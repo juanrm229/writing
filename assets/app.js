@@ -92,6 +92,7 @@
   if (SITE.sticky) root.style.setProperty('--lime', SITE.sticky);
   if (!store.get('theme', null) && SITE.theme !== 'auto') root.setAttribute('data-theme', SITE.theme === 'gelap' ? 'dark' : 'light');
   $('.tk-title').textContent = SITE.handle;
+  { const [h1, ...rest] = SITE.handle.split('/'); $('#tbBrand').innerHTML = esc(h1) + (rest.length ? `<em>/${esc(rest.join('/'))}</em>` : ''); }
   const win = $('#win');
   if (!SITE.features.dock) win.classList.add('no-dock');
   if (!SITE.features.visitorStickies) $('#addNote').hidden = true;
