@@ -1,105 +1,76 @@
 (() => {
   'use strict';
 
+  /* ======================================================================
+     DASAR
+     ====================================================================== */
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const SITE = window.SITE;
-  const WORKS = [...window.WORKS].sort((a, b) => b.date.localeCompare(a.date));
-  const BY_SLUG = Object.fromEntries(WORKS.map(w => [w.slug, w]));
-  // nomor katalog: urutan terbit, yang tertua = 01
+  const WORKS = [...window.WORKS].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = matchMedia('(pointer: fine)').matches;
+  const mobileMQ = matchMedia('(max-width: 860px)');
+  const isMobile = () => mobileMQ.matches;
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* tidak apa-apa */ } }
+    set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fmt = (d, o) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', o);
+  const fmtShort = d => fmt(d, { day: 'numeric', month: 'short', year: 'numeric' });
+  const fmtLong = d => fmt(d, { day: 'numeric', month: 'long', year: 'numeric' });
+  const num = n => n.toLocaleString('id-ID');
 
   const CATS = {
-    esai:    { label: 'Esai',       color: '--c-esai',    tint: '--lav' },
-    puisi:   { label: 'Puisi',      color: '--c-puisi',   tint: '--pink' },
-    cerpen:  { label: 'Cerpen',     color: '--c-cerpen',  tint: '--mint' },
-    mini:    { label: 'Fiksi Mini', color: '--c-mini',    tint: '--butter' },
-    catatan: { label: 'Catatan',    color: '--c-catatan', tint: '--lime' }
+    esai:    { label: 'Esai',       tag: 'ESAI',  ink: '#2F5BFF' },
+    puisi:   { label: 'Puisi',      tag: 'PUISI', ink: '#D2338A', red: true },
+    cerpen:  { label: 'Cerpen',     tag: 'CERPEN', ink: '#0E8A5C' },
+    mini:    { label: 'Fiksi Mini', tag: 'MINI',  ink: '#E0571C' },
+    catatan: { label: 'Catatan',    tag: 'CATATAN', ink: '#6A4DF0' },
+    milikmu: { label: 'Milikmu',    tag: 'TXT',   ink: '#111214' }
   };
-  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const catStyle = w => `--cat:var(${CATS[w.cat].color});--tint:var(${CATS[w.cat].tint})`;
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  const clamp = (v, a = 0, b = 10) => Math.max(a, Math.min(b, v));
-  const fullText = w => w.body.join('\n\n');
-  const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const fmtDate = (d, opts = { month: 'short', year: 'numeric' }) =>
-    new Date(d + 'T00:00:00').toLocaleDateString('id-ID', opts);
+  const FOLDER_TITLES = { esai: 'Esai tentang hal-hal kecil', puisi: 'Puisi yang dicoret berkali-kali' };
 
-  let toastTimer;
+  let toastT;
   function toast(msg) {
     const t = $('#toast');
     t.textContent = msg; t.classList.add('on');
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2400);
-  }
-  async function copyText(text, okMsg) {
-    try { await navigator.clipboard.writeText(text); toast(okMsg); }
-    catch (e) { toast('Tidak bisa menyalin otomatis. Pilih teksnya lalu salin manual.'); }
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
   }
 
-  /* ======================================================================
-     ANALISIS TEKS
-     ====================================================================== */
-  const STOP = new Set(('yang dan di ke dari itu ini aku kamu ia dia kita kami mereka dengan untuk pada ada tidak tapi tetapi juga akan sudah saja ' +
-    'karena seperti adalah sebagai atau dalam bahwa lalu kalau jika apa satu setiap lebih sangat hanya masih bisa harus pun oleh kepada para si sang ' +
-    'begitu sampai belum telah sedang agar supaya maka namun mau ingin lagi sebuah seorang pak bu yah iya ya tak kan kah lah hal demi tanpa sejak ' +
-    'antara setelah sebelum selalu pernah mungkin kupikir sebenarnya terlalu semua nya yg aja gak bukan dua tiga biasanya entah kenapa sesuatu ' +
-    'the a an of to and in is it that for on with as was').split(' '));
-
+  /* ---------- analisis ringan ---------- */
+  const wordsOf = s => (s.toLowerCase().match(/[a-zà-ÿ]+(?:-[a-zà-ÿ]+)*/g) || []);
   function units(text, poem) {
     if (poem) return text.split(/\n+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));
     const flat = text.replace(/\s*\n+\s*/g, ' ');
     return (flat.match(/[^.!?…]+(?:[.!?…]+[”"’)]*|$)/g) || []).map(s => s.trim()).filter(s => /[a-z]/i.test(s));
   }
-  const wordsOf = s => (s.toLowerCase().match(/[a-zà-ÿ]+(?:-[a-zà-ÿ]+)*/g) || []);
-  function mattr(words, win = 40) {
-    if (words.length <= win) return new Set(words).size / Math.max(1, words.length);
-    let sum = 0, n = 0;
-    for (let i = 0; i + win <= words.length; i++) { sum += new Set(words.slice(i, i + win)).size / win; n++; }
-    return sum / n;
+  const fullText = w => w.body.join('\n\n');
+  function prep(w) {
+    const t = fullText(w);
+    const words = wordsOf(t).length;
+    w.words = words;
+    w.minutes = Math.max(1, Math.round(words / 170));
+    w.lens = units(t, w.form === 'puisi').map(u => wordsOf(u).length).filter(Boolean);
+    w.bytes = new Blob([t]).size;
+    w.file = (w.title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) + '.md';
+    return w;
   }
+  WORKS.forEach(prep);
 
-  function analyze(text, poem) {
-    const us = units(text, poem);
-    const words = wordsOf(text);
-    const lens = us.map(u => wordsOf(u).length).filter(n => n > 0);
-    const n = Math.max(1, lens.length);
-    const mean = lens.reduce((a, b) => a + b, 0) / n;
-    const sd = Math.sqrt(lens.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
-    const cv = mean ? sd / mean : 0;
-    const mt = mattr(words);
-    const content = words.filter(w => !STOP.has(w) && w.length > 2);
-    const density = words.length ? content.length / words.length : 0;
-    const freq = {};
-    content.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-    const top = Object.entries(freq).filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1] || b[0].length - a[0].length).slice(0, 10);
-    const longest = words.reduce((a, b) => (b.length > a.length ? b : a), '');
-    const scores = {
-      ragam: clamp((mt - 0.65) / 0.28 * 10),
-      ritme: clamp(10 - Math.abs(cv - 0.62) * 16),
-      // titik ideal: ±13 kata per kalimat untuk prosa, ±5 kata per baris untuk puisi
-      jernih: clamp(poem ? 10 - Math.abs(mean - 5) * 0.9 : 10 - Math.abs(mean - 13) * 0.45),
-      padat: clamp(10 - Math.abs(density - 0.6) * 28)
-    };
-    const total = (scores.ragam + scores.ritme + scores.jernih + scores.padat) / 4;
-    return {
-      units: us, lens, mean, cv, mattr: mt, density, top, longest,
-      words: words.length, unique: new Set(words).size,
-      minutes: Math.max(1, Math.round(words.length / 170)),
-      scores, total, poem
-    };
-  }
-  WORKS.forEach(w => { w.stats = analyze(fullText(w), w.form === 'puisi'); });
+  // tulisan yang dijatuhkan pengunjung (hanya di peramban mereka)
+  let MINE = store.get('mine', []).map(prep);
+  const all = () => [...MINE, ...WORKS];
+  const bySlug = slug => all().find(w => w.slug === slug);
+  const readSet = new Set(store.get('read', []));
+  const notes = store.get('notes', {});
 
   /* ======================================================================
-     SENI BENANG — 26 huruf di lingkaran, benang mengikuti urutan huruf teks
+     SENI BENANG: 26 huruf di lingkaran, benang mengikuti urutan huruf teks
      ====================================================================== */
   const ABC = 'abcdefghijklmnopqrstuvwxyz';
   function seeded(str) {
@@ -107,938 +78,986 @@
     for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
     return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; };
   }
-
-  function paintThread(ctx, w, h, text, o = {}) {
-    const color = o.color || css('--ink');
-    const pad = o.labels ? Math.max(22, w * 0.06) : (o.pad ?? 10);
-    const r = Math.min(w, h) / 2 - pad, cx = w / 2, cy = h / 2;
-    const P = [...ABC].map((ch, i) => {
-      const a = -Math.PI / 2 + (o.rotate || 0) + (i / 26) * Math.PI * 2;
-      return { ch, a, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
-    });
-    const seq = fold(text).replace(/[^a-z]/g, '').slice(0, o.max || 1800);
-    const rnd = seeded(o.seed || seq.slice(0, 40));
-    const j = r * 0.018;
-    const segs = [];
-    for (let i = 1; i < seq.length; i++) {
-      const a = P[seq.charCodeAt(i - 1) - 97], b = P[seq.charCodeAt(i) - 97];
-      if (a === b) continue;
-      segs.push([a.x + (rnd() - .5) * j, a.y + (rnd() - .5) * j, b.x + (rnd() - .5) * j, b.y + (rnd() - .5) * j]);
-    }
-    const alpha = clamp(6.5 / Math.sqrt(segs.length + 4), 0.045, 0.55) * (o.weight || 1);
-    const lw = Math.max(0.5, r / 190);
-
-    const drawPins = () => {
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = color;
-      P.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1.2, r / 110), 0, Math.PI * 2); ctx.fill(); });
-      if (o.labels) {
-        ctx.fillStyle = o.labelColor || css('--muted');
-        ctx.font = `500 ${Math.max(10, Math.round(r / 17))}px Geist, system-ui, sans-serif`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        P.forEach(p => ctx.fillText(p.ch, cx + Math.cos(p.a) * (r + pad * 0.55), cy + Math.sin(p.a) * (r + pad * 0.55)));
-      }
-    };
-    const drawRange = (from, to) => {
-      ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
-      for (let i = from; i < to; i++) {
-        const s = segs[i];
-        ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); ctx.stroke();
-      }
-    };
-    return { segs, drawPins, drawRange };
-  }
-
   function drawThread(canvas, text, o = {}) {
-    const rect = canvas.getBoundingClientRect();
-    const w = rect.width, h = rect.height;
+    const w = o.w || canvas.clientWidth, h = o.h || canvas.clientHeight;
     if (!w || !h) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    cancelAnimationFrame(canvas._raf);
-    const t = paintThread(ctx, w, h, text, o);
-    if (!o.animate || reduced) { t.drawRange(0, t.segs.length); t.drawPins(); return; }
-    t.drawPins();
-    const per = Math.max(1, Math.ceil(t.segs.length / (o.frames || 70)));
-    let i = 0;
-    const step = () => {
-      t.drawRange(i, Math.min(i + per, t.segs.length));
-      i += per;
-      if (i < t.segs.length) canvas._raf = requestAnimationFrame(step);
-    };
-    step();
+    const pad = o.pad ?? 6;
+    const r = Math.min(w, h) / 2 - pad, cx = w / 2, cy = h / 2;
+    const rot = o.seed ? seeded(o.seed + '/r')() * Math.PI * 2 : 0;
+    const P = [...ABC].map((_, i) => {
+      const a = -Math.PI / 2 + rot + (i / 26) * Math.PI * 2;
+      return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+    });
+    const seq = fold(text).replace(/[^a-z]/g, '').slice(0, o.max || 1600);
+    const rnd = seeded(o.seed || 'x');
+    const j = r * 0.02;
+    let n = 0;
+    ctx.strokeStyle = o.color || '#111';
+    ctx.lineWidth = o.lw || Math.max(0.45, r / 170);
+    const segs = Math.max(1, seq.length - 1);
+    ctx.globalAlpha = clamp(6 / Math.sqrt(segs + 4), 0.05, 0.6) * (o.weight || 1);
+    for (let i = 1; i < seq.length; i++) {
+      const a = P[seq.charCodeAt(i - 1) - 97], b = P[seq.charCodeAt(i) - 97];
+      if (a === b) continue;
+      ctx.beginPath();
+      ctx.moveTo(a[0] + (rnd() - .5) * j, a[1] + (rnd() - .5) * j);
+      ctx.lineTo(b[0] + (rnd() - .5) * j, b[1] + (rnd() - .5) * j);
+      ctx.stroke(); n++;
+    }
+    if (o.pins !== false) {
+      ctx.globalAlpha = 1; ctx.fillStyle = o.color || '#111';
+      P.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.7, r / 120), 0, Math.PI * 2); ctx.fill(); });
+    }
+    return n;
+  }
+  const coverOf = (canvas, w, o = {}) => drawThread(canvas, fullText(w), { color: CATS[w.cat].ink, seed: w.slug, ...o });
+  function mini(w, size = 36) {
+    const c = document.createElement('canvas');
+    c.style.width = c.style.height = size + 'px';
+    c.setAttribute('aria-hidden', 'true');
+    requestAnimationFrame(() => coverOf(c, w, { w: size, h: size, pad: 3, pins: false, weight: 1.2 }));
+    return c;
   }
 
-  // sampul diputar sesuai slug supaya tiap karya punya sudut sendiri; peta berlabel di Anatomi tidak diputar
-  const threadFor = (canvas, w, extra = {}) =>
-    drawThread(canvas, fullText(w), { color: css(CATS[w.cat].color), seed: w.slug, rotate: seeded(w.slug + '/r')() * Math.PI * 2, ...extra });
-
   /* ======================================================================
-     TEMA
+     JENDELA, TAMPILAN, TEMA
      ====================================================================== */
+  const win = $('#win');
+  const VIEWS = ['kanvas', 'daftar', 'sapa'];
+  let view = 'kanvas', prevView = 'kanvas';
+
+  function setView(v) {
+    if (v === 'sapa' && !isMobile()) v = 'kanvas';
+    if (view !== 'baca') prevView = view;
+    view = v;
+    win.dataset.view = v;
+    syncPill();
+    if (v === 'kanvas') canvasFit(false);
+    if (v !== 'baca') { stopSpeech(); releaseLock(); }
+  }
+  function syncPill() {
+    $$('.pill [data-go]').forEach(b => {
+      const on = b.dataset.go === 'sapa' ? (isMobile() ? view === 'sapa' : !win.classList.contains('dock-off')) : b.dataset.go === view;
+      b.setAttribute('aria-current', on ? 'true' : 'false');
+    });
+  }
+  function go(v) {
+    if (v === 'sapa' && !isMobile()) { toggleDock(); return; }
+    if (location.hash === '#' + v) setView(v); else location.hash = v;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-go]');
+    if (b) go(b.dataset.go);
+  });
+
+  function toggleDock(force) {
+    const off = force != null ? !force : !win.classList.contains('dock-off');
+    win.classList.toggle('dock-off', off);
+    $('#dockToggle').setAttribute('aria-pressed', String(!off));
+    store.set('dockOff', off);
+    syncPill();
+    setTimeout(() => canvasClamp(), 480);
+  }
+  $('#dockToggle').addEventListener('click', () => toggleDock());
+  if (store.get('dockOff', false)) toggleDock(false);
+
   const darkMQ = matchMedia('(prefers-color-scheme: dark)');
   const isDark = () => {
     const t = document.documentElement.getAttribute('data-theme');
     return t ? t === 'dark' : darkMQ.matches;
   };
-  const repaintHooks = [];
-  const repaintAll = () => repaintHooks.forEach(fn => fn());
-  $('#themeToggle').addEventListener('click', () => {
-    const next = isDark() ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    store.set('theme', next);
-    repaintAll();
+  function setTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    store.set('theme', dark ? 'dark' : 'light');
+    $('#chipDark').setAttribute('aria-checked', String(dark));
+  }
+  $('#chipDark').setAttribute('aria-checked', String(isDark()));
+  $('#chipDark').addEventListener('click', () => setTheme(!isDark()));
+  darkMQ.addEventListener?.('change', () => $('#chipDark').setAttribute('aria-checked', String(isDark())));
+
+  const BACKDROPS = ['auto', 'senja', 'kabut', 'malam'];
+  const BD_NAMES = { auto: 'Otomatis', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
+  let backdrop = store.get('backdrop', 'auto');
+  function applyBackdrop() {
+    if (backdrop === 'auto') document.documentElement.removeAttribute('data-backdrop');
+    else document.documentElement.setAttribute('data-backdrop', backdrop);
+    $('#bdNext').textContent = BD_NAMES[BACKDROPS[(BACKDROPS.indexOf(backdrop) + 1) % BACKDROPS.length]];
+  }
+  $('#chipBackdrop').addEventListener('click', () => {
+    backdrop = BACKDROPS[(BACKDROPS.indexOf(backdrop) + 1) % BACKDROPS.length];
+    store.set('backdrop', backdrop);
+    applyBackdrop();
+    toast('Latar: ' + BD_NAMES[backdrop]);
   });
-  darkMQ.addEventListener?.('change', repaintAll);
-  let resizeT;
-  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(repaintAll, 180); });
+  applyBackdrop();
 
   /* ======================================================================
-     NAV: pulau "sedang menulis" + tautan aktif
+     KANVAS
      ====================================================================== */
-  (function island() {
-    const nw = SITE.nowWriting;
-    if (!nw) { $('#island').hidden = true; return; }
-    $('#islandTitle').textContent = nw.title;
-    $('#islandMeta').textContent = `${nw.kind} · draf ${nw.draft}`;
-    $('#islandBar').style.width = Math.round(nw.progress * 100) + '%';
-    $('#islandPct').textContent = Math.round(nw.progress * 100) + '%';
-    $('#island').addEventListener('click', e => {
-      const b = e.currentTarget;
-      b.setAttribute('aria-expanded', b.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
-    });
-  })();
+  const viewport = $('#viewport'), world = $('#world');
+  const WORLD = { w: 2600, h: 1100 };
+  const cam = { x: 0, y: 0, s: 1 };
+  const pos = store.get('pos', {});
+  let stickies = store.get('stickies', []);
+  let zTop = 10;
 
-  const navLinks = $$('.nav-links a');
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(en => {
-        if (!en.isIntersecting) return;
-        navLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + en.target.id));
-      });
-    }, { rootMargin: '-45% 0px -50% 0px' });
-    ['karya', 'anatomi', 'perjalanan', 'ruang-main', 'surat'].forEach(id => io.observe(document.getElementById(id)));
-  }
-
-  /* ======================================================================
-     HERO: judul yang direvisi di depan mata
-     ====================================================================== */
-  const DRAFTS = ['berisik', 'ragu-ragu', 'menolak diam.'];
-  let draftRun = 0;
-  async function playDraft() {
-    if (reduced) return;
-    const run = ++draftRun;
-    const host = $('#draft');
-    const logItems = $$('#draftLog > :not(.dl-label)');
-    logItems.forEach(el => el.classList.add('pending'));
-    host.textContent = '';
-    host.classList.add('typing');
-    for (let d = 0; d < DRAFTS.length; d++) {
-      const span = document.createElement('span');
-      span.className = 'draft-word';
-      host.append(span);
-      for (const ch of DRAFTS[d]) {
-        if (run !== draftRun) return;
-        span.textContent += ch;
-        await wait(60 + Math.random() * 70);
-      }
-      if (d < DRAFTS.length - 1) {
-        await wait(520);
-        span.classList.add('struck');
-        await wait(560);
-        logItems[d].classList.remove('pending');
-        span.classList.add('gone');
-        await wait(340);
-        if (run !== draftRun) return;
-        span.remove();
-      }
-    }
-    await wait(350);
-    logItems[DRAFTS.length - 1].classList.remove('pending');
-    await wait(1600);
-    if (run === draftRun) host.classList.remove('typing');
-  }
-  $('#replayDraft').addEventListener('click', playDraft);
-
-  /* ---------- angka dot-matrix ---------- */
-  const totals = {
-    tWords: WORKS.reduce((a, w) => a + w.stats.words, 0),
-    tWorks: WORKS.length,
-    tMinutes: WORKS.reduce((a, w) => a + w.stats.minutes, 0),
-    tSaved: SITE.savedSentences || 0
-  };
-  Object.entries(totals).forEach(([id, v]) => {
-    const el = document.getElementById(id);
-    const final = v.toLocaleString('id-ID');
-    el.textContent = final;
-    if (reduced) return;
-    let k = 0;
-    const iv = setInterval(() => {
-      el.textContent = final.replace(/\d/g, () => Math.floor(Math.random() * 10));
-      if (++k > 14) { clearInterval(iv); el.textContent = final; }
-    }, 55);
-  });
-
-  /* ---------- tumpukan kartu ---------- */
-  const stack = $('#stack');
-  let order = WORKS.slice(0, 5).map(w => {
-    const el = document.createElement('div');
-    el.className = 's-card';
-    el.setAttribute('style', catStyle(w));
-    el.dataset.slug = w.slug;
-    el.setAttribute('role', 'link');
-    el.setAttribute('aria-label', `Baca ${w.title}`);
-    el.innerHTML = `
-      <div class="s-art"><canvas></canvas></div>
-      <div class="s-body">
-        <span class="chip-cat">${CATS[w.cat].label}</span>
-        <h3>${esc(w.title)}</h3>
-        <div class="s-meta"><span>${fmtDate(w.date)}</span><span>${w.stats.minutes} menit baca</span></div>
-      </div>`;
-    stack.append(el);
-    return el;
-  });
-  function layoutStack() {
-    order.forEach((el, i) => {
-      el.style.setProperty('--i', i);
-      el.dataset.i = i;
-      el.style.zIndex = 50 - i;
-      el.classList.toggle('is-top', i === 0);
-      el.tabIndex = i === 0 ? 0 : -1;
-    });
-  }
-  function paintStack(animate) {
-    order.forEach(el => threadFor($('canvas', el), BY_SLUG[el.dataset.slug], { animate, frames: 80 }));
-  }
-  function sendBack(el, dx = -260, dy = 40) {
-    el.classList.add('is-drag');
-    el.style.transition = 'transform .38s cubic-bezier(.4,0,.6,1), opacity .38s';
-    el.style.transform = `translate(-50%,-50%) translate(${dx}px, ${dy}px) rotate(${dx / 10}deg)`;
-    el.style.opacity = '0';
-    setTimeout(() => {
-      el.classList.remove('is-drag');
-      el.style.transition = 'none'; el.style.transform = ''; el.style.opacity = '';
-      order.push(order.shift());
-      layoutStack();
-      requestAnimationFrame(() => { el.style.transition = ''; });
-    }, 380);
-  }
-  layoutStack();
-  repaintHooks.push(() => paintStack(false));
-
-  let drag = null;
-  stack.addEventListener('pointerdown', e => {
-    const el = e.target.closest('.s-card.is-top');
-    if (!el) return;
-    drag = { el, x: e.clientX, y: e.clientY, dx: 0, dy: 0, id: e.pointerId };
-    el.setPointerCapture(e.pointerId);
-    el.classList.add('is-drag');
-  });
-  stack.addEventListener('pointermove', e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    drag.dx = e.clientX - drag.x; drag.dy = e.clientY - drag.y;
-    drag.el.style.transform = `translate(-50%,-50%) translate(${drag.dx}px, ${drag.dy}px) rotate(${drag.dx / 14 - 4}deg)`;
-  });
-  const endDrag = e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const { el, dx, dy } = drag;
-    drag = null;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 6) { el.classList.remove('is-drag'); el.style.transform = ''; openWork(el.dataset.slug); return; }
-    if (dist > 90) { sendBack(el, dx * 2.4, dy * 2.4); return; }
-    el.classList.remove('is-drag'); el.style.transform = '';
-  };
-  stack.addEventListener('pointerup', endDrag);
-  stack.addEventListener('pointercancel', endDrag);
-  stack.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.classList.contains('s-card')) openWork(e.target.dataset.slug);
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { sendBack(order[0]); requestAnimationFrame(() => order[0].focus()); }
-  });
-  $('#stackNext').addEventListener('click', () => sendBack(order[0]));
-  $('#randomRead').addEventListener('click', () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug));
-
-  /* ---------- pita berjalan ---------- */
-  (function marquee() {
-    const items = WORKS.map(w => `<span class="marquee-item">${esc(w.line)}</span>`).join('');
-    $('#marquee').innerHTML = items + items;
-  })();
-
-  /* ======================================================================
-     KARYA
-     ====================================================================== */
-  let filter = 'semua';
-  let view = store.get('view', 'grid');
-  const worksEl = $('#works');
-
-  function renderFilters() {
-    const counts = WORKS.reduce((m, w) => (m[w.cat] = (m[w.cat] || 0) + 1, m), {});
-    const chips = [['semua', 'Semua', WORKS.length], ...Object.keys(CATS).filter(k => counts[k]).map(k => [k, CATS[k].label, counts[k]])];
-    $('#filters').innerHTML = chips.map(([k, label, n]) =>
-      `<button class="chip" type="button" data-filter="${k}" aria-pressed="${k === filter}">${label}<sup>${n}</sup></button>`).join('');
-  }
-  function renderWorks() {
-    const list = WORKS.filter(w => filter === 'semua' || w.cat === filter);
-    worksEl.className = 'works ' + (view === 'grid' ? 'is-grid' : 'is-list');
-    $('#workCount').textContent = list.length;
-    if (view === 'grid') {
-      worksEl.innerHTML = list.map(w => `
-        <a class="work-card" href="#baca-${w.slug}" style="${catStyle(w)}" data-slug="${w.slug}">
-          <div class="wc-art"><canvas></canvas><span class="wc-no">${w.no}</span></div>
-          <div class="wc-body">
-            <span class="chip-cat">${CATS[w.cat].label}</span>
-            <h3>${esc(w.title)}</h3>
-            <p>${esc(w.excerpt)}</p>
-          </div>
-          <div class="wc-foot"><span>${fmtDate(w.date)}</span><span>${w.stats.words.toLocaleString('id-ID')} kata · ${w.stats.minutes} mnt</span></div>
-        </a>`).join('');
-      $$('.work-card', worksEl).forEach(el => threadFor($('canvas', el), BY_SLUG[el.dataset.slug]));
-    } else {
-      worksEl.innerHTML = list.map(w => `
-        <a class="work-row" href="#baca-${w.slug}" style="${catStyle(w)}" data-slug="${w.slug}">
-          <span class="wr-no">${w.no}</span>
-          <span class="wr-title">${esc(w.title)}</span>
-          <span class="chip-cat">${CATS[w.cat].label}</span>
-          <span class="wr-date">${fmtDate(w.date)}</span>
-          <span class="wr-min">${w.stats.minutes} mnt</span>
-          <span class="wr-arrow" aria-hidden="true">→</span>
-        </a>`).join('');
-    }
-    $$('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
-  }
-  $('#filters').addEventListener('click', e => {
-    const b = e.target.closest('[data-filter]');
-    if (!b) return;
-    filter = b.dataset.filter;
-    $$('#filters .chip').forEach(c => c.setAttribute('aria-pressed', c === b));
-    renderWorks();
-  });
-  $('.seg').addEventListener('click', e => {
-    const b = e.target.closest('[data-view]');
-    if (!b) return;
-    view = b.dataset.view; store.set('view', view);
-    renderWorks();
-  });
-  renderFilters();
-  renderWorks();
-  repaintHooks.push(() => $$('.work-card', worksEl).forEach(el => threadFor($('canvas', el), BY_SLUG[el.dataset.slug])));
-
-  // pratinjau benang yang mengikuti kursor di tampilan indeks
-  const hover = $('#hoverThread');
-  if (finePointer) {
-    let current = null;
-    worksEl.addEventListener('pointermove', e => {
-      const row = e.target.closest('.work-row');
-      if (!row) { hover.classList.remove('on'); current = null; return; }
-      hover.style.left = e.clientX + 130 + 'px';
-      hover.style.top = e.clientY + 'px';
-      if (current !== row.dataset.slug) {
-        current = row.dataset.slug;
-        hover.classList.add('on');
-        threadFor(hover, BY_SLUG[current], { pad: 18, animate: true, frames: 30 });
-      }
-    });
-    worksEl.addEventListener('pointerleave', () => { hover.classList.remove('on'); current = null; });
-  }
-
-  /* ======================================================================
-     ANATOMI
-     ====================================================================== */
-  const METRICS = [
-    ['ragam', 'Ragam kata', '--c-esai', a => `MATTR ${a.mattr.toFixed(2)} · seberapa jarang kata diulang`],
-    ['ritme', 'Ritme', '--c-puisi', a => `variasi panjang ${a.poem ? 'baris' : 'kalimat'} ${(a.cv * 100).toFixed(0)}%`],
-    ['jernih', 'Kejernihan', '--c-cerpen', a => `rata-rata ${a.mean.toFixed(1)} kata per ${a.poem ? 'baris' : 'kalimat'}`],
-    ['padat', 'Kepadatan', '--c-mini', a => `${Math.round(a.density * 100)}% kata bermakna`]
+  const LAYOUT = [
+    { id: 's:peta', type: 'sticky', slug: 'peta-tersesat', x: 60, y: 560 },
+    { id: 'p:draf-ketujuh', type: 'paper', slug: 'draf-ketujuh', x: 250, y: 420, peek: 'bahasa-ibu' },
+    { id: 'f:puisi', type: 'folder', cat: 'puisi', x: 520, y: 400 },
+    { id: 'p:jendela', type: 'paper', slug: 'jendela', x: 772, y: 396 },
+    { id: 'img', type: 'img', slug: 'penjual-senin', x: 1012, y: 432 },
+    { id: 'note', type: 'note', slug: 'penjual-senin', x: 1222, y: 398 },
+    { id: 'p:peta-tersesat', type: 'paper', slug: 'peta-tersesat', x: 1420, y: 386 },
+    { id: 's:kopi', type: 'sticky', slug: 'kopi-kedua', x: 1636, y: 548 },
+    { id: 'p:kopi-kedua', type: 'paper', slug: 'kopi-kedua', x: 1700, y: 404 },
+    { id: 'p:penjual-senin', type: 'paper', slug: 'penjual-senin', x: 1960, y: 392 },
+    { id: 'f:esai', type: 'folder', cat: 'esai', x: 2220, y: 404 }
   ];
-  let anatSel = WORKS[0].slug;
-  let anatCurrent = null;
 
-  function polar(cx, cy, r, deg) { const a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
-  function arc(cx, cy, r, a0, a1) {
-    const [x0, y0] = polar(cx, cy, r, a0), [x1, y1] = polar(cx, cy, r, a1);
-    return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  function tinyOf(w) {
+    if (w.form === 'puisi') return `<div class="tiny"><p class="poem">${esc(w.body.slice(0, 3).join('\n\n'))}</p></div>`;
+    const sents = units(w.body.slice(1).join(' '), false).slice(0, 3);
+    return `<div class="tiny"><p>${esc(w.body[0])}</p><b>${esc(w.line)}</b>${sents.map(s => `<p class="li">${esc(s)}</p>`).join('')}</div>`;
   }
-  function ringSVG(a) {
-    const C = 110, R = 92, gap = 14, span = 90 - gap;
-    const parts = METRICS.map(([k, , color], i) => {
-      const start = i * 90 + gap / 2, end = start + span;
-      const len = (Math.PI * 2 * R) * span / 360;
-      const v = a.scores[k] / 10;
-      return `<path d="${arc(C, C, R, start, end)}" fill="none" stroke="var(--sheet-2)" stroke-width="18" stroke-linecap="round"/>
-        <path d="${arc(C, C, R, start, end)}" fill="none" stroke="var(${color})" stroke-width="18" stroke-linecap="round"
-          stroke-dasharray="${(len * v).toFixed(1)} ${len.toFixed(1)}"/>`;
-    }).join('');
-    return `<svg viewBox="0 0 220 220" role="img" aria-label="Indeks napas ${a.total.toFixed(1)} dari 10">
-      ${parts}
-      <text class="r-num" x="110" y="118" text-anchor="middle">${a.total.toFixed(1)}</text>
-      <text class="r-sub" x="110" y="142" text-anchor="middle">dari 10</text>
-    </svg>`;
-  }
-
-  function rhythmSVG(host, a, color, compact) {
-    const W = host.clientWidth || 600, H = host.clientHeight || 150;
-    const n = a.lens.length;
-    if (!n) { host.innerHTML = ''; return; }
-    const max = Math.max(...a.lens);
-    const bw = W / n, bar = Math.max(2, Math.min(bw * 0.62, 26));
-    const mid = H / 2;
-    const rects = a.lens.map((len, i) => {
-      const h = Math.max(4, (len / max) * (H - 8));
-      const x = i * bw + (bw - bar) / 2;
-      return `<rect data-i="${i}" x="${x.toFixed(1)}" y="${(mid - h / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 6)}" fill="${color}"><title>${len} kata</title></rect>`;
-    }).join('');
-    const unit = a.poem ? 'baris' : 'kalimat';
-    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${n} ${unit}, terpendek ${Math.min(...a.lens)} kata, terpanjang ${max} kata">
-      <line x1="0" x2="${W}" y1="${mid}" y2="${mid}" stroke="var(--line)" stroke-width="1"/>${rects}</svg>`;
-    if (compact) return;
-    const cap = $('#rhythmCap');
-    const show = i => {
-      $$('rect', host).forEach(r => r.classList.toggle('on', +r.dataset.i === i));
-      const s = a.units[i] || '';
-      cap.innerHTML = `<b>${unit} ${i + 1} dari ${n} · ${a.lens[i]} kata</b>${esc(s.length > 220 ? s.slice(0, 220) + '…' : s)}`;
-    };
-    const longestIdx = a.lens.indexOf(max);
-    show(longestIdx);
-    const svg = $('svg', host);
-    svg.addEventListener('pointermove', e => {
-      const r = svg.getBoundingClientRect();
-      const i = Math.min(n - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * n)));
-      show(i);
-    });
-    svg.addEventListener('pointerleave', () => show(longestIdx));
-  }
-
-  function renderAnatomy(text, poem, opts) {
-    const a = analyze(text, poem);
-    anatCurrent = { text, poem, ...opts };
-    $('#ring').innerHTML = ringSVG(a);
-    $('#legend').innerHTML = METRICS.map(([k, name, color, desc]) =>
-      `<li style="--c:var(${color})"><span class="lg-name">${name}</span><span class="lg-val">${a.scores[k].toFixed(1)}</span><span class="lg-desc">${desc(a)}</span></li>`).join('');
-    const unit = poem ? 'baris' : 'kalimat';
-    $('#stats').innerHTML = [
-      ['kata', a.words.toLocaleString('id-ID')],
-      ['kata unik', a.unique.toLocaleString('id-ID')],
-      [unit, a.lens.length],
-      [`kata per ${unit}`, a.mean.toFixed(1)],
-      ['waktu baca', `${a.minutes}<small>mnt</small>`],
-      ['kata terpanjang', esc(a.longest || '—')]
-    ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
-    $('#words').innerHTML = a.top.length
-      ? a.top.map(([w, c], i) => `<li style="font-size:${(26 - i * 1.4).toFixed(1)}px">${esc(w)}<sup>${c}×</sup></li>`).join('')
-      : '<li>belum ada kata yang muncul dua kali</li>';
-    rhythmSVG($('#rhythm'), a, opts.color, false);
-    const letters = fold(text).replace(/[^a-z]/g, '').length;
-    $('#threadNote').textContent = `${letters.toLocaleString('id-ID')} huruf, ${Math.max(0, letters - 1).toLocaleString('id-ID')} tarikan benang`;
-    drawThread($('#anatThread'), text, { color: opts.color, seed: opts.seed, labels: true, animate: true, frames: 90 });
-  }
-  function renderAnatChips() {
-    $('#anatChips').innerHTML = WORKS.map(w =>
-      `<button class="chip" type="button" data-slug="${w.slug}" aria-pressed="${w.slug === anatSel}">${esc(w.title)}</button>`).join('');
-  }
-  function selectAnat(slug) {
-    anatSel = slug;
-    const w = BY_SLUG[slug];
-    $$('#anatChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.slug === slug));
-    $('#ownToggle').setAttribute('aria-pressed', 'false');
-    $('#ownBox').hidden = true;
-    renderAnatomy(fullText(w), w.form === 'puisi', { color: css(CATS[w.cat].color), seed: w.slug, slug });
-  }
-  $('#anatChips').addEventListener('click', e => { const b = e.target.closest('[data-slug]'); if (b) selectAnat(b.dataset.slug); });
-  let ownT;
-  const renderOwn = () => {
-    const t = $('#ownText').value.trim();
-    if (t) renderAnatomy(t, $('#ownPoem').checked, { color: css('--blue'), seed: 'own' });
-  };
-  $('#ownToggle').addEventListener('click', () => {
-    $$('#anatChips .chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
-    $('#ownToggle').setAttribute('aria-pressed', 'true');
-    $('#ownBox').hidden = false;
-    const ta = $('#ownText');
-    if (!ta.value) ta.value = store.get('own', '');
-    ta.focus();
-    renderOwn();
-  });
-  $('#ownText').addEventListener('input', () => {
-    clearTimeout(ownT);
-    ownT = setTimeout(() => { store.set('own', $('#ownText').value); renderOwn(); }, 260);
-  });
-  $('#ownPoem').addEventListener('change', renderOwn);
-  renderAnatChips();
-  selectAnat(anatSel);
-  repaintHooks.push(() => {
-    if (!anatCurrent) return;
-    if (anatCurrent.slug) selectAnat(anatCurrent.slug); else renderOwn();
-  });
-
-  /* ======================================================================
-     PERJALANAN
-     ====================================================================== */
-  (function timeline() {
-    const items = SITE.timeline || [];
-    $('#tlTrack').innerHTML = items.map((t, i) => `
-      <li class="tl-item${i === items.length - 1 ? ' is-now' : ''}">
-        <span class="tl-year">${esc(t.year)}</span>
-        <h3>${esc(t.title)}</h3>
-        <p>${esc(t.text)}</p>
-        ${t.slug && BY_SLUG[t.slug] ? `<a class="tl-link" href="#baca-${t.slug}">baca “${esc(BY_SLUG[t.slug].title)}” →</a>` : ''}
-        <span class="tl-tag">${esc(t.tag)}</span>
-      </li>`).join('');
-    const tl = $('#timeline'), bar = $('#tlBar');
-    const update = () => {
-      const max = tl.scrollWidth - tl.clientWidth;
-      const vis = tl.clientWidth / tl.scrollWidth;
-      bar.style.width = Math.min(100, (vis + (max > 0 ? tl.scrollLeft / max : 1) * (1 - vis)) * 100) + '%';
-    };
-    tl.addEventListener('scroll', update, { passive: true });
-    repaintHooks.push(update);
-    update();
-    // geser dengan mouse
-    let d = null;
-    tl.addEventListener('pointerdown', e => {
-      if (e.pointerType !== 'mouse' || e.target.closest('a')) return;
-      d = { x: e.clientX, s: tl.scrollLeft, moved: false };
-      tl.classList.add('dragging');
-    });
-    addEventListener('pointermove', e => {
-      if (!d) return;
-      tl.scrollLeft = d.s - (e.clientX - d.x);
-    });
-    addEventListener('pointerup', () => { d = null; tl.classList.remove('dragging'); });
-    tl.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight') tl.scrollBy({ left: 300, behavior: 'smooth' });
-      if (e.key === 'ArrowLeft') tl.scrollBy({ left: -300, behavior: 'smooth' });
-    });
-  })();
-
-  /* ======================================================================
-     RUANG MAIN: puisi hitam
-     ====================================================================== */
-  const SOURCES = WORKS.filter(w => w.form === 'prosa').flatMap(w => w.body.map((p, i) => ({ w, i, p })))
-    .filter(s => s.p.split(/\s+/).length > 30);
-  const bo = { src: null, keep: new Set(), black: true };
-  const strip = t => t.replace(/[^\p{L}\p{N}-]/gu, '').toLowerCase();
-
-  function boRender() {
-    const tokens = bo.src.p.split(/\s+/);
-    $('#boSource').innerHTML = `dari <b>${esc(bo.src.w.title)}</b>, paragraf ${bo.src.i + 1}`;
-    $('#boText').innerHTML = tokens.map((t, i) =>
-      `<span class="bw${bo.keep.has(i) ? ' keep' : ''}" data-i="${i}" style="--d:${(i * 7) % 400}">${esc(t)}</span>`).join(' ');
-    $('#boText').classList.toggle('is-black', bo.black);
-    boOut();
-  }
-  function boOut() {
-    const tokens = bo.src.p.split(/\s+/);
-    const kept = [...bo.keep].sort((a, b) => a - b).map(i => strip(tokens[i])).filter(Boolean);
-    $('#boOut').textContent = kept.length ? kept.join(' ') : '…';
-    $('#boToggle').textContent = bo.black ? 'Tampilkan teks' : 'Hitamkan sisanya';
-    $('#boToggle').setAttribute('aria-pressed', bo.black);
-  }
-  function boLoad(src, keepWords) {
-    bo.src = src; bo.keep = new Set();
-    if (keepWords) {
-      const tokens = src.p.split(/\s+/).map(strip);
-      let from = 0;
-      keepWords.forEach(k => { const i = tokens.indexOf(k, from); if (i >= 0) { bo.keep.add(i); from = i + 1; } });
+  function objHTML(o) {
+    const w = o.slug && bySlug(o.slug);
+    if (o.type === 'paper') return `
+      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, ${CATS[w.cat].label}">
+        ${o.peek ? (() => { const pw = bySlug(o.peek); return `<div class="peek" data-open="${pw.slug}">${esc(pw.body[0].replace(/\n/g, ' '))}…</div>`; })() : ''}
+        <div class="sheet"><p class="k">${CATS[w.cat].label}</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>
+      </article>`;
+    if (o.type === 'folder') {
+      const items = WORKS.filter(x => x.cat === o.cat);
+      return `
+      <article class="obj folder" tabindex="0" data-shelf="${o.cat}" aria-label="Kumpulan ${CATS[o.cat].label}, ${items.length} tulisan">
+        <div class="in-paper"><p class="t">${esc(items[0].body[0])}</p></div><div class="in-paper"></div><div class="in-lime"></div>
+        <svg class="shape" viewBox="0 0 176 250" preserveAspectRatio="none" aria-hidden="true"><path d="M10 0H166Q176 0 176 10V58C176 80 144 76 144 102V150C144 176 176 172 176 194V240Q176 250 166 250H10Q0 250 0 240V10Q0 0 10 0Z"/></svg>
+        <div class="f-label"><p>Kumpulan · ${items.length}</p><h3>${esc(FOLDER_TITLES[o.cat] || CATS[o.cat].label)}</h3></div>
+      </article>`;
     }
-    boRender();
+    if (o.type === 'img') return `
+      <article class="obj imgcard" tabindex="0" data-open="${w.slug}" aria-label="Peta benang dari ${esc(w.title)}">
+        <canvas data-thread="${w.slug}"></canvas><span class="cap">benang dari “${esc(w.title)}”</span>
+      </article>`;
+    if (o.type === 'note') return `
+      <button class="obj note" type="button" data-open="${w.slug}">Gambar ini dirajut dari huruf-huruf cerpennya. Ketuk untuk membaca.</button>`;
+    if (o.type === 'sticky') return `
+      <article class="obj sticky" tabindex="0" data-open="${w.slug}" aria-label="Baris dari ${esc(w.title)}">${esc(w.line)}<span class="from">— ${esc(w.title)}</span></article>`;
+    if (o.type === 'mine') return `
+      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, tulisanmu">
+        <div class="sheet"><p class="k">Milikmu</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>
+      </article>`;
+    if (o.type === 'user') return `
+      <article class="obj sticky" data-sticky="${o.id}">
+        <button class="x" type="button" aria-label="Hapus catatan">×</button>
+        <div class="edit" contenteditable="true" spellcheck="false" aria-label="Catatan tempel">${esc(o.text || '')}</div>
+      </article>`;
+    return '';
   }
-  $('#boText').addEventListener('click', e => {
-    const s = e.target.closest('.bw');
-    if (!s) return;
-    const i = +s.dataset.i;
-    bo.keep.has(i) ? bo.keep.delete(i) : bo.keep.add(i);
-    s.classList.toggle('keep');
-    boOut();
-  });
-  $('#boToggle').addEventListener('click', () => { bo.black = !bo.black; $('#boText').classList.toggle('is-black', bo.black); boOut(); });
-  $('#boShuffle').addEventListener('click', () => {
-    let s; do { s = SOURCES[Math.floor(Math.random() * SOURCES.length)]; } while (SOURCES.length > 1 && s === bo.src);
-    bo.black = false; boLoad(s);
-  });
-  $('#boClear').addEventListener('click', () => { bo.keep.clear(); bo.black = false; boRender(); });
-  $('#boCopy').addEventListener('click', () => {
-    const t = $('#boOut').textContent;
-    if (t === '…') { toast('Pilih dulu beberapa kata.'); return; }
-    copyText(`${t}\n\n(puisi hitam dari “${bo.src.w.title}” — ${SITE.author})`, 'Puisi disalin.');
-  });
-  const defaultSrc = SOURCES.find(s => s.w.slug === 'jendela' && s.i === 1) || SOURCES[0];
-  boLoad(defaultSrc, defaultSrc.w.slug === 'jendela'
-    ? ['seni', 'membiarkan', 'celah', 'terbuka', 'kita', 'kedap', 'seperti', 'ruangan', 'tidak', 'pernah', 'kemasukan', 'angin']
-    : null);
-
-  /* ---------- benangmu ---------- */
-  const tg = $('#tgInput');
-  let tgT;
-  function renderTG(animate) {
-    const text = tg.value;
-    const seq = fold(text).replace(/[^a-z]/g, '');
-    $('#tgSeq').textContent = seq ? seq.slice(0, 60).split('').join(' → ') + (seq.length > 60 ? ' …' : '') : 'ketik sesuatu';
-    drawThread($('#tgCanvas'), text, { color: css('--blue'), seed: 'tg', labels: true, animate, frames: 50 });
+  function canvasObjects() {
+    const list = LAYOUT.filter(o => !o.slug || bySlug(o.slug)).slice();
+    MINE.forEach((w, i) => list.push({ id: 'm:' + w.slug, type: 'mine', slug: w.slug, x: 1140 + i * 40, y: 700 + i * 30 }));
+    stickies.forEach(s => list.push({ ...s, type: 'user' }));
+    return list;
   }
-  tg.addEventListener('input', () => { clearTimeout(tgT); tgT = setTimeout(() => renderTG(true), 120); });
-  renderTG(false);
-  repaintHooks.push(() => renderTG(false));
-
-  function downloadCanvas(canvas, name) {
-    canvas.toBlob(blob => {
-      if (!blob) { toast('Gambar tidak bisa dibuat di peramban ini.'); return; }
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      document.body.append(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      toast('Mengunduh ' + name);
-    }, 'image/png');
+  function renderCanvas() {
+    const objs = canvasObjects();
+    world.innerHTML = objs.map(objHTML).join('');
+    [...world.children].forEach((el, i) => {
+      const o = objs[i], p = pos[o.id] || o;
+      el.dataset.id = o.id;
+      el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+      el.style.zIndex = p.z || (i + 1);
+      zTop = Math.max(zTop, p.z || 0, i + 1);
+    });
+    $$('canvas[data-thread]', world).forEach(c => drawThread(c, fullText(bySlug(c.dataset.thread)), { color: '#2A2620', seed: c.dataset.thread, weight: 1.3, pad: 12 }));
   }
-  $('#tgSave').addEventListener('click', () => {
-    const S = 1600, c = document.createElement('canvas');
-    c.width = S; c.height = S;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = css('--sheet'); ctx.fillRect(0, 0, S, S);
-    const t = paintThread(ctx, S, S, tg.value, { color: css('--blue'), seed: 'tg', labels: true, labelColor: css('--muted') });
-    t.drawRange(0, t.segs.length); t.drawPins();
-    ctx.globalAlpha = 1; ctx.fillStyle = css('--muted');
-    ctx.font = '500 26px Geist, system-ui, sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(SITE.handle, 40, S - 36);
-    downloadCanvas(c, 'benang.png');
-  });
+  function applyCam() { world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})`; }
+  function canvasClamp() {
+    const vw = viewport.clientWidth, vh = viewport.clientHeight;
+    cam.x = clamp(cam.x, vw - WORLD.w * cam.s - 120, 120);
+    cam.y = clamp(cam.y, vh - WORLD.h * cam.s - 120, 120);
+    applyCam();
+  }
+  let fitted = false;
+  function canvasFit(force) {
+    if (fitted && !force) return;
+    const vw = viewport.clientWidth, vh = viewport.clientHeight;
+    if (!vw) return;
+    fitted = true;
+    const saved = store.get('cam', null);
+    if (saved && !force) { Object.assign(cam, saved); canvasClamp(); return; }
+    cam.s = clamp(Math.min(vh / 620, vw / 900), 0.6, 1);
+    cam.x = vw / 2 - 1150 * cam.s;
+    cam.y = vh / 2 - 520 * cam.s;
+    canvasClamp();
+  }
+  const saveCam = () => store.set('cam', { x: Math.round(cam.x), y: Math.round(cam.y), s: +cam.s.toFixed(3) });
 
-  /* ---------- prangko ---------- */
-  drawThread($('#stampCanvas'), SITE.author + ' menulis', { color: css('--ink'), seed: 'stamp', pad: 4 });
-  repaintHooks.push(() => drawThread($('#stampCanvas'), SITE.author + ' menulis', { color: css('--ink'), seed: 'stamp', pad: 4 }));
+  // interaksi: geser latar, pindahkan objek, cubit untuk zoom
+  const pointers = new Map();
+  let act = null, pinch = null;
+  const hideHint = () => $('#canvasHint').classList.add('gone');
+  viewport.addEventListener('pointerdown', e => {
+    if (e.target.closest('.edit, .x')) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    viewport.setPointerCapture(e.pointerId);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: cam.s, x: cam.x, y: cam.y, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+      if (act?.obj) act.obj.classList.remove('dragging');
+      act = null; return;
+    }
+    const obj = e.target.closest('.obj');
+    if (obj) act = { obj, sx: e.clientX, sy: e.clientY, ox: parseFloat(obj.style.left), oy: parseFloat(obj.style.top), moved: false, target: e.target };
+    else { act = { pan: true, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y }; viewport.classList.add('panning'); }
+  });
+  viewport.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      zoomAt(pinch.mx, pinch.my, clamp(pinch.s * d / pinch.d, 0.45, 1.6), pinch);
+      return;
+    }
+    if (!act) return;
+    const dx = e.clientX - act.sx, dy = e.clientY - act.sy;
+    if (act.pan) { cam.x = act.cx + dx; cam.y = act.cy + dy; canvasClamp(); hideHint(); return; }
+    if (!act.moved && Math.hypot(dx, dy) > 5) {
+      act.moved = true; act.obj.classList.add('dragging');
+      act.obj.style.zIndex = ++zTop; hideHint();
+    }
+    if (act.moved) {
+      act.obj.style.left = Math.round(act.ox + dx / cam.s) + 'px';
+      act.obj.style.top = Math.round(act.oy + dy / cam.s) + 'px';
+    }
+  });
+  const endPointer = e => {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = null;
+    viewport.classList.remove('panning');
+    if (!act) { saveCam(); return; }
+    const a = act; act = null;
+    if (a.pan) { saveCam(); return; }
+    a.obj.classList.remove('dragging');
+    if (a.moved) {
+      pos[a.obj.dataset.id] = { x: parseFloat(a.obj.style.left), y: parseFloat(a.obj.style.top), z: +a.obj.style.zIndex };
+      store.set('pos', pos);
+      const s = stickies.find(s => s.id === a.obj.dataset.id);
+      if (s) { s.x = pos[s.id].x; s.y = pos[s.id].y; store.set('stickies', stickies); }
+    } else if (e.type === 'pointerup') activate(a.obj, a.target);
+  };
+  viewport.addEventListener('pointerup', endPointer);
+  viewport.addEventListener('pointercancel', endPointer);
+  function zoomAt(px, py, s, base = cam) {
+    const r = viewport.getBoundingClientRect();
+    const wx = (px - r.left - base.x) / base.s, wy = (py - r.top - base.y) / base.s;
+    cam.s = s;
+    cam.x = px - r.left - wx * s; cam.y = py - r.top - wy * s;
+    canvasClamp();
+  }
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) zoomAt(e.clientX, e.clientY, clamp(cam.s * Math.exp(-e.deltaY * 0.01), 0.45, 1.6));
+    else { cam.x -= e.shiftKey ? e.deltaY : e.deltaX; cam.y -= e.shiftKey ? 0 : e.deltaY; canvasClamp(); }
+    hideHint();
+    clearTimeout(viewport._t); viewport._t = setTimeout(saveCam, 300);
+  }, { passive: false });
+  viewport.addEventListener('keydown', e => {
+    if (e.target.closest('.edit')) return;
+    const step = { ArrowLeft: [90, 0], ArrowRight: [-90, 0], ArrowUp: [0, 90], ArrowDown: [0, -90] }[e.key];
+    if (step && e.target === viewport) { e.preventDefault(); cam.x += step[0]; cam.y += step[1]; canvasClamp(); saveCam(); }
+    if (e.key === 'Enter' && e.target.classList.contains('obj')) activate(e.target, e.target);
+  });
+  function activate(obj, target) {
+    const open = (target && target.closest('[data-open]')) || obj;
+    if (obj.dataset.shelf) { shelf = obj.dataset.shelf; renderList(); go('daftar'); return; }
+    if (open.dataset.open) openWork(open.dataset.open);
+  }
+
+  // catatan tempel milik pengunjung
+  function addSticky() {
+    if (view !== 'kanvas') go('kanvas');
+    const vw = viewport.clientWidth, vh = viewport.clientHeight;
+    const s = { id: 'u:' + Date.now().toString(36), text: '', x: Math.round((vw / 2 - cam.x) / cam.s - 59), y: Math.round((vh / 2 - cam.y) / cam.s - 59) };
+    stickies.push(s); store.set('stickies', stickies);
+    renderCanvas();
+    $(`[data-sticky="${s.id}"] .edit`)?.focus();
+  }
+  $('#addNote').addEventListener('click', addSticky);
+  world.addEventListener('input', e => {
+    const el = e.target.closest('[data-sticky]');
+    if (!el) return;
+    const s = stickies.find(s => s.id === el.dataset.sticky);
+    if (s) { s.text = e.target.textContent; store.set('stickies', stickies); }
+  });
+  world.addEventListener('focusout', e => {
+    const el = e.target.closest('[data-sticky]');
+    if (!el || !e.target.classList.contains('edit')) return;
+    if (!e.target.textContent.trim()) removeSticky(el.dataset.sticky);
+  });
+  world.addEventListener('click', e => {
+    const x = e.target.closest('.x');
+    if (x) removeSticky(x.closest('[data-sticky]').dataset.sticky);
+  });
+  function removeSticky(id) {
+    stickies = stickies.filter(s => s.id !== id); store.set('stickies', stickies);
+    delete pos[id]; store.set('pos', pos);
+    renderCanvas();
+  }
 
   /* ======================================================================
-     SURAT
+     DAFTAR
      ====================================================================== */
-  $('#emailText').textContent = SITE.email;
-  $('#copyEmail').addEventListener('click', () => copyText(SITE.email, 'Alamat email disalin.'));
-  $('#letter').addEventListener('submit', e => {
+  let shelf = 'semua';
+  const openYears = new Set(store.get('openYears', ['2025']));
+  const selected = new Set();
+  let queue = [];
+
+  function shelfItems(k) { return k === 'semua' ? all() : all().filter(w => w.cat === k); }
+  function renderShelves() {
+    const keys = ['semua', ...Object.keys(CATS).filter(k => all().some(w => w.cat === k))];
+    const host = $('#shelves');
+    host.innerHTML = keys.map(k => {
+      const items = shelfItems(k);
+      return `<button class="shelf" type="button" data-shelf="${k}" aria-pressed="${k === shelf}">
+        <span class="n">${items.length}</span><span class="dots3" aria-hidden="true"></span>
+        <h3>${k === 'semua' ? 'Semua tulisan' : CATS[k].label}</h3>
+        <span class="d">${fmtLong(items[0].date)}</span>
+        <span class="avas"></span></button>`;
+    }).join('');
+    $$('.shelf', host).forEach(b => {
+      const items = shelfItems(b.dataset.shelf), av = $('.avas', b);
+      items.slice(0, items.length > 4 ? 3 : 4).forEach(w => av.append(mini(w, 36)));
+      if (items.length > 4) { const s = document.createElement('span'); s.textContent = '+' + (items.length - 3); av.append(s); }
+    });
+  }
+  $('#shelves').addEventListener('click', e => {
+    const b = e.target.closest('[data-shelf]');
+    if (!b) return;
+    shelf = b.dataset.shelf;
+    $$('#shelves .shelf').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderRows();
+  });
+
+  const shortName = f => f.length > 24 ? f.slice(0, 12) + '…' + f.slice(-10) : f;
+  const kb = b => (b / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' KB';
+  function docIcon(w) {
+    return `<div class="doc" aria-hidden="true"><div class="pg"></div><span class="tag${CATS[w.cat].red ? ' red' : ''}">${CATS[w.cat].tag}</span></div>`;
+  }
+  function rowHTML(w, child) {
+    return `<div class="row${child ? ' child' : ''}${selected.has(w.slug) ? ' sel' : ''}" data-slug="${w.slug}">
+      ${docIcon(w)}
+      <div class="r-text">
+        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
+        <p class="r-sub">${esc(shortName(w.file))} ${kb(w.bytes)}</p>
+        <p class="r-note" contenteditable="true" spellcheck="false" data-note="${w.slug}" aria-label="Catatan untuk ${esc(w.title)}">${esc(notes[w.slug] || '')}</p>
+      </div>
+      <p class="r-date">${fmtShort(w.date)} ${w.time || ''}</p>
+    </div>`;
+  }
+  const cbHTML = (state, label, data) => `<button class="cb" type="button" role="checkbox" aria-checked="${state}" aria-label="${esc(label)}" ${data}></button>`;
+  const cbState = items => { const n = items.filter(w => selected.has(w.slug)).length; return n === 0 ? 'false' : n === items.length ? 'true' : 'mixed'; };
+
+  function renderRows() {
+    const items = shelfItems(shelf);
+    const topYear = WORKS[0].date.slice(0, 4);
+    const top = items.filter(w => w.mine || w.date.startsWith(topYear));
+    const years = [...new Set(items.filter(w => !top.includes(w)).map(w => w.date.slice(0, 4)))].sort().reverse();
+    let html = '';
+    if (top.length) {
+      html += `<div class="grp flat"><div class="grp-cbs">${top.map(w => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`)).join('')}</div>
+        <div class="grp-panel" style="background:none;box-shadow:none">${top.map(w => rowHTML(w, false)).join('')}</div></div>`;
+    }
+    years.forEach(y => {
+      const ws = items.filter(w => !top.includes(w) && w.date.startsWith(y));
+      const open = openYears.has(y);
+      html += `<div class="grp${open ? ' open' : ''}">
+        <div class="grp-cbs">${cbHTML(cbState(ws), 'Pilih semua dari ' + y, `data-year-sel="${y}"`)}${open ? ws.map(w => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`)).join('') : ''}</div>
+        <div class="grp-panel">
+          <div class="row folder-row" data-year="${y}" role="button" tabindex="0" aria-expanded="${open}">
+            <div class="fold-ic" aria-hidden="true"><svg viewBox="0 0 62 52"><path class="bg" d="M14 4h12l4 4h22a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H14a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z"/><path class="bg" d="M7 12h12l4 4h29a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5z"/></svg></div>
+            <div class="r-text"><p class="r-title">${y}</p><p class="r-sub">${ws.length} tulisan</p><p class="r-note" style="cursor:inherit">${esc((SITE.years || {})[y] || '')}</p></div>
+            <p class="r-date">${fmtShort(ws[0].date)} ${ws[0].time || ''}</p>
+          </div>
+          ${open ? ws.map(w => rowHTML(w, true)).join('') : ''}
+        </div></div>`;
+    });
+    $('#libRows').innerHTML = html || '<p style="padding:24px;color:var(--muted)">Belum ada tulisan di rak ini.</p>';
+    $('#cbAll').setAttribute('aria-checked', cbState(items));
+    syncSelbar();
+  }
+  function renderList() { renderShelves(); renderRows(); updateBadge(); }
+
+  $('#libRows').addEventListener('click', e => {
+    if (e.target.closest('.r-note[data-note]')) return;
+    const cb = e.target.closest('.cb');
+    if (cb) {
+      if (cb.dataset.sel) { selected.has(cb.dataset.sel) ? selected.delete(cb.dataset.sel) : selected.add(cb.dataset.sel); }
+      if (cb.dataset.yearSel) {
+        const ws = shelfItems(shelf).filter(w => w.date.startsWith(cb.dataset.yearSel) && !w.mine);
+        const allOn = ws.every(w => selected.has(w.slug));
+        ws.forEach(w => allOn ? selected.delete(w.slug) : selected.add(w.slug));
+        openYears.add(cb.dataset.yearSel);
+      }
+      renderRows(); return;
+    }
+    const fr = e.target.closest('.folder-row');
+    if (fr) { toggleYear(fr.dataset.year); return; }
+    const row = e.target.closest('.row[data-slug]');
+    if (row) openWork(row.dataset.slug);
+  });
+  $('#libRows').addEventListener('keydown', e => {
+    const fr = e.target.closest('.folder-row');
+    if (fr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleYear(fr.dataset.year); }
+    if (e.target.matches('.r-note') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  });
+  function toggleYear(y) {
+    openYears.has(y) ? openYears.delete(y) : openYears.add(y);
+    store.set('openYears', [...openYears]);
+    renderRows();
+    $(`.folder-row[data-year="${y}"]`)?.focus({ preventScroll: true });
+  }
+  $('#libRows').addEventListener('input', e => {
+    const n = e.target.closest('[data-note]');
+    if (!n) return;
+    const t = n.textContent.trim();
+    if (t) notes[n.dataset.note] = t; else delete notes[n.dataset.note];
+    store.set('notes', notes);
+  });
+  $('#cbAll').addEventListener('click', () => {
+    const items = shelfItems(shelf);
+    const allOn = items.every(w => selected.has(w.slug));
+    items.forEach(w => allOn ? selected.delete(w.slug) : selected.add(w.slug));
+    renderRows();
+  });
+  function syncSelbar() {
+    $('#selbar').hidden = selected.size === 0;
+    $('#selCount').textContent = selected.size + ' dipilih';
+  }
+  $('#selClear').addEventListener('click', () => { selected.clear(); renderRows(); });
+  $('#selRead').addEventListener('click', () => {
+    queue = all().filter(w => selected.has(w.slug)).map(w => w.slug);
+    if (queue.length) { toast(`Membaca ${queue.length} tulisan berurutan.`); openWork(queue[0]); }
+  });
+  function updateBadge() {
+    const n = WORKS.filter(w => !readSet.has(w.slug)).length;
+    const b = $('#unreadBadge');
+    b.textContent = n; b.classList.toggle('zero', n === 0);
+    renderGreet();
+  }
+
+  /* ---------- tulisan yang dijatuhkan ---------- */
+  async function addFile(file) {
+    if (!file) return;
+    if (file.size > 1024 * 1024) { toast('Berkasnya lebih dari 1 MB. Coba yang lebih kecil.'); return; }
+    if (!/\.(txt|md|markdown)$/i.test(file.name) && !/^text\//.test(file.type)) { toast('Hanya berkas teks (.txt atau .md) yang bisa dibaca.'); return; }
+    const raw = (await file.text()).replace(/\r/g, '').trim();
+    if (!raw) { toast('Berkasnya kosong.'); return; }
+    let lines = raw.split('\n');
+    let title = file.name.replace(/\.[^.]+$/, '');
+    if (/^#\s+/.test(lines[0]) || (lines[0].length < 80 && lines[1] === '')) { title = lines.shift().replace(/^#+\s*/, ''); }
+    const text = lines.join('\n').trim();
+    const blocks = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+    const short = text.split('\n').filter(Boolean);
+    const poem = short.length > 3 && short.reduce((a, l) => a + l.length, 0) / short.length < 48;
+    const now = new Date();
+    const w = prep({
+      slug: 'u-' + now.getTime().toString(36), title: title.slice(0, 90), cat: 'milikmu', form: poem ? 'puisi' : 'prosa', mine: true,
+      date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
+      excerpt: blocks[0].slice(0, 140), line: (units(text, poem)[0] || title).slice(0, 90),
+      body: poem ? blocks : blocks.map(b => b.replace(/\n/g, ' '))
+    });
+    w.no = '—';
+    MINE.unshift(w);
+    store.set('mine', MINE.map(({ slug, title, cat, form, mine, date, time, excerpt, line, body }) => ({ slug, title, cat, form, mine, date, time, excerpt, line, body })));
+    renderCanvas(); renderList();
+    toast(`“${w.title}” ditambahkan ke meja.`);
+    openWork(w.slug);
+  }
+  $('#fileIn').addEventListener('change', e => { addFile(e.target.files[0]); e.target.value = ''; });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => {
+    if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+    e.preventDefault(); drop.classList.add('over');
+  }));
+  ['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => {
+    if (t === 'dragleave' && e.relatedTarget) return;
+    drop.classList.remove('over');
+  }));
+  document.addEventListener('drop', e => {
+    if (!e.dataTransfer?.files?.length) return;
     e.preventDefault();
-    const name = $('#lName').value.trim(), msg = $('#lMsg').value.trim();
-    if (!msg) { toast('Tulis pesannya dulu, sependek apa pun.'); $('#lMsg').focus(); return; }
-    const subject = `Surat dari ${name || 'seorang pembaca'}`;
-    location.href = `mailto:${SITE.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg + (name ? '\n\n— ' + name : ''))}`;
-    toast('Membuka aplikasi email. Kalau tidak terbuka, salin alamatnya.');
+    addFile(e.dataTransfer.files[0]);
+  });
+
+  /* ======================================================================
+     PANEL SAPA
+     ====================================================================== */
+  const dock = $('#dock');
+  let statsMode = false;
+  function renderGreet() {
+    const unread = WORKS.filter(w => !readSet.has(w.slug));
+    const latest = WORKS[0];
+    const month = fmt(latest.date, { month: 'long', year: 'numeric' });
+    const sameMonth = WORKS.filter(w => w.date.slice(0, 7) === latest.date.slice(0, 7)).length;
+    const total = WORKS.reduce((a, w) => a + w.words, 0);
+    const g = $('#tkGreet');
+    if (statsMode) {
+      const long = WORKS.reduce((a, w) => w.words > a.words ? w : a), short = WORKS.reduce((a, w) => w.words < a.words ? w : a);
+      g.innerHTML = `<span class="dim">Totalnya</span> ${num(total)} kata <span class="dim">dalam</span> ${WORKS.length} tulisan<span class="dim">. Paling panjang</span>
+        <button type="button" data-act="open" data-slug="${long.slug}">“${esc(long.title)}”</button> <span class="dim">(${long.words}), paling singkat</span>
+        <button type="button" data-act="open" data-slug="${short.slug}">“${esc(short.title)}”</button><span class="dim"> (${short.words}).</span>`;
+    } else {
+      g.innerHTML = `<span class="dim">Hai,</span> <span class="ava-in"><canvas id="tkAva"></canvas></span> pembaca.
+        <span class="dim">Meja ini</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><button type="button" data-act="list">${WORKS.length} tulisan</button></span>
+        <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">esai</span></span> <span class="dim">sampai puisi. Kamu punya</span>
+        <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="unread">${unread.length ? unread.length + ' belum' : 'semua sudah'}</button></span> <button type="button" data-act="unread">dibaca</button>
+        <span class="dim">dan</span> <span class="nw"><span class="ico-cal" aria-hidden="true"><b>${new Date(latest.date + 'T00:00:00').getDate()}</b></span><button type="button" data-act="open" data-slug="${latest.slug}">${sameMonth} terbit</button></span> <button type="button" data-act="open" data-slug="${latest.slug}">${esc(month)}.</button>`;
+      const ava = $('#tkAva');
+      requestAnimationFrame(() => drawThread(ava, SITE.author + ' menulis', { w: 24, h: 24, pad: 2, color: '#7A2448', seed: 'me', pins: false, weight: 1.4 }));
+      const st = $('#tkStack');
+      ['esai', 'cerpen', 'puisi'].map(c => WORKS.find(w => w.cat === c)).filter(Boolean).forEach(w => st.append(mini(w, 22)));
+    }
+    $('#tkMeta').innerHTML = `
+      <span>diperbarui ${fmt(latest.date, { day: 'numeric', month: 'short' })}</span><i class="sep"></i>
+      <span title="tulisan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 11.5-6.4 6.4a4.2 4.2 0 0 1-6-6l7.1-7.1a2.8 2.8 0 0 1 4 4l-7 7a1.4 1.4 0 0 1-2-2l6.4-6.4"/></svg>${WORKS.length}</span><i class="sep"></i>
+      <span title="jenis tulisan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M3.5 9.5h17"/></svg>${new Set(WORKS.map(w => w.cat)).size}</span><i class="sep"></i>
+      <span title="kata"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>${num(total)} kata</span>`;
+  }
+  $('#tkGreet').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    if (b.dataset.act === 'list') { shelf = 'semua'; renderList(); go('daftar'); }
+    if (b.dataset.act === 'unread') { const u = WORKS.find(w => !readSet.has(w.slug)); if (u) openWork(u.slug); else go('daftar'); }
+    if (b.dataset.act === 'open') openWork(b.dataset.slug);
+  });
+  $('#tkStats').addEventListener('click', e => {
+    statsMode = !statsMode; e.currentTarget.setAttribute('aria-pressed', String(statsMode));
+    renderGreet();
+  });
+  $('#tkGear').addEventListener('click', () => { $('#chipDark').scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' }); $('#chipDark').focus({ preventScroll: true }); });
+  $('#tkBack').addEventListener('click', () => go(isMobile() ? 'kanvas' : (view === 'kanvas' ? 'daftar' : 'kanvas')));
+
+  // pegangan: ketuk atau tarik untuk menciutkan kartu biru
+  const grip = $('#tkGrip');
+  function setCollapsed(c) { dock.classList.toggle('collapsed', c); grip.setAttribute('aria-expanded', String(!c)); grip.setAttribute('aria-label', c ? 'Bentangkan kartu sapaan' : 'Ciutkan kartu sapaan'); }
+  let gy = null;
+  grip.addEventListener('pointerdown', e => { gy = e.clientY; grip.setPointerCapture(e.pointerId); });
+  grip.addEventListener('pointerup', e => {
+    if (gy == null) return;
+    const dy = e.clientY - gy; gy = null;
+    if (dy < -18) setCollapsed(true); else if (dy > 18) setCollapsed(false); else setCollapsed(!dock.classList.contains('collapsed'));
+  });
+  grip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!dock.classList.contains('collapsed')); } });
+
+  // isi bawah: kutipan bergilir, daftar baca, atau hasil cari
+  const feed = $('#tkFeed');
+  let feedMode = 'feed', feedIdx = Math.floor(Math.random() * WORKS.length), feedT;
+  const noteOf = w => `Dari ${CATS[w.cat].label.toLowerCase()} <button type="button" data-open="${w.slug}">“${esc(w.title)}”</button> <span class="spark"><canvas data-spark="${w.slug}"></canvas></span> ditulis ${fmtLong(w.date)}, ${w.words} kata, kira-kira ${w.minutes} menit membaca.`;
+  function renderFeed() {
+    clearTimeout(feedT);
+    feed.classList.toggle('plain', feedMode !== 'feed');
+    $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === feedMode)));
+    if (feedMode === 'list') {
+      feed.innerHTML = `<ul class="tk-list">${all().map(w => `<li><a href="#baca-${w.slug}"><b>${esc(w.title)}</b><span class="${readSet.has(w.slug) ? 'ok' : ''}">${readSet.has(w.slug) ? '✓ dibaca' : w.minutes + ' mnt'}</span><span>${CATS[w.cat].label} · ${fmtShort(w.date)}</span></a></li>`).join('')}</ul>`;
+      return;
+    }
+    if (feedMode !== 'feed') return;
+    const w = WORKS[feedIdx % WORKS.length], prev = WORKS[(feedIdx + WORKS.length - 1) % WORKS.length];
+    const para = w.body[Math.min(1, w.body.length - 1)];
+    feed.innerHTML = `<div class="fd">
+      <p class="fd-pre">${noteOf(prev).replace(/<[^>]+>/g, '')}</p>
+      <p class="fd-quote">${esc(para.length > 260 ? para.slice(0, 260) + '…' : para).replace(/\n/g, '<br>')}</p>
+      <p class="fd-note">${noteOf(w)}</p></div>`;
+    $$('canvas[data-spark]', feed).forEach(c => requestAnimationFrame(() => drawThread(c, fullText(bySlug(c.dataset.spark)), { w: 26, h: 20, pad: 1, color: '#fff', seed: c.dataset.spark, pins: false, weight: 1.3 })));
+    if (!reduced) feedT = setTimeout(() => { if (!feed.matches(':hover') && !document.hidden) feedIdx++; renderFeed(); }, 9000);
+  }
+  $('.tk-seg').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]');
+    if (b) { feedMode = b.dataset.mode; renderFeed(); }
+  });
+  feed.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]');
+    if (b) openWork(b.dataset.open);
+    if (e.target.closest('[data-clear]')) { $('#tkInput').value = ''; feedMode = 'feed'; renderFeed(); }
+  });
+  $('#chipRandom').addEventListener('click', () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug));
+  $('#tkAsk').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = $('#tkInput').value.trim();
+    if (!q) { $('#tkInput').focus(); return; }
+    const res = search(q);
+    feedMode = 'search'; clearTimeout(feedT);
+    feed.classList.add('plain');
+    $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    feed.innerHTML = `<p class="tk-res-h"><span>${res.length} hasil untuk “${esc(q)}”</span><button type="button" data-clear>hapus</button></p>
+      <ul class="tk-list">${res.map(r => `<li><a href="#baca-${r.w.slug}"><b>${esc(r.w.title)}</b><span>${CATS[r.w.cat].label}</span><span style="grid-column:1/-1">${r.snip}</span></a></li>`).join('') || '<li style="color:var(--dock-muted);padding:10px 12px">Tidak ada kalimat yang cocok. Coba “hujan” atau “Senin”.</li>'}</ul>`;
   });
 
   /* ======================================================================
      PEMBACA
      ====================================================================== */
-  const reader = $('#reader'), rBody = $('#rBody'), rScroll = $('#rScroll');
-  let readerSlug = null, pushedHash = false, lastFocus = null;
-  const prefs = { size: store.get('size', 20), paper: store.get('paper', 'kertas'), focus: false };
+  const FONTS = [
+    { id: 'newsreader', name: 'Newsreader', css: '"Newsreader", "Iowan Old Style", Georgia, serif' },
+    { id: 'literata', name: 'Literata', css: '"Literata", Georgia, serif' },
+    { id: 'georgia', name: 'Georgia', css: 'Georgia, "Times New Roman", serif' },
+    { id: 'sistem', name: 'Sistem', css: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Geist", system-ui, sans-serif' },
+    { id: 'instrument', name: 'Instrument', css: '"Instrument Serif", Georgia, serif' },
+    { id: 'geist', name: 'Geist', css: '"Geist", system-ui, sans-serif' }
+  ];
+  const WEIGHTS = [300, 400, 500, 600];
+  const rd = Object.assign({ rt: 'putih', custom: '#F3E9DC', font: 'newsreader', size: 19, weight: 400, liga: true, align: 'start', bright: 100 }, store.get('rd', {}));
+  let focusMode = false, current = null;
+  const card = $('#rdCard'), body = $('#rdBody'), scroller = $('#rdScroll');
+  const saveRd = () => store.set('rd', rd);
 
-  function applyPrefs() {
-    reader.style.setProperty('--r-size', prefs.size + 'px');
-    reader.dataset.paper = prefs.paper;
-    $$('#rPaper .tool').forEach(b => b.setAttribute('aria-pressed', b.dataset.paper === prefs.paper));
-    rBody.classList.toggle('focus', prefs.focus);
-    $('#rFocus').setAttribute('aria-pressed', prefs.focus);
-  }
-  const paperInk = () => getComputedStyle(reader).getPropertyValue('--r-fg').trim();
+  $('#fonts').innerHTML = FONTS.map(f => `<button type="button" role="radio" data-font="${f.id}" aria-checked="false"><b style="font-family:${f.css}">Aa</b><small style="font-family:${f.css}">${f.name}</small></button>`).join('');
+  $('#fontDots').innerHTML = Array.from({ length: Math.ceil(FONTS.length / 4) }, () => '<i></i>').join('');
 
-  function openWork(slug) {
-    if (!BY_SLUG[slug]) return;
-    if (location.hash !== '#baca-' + slug) { pushedHash = true; location.hash = 'baca-' + slug; }
-    else showReader(slug);
+  function lum(hex) {
+    const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+    return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
   }
-  function showReader(slug) {
-    const w = BY_SLUG[slug];
-    if (!w) return;
-    stopSpeech();
-    if (reader.hidden) lastFocus = document.activeElement;
-    readerSlug = slug;
-    reader.setAttribute('style', catStyle(w));
-    applyPrefs();
-    $('#rCat').textContent = CATS[w.cat].label;
-    $('#rCrumb').textContent = w.title;
-    $('#rMeta').innerHTML = `<span class="chip-cat">${CATS[w.cat].label}</span><span>No. ${w.no}</span><span>${fmtDate(w.date, { day: 'numeric', month: 'long', year: 'numeric' })}</span><span>${w.stats.words.toLocaleString('id-ID')} kata · ${w.stats.minutes} menit</span>`;
-    $('#rTitle').textContent = w.title;
-    rBody.className = 'r-body ' + (w.form === 'puisi' ? 'is-poem' : 'is-prose');
-    rBody.innerHTML = w.body.map(p => w.form === 'puisi' ? `<p class="stanza">${esc(p)}</p>` : `<p>${esc(p)}</p>`).join('');
-    applyPrefs();
-    const i = WORKS.indexOf(w);
-    const prev = WORKS[(i - 1 + WORKS.length) % WORKS.length], next = WORKS[(i + 1) % WORKS.length];
-    $('#rPrev').href = '#baca-' + prev.slug; $('b', $('#rPrev')).textContent = prev.title;
-    $('#rNext').href = '#baca-' + next.slug; $('b', $('#rNext')).textContent = next.title;
-    reader.hidden = false;
-    document.documentElement.classList.add('locked');
-    rScroll.scrollTop = 0;
-    requestAnimationFrame(() => {
-      threadFor($('#rThread'), w, { animate: true, frames: 90, color: css(CATS[w.cat].color) });
-      rhythmSVG($('#rRhythm'), w.stats, css(CATS[w.cat].color), true);
-      onReaderScroll();
-      reader.focus({ preventScroll: true });
+  function applyRd() {
+    card.dataset.rt = rd.rt;
+    if (rd.rt === 'custom') {
+      const dark = lum(rd.custom) < .3;
+      card.style.setProperty('--rbg', rd.custom);
+      card.style.setProperty('--rfg', dark ? '#F2F2F4' : '#1D1D1F');
+      card.style.setProperty('--rmut', dark ? 'rgb(242 242 244 / .6)' : 'rgb(29 29 31 / .55)');
+    } else ['--rbg', '--rfg', '--rmut'].forEach(p => card.style.removeProperty(p));
+    const f = FONTS.find(x => x.id === rd.font) || FONTS[0];
+    card.style.setProperty('--r-font', f.css);
+    card.style.setProperty('--r-size', rd.size + 'px');
+    card.style.setProperty('--r-weight', rd.weight);
+    card.style.setProperty('--r-align', rd.align);
+    card.style.setProperty('--r-liga', rd.liga ? 'normal' : 'none');
+    $('#rdDim').style.opacity = ((100 - rd.bright) / 100 * 0.9).toFixed(2);
+    $$('.theme-pill [data-rt]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.rt === rd.rt)));
+    $$('#fonts [data-font]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.font === rd.font)));
+    $$('.aligns [data-align]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.align === rd.align)));
+    $('#swLiga').setAttribute('aria-checked', String(rd.liga));
+    $('#outSize').textContent = rd.size;
+    $('#outWeight').textContent = rd.weight;
+    const prev = $('#advPreview');
+    prev.style.fontFamily = f.css; prev.style.fontWeight = rd.weight; prev.style.textAlign = rd.align;
+    prev.style.fontVariantLigatures = rd.liga ? 'normal' : 'none';
+    setSlider($('#vsSize'), rd.size, 15, 28);
+    setSlider($('#vsBright'), rd.bright, 40, 100);
+  }
+  function setSlider(el, v, min, max) {
+    $('.vs-fill', el).style.height = (8 + (v - min) / (max - min) * 92) + '%';
+    el.setAttribute('aria-valuenow', v);
+  }
+  function makeSlider(el, min, max, key) {
+    let on = false;
+    const setFrom = y => {
+      const r = el.getBoundingClientRect();
+      rd[key] = Math.round(min + clamp((r.bottom - y) / r.height, 0, 1) * (max - min));
+      applyRd(); saveRd();
+    };
+    el.addEventListener('pointerdown', e => { on = true; el.setPointerCapture(e.pointerId); setFrom(e.clientY); });
+    el.addEventListener('pointermove', e => { if (on) setFrom(e.clientY); });
+    el.addEventListener('pointerup', () => { on = false; });
+    el.addEventListener('keydown', e => {
+      const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault(); rd[key] = clamp(rd[key] + d * (key === 'bright' ? 5 : 1), min, max); applyRd(); saveRd();
     });
-    document.title = `${w.title} · Juan Menulis`;
   }
-  function closeReader() {
-    if (reader.hidden) return;
-    stopSpeech();
-    reader.hidden = true;
-    $('#quotePop').hidden = true;
-    document.documentElement.classList.remove('locked');
-    readerSlug = null;
-    document.title = 'Juan Menulis';
-    lastFocus?.focus?.({ preventScroll: true });
-  }
-  function requestClose() {
-    if (location.hash.startsWith('#baca-')) {
-      if (pushedHash) { pushedHash = false; history.back(); }
-      else { history.replaceState(null, '', location.pathname + location.search); closeReader(); }
-    } else closeReader();
-  }
-  function route() {
-    const m = location.hash.match(/^#baca-([\w-]+)$/);
-    if (m && BY_SLUG[m[1]]) showReader(m[1]);
-    else closeReader();
-  }
-  addEventListener('hashchange', route);
+  makeSlider($('#vsSize'), 15, 28, 'size');
+  makeSlider($('#vsBright'), 40, 100, 'bright');
 
-  $('#rClose').addEventListener('click', requestClose);
-  $('#rSmaller').addEventListener('click', () => { prefs.size = Math.max(16, prefs.size - 1); store.set('size', prefs.size); applyPrefs(); });
-  $('#rBigger').addEventListener('click', () => { prefs.size = Math.min(28, prefs.size + 1); store.set('size', prefs.size); applyPrefs(); });
-  $('#rPaper').addEventListener('click', e => {
-    const b = e.target.closest('[data-paper]');
+  $('.theme-pill').addEventListener('click', e => {
+    const b = e.target.closest('[data-rt]');
     if (!b) return;
-    prefs.paper = b.dataset.paper; store.set('paper', prefs.paper); applyPrefs();
+    if (b.dataset.rt === 'custom') { $('#colorIn').value = rd.custom; $('#colorIn').click(); }
+    rd.rt = b.dataset.rt; applyRd(); saveRd();
   });
-  $('#rFocus').addEventListener('click', () => { prefs.focus = !prefs.focus; applyPrefs(); onReaderScroll(); });
+  $('#colorIn').addEventListener('input', e => { rd.custom = e.target.value; rd.rt = 'custom'; applyRd(); saveRd(); });
+  $('#advColors').addEventListener('click', () => { $('#colorIn').value = rd.custom; $('#colorIn').click(); });
+  $('#fonts').addEventListener('click', e => { const b = e.target.closest('[data-font]'); if (b) { rd.font = b.dataset.font; applyRd(); saveRd(); } });
+  $('#fonts').addEventListener('scroll', () => {
+    const f = $('#fonts');
+    const page = Math.round(f.scrollLeft / Math.max(1, f.scrollWidth - f.clientWidth) * ($$('#fontDots i').length - 1));
+    $$('#fontDots i').forEach((d, i) => d.classList.toggle('on', i === page));
+  }, { passive: true });
+  $$('#fontDots i')[0].classList.add('on');
+  $('.adv-group').addEventListener('click', e => {
+    const b = e.target.closest('[data-step]');
+    if (!b) return;
+    const d = +b.dataset.d;
+    if (b.dataset.step === 'size') rd.size = clamp(rd.size + d, 15, 28);
+    else rd.weight = WEIGHTS[clamp(WEIGHTS.indexOf(rd.weight) + d, 0, WEIGHTS.length - 1)];
+    applyRd(); saveRd();
+  });
+  $('#swLiga').addEventListener('click', () => { rd.liga = !rd.liga; applyRd(); saveRd(); });
+  $('.aligns').addEventListener('click', e => { const b = e.target.closest('[data-align]'); if (b) { rd.align = b.dataset.align; applyRd(); saveRd(); } });
+  $('#rsText').addEventListener('click', () => { $('#rsMain').hidden = true; $('#rsAdv').hidden = false; $('#rs').scrollTop = 0; $('#advBack').focus({ preventScroll: true }); });
+  $('#advBack').addEventListener('click', () => { $('#rsAdv').hidden = true; $('#rsMain').hidden = false; $('#rsText').focus({ preventScroll: true }); });
+  $('#rsFocus').addEventListener('click', () => { focusMode = !focusMode; $('#rsFocus').setAttribute('aria-pressed', String(focusMode)); body.classList.toggle('focus', focusMode); onScroll(); });
 
-  function onReaderScroll() {
-    const max = rScroll.scrollHeight - rScroll.clientHeight;
-    $('#rProgress').style.width = (max > 0 ? (rScroll.scrollTop / max) * 100 : 100) + '%';
-    if (!prefs.focus) return;
-    const mid = rScroll.getBoundingClientRect().top + rScroll.clientHeight * 0.45;
-    let best = null, bestD = Infinity;
-    [...rBody.children].forEach(p => {
-      const r = p.getBoundingClientRect();
-      const d = Math.abs((r.top + r.bottom) / 2 - mid);
-      if (d < bestD) { bestD = d; best = p; }
-    });
-    [...rBody.children].forEach(p => p.classList.toggle('is-current', p === best));
+  // lembar pengaturan di ponsel
+  const rs = $('#rs');
+  function setSheet(open) { rs.classList.toggle('open', open); $('#aaFab').setAttribute('aria-expanded', String(open)); }
+  $('#aaFab').addEventListener('click', () => setSheet(!rs.classList.contains('open')));
+  $('#rsHandle').addEventListener('click', () => { if (isMobile()) setSheet(false); else rs.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  function renderBody(q) {
+    const w = current;
+    const mark = t => {
+      if (!q) return esc(t);
+      const lt = t.toLowerCase(), lq = q.toLowerCase();
+      let out = '', i = 0, k;
+      while ((k = lt.indexOf(lq, i)) >= 0) { out += esc(t.slice(i, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>'; i = k + q.length; }
+      return out + esc(t.slice(i));
+    };
+    body.className = 'rd-body' + (focusMode ? ' focus' : '');
+    body.innerHTML = w.body.map(p => w.form === 'puisi' ? `<p class="stanza">${mark(p)}</p>` : `<p>${mark(p)}</p>`).join('');
   }
-  rScroll.addEventListener('scroll', () => { onReaderScroll(); $('#quotePop').hidden = true; }, { passive: true });
+  function rhythm(host, lens) {
+    const n = lens.length, W = 600, H = 64;
+    if (!n) { host.innerHTML = ''; return; }
+    const max = Math.max(...lens), bw = W / n, bar = Math.max(2, Math.min(bw * .6, 18));
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${n} kalimat, terpanjang ${max} kata">${lens.map((l, i) => {
+      const h = Math.max(3, l / max * (H - 4));
+      return `<rect x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} kata</title></rect>`;
+    }).join('')}</svg>`;
+  }
+  const navList = () => (queue.includes(current?.slug) ? queue.map(bySlug).filter(Boolean) : all());
+  function neighbors() {
+    const list = navList(), i = list.findIndex(w => w.slug === current.slug);
+    return { prev: list[(i - 1 + list.length) % list.length], next: list[(i + 1) % list.length] };
+  }
 
-  /* ---------- dengarkan (Web Speech) ---------- */
+  function showReader(slug) {
+    const w = bySlug(slug);
+    if (!w) return;
+    stopSpeech(); closeFind();
+    current = w;
+    setView('baca');
+    $('#rdBackLabel').textContent = prevView === 'daftar' ? 'Daftar' : prevView === 'sapa' ? 'Sapa' : 'Kanvas';
+    $('#rdCrumb').textContent = `${CATS[w.cat].label} · ${w.title}`;
+    $('#rdMeta').innerHTML = `<span>${CATS[w.cat].label}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>`;
+    $('#rdTitle').textContent = w.title;
+    renderBody('');
+    rhythm($('#rdRhythm'), w.lens);
+    const { prev, next } = neighbors();
+    $('#rdNextLink').href = '#baca-' + next.slug;
+    $('b', $('#rdNextLink')).textContent = next.title;
+    $('#rdPrev').dataset.slug = prev.slug; $('#rdNext').dataset.slug = next.slug;
+    $('#advPreview').textContent = w.body[0].replace(/\n/g, ' ');
+    applyRd();
+    scroller.scrollTop = 0;
+    const marks = store.get('marks', {});
+    $('#rsMark').setAttribute('aria-pressed', String(marks[slug] != null));
+    requestAnimationFrame(() => {
+      if (marks[slug] != null) {
+        scroller.scrollTop = marks[slug] * (scroller.scrollHeight - scroller.clientHeight);
+        toast('Melanjutkan dari posisi yang kamu tandai.');
+      }
+      onScroll();
+    });
+    if (!w.mine && !readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
+    updateBadge(); renderRows(); if (feedMode === 'list') renderFeed();
+    document.title = `${w.title} · Juan Menulis`;
+    scroller.focus({ preventScroll: true });
+  }
+  scroller.tabIndex = -1;
+  function openWork(slug) {
+    if (location.hash === '#baca-' + slug) showReader(slug); else location.hash = 'baca-' + slug;
+  }
+  $('#rdBack').addEventListener('click', () => go(prevView === 'baca' ? 'kanvas' : prevView));
+  $('#rdPrev').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
+  $('#rdNext').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
+
+  function onScroll() {
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    $('#rdProg').style.width = (max > 0 ? scroller.scrollTop / max * 100 : 100) + '%';
+    if (!focusMode) return;
+    const r0 = scroller.getBoundingClientRect(), mid = r0.top + r0.height * .45;
+    let best = null, bd = Infinity;
+    [...body.children].forEach(p => { const r = p.getBoundingClientRect(), d = Math.abs((r.top + r.bottom) / 2 - mid); if (d < bd) { bd = d; best = p; } });
+    [...body.children].forEach(p => p.classList.toggle('cur', p === best));
+  }
+  scroller.addEventListener('scroll', onScroll, { passive: true });
+
+  // tandai posisi
+  $('#rsMark').addEventListener('click', () => {
+    const marks = store.get('marks', {});
+    if (marks[current.slug] != null) { delete marks[current.slug]; toast('Tanda dihapus.'); }
+    else {
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      marks[current.slug] = max > 0 ? +(scroller.scrollTop / max).toFixed(3) : 0;
+      toast('Posisi baca ditandai. Lain kali kamu mulai dari sini.');
+    }
+    store.set('marks', marks);
+    $('#rsMark').setAttribute('aria-pressed', String(marks[current.slug] != null));
+  });
+
+  // layar tetap menyala
+  let lock = null;
+  async function releaseLock() { if (lock) { try { await lock.release(); } catch (e) { /* sudah lepas */ } lock = null; } $('#rsLock').setAttribute('aria-pressed', 'false'); }
+  $('#rsLock').addEventListener('click', async () => {
+    if (lock) { releaseLock(); toast('Layar boleh redup lagi.'); return; }
+    try {
+      lock = await navigator.wakeLock.request('screen');
+      $('#rsLock').setAttribute('aria-pressed', 'true');
+      toast('Layar tetap menyala selama kamu membaca.');
+      lock.addEventListener('release', () => { lock = null; $('#rsLock').setAttribute('aria-pressed', 'false'); });
+    } catch (e) { toast('Peramban ini tidak mengizinkan layar tetap menyala.'); }
+  });
+
+  // dengarkan
   let speaking = false;
   function stopSpeech() {
     speaking = false;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
-    $$('.is-speaking', rBody).forEach(p => p.classList.remove('is-speaking'));
-    $('#rListen').textContent = '▶ Dengarkan';
-    $('#rListen').setAttribute('aria-pressed', 'false');
+    $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
+    $('#rsVoice').setAttribute('aria-pressed', 'false');
   }
-  function speak() {
+  $('#rsVoice').addEventListener('click', () => {
     if (!('speechSynthesis' in window)) { toast('Peramban ini belum bisa membacakan teks.'); return; }
     if (speaking) { stopSpeech(); return; }
     speaking = true;
-    $('#rListen').textContent = '■ Berhenti';
-    $('#rListen').setAttribute('aria-pressed', 'true');
-    const paras = [...rBody.children];
+    $('#rsVoice').setAttribute('aria-pressed', 'true');
+    const paras = [...body.children];
     const voice = speechSynthesis.getVoices().find(v => /^id|indones/i.test(v.lang + v.name));
-    const go = j => {
-      $$('.is-speaking', rBody).forEach(p => p.classList.remove('is-speaking'));
+    const next = j => {
+      $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
       if (!speaking || j >= paras.length) { stopSpeech(); return; }
-      const p = paras[j];
-      p.classList.add('is-speaking');
-      p.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
-      const u = new SpeechSynthesisUtterance(p.textContent);
-      u.lang = 'id-ID'; if (voice) u.voice = voice;
-      u.rate = 0.95;
-      u.onend = () => go(j + 1);
-      u.onerror = () => stopSpeech();
+      paras[j].classList.add('speaking');
+      paras[j].scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+      const u = new SpeechSynthesisUtterance(paras[j].textContent);
+      u.lang = 'id-ID'; if (voice) u.voice = voice; u.rate = .95;
+      u.onend = () => next(j + 1); u.onerror = () => stopSpeech();
       speechSynthesis.speak(u);
     };
-    go(0);
-  }
-  $('#rListen').addEventListener('click', speak);
-
-  /* ---------- pilih teks → kartu kutipan ---------- */
-  const pop = $('#quotePop');
-  let selText = '';
-  function checkSelection() {
-    const sel = getSelection();
-    const t = sel && sel.toString().trim().replace(/\s+/g, ' ');
-    if (!t || t.length < 6 || t.length > 420 || !rBody.contains(sel.anchorNode)) { pop.hidden = true; return; }
-    selText = t;
-    const r = sel.getRangeAt(0).getBoundingClientRect();
-    pop.style.left = Math.min(innerWidth - 120, Math.max(120, r.left + r.width / 2)) + 'px';
-    pop.style.top = Math.min(innerHeight - 16, Math.max(70, r.top)) + 'px';
-    pop.hidden = false;
-  }
-  rBody.addEventListener('mouseup', () => setTimeout(checkSelection, 10));
-  rBody.addEventListener('keyup', checkSelection);
-  document.addEventListener('selectionchange', () => { if (!reader.hidden && matchMedia('(pointer: coarse)').matches) checkSelection(); });
-  pop.addEventListener('mousedown', e => e.preventDefault());
-  pop.addEventListener('click', () => { pop.hidden = true; openQuote(selText, BY_SLUG[readerSlug]); });
-
-  const SWATCHES = [
-    { id: 'tint', label: 'Pastel' },
-    { id: 'ink', label: 'Tinta' },
-    { id: 'blue', label: 'Biru' },
-    { id: 'paper', label: 'Kertas' }
-  ];
-  let quote = { text: '', work: null, sw: 'tint' };
-  // Kartu kutipan adalah gambar yang dibagikan ke luar situs, jadi warnanya tetap
-  // (tidak ikut tema terang/gelap pembaca).
-  const CARD_PASTEL = { esai: '#DBD6FA', puisi: '#F6CDE2', cerpen: '#C9EFDC', mini: '#F7E8AA', catatan: '#DDF26E' };
-  const CARD_INK = { esai: '#2244FF', puisi: '#C8287F', cerpen: '#0E7E54', mini: '#D44E14', catatan: '#5E3FE6' };
-  function swatchColors(id, w) {
-    if (id === 'tint') return { bg: CARD_PASTEL[w.cat], fg: '#0F1016', sub: '#4A4D58', thread: CARD_INK[w.cat] };
-    if (id === 'ink') return { bg: '#0F1016', fg: '#F2F3F7', sub: '#9A9EAB', thread: '#F2F3F7' };
-    if (id === 'blue') return { bg: '#2244FF', fg: '#FFFFFF', sub: '#C9D2FF', thread: '#FFFFFF' };
-    return { bg: '#FAFAFC', fg: '#0F1016', sub: '#646875', thread: CARD_INK[w.cat] };
-  }
-  function wrap(ctx, text, maxW) {
-    const words = text.split(' '), lines = [];
-    let line = '';
-    words.forEach(word => {
-      const test = line ? line + ' ' + word : word;
-      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; } else line = test;
-    });
-    if (line) lines.push(line);
-    return lines;
-  }
-  function paintQuote() {
-    const c = $('#quoteCanvas'), ctx = c.getContext('2d');
-    const W = c.width, H = c.height, w = quote.work;
-    const col = swatchColors(quote.sw, w);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = col.bg; ctx.fillRect(0, 0, W, H);
-    ctx.save();
-    ctx.translate(W - 470, -110);
-    const t = paintThread(ctx, 560, 560, fullText(w), { color: col.thread, seed: w.slug, weight: 0.8, pad: 10, rotate: seeded(w.slug + '/r')() * Math.PI * 2 });
-    t.drawRange(0, t.segs.length); t.drawPins();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = col.fg;
-    ctx.font = 'italic 220px "Instrument Serif", Georgia, serif';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('“', 80, 520);
-    const maxW = W - 180;
-    let size = 84, lines;
-    do {
-      ctx.font = `${size}px "Instrument Serif", Georgia, serif`;
-      lines = wrap(ctx, quote.text, maxW);
-      size -= 4;
-    } while (lines.length * size * 1.18 > 640 && size > 40);
-    size += 4;
-    const lh = size * 1.16;
-    let y = 600;
-    lines.forEach(l => { ctx.fillText(l, 90, y); y += lh; });
-    ctx.fillStyle = col.sub;
-    ctx.font = '500 30px Geist, system-ui, sans-serif';
-    ctx.fillText(`— ${SITE.author}, “${w.title}”`, 90, Math.min(H - 150, y + 40));
-    ctx.font = '600 26px Geist, system-ui, sans-serif';
-    ctx.fillText(SITE.handle, 90, H - 80);
-    ctx.textAlign = 'right';
-    ctx.fillText(CATS[w.cat].label.toUpperCase() + ' · NO. ' + w.no, W - 90, H - 80);
-    ctx.textAlign = 'left';
-  }
-  function openQuote(text, work) {
-    quote = { text, work, sw: quote.sw || 'tint' };
-    $('#swatches').innerHTML = SWATCHES.map(s => {
-      const col = swatchColors(s.id, work);
-      return `<button type="button" data-sw="${s.id}" style="--sw:${col.bg}" aria-label="${s.label}" aria-pressed="${s.id === quote.sw}"></button>`;
-    }).join('');
-    $('#quoteModal').hidden = false;
-    (document.fonts ? document.fonts.ready : Promise.resolve()).then(paintQuote);
-    $('#quoteSave').focus();
-  }
-  $('#swatches').addEventListener('click', e => {
-    const b = e.target.closest('[data-sw]');
-    if (!b) return;
-    quote.sw = b.dataset.sw;
-    $$('#swatches button').forEach(x => x.setAttribute('aria-pressed', x === b));
-    paintQuote();
+    if (isMobile()) setSheet(false);
+    next(0);
   });
-  $('#quoteSave').addEventListener('click', () => downloadCanvas($('#quoteCanvas'), `kutipan-${quote.work.slug}.png`));
-  $('#quoteCopy').addEventListener('click', () => copyText(`“${quote.text}”\n— ${SITE.author}, ${quote.work.title}`, 'Kutipan disalin.'));
-  const closeQuote = () => { $('#quoteModal').hidden = true; };
-  $('#quoteClose').addEventListener('click', closeQuote);
-  $('#quoteModal').addEventListener('click', e => { if (e.target.id === 'quoteModal') closeQuote(); });
+
+  // cari di dalam tulisan
+  let hits = [], hit = 0;
+  function openFind() { $('#rdFind').hidden = false; $('#findIn').focus(); if (isMobile()) setSheet(false); }
+  function closeFind() { $('#rdFind').hidden = true; $('#findIn').value = ''; $('#findCount').textContent = ''; if (current) renderBody(''); }
+  function runFind() {
+    const q = $('#findIn').value.trim();
+    renderBody(q.length > 1 ? q : '');
+    hits = $$('mark', body); hit = 0;
+    $('#findCount').textContent = q.length > 1 ? (hits.length ? `1/${hits.length}` : 'tidak ada') : '';
+    showHit();
+  }
+  function showHit() {
+    hits.forEach((m, i) => m.classList.toggle('on', i === hit));
+    if (hits[hit]) { hits[hit].scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' }); $('#findCount').textContent = `${hit + 1}/${hits.length}`; }
+  }
+  $('#rsSearch').addEventListener('click', openFind);
+  $('#findIn').addEventListener('input', runFind);
+  $('#findIn').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); hit = (hit + (e.shiftKey ? -1 : 1) + hits.length) % Math.max(1, hits.length); showHit(); }
+    if (e.key === 'Escape') { e.stopPropagation(); closeFind(); }
+  });
+  $('#findNext').addEventListener('click', () => { if (hits.length) { hit = (hit + 1) % hits.length; showHit(); } });
+  $('#findPrev').addEventListener('click', () => { if (hits.length) { hit = (hit - 1 + hits.length) % hits.length; showHit(); } });
+  $('#findClose').addEventListener('click', closeFind);
 
   /* ======================================================================
-     PALET PENCARIAN (⌘K atau /)
+     PALET PENCARIAN
      ====================================================================== */
-  const palette = $('#palette'), pInput = $('#pInput'), pResults = $('#pResults');
-  let pSel = 0, pItems = [];
   function search(q) {
     const nq = fold(q.trim());
-    if (!nq) return WORKS.map(w => ({ w, snip: esc(w.excerpt) }));
+    if (!nq) return all().map(w => ({ w, snip: esc(w.excerpt) }));
     const out = [];
-    WORKS.forEach(w => {
+    all().forEach(w => {
       let score = 0, snip = '';
       if (fold(w.title).includes(nq)) score += 5;
-      if (CATS[w.cat].label.toLowerCase().includes(nq)) score += 2;
-      const text = fullText(w).replace(/\s+/g, ' ');
-      const ft = fold(text);
-      const idx = ft.indexOf(nq);
+      if (fold(CATS[w.cat].label).includes(nq)) score += 2;
+      const text = fullText(w).replace(/\s+/g, ' '), ft = fold(text), idx = ft.indexOf(nq);
       if (idx >= 0) {
         score += 2 + Math.min(3, ft.split(nq).length - 2);
-        const a = Math.max(0, idx - 36), b = Math.min(text.length, idx + nq.length + 60);
+        const a = Math.max(0, idx - 32), b = Math.min(text.length, idx + nq.length + 56);
         snip = (a ? '…' : '') + esc(text.slice(a, idx)) + '<mark>' + esc(text.slice(idx, idx + nq.length)) + '</mark>' + esc(text.slice(idx + nq.length, b)) + (b < text.length ? '…' : '');
       }
       if (score) out.push({ w, score, snip: snip || esc(w.excerpt) });
     });
     return out.sort((a, b) => b.score - a.score);
   }
+  const palette = $('#palette'), pInput = $('#pInput'), pResults = $('#pResults');
+  let pSel = 0, pItems = [];
   function renderPalette() {
     pItems = search(pInput.value);
     pSel = Math.min(pSel, Math.max(0, pItems.length - 1));
     pResults.innerHTML = pItems.length
-      ? pItems.map((r, i) => `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}">
-          <span class="p-title"><span>${esc(r.w.title)}</span><span class="chip-cat" style="${catStyle(r.w)}">${CATS[r.w.cat].label}</span></span>
-          <span class="p-snip">${r.snip}</span></li>`).join('')
+      ? pItems.map((r, i) => `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
       : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, misalnya “hujan” atau “Senin”.</li>';
     pInput.setAttribute('aria-activedescendant', pItems.length ? 'po-' + pSel : '');
   }
   function openPalette() { palette.hidden = false; pInput.value = ''; pSel = 0; renderPalette(); pInput.focus(); }
-  function closePalette() { palette.hidden = true; }
+  const closePalette = () => { palette.hidden = true; };
   $('#openPalette').addEventListener('click', openPalette);
   pInput.addEventListener('input', () => { pSel = 0; renderPalette(); });
   pInput.addEventListener('keydown', e => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); pSel = Math.min(pItems.length - 1, pSel + 1); renderPalette(); $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' }); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); pSel = Math.max(0, pSel - 1); renderPalette(); $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' }); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      pSel = clamp(pSel + (e.key === 'ArrowDown' ? 1 : -1), 0, pItems.length - 1);
+      renderPalette(); $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' });
+    }
     if (e.key === 'Enter' && pItems[pSel]) { closePalette(); openWork(pItems[pSel].w.slug); }
   });
   pResults.addEventListener('click', e => { const li = e.target.closest('[data-slug]'); if (li) { closePalette(); openWork(li.dataset.slug); } });
   palette.addEventListener('click', e => { if (e.target === palette) closePalette(); });
 
   /* ======================================================================
-     KEYBOARD GLOBAL
+     KEYBOARD & RUTE
      ====================================================================== */
   addEventListener('keydown', e => {
-    const typing = /INPUT|TEXTAREA/.test(document.activeElement?.tagName);
+    const typing = /INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette.hidden ? openPalette() : closePalette(); return; }
     if (e.key === 'Escape') {
       if (!palette.hidden) return closePalette();
-      if (!$('#quoteModal').hidden) return closeQuote();
-      if (!reader.hidden) return requestClose();
-      $('#island').setAttribute('aria-expanded', 'false');
+      if (!$('#rdFind').hidden) return closeFind();
+      if (rs.classList.contains('open')) return setSheet(false);
+      if (!$('#rsAdv').hidden && view === 'baca') return $('#advBack').click();
+      if (view === 'baca') return $('#rdBack').click();
     }
     if (typing) return;
     if (e.key === '/' && palette.hidden) { e.preventDefault(); openPalette(); return; }
-    if (!reader.hidden && palette.hidden && $('#quoteModal').hidden) {
-      if (e.key === 'ArrowRight') location.hash = $('#rNext').hash.slice(1);
-      if (e.key === 'ArrowLeft') location.hash = $('#rPrev').hash.slice(1);
-      if (e.key.toLowerCase() === 'f') $('#rFocus').click();
+    if (view === 'baca' && palette.hidden) {
+      if (e.key === 'ArrowRight') openWork($('#rdNext').dataset.slug);
+      if (e.key === 'ArrowLeft') openWork($('#rdPrev').dataset.slug);
+      if (e.key.toLowerCase() === 'f') $('#rsFocus').click();
     }
   });
+
+  function route() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    const m = h.match(/^baca-([\w-]+)$/);
+    if (m && bySlug(m[1])) { showReader(m[1]); return; }
+    if (VIEWS.includes(h)) { setView(h); return; }
+    setView(isMobile() ? 'sapa' : 'kanvas');
+  }
+  addEventListener('hashchange', route);
+  mobileMQ.addEventListener?.('change', () => { if (view === 'sapa' && !isMobile()) setView('kanvas'); syncPill(); });
+  let rt;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
 
   /* ======================================================================
      MULAI
      ====================================================================== */
+  drawThread($('#meAvatar'), SITE.author + ' menulis setiap hari', { w: 84, h: 84, pad: 8, color: '#7A2448', seed: 'me', weight: 1.2 });
+  renderCanvas();
+  renderList();
+  renderFeed();
+  applyRd();
   route();
-  playDraft();
-  // Gambar ulang setelah font siap, supaya label huruf di kanvas memakai Geist.
-  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  fontsReady.then(() => {
-    paintStack(true);
-    renderTG(false);
-    if (anatCurrent?.slug) selectAnat(anatCurrent.slug);
-  });
+  requestAnimationFrame(() => canvasFit(false));
 })();

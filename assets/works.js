@@ -6,23 +6,19 @@
  * form  : "prosa" (body = paragraf) | "puisi" (body = bait, baris dipisah \n)
  * line  : satu baris favorit, muncul di pita berjalan di beranda
  * date  : YYYY-MM-DD
+ * time  : jam selesai ditulis (HH:MM), tampil di Daftar
  */
 
 window.SITE = {
   author: "Juan",
   handle: "juan/menulis",
   email: "juan@example.com", // ganti dengan alamat email aslimu
-  nowWriting: { title: "Rumah di Ujung Rel", kind: "novela", draft: 2, progress: 0.62 },
-  // jumlah kalimat yang dihapus tapi disimpan di berkas "nanti"
-  savedSentences: 412,
-  timeline: [
-    { year: "2017", title: "Buku tulis bergaris", text: "Puisi pertama ditulis di halaman belakang buku tulis matematika, di antara rumus luas trapesium.", tag: "awal" },
-    { year: "2019", title: "Blog yang dibaca tiga orang", text: "Satu di antaranya ibu. Satu lagi mesin pencari. Yang ketiga masih misteri.", tag: "blog" },
-    { year: "2021", title: "100 hari, 100 puisi", text: "Tantangan menulis harian. Selesai 71. Sisanya mengajari bahwa berhenti juga bagian dari latihan.", tag: "tantangan" },
-    { year: "2023", title: "Bahasa Ibu", text: "Puisi pertama yang berani dibacakan di depan orang lain. Tangan gemetar, suara tidak.", tag: "puisi", slug: "bahasa-ibu" },
-    { year: "2024", title: "Berkas bernama nanti", text: "Mulai menyimpan kalimat yang dihapus dari setiap draf. Sekarang isinya lebih dari empat ratus.", tag: "kebiasaan", slug: "draf-ketujuh" },
-    { year: "2026", title: "Situs ini", text: "Semua tulisan akhirnya pindah ke satu rumah, dengan jendela yang sengaja dibiarkan terbuka.", tag: "sekarang", slug: "jendela" }
-  ]
+  // catatan kecil untuk setiap map tahun di tampilan Daftar
+  years: {
+    "2025": "Tahun belajar tersesat dengan sengaja.",
+    "2024": "Draf, laci, dan hari Senin yang dicuci.",
+    "2023": "Puisi pertama yang dibacakan keras-keras."
+  }
 };
 
 window.WORKS = [
@@ -32,6 +28,7 @@ window.WORKS = [
     cat: "esai",
     form: "prosa",
     date: "2026-03-14",
+    time: "23:14",
     excerpt: "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Awalnya kuanggap kerusakan. Belakangan kuanggap guru.",
     line: "Ingatan itu penulis yang malas.",
     body: [
@@ -49,6 +46,7 @@ window.WORKS = [
     cat: "mini",
     form: "prosa",
     date: "2025-11-02",
+    time: "07:52",
     excerpt: "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak.",
     line: "Maaf, Yah. Aku terlambat sebelas tahun.",
     body: [
@@ -65,6 +63,7 @@ window.WORKS = [
     cat: "esai",
     form: "prosa",
     date: "2025-06-21",
+    time: "16:05",
     excerpt: "Ponselku tahu jalan tercepat ke mana pun. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan.",
     line: "Pasar Lama berjarak tiga obrolan dari rumahku.",
     body: [
@@ -82,6 +81,7 @@ window.WORKS = [
     cat: "puisi",
     form: "puisi",
     date: "2025-05-09",
+    time: "21:42",
     excerpt: "hujan datang terlambat, seperti surat yang dialamatkan ke rumah yang sudah dijual",
     line: "seperti surat yang dialamatkan ke rumah yang sudah dijual",
     body: [
@@ -97,6 +97,7 @@ window.WORKS = [
     cat: "puisi",
     form: "puisi",
     date: "2024-12-30",
+    time: "23:26",
     excerpt: "aku menyimpan karcis bioskop yang tintanya pudar, tutup pulpen yang digigit saat ujian, dan kamu.",
     line: "di laci yang sama dengan hal-hal yang tidak sanggup kubuang",
     body: [
@@ -112,6 +113,7 @@ window.WORKS = [
     cat: "cerpen",
     form: "prosa",
     date: "2024-08-17",
+    time: "02:10",
     excerpt: "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu bertuliskan: DIJUAL — HARI SENIN, MASIH SEGAR.",
     line: "Senin itu sebenarnya tidak jahat.",
     body: [
@@ -131,6 +133,7 @@ window.WORKS = [
     cat: "catatan",
     form: "prosa",
     date: "2024-02-11",
+    time: "10:37",
     excerpt: "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar.",
     line: "Kalimat itu indah dan egois.",
     body: [
@@ -147,6 +150,7 @@ window.WORKS = [
     cat: "puisi",
     form: "puisi",
     date: "2023-10-28",
+    time: "19:03",
     excerpt: "ibu tidak pernah bilang aku mencintaimu. ia bilang: sudah makan?",
     line: "sudah makan? bawa jaket, nanti hujan.",
     body: [

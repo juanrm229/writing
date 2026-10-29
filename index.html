@@ -4,300 +4,323 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Juan Menulis</title>
-<meta name="description" content="Esai, puisi, cerpen, dan fiksi mini karya Juan. Setiap sampul digambar dari teksnya sendiri.">
-<meta name="theme-color" content="#E8E9EE">
+<meta name="description" content="Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Doto:wght@600;900&family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <script>
-  try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}
+  try {
+    var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t));
+    var b = localStorage.getItem('jm:backdrop'); if (b) document.documentElement.setAttribute('data-backdrop', JSON.parse(b));
+  } catch (e) {}
 </script>
 </head>
 <body>
-<a class="skip" href="#karya">Lewati ke karya</a>
 
-<header class="nav" id="nav">
-  <a class="brand" href="#top" aria-label="Beranda">
-    <span class="brand-mark" aria-hidden="true">J</span>
-    <span class="brand-word">juan<em>/menulis</em></span>
-  </a>
+<div class="win" id="win" data-view="kanvas">
 
-  <button class="island" id="island" type="button" aria-expanded="false" aria-controls="islandMore">
-    <span class="island-dot" aria-hidden="true"></span>
-    <span class="island-label">sedang menulis</span>
-    <span class="island-more" id="islandMore">
-      <b id="islandTitle">Rumah di Ujung Rel</b>
-      <span id="islandMeta">novela · draf 2</span>
-      <span class="island-bar" aria-hidden="true"><i id="islandBar"></i></span>
-      <span class="island-pct" id="islandPct">62%</span>
-    </span>
-  </button>
+  <!-- ============ title bar ============ -->
+  <header class="titlebar">
+    <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="tb-center">
+      <button class="tb-btn" id="addNote" type="button" aria-label="Tambah catatan tempel di kanvas" title="Catatan tempel baru">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="tb-btn" id="openPalette" type="button" aria-label="Cari tulisan" title="Cari (⌘K)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.4 4.4"/></svg>
+      </button>
+    </div>
+    <div class="tb-right">
+      <button class="tb-btn" id="dockToggle" type="button" aria-label="Tampilkan panel sapa" aria-pressed="true" title="Panel sapa">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M14.5 5v14"/></svg>
+      </button>
+    </div>
+  </header>
 
-  <nav class="nav-links" aria-label="Bagian">
-    <a href="#karya">Karya</a>
-    <a href="#anatomi">Anatomi</a>
-    <a href="#perjalanan">Perjalanan</a>
-    <a href="#ruang-main">Ruang Main</a>
-    <a href="#surat">Surat</a>
-  </nav>
+  <div class="win-body">
 
-  <div class="nav-tools">
-    <button class="search-btn" id="openPalette" type="button" aria-label="Cari tulisan">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <span>Cari</span><kbd>⌘K</kbd>
-    </button>
-    <button class="icon-btn" id="themeToggle" type="button" aria-label="Ganti tema terang atau gelap">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="fill"/></svg>
-    </button>
+    <!-- ============ view pill ============ -->
+    <nav class="viewpill" aria-label="Tampilan">
+      <div class="pill">
+        <button type="button" data-go="daftar" aria-label="Daftar" title="Daftar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r=".9" class="f"/><circle cx="4.5" cy="12" r=".9" class="f"/><circle cx="4.5" cy="17" r=".9" class="f"/></svg>
+        </button>
+        <button type="button" data-go="kanvas" aria-label="Kanvas" title="Kanvas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4 7.5 20M16.5 4l-2 16M4.5 9h16M3.5 15h16"/></svg>
+        </button>
+        <button type="button" data-go="sapa" aria-label="Sapa" title="Sapa">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+        </button>
+      </div>
+      <span class="grip-dots" aria-hidden="true"></span>
+    </nav>
+
+    <main class="views">
+
+      <!-- ============ KANVAS ============ -->
+      <section class="view view-kanvas" id="vKanvas" aria-label="Kanvas tulisan">
+        <div class="viewport" id="viewport" tabindex="0" aria-label="Kanvas. Seret latar untuk menggeser, tombol panah juga bisa.">
+          <div class="world" id="world"></div>
+        </div>
+        <p class="canvas-hint" id="canvasHint">seret latar untuk menggeser · seret kertas untuk memindahkan · ketuk untuk membaca</p>
+      </section>
+
+      <!-- ============ DAFTAR ============ -->
+      <section class="view view-daftar" id="vDaftar" aria-label="Daftar tulisan">
+        <aside class="lib-side">
+          <div class="lib-me">
+            <canvas class="me-avatar" id="meAvatar" aria-label="Juan"></canvas>
+            <button class="sq-btn" type="button" data-go="kanvas" aria-label="Buka kanvas">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><g class="f"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></g></svg>
+            </button>
+            <span class="badge" id="unreadBadge" title="Tulisan yang belum kamu buka">0</span>
+          </div>
+          <label class="drop" id="drop" for="fileIn">
+            <span class="drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 76"><path class="pg" d="M8 0h36l20 20v48a8 8 0 0 1-8 8H8a8 8 0 0 1-8-8V8a8 8 0 0 1 8-8z"/><path class="fold" d="M44 0v14a6 6 0 0 0 6 6h14z"/><path class="ar" d="M32 52V34m-7 7 7-7 7 7M24 56h16"/></svg>
+            </span>
+            <span class="drop-title">Jatuhkan berkas <u>di sini</u></span>
+            <span class="drop-sub">TXT atau MD, maksimal 1 MB.<br>Tulisanmu hanya tersimpan di peramban ini.</span>
+          </label>
+        </aside>
+        <div class="lib-main" id="libMain">
+          <div class="shelves" id="shelves" role="group" aria-label="Rak"></div>
+          <div class="lib-table">
+            <div class="lib-head">
+              <button class="cb" id="cbAll" type="button" role="checkbox" aria-checked="false" aria-label="Pilih semua"></button>
+              <span>Nama</span>
+              <span class="lh-date">Tanggal</span>
+            </div>
+            <div class="lib-rows" id="libRows"></div>
+          </div>
+          <div class="selbar" id="selbar" hidden>
+            <span id="selCount">0 dipilih</span>
+            <button type="button" id="selRead">Baca berurutan</button>
+            <button type="button" id="selClear">Batal</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ BACA ============ -->
+      <section class="view view-baca" id="vBaca" aria-label="Pembaca">
+        <div class="rd-top">
+          <button class="pill-btn" id="rdBack" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span id="rdBackLabel">Kanvas</span>
+          </button>
+          <p class="rd-crumb" id="rdCrumb"></p>
+          <div class="rd-nav">
+            <button class="round-sm" id="rdPrev" type="button" aria-label="Tulisan sebelumnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
+            <button class="round-sm" id="rdNext" type="button" aria-label="Tulisan berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+          </div>
+        </div>
+
+        <div class="rd-stage">
+          <div class="rd-card" id="rdCard" data-rt="putih">
+            <div class="rd-find" id="rdFind" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.4 4.4"/></svg>
+              <label class="sr-only" for="findIn">Cari di tulisan ini</label>
+              <input id="findIn" type="search" placeholder="Cari di tulisan ini" autocomplete="off">
+              <span id="findCount" class="find-count"></span>
+              <button type="button" id="findPrev" aria-label="Hasil sebelumnya">↑</button>
+              <button type="button" id="findNext" aria-label="Hasil berikutnya">↓</button>
+              <button type="button" id="findClose" aria-label="Tutup pencarian">×</button>
+            </div>
+            <div class="rd-scroll" id="rdScroll">
+              <article class="rd-article">
+                <p class="rd-meta" id="rdMeta"></p>
+                <h1 class="rd-title" id="rdTitle"></h1>
+                <div class="rd-body" id="rdBody"></div>
+                <footer class="rd-end">
+                  <p class="rd-end-label">ritme kalimat · setiap batang satu kalimat</p>
+                  <div class="rhythm" id="rdRhythm"></div>
+                  <a class="rd-nextlink" id="rdNextLink" href="#"><span>berikutnya</span><b></b></a>
+                </footer>
+              </article>
+            </div>
+            <div class="rd-dim" id="rdDim" aria-hidden="true"></div>
+            <div class="rd-progress" aria-hidden="true"><i id="rdProg"></i></div>
+          </div>
+
+          <!-- reader settings -->
+          <div class="rs" id="rs" aria-label="Pengaturan baca">
+            <div class="rs-page" id="rsMain">
+              <button class="rs-handle" id="rsHandle" type="button" aria-label="Tutup pengaturan baca"><svg viewBox="0 0 40 12" aria-hidden="true"><path d="M4 3q16 8 32 0"/></svg></button>
+              <p class="rs-title">Pengaturan Baca</p>
+              <div class="rs-grid">
+                <div class="rs-cell c-theme">
+                  <div class="theme-pill" role="radiogroup" aria-label="Warna kertas">
+                    <button type="button" role="radio" data-rt="putih" aria-label="Putih"><i></i></button>
+                    <button type="button" role="radio" data-rt="sepia" aria-label="Sepia"><i></i></button>
+                    <button type="button" role="radio" data-rt="gelap" aria-label="Gelap"><i></i></button>
+                    <button type="button" role="radio" data-rt="custom" aria-label="Warna sendiri">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 18.5 9.5M4.5 19.5l1-4.5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18z"/><path d="M4 20c2.5.8 4.5-.5 4.5-.5"/></svg>
+                    </button>
+                  </div>
+                  <span class="rs-lbl">Tema</span>
+                </div>
+                <div class="rs-cell c-voice">
+                  <button class="rb" id="rsVoice" type="button" aria-pressed="false" aria-label="Dengarkan tulisan">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M7.5 7.5v9M11 5v14M14.5 8.5v7M18 11v2"/><path d="M19.5 3.5v3M18 5h3" class="thin"/></svg>
+                  </button>
+                  <span class="rs-lbl">Suara</span>
+                </div>
+                <div class="rs-cell c-text">
+                  <button class="tile-btn" id="rsText" type="button">
+                    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M3 18 8 5l5 13M4.8 13.5h6.4"/><path d="M19.5 12.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm3 0v6"/><path d="M3 22.5h22M3 25.5h14" class="thin"/></svg>
+                    <span><b>Teks</b><small>Atur</small></span>
+                  </button>
+                  <span class="rs-lbl">Lanjutan</span>
+                </div>
+                <div class="rs-cell c-search">
+                  <button class="rb" id="rsSearch" type="button" aria-label="Cari di tulisan ini">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="11" r="5.5"/><path d="m14 15 4.5 4.5M15.5 6.5H21M17.5 10H21"/></svg>
+                  </button>
+                  <span class="rs-lbl">Cari</span>
+                </div>
+                <div class="rs-cell c-focus">
+                  <button class="rb" id="rsFocus" type="button" aria-pressed="false" aria-label="Mode fokus, redupkan paragraf lain">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="4"/><path d="M12 7.5v3.5M10 9.5l2 2 2-2M12 16.5V13M10 14.5l2-2 2 2"/></svg>
+                  </button>
+                  <span class="rs-lbl">Fokus</span>
+                </div>
+                <div class="rs-cell c-size">
+                  <div class="vs" id="vsSize" role="slider" tabindex="0" aria-label="Ukuran teks" aria-valuemin="15" aria-valuemax="28" aria-valuenow="19">
+                    <i class="vs-fill"></i><i class="vs-ticks"></i>
+                    <svg class="vs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M8.5 6v13M16 10h5M18.5 10v9"/><path d="m17 6 1.5-2L20 6M17 21.5l1.5 2 1.5-2" class="thin"/></svg>
+                  </div>
+                  <span class="rs-lbl">Ukuran</span>
+                </div>
+                <div class="rs-cell c-bright">
+                  <div class="vs" id="vsBright" role="slider" tabindex="0" aria-label="Kecerahan" aria-valuemin="40" aria-valuemax="100" aria-valuenow="100">
+                    <i class="vs-fill"></i>
+                    <svg class="vs-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>
+                  </div>
+                  <span class="rs-lbl">Kecerahan</span>
+                </div>
+                <div class="rs-cell c-mark">
+                  <button class="rb" id="rsMark" type="button" aria-pressed="false" aria-label="Tandai posisi baca">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z"/></svg>
+                  </button>
+                  <span class="rs-lbl">Tandai</span>
+                </div>
+                <div class="rs-cell c-lock">
+                  <button class="rb" id="rsLock" type="button" aria-pressed="false" aria-label="Jaga layar tetap menyala">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4v3.5H16"/><rect x="9" y="11" width="6" height="5" rx="1.2"/><path d="M10.5 11V9.6a1.5 1.5 0 0 1 3 0V11"/></svg>
+                  </button>
+                  <span class="rs-lbl">Layar</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rs-page rs-adv" id="rsAdv" hidden>
+              <p class="rs-title">Pengaturan Lanjutan</p>
+              <div class="adv-card">
+                <p class="adv-lbl">Pratinjau</p>
+                <p class="adv-preview" id="advPreview"></p>
+                <button class="adv-row" id="advColors" type="button">
+                  <span class="adv-blob" aria-hidden="true"></span>
+                  <span class="adv-row-t"><b>Teks &amp; Latar</b><small>Racik palet bacamu sendiri.</small></span>
+                  <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>
+                </button>
+              </div>
+              <p class="adv-h">Pilih Huruf</p>
+              <div class="fonts" id="fonts" role="radiogroup" aria-label="Huruf bacaan"></div>
+              <div class="dots" id="fontDots" aria-hidden="true"><i></i><i></i></div>
+              <p class="adv-h">Tipografi</p>
+              <div class="adv-group">
+                <div class="adv-line">
+                  <svg class="al-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M8.5 6v13M16 10h5M18.5 10v9"/></svg>
+                  <span class="al-name">Ukuran Huruf</span>
+                  <span class="stepper"><button type="button" data-step="size" data-d="-1" aria-label="Perkecil">−</button><output id="outSize">19</output><button type="button" data-step="size" data-d="1" aria-label="Perbesar">+</button></span>
+                </div>
+                <div class="adv-line">
+                  <svg class="al-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 12 4l7 15M7.8 13.5h8.4"/><path d="M3 21.5h18" class="thin"/></svg>
+                  <span class="al-name">Ketebalan</span>
+                  <span class="stepper"><button type="button" data-step="weight" data-d="-1" aria-label="Lebih tipis">−</button><output id="outWeight">400</output><button type="button" data-step="weight" data-d="1" aria-label="Lebih tebal">+</button></span>
+                </div>
+                <div class="adv-line">
+                  <svg class="al-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20V8.5a4 4 0 0 1 7-2.6M5 11h7M16 11v9"/></svg>
+                  <span class="al-name">Ligatur<small>Huruf yang bersambung halus (jika hurufnya mendukung)</small></span>
+                  <button class="switch" id="swLiga" type="button" role="switch" aria-checked="true" aria-label="Ligatur"><i></i></button>
+                </div>
+              </div>
+              <p class="adv-h">Perataan Teks</p>
+              <div class="aligns" role="radiogroup" aria-label="Perataan teks">
+                <button type="button" role="radio" data-align="start" aria-checked="true">
+                  <b>Bawaan</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h11M4 14h16M4 18h9"/></svg>
+                  <small>Baris berbaris rapi di sisi kiri.</small>
+                </button>
+                <button type="button" role="radio" data-align="justify" aria-checked="false">
+                  <b>Rata penuh</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                  <small>Teks merentang selebar kolom.</small>
+                </button>
+              </div>
+              <button class="back-float" id="advBack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>Kembali</button>
+            </div>
+          </div>
+        </div>
+        <button class="aa-fab" id="aaFab" type="button" aria-label="Pengaturan baca" aria-expanded="false">Aa</button>
+      </section>
+    </main>
+
+    <!-- ============ DOCK (sapa) ============ -->
+    <aside class="dock" id="dock" aria-label="Sapa">
+      <div class="tk-card" id="tkCard">
+        <div class="tk-head">
+          <button class="tk-ic" id="tkBack" type="button" aria-label="Ke kanvas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
+          <p class="tk-title">juan/menulis</p>
+          <div class="tk-head-r">
+            <button class="tk-ic" id="tkStats" type="button" aria-pressed="false" aria-label="Tampilkan angka"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17v-5M12 17V7M17 17v-8"/></svg></button>
+            <button class="tk-ic" id="tkGear" type="button" aria-label="Ke pilihan tampilan"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.8v2.4M12 17.8v2.4M3.8 12h2.4M17.8 12h2.4M6.2 6.2l1.7 1.7M16.1 16.1l1.7 1.7M6.2 17.8l1.7-1.7M16.1 7.9l1.7-1.7"/></svg></button>
+          </div>
+        </div>
+        <div class="tk-collapse">
+          <div>
+            <p class="tk-greet" id="tkGreet"></p>
+            <div class="tk-meta" id="tkMeta"></div>
+          </div>
+        </div>
+      </div>
+      <button class="tk-grip" id="tkGrip" type="button" aria-label="Ciutkan kartu sapaan" aria-expanded="true"><i></i></button>
+      <div class="tk-seg" role="group" aria-label="Isi panel">
+        <button type="button" data-mode="list" aria-pressed="false" aria-label="Daftar baca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>
+        </button>
+        <button type="button" data-mode="feed" aria-pressed="true" aria-label="Kutipan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M12 4.5c4.7 0 8 2.9 8 6.6s-3.3 6.6-8 6.6c-.9 0-1.8-.1-2.6-.3L5.5 19.5l.9-3.4C4.9 14.9 4 13.1 4 11.1c0-3.7 3.3-6.6 8-6.6z"/></svg>
+        </button>
+      </div>
+      <div class="tk-feed" id="tkFeed" aria-live="polite"></div>
+      <div class="tk-chips">
+        <button class="tk-chip" id="chipBackdrop" type="button">
+          <span class="cd-dot" aria-hidden="true"></span>
+          <svg class="cd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+          <span>Ganti latar ke<br><b id="bdNext">Kabut</b></span>
+        </button>
+        <button class="tk-chip" id="chipDark" type="button" role="switch" aria-checked="false">
+          <span class="sw" aria-hidden="true"><i></i></span>
+          <span>Aktifkan mode<br>gelap</span>
+        </button>
+        <button class="tk-chip" id="chipRandom" type="button">
+          <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" class="f"/><circle cx="15" cy="15" r="1.2" class="f"/><circle cx="15" cy="9" r="1.2" class="f"/><circle cx="9" cy="15" r="1.2" class="f"/></svg>
+          <span>Buka satu<br>secara acak</span>
+        </button>
+      </div>
+      <form class="tk-ask" id="tkAsk" role="search">
+        <svg class="ask-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10-10M14.5 4.5v3M13 6h3M19 9.5v2.5M17.8 10.8h2.5M18.5 3.5l.9.9"/></svg>
+        <label class="sr-only" for="tkInput">Cari kalimat di semua tulisan</label>
+        <input id="tkInput" type="text" placeholder="Cari kalimat…" autocomplete="off" enterkeyhint="search">
+        <label class="ask-clip" for="fileIn" title="Lampirkan berkas teks"><span class="sr-only">Lampirkan berkas teks</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 11.5-6.4 6.4a4.2 4.2 0 0 1-6-6l7.1-7.1a2.8 2.8 0 0 1 4 4l-7 7a1.4 1.4 0 0 1-2-2l6.4-6.4"/></svg>
+        </label>
+        <button class="ask-send" type="submit" aria-label="Cari"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+      </form>
+    </aside>
   </div>
-</header>
-
-<main class="wrap">
-
-  <!-- HERO -->
-  <section class="hero" id="top">
-    <div class="hero-copy">
-      <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>Esai · Puisi · Cerpen · Fiksi mini</p>
-      <h1 class="hero-title">
-        <span class="line">Tulisan</span>
-        <span class="line">yang <span class="draft" id="draft"><span class="draft-word">menolak diam.</span></span></span>
-      </h1>
-      <p class="draft-log" id="draftLog" aria-label="Riwayat revisi judul">
-        <span class="dl-label">riwayat revisi:</span>
-        <s>berisik</s>
-        <s>ragu-ragu</s>
-        <b>menolak diam. ✓</b>
-      </p>
-      <p class="lede">Rumah untuk tulisan-tulisan Juan: esai tentang hal-hal kecil, puisi yang dicoret berkali-kali, dan cerita yang lahir dari jendela yang tak bisa ditutup.</p>
-      <div class="hero-cta">
-        <a class="btn btn-ink" href="#karya">Baca karya <span aria-hidden="true">↓</span></a>
-        <button class="btn btn-ghost" id="randomRead" type="button">Buka satu secara acak</button>
-        <button class="link-btn" id="replayDraft" type="button">↻ putar ulang revisi</button>
-      </div>
-    </div>
-
-    <div class="hero-stage">
-      <div class="stack" id="stack" aria-label="Tumpukan tulisan terbaru"></div>
-      <div class="stage-foot">
-        <p class="stage-hint">seret kartu teratas untuk menyingkirkannya · ketuk untuk membaca</p>
-        <button class="round-btn" id="stackNext" type="button" aria-label="Kartu berikutnya">→</button>
-      </div>
-    </div>
-
-    <dl class="ticker" id="ticker">
-      <div><dt>kata diterbitkan</dt><dd class="dot-num" id="tWords">0</dd></div>
-      <div><dt>tulisan</dt><dd class="dot-num" id="tWorks">0</dd></div>
-      <div><dt>menit membaca</dt><dd class="dot-num" id="tMinutes">0</dd></div>
-      <div><dt>kalimat di berkas “nanti”</dt><dd class="dot-num" id="tSaved">0</dd></div>
-    </dl>
-  </section>
-
-  <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marquee"></div></div>
-
-  <!-- KARYA -->
-  <section class="section" id="karya">
-    <div class="section-head">
-      <h2 class="h2">Karya<sup id="workCount">8</sup></h2>
-      <p class="section-sub">Diurutkan dari yang terbaru. Sampul setiap tulisan digambar dari teksnya sendiri: dua puluh enam huruf di lingkaran, lalu benang ditarik dari huruf ke huruf mengikuti urutan kalimat.</p>
-    </div>
-    <div class="toolbar">
-      <div class="chips" id="filters" role="group" aria-label="Saring jenis tulisan"></div>
-      <div class="seg" role="group" aria-label="Tampilan">
-        <button type="button" data-view="grid" aria-pressed="true">Kartu</button>
-        <button type="button" data-view="list" aria-pressed="false">Indeks</button>
-      </div>
-    </div>
-    <div class="works is-grid" id="works"></div>
-  </section>
-
-  <!-- ANATOMI -->
-  <section class="section" id="anatomi">
-    <div class="section-head">
-      <h2 class="h2">Setiap tulisan punya <em>sidik jari.</em></h2>
-      <p class="section-sub">Pilih satu karya, atau tempel tulisanmu sendiri. Semua dihitung langsung di peramban dan tidak dikirim ke mana pun.</p>
-    </div>
-    <div class="anat-picker">
-      <div class="chips" id="anatChips" role="group" aria-label="Pilih tulisan untuk dibedah"></div>
-      <button class="chip chip-dashed" id="ownToggle" type="button" aria-pressed="false">+ Tulisanku sendiri</button>
-    </div>
-    <div class="own" id="ownBox" hidden>
-      <label for="ownText">Tempel atau ketik tulisanmu. Pisahkan baris untuk puisi.</label>
-      <textarea id="ownText" rows="6" placeholder="Tulis di sini…"></textarea>
-      <label class="own-poem"><input type="checkbox" id="ownPoem"> hitung per baris (puisi)</label>
-    </div>
-
-    <div class="bento">
-      <article class="tile tile-score">
-        <header class="tile-head"><h3>Indeks napas</h3><span class="tile-note">main-main, tapi dihitung sungguhan</span></header>
-        <div class="score-wrap">
-          <div class="ring" id="ring"></div>
-          <ul class="legend" id="legend"></ul>
-        </div>
-      </article>
-
-      <article class="tile tile-thread">
-        <header class="tile-head"><h3>Peta benang</h3><span class="tile-note" id="threadNote"></span></header>
-        <canvas class="big-thread" id="anatThread" aria-label="Seni benang dari huruf-huruf tulisan"></canvas>
-        <p class="tile-cap">Garis paling tebal adalah pasangan huruf yang paling sering berurutan. Dalam bahasa Indonesia, <b>a–n</b>, <b>a–k</b>, dan <b>e–r</b> hampir selalu menang.</p>
-      </article>
-
-      <article class="tile tile-stats">
-        <header class="tile-head"><h3>Angka-angka</h3></header>
-        <dl class="stats" id="stats"></dl>
-      </article>
-
-      <article class="tile tile-rhythm">
-        <header class="tile-head"><h3>Ritme kalimat</h3><span class="tile-note">setiap batang = satu kalimat, tingginya = jumlah kata</span></header>
-        <div class="rhythm" id="rhythm"></div>
-        <p class="rhythm-cap" id="rhythmCap"></p>
-      </article>
-
-      <article class="tile tile-words">
-        <header class="tile-head"><h3>Kata yang kembali</h3></header>
-        <ul class="wordcloud" id="words"></ul>
-      </article>
-    </div>
-  </section>
-
-  <!-- PERJALANAN -->
-  <section class="section" id="perjalanan">
-    <div class="section-head">
-      <h2 class="h2">Perjalanan</h2>
-      <p class="section-sub">Garis waktu kecil dari buku tulis bergaris sampai halaman ini. Geser ke samping.</p>
-    </div>
-    <div class="timeline" id="timeline" tabindex="0" aria-label="Garis waktu, geser ke samping">
-      <ol class="tl-track" id="tlTrack"></ol>
-    </div>
-    <div class="tl-progress" aria-hidden="true"><i id="tlBar"></i></div>
-  </section>
-
-  <!-- RUANG MAIN -->
-  <section class="section" id="ruang-main">
-    <div class="section-head">
-      <h2 class="h2">Ruang <em>main.</em></h2>
-      <p class="section-sub">Dua mainan kecil untuk orang yang suka kata-kata. Bahannya diambil dari tulisan di situs ini.</p>
-    </div>
-    <div class="play-grid">
-      <article class="tile play-blackout">
-        <header class="tile-head">
-          <h3>Puisi hitam</h3>
-          <span class="tile-note">ketuk kata yang ingin disimpan, hitamkan sisanya</span>
-        </header>
-        <p class="bo-source" id="boSource"></p>
-        <div class="bo-text is-black" id="boText"></div>
-        <div class="bo-out"><span class="bo-label">puisimu</span><p id="boOut"></p></div>
-        <div class="bo-actions">
-          <button class="btn btn-ink btn-sm" id="boToggle" type="button" aria-pressed="true">Tampilkan teks</button>
-          <button class="btn btn-ghost btn-sm" id="boShuffle" type="button">Paragraf lain</button>
-          <button class="btn btn-ghost btn-sm" id="boClear" type="button">Kosongkan</button>
-          <button class="btn btn-ghost btn-sm" id="boCopy" type="button">Salin puisi</button>
-        </div>
-      </article>
-
-      <article class="tile play-thread">
-        <header class="tile-head">
-          <h3>Benangmu</h3>
-          <span class="tile-note">ketik apa saja, lihat bentuknya</span>
-        </header>
-        <label class="sr-only" for="tgInput">Teks untuk benang</label>
-        <input class="tg-input" id="tgInput" type="text" value="kata-kata yang menolak diam" maxlength="400" autocomplete="off">
-        <canvas class="big-thread" id="tgCanvas" aria-label="Seni benang dari teks yang kamu ketik"></canvas>
-        <div class="tg-foot">
-          <p class="tg-seq" id="tgSeq"></p>
-          <button class="btn btn-ghost btn-sm" id="tgSave" type="button">Unduh PNG</button>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- SURAT -->
-  <section class="section letter-section" id="surat">
-    <h2 class="giant">Tulis <em>balik.</em></h2>
-    <form class="letter" id="letter" novalidate>
-      <div class="stamp" aria-hidden="true"><canvas id="stampCanvas"></canvas><span>Rp 2026</span></div>
-      <p class="letter-to">Untuk: <b>Juan</b> · <span class="email" id="emailText">juan@example.com</span>
-        <button class="link-btn" id="copyEmail" type="button">salin alamat</button></p>
-      <label for="lName">Dari</label>
-      <input id="lName" name="name" type="text" placeholder="namamu" autocomplete="name">
-      <label for="lMsg">Pesan</label>
-      <textarea id="lMsg" name="message" rows="6" placeholder="Tentang tulisan yang kamu baca, kalimat yang tertinggal, atau sekadar salam."></textarea>
-      <div class="letter-foot">
-        <span class="hand">tertanda, pembaca yang baik</span>
-        <button class="btn btn-ink" type="submit">Buka di aplikasi email →</button>
-      </div>
-    </form>
-  </section>
-</main>
-
-<footer class="footer">
-  <p class="footer-giant" aria-hidden="true">juan<em>/menulis</em></p>
-  <div class="footer-row">
-    <span>© 2026 Juan</span>
-    <span>dibuat dengan tangan, dicoret berkali-kali</span>
-    <a href="#top">kembali ke atas ↑</a>
-  </div>
-</footer>
-
-<!-- READER -->
-<div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rTitle" data-paper="kertas" tabindex="-1" hidden>
-  <div class="reader-bar">
-    <button class="icon-btn" id="rClose" type="button" aria-label="Tutup bacaan">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-    </button>
-    <p class="r-crumb"><span class="chip-cat" id="rCat"></span><span id="rCrumb"></span></p>
-    <div class="r-tools">
-      <button class="tool" id="rListen" type="button" aria-pressed="false">▶ Dengarkan</button>
-      <button class="tool" id="rFocus" type="button" aria-pressed="false" title="Tombol F">Fokus</button>
-      <span class="tool-group">
-        <button class="tool" id="rSmaller" type="button" aria-label="Perkecil huruf">A−</button>
-        <button class="tool" id="rBigger" type="button" aria-label="Perbesar huruf">A+</button>
-      </span>
-      <span class="tool-group" id="rPaper" role="group" aria-label="Warna kertas">
-        <button class="tool" type="button" data-paper="kertas" aria-pressed="true">Kertas</button>
-        <button class="tool" type="button" data-paper="sepia" aria-pressed="false">Sepia</button>
-        <button class="tool" type="button" data-paper="malam" aria-pressed="false">Malam</button>
-      </span>
-    </div>
-    <div class="r-progress" aria-hidden="true"><i id="rProgress"></i></div>
-  </div>
-  <div class="reader-scroll" id="rScroll">
-    <article class="reader-article">
-      <canvas class="r-thread" id="rThread" aria-hidden="true"></canvas>
-      <p class="r-meta" id="rMeta"></p>
-      <h1 class="r-title" id="rTitle"></h1>
-      <div class="r-body" id="rBody"></div>
-      <div class="r-end">
-        <p class="hand">selesai. terima kasih sudah membaca sampai sini.</p>
-        <div class="r-rhythm">
-          <p class="r-rhythm-label">ritme tulisan ini</p>
-          <div class="rhythm rhythm-sm" id="rRhythm"></div>
-        </div>
-        <div class="r-nav">
-          <a class="r-nav-link" id="rPrev" href="#"><span>← sebelumnya</span><b></b></a>
-          <a class="r-nav-link r-nav-next" id="rNext" href="#"><span>berikutnya →</span><b></b></a>
-        </div>
-      </div>
-    </article>
-  </div>
-  <button class="quote-pop" id="quotePop" type="button" hidden>❝ Jadikan kartu kutipan</button>
 </div>
 
-<!-- QUOTE CARD -->
-<div class="modal" id="quoteModal" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Kartu kutipan">
-    <canvas id="quoteCanvas" width="1080" height="1350"></canvas>
-    <div class="modal-side">
-      <p class="modal-title">Kartu kutipan</p>
-      <div class="swatches" id="swatches" role="group" aria-label="Warna kartu"></div>
-      <button class="btn btn-ink btn-sm" id="quoteSave" type="button">Unduh PNG</button>
-      <button class="btn btn-ghost btn-sm" id="quoteCopy" type="button">Salin teks</button>
-      <button class="link-btn" id="quoteClose" type="button">tutup</button>
-    </div>
-  </div>
-</div>
-
-<!-- COMMAND PALETTE -->
+<!-- ============ palet pencarian ============ -->
 <div class="palette" id="palette" hidden>
   <div class="palette-card" role="dialog" aria-modal="true" aria-label="Cari tulisan">
     <label class="sr-only" for="pInput">Cari</label>
@@ -307,7 +330,8 @@
   </div>
 </div>
 
-<canvas class="hover-thread" id="hoverThread" aria-hidden="true"></canvas>
+<input type="file" id="fileIn" accept=".txt,.md,text/plain,text/markdown" hidden>
+<input type="color" id="colorIn" value="#F3E9DC" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="assets/works.js"></script>
