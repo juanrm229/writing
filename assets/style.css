@@ -228,16 +228,25 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 .sq-btn svg { width: 22px; height: 22px; }
 .badge { min-width: 32px; height: 32px; padding: 0 8px; border-radius: 16px; background: var(--danger); color: #fff; font-size: 14px; font-weight: 500; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
 .badge.zero { background: var(--chip); color: var(--muted); }
-.drop { margin: auto 0; display: grid; justify-items: center; text-align: center; gap: 8px; padding: 28px 12px; border-radius: 24px; cursor: pointer; transition: background-color .2s; }
-.drop:hover, .drop.over { background: rgb(255 255 255 / .35); }
-.drop.over { outline: 2px dashed var(--muted); outline-offset: -6px; }
-.drop-icon svg { width: 64px; height: 76px; stroke: none; }
-.drop-icon .pg { fill: var(--chip); }
-.drop-icon .fold { fill: color-mix(in srgb, var(--chip) 70%, var(--muted)); }
-.drop-icon .ar { fill: none; stroke: var(--ink); stroke-width: 3; }
-.drop-title { margin-top: 10px; font-size: 18px; font-weight: 500; letter-spacing: -.01em; }
-.drop-title u { text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
-.drop-sub { font-size: 14.5px; color: var(--soft); line-height: 1.5; }
+.profile { margin: auto 0; display: grid; gap: 14px; padding: 6px 4px 12px; }
+.pf-name { font: 500 30px/1.05 var(--f-read); letter-spacing: -.02em; }
+.pf-bio { font-size: 14.5px; line-height: 1.55; color: var(--soft); max-width: 30ch; }
+.pf-bio:empty { display: none; }
+.pf-stats { margin: 4px 0 0; display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 18px; }
+.pf-stats div { display: flex; flex-direction: column-reverse; }
+.pf-stats dt { font-size: 12px; color: var(--muted); }
+.pf-stats dd { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pf-install {
+  margin-top: 8px; display: flex; align-items: center; gap: 12px; padding: 12px 16px 12px 12px; border: 0; border-radius: 20px; cursor: pointer; text-align: left;
+  background: #0E0F11; color: #fff; box-shadow: 0 14px 30px -14px rgb(0 0 0 / .5); animation: selIn .6s var(--spring);
+  transition: transform .35s var(--spring);
+}
+.pf-install:hover { transform: translateY(-2px); }
+.pf-install:active { transform: scale(.97); }
+.pf-install svg { width: 30px; height: 30px; padding: 6px; border-radius: 10px; background: var(--tk-blue); flex: none; stroke-width: 2; }
+.pf-install b { display: block; font-weight: 500; font-size: 14.5px; }
+.pf-install small { display: block; font-size: 12.5px; color: rgb(255 255 255 / .6); }
+.pf-ios { font-size: 13px; line-height: 1.5; color: var(--soft); padding: 10px 12px; border-radius: 14px; background: var(--chip-2); animation: selIn .5s var(--spring); }
 
 .lib-main { position: relative; flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 0 0 120px; scrollbar-width: thin; }
 .shelves { display: flex; gap: 32px; padding: 30px 40px 26px 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
@@ -536,8 +545,6 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 .ask-ic { width: 20px; height: 20px; color: var(--dock-muted); flex: none; }
 .tk-ask input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--dock-ink); font: 15px var(--f-ui); outline: none; }
 .tk-ask input::placeholder { color: #6E6E73; }
-.ask-clip { width: 30px; height: 30px; display: grid; place-items: center; color: var(--dock-muted); cursor: pointer; border-radius: 50%; }
-.ask-clip svg { width: 19px; height: 19px; }
 .ask-send { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #3A3A3C; color: #AEAEB2; display: grid; place-items: center; cursor: pointer; transition: background-color .2s, color .2s; }
 .ask-send svg { width: 17px; height: 17px; stroke-width: 2.4; }
 .tk-ask:focus-within .ask-send { background: #fff; color: #000; }
@@ -557,6 +564,10 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 .palette-foot { padding: 10px 22px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
 .toast { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom, 0px) + 20px)); z-index: 60; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; padding: 11px 18px; border-radius: 22px; background: #0E0F11; color: #fff; font-size: 14px; transition: opacity .25s, transform .25s; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; }
+.toast button { height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: #fff; color: #0E0F11; font-weight: 500; cursor: pointer; flex: none; }
+/* terpasang sebagai aplikasi: jendela memenuhi layar ponsel */
+@media (max-width: 860px) { .standalone body { padding: env(safe-area-inset-top, 0px) 0 0; } .standalone .win { border-radius: 0; border: 0; } }
 
 /* ---------------------------------------------------------------- responsive */
 @media (max-width: 1180px) {

@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Juan Menulis</title>
 <meta name="description" content="Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan.">
+<meta name="theme-color" content="#C6D1EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0E1B" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Juan">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="assets/icons/favicon.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
@@ -77,13 +86,20 @@
             </button>
             <span class="badge" id="unreadBadge" title="Tulisan yang belum kamu buka">0</span>
           </div>
-          <label class="drop" id="drop" for="fileIn">
-            <span class="drop-icon" aria-hidden="true">
-              <svg viewBox="0 0 64 76"><path class="pg" d="M8 0h36l20 20v48a8 8 0 0 1-8 8H8a8 8 0 0 1-8-8V8a8 8 0 0 1 8-8z"/><path class="fold" d="M44 0v14a6 6 0 0 0 6 6h14z"/><path class="ar" d="M32 52V34m-7 7 7-7 7 7M24 56h16"/></svg>
-            </span>
-            <span class="drop-title">Jatuhkan berkas <u>di sini</u></span>
-            <span class="drop-sub">TXT atau MD, maksimal 1 MB.<br>Tulisanmu hanya tersimpan di peramban ini.</span>
-          </label>
+          <section class="profile" aria-label="Tentang penulis">
+            <p class="pf-name" id="pfName">Juan</p>
+            <p class="pf-bio" id="pfBio"></p>
+            <dl class="pf-stats">
+              <div><dt>tulisan</dt><dd id="pfWorks">0</dd></div>
+              <div><dt>kata</dt><dd id="pfWords">0</dd></div>
+              <div><dt>sejak</dt><dd id="pfSince">—</dd></div>
+            </dl>
+            <button class="pf-install" id="installBtn" type="button" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 7.5v7M9 11.5l3 3 3-3"/></svg>
+              <span><b>Pasang di layar utama</b><small>Baca kapan saja, juga tanpa sinyal.</small></span>
+            </button>
+            <p class="pf-ios" id="iosHint" hidden>Di iPhone atau iPad: ketuk <b>Bagikan</b> <span aria-hidden="true">⎋</span> lalu <b>Tambahkan ke Layar Utama</b>.</p>
+          </section>
         </aside>
         <div class="lib-main" id="libMain">
           <div class="shelves" id="shelves" role="group" aria-label="Rak"></div>
@@ -308,6 +324,10 @@
           <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" class="f"/><circle cx="15" cy="15" r="1.2" class="f"/><circle cx="15" cy="9" r="1.2" class="f"/><circle cx="9" cy="15" r="1.2" class="f"/></svg>
           <span>Buka satu<br>secara acak</span>
         </button>
+        <button class="tk-chip" id="chipInstall" type="button" hidden>
+          <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 7.5v7M9 11.5l3 3 3-3"/></svg>
+          <span>Pasang<br>aplikasi</span>
+        </button>
         <button class="tk-chip" id="chipMail" type="button" hidden>
           <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 7.5 7.5 6 7.5-6"/></svg>
           <span>Kirim surat<br><b id="mailName">ke penulis</b></span>
@@ -316,10 +336,7 @@
       <form class="tk-ask" id="tkAsk" role="search">
         <svg class="ask-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10-10M14.5 4.5v3M13 6h3M19 9.5v2.5M17.8 10.8h2.5M18.5 3.5l.9.9"/></svg>
         <label class="sr-only" for="tkInput">Cari kalimat di semua tulisan</label>
-        <input id="tkInput" type="text" placeholder="Cari kalimat…" autocomplete="off" enterkeyhint="search">
-        <label class="ask-clip" for="fileIn" title="Lampirkan berkas teks"><span class="sr-only">Lampirkan berkas teks</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 11.5-6.4 6.4a4.2 4.2 0 0 1-6-6l7.1-7.1a2.8 2.8 0 0 1 4 4l-7 7a1.4 1.4 0 0 1-2-2l6.4-6.4"/></svg>
-        </label>
+        <input id="tkInput" type="text" placeholder="Cari kalimat di semua tulisan…" autocomplete="off" enterkeyhint="search">
         <button class="ask-send" type="submit" aria-label="Cari"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
       </form>
     </aside>
@@ -345,7 +362,6 @@
   <a href="./" id="tataExit">Keluar</a>
 </div>
 
-<input type="file" id="fileIn" accept=".txt,.md,text/plain,text/markdown" hidden>
 <input type="color" id="colorIn" value="#F3E9DC" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

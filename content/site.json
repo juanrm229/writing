@@ -15,7 +15,6 @@
   "readerPaper": "putih",
   "features": {
     "dock": true,
-    "visitorUploads": true,
     "visitorStickies": true,
     "rotatingQuotes": true
   },

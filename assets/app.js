@@ -27,10 +27,18 @@
   const num = n => n.toLocaleString('id-ID');
 
   let toastT;
-  function toast(msg) {
+  function toast(msg, action, ms = 2800) {
     const t = $('#toast');
-    t.textContent = msg; t.classList.add('on');
-    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2800);
+    t.textContent = msg;
+    if (action) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = action.label;
+      b.addEventListener('click', () => { t.classList.remove('on'); action.run(); });
+      t.append(b);
+    }
+    t.classList.toggle('has-action', !!action);
+    t.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), action ? 8000 : ms);
   }
 
   /* ======================================================================
@@ -60,11 +68,10 @@
     accent: '', sticky: '', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
     folders: {}, years: {}, categories: DEFAULT_CATS,
     ...site,
-    features: { dock: true, visitorUploads: true, visitorStickies: true, rotatingQuotes: true, ...(site.features || {}) }
+    features: { dock: true, visitorStickies: true, rotatingQuotes: true, ...(site.features || {}) }
   };
   const CATS = {};
   (SITE.categories && SITE.categories.length ? SITE.categories : DEFAULT_CATS).forEach(c => { CATS[c.id] = c; });
-  CATS.milikmu = { id: 'milikmu', label: 'Milikmu', tag: 'TXT', ink: '#111214' };
   const catOf = id => CATS[id] || (CATS[id] = { id, label: id, tag: String(id).toUpperCase().slice(0, 7), ink: '#111214' });
 
   const WORKS = (Array.isArray(content.works) ? content.works : [])
@@ -83,7 +90,6 @@
   $('.tk-title').textContent = SITE.handle;
   const win = $('#win');
   if (!SITE.features.dock) win.classList.add('no-dock');
-  if (!SITE.features.visitorUploads) { $('#drop').hidden = true; $('.ask-clip').hidden = true; }
   if (!SITE.features.visitorStickies) $('#addNote').hidden = true;
   if (SITE.email) { $('#chipMail').hidden = false; $('#mailName').textContent = 'ke ' + SITE.author; }
 
@@ -114,8 +120,7 @@
   }
   WORKS.forEach(prep);
 
-  let MINE = store.get('mine', []).map(prep);
-  const all = () => [...MINE, ...WORKS];
+  const all = () => WORKS;
   const bySlug = slug => all().find(w => w.slug === slug);
   const readSet = new Set(store.get('read', []));
   const notes = store.get('notes', {});
@@ -341,7 +346,7 @@
   const hoverPill = w => `<span class="read-pill" aria-hidden="true">Baca · ${w.minutes} mnt</span>`;
   function objHTML(o) {
     const w = o.slug && bySlug(o.slug);
-    if (o.type === 'paper' || o.type === 'mine') return `
+    if (o.type === 'paper') return `
       <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, ${esc(catOf(w.cat).label)}">
         ${o.peek ? (() => { const pw = bySlug(o.peek); return `<div class="peek" data-open="${pw.slug}">${esc(plain(pw.body[0]).replace(/\n/g, ' '))}…</div>`; })() : ''}
         <div class="sheet"><p class="k">${esc(catOf(w.cat).label)}</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>${hoverPill(w)}
@@ -373,7 +378,6 @@
   function canvasObjects() {
     const list = LAYOUT.slice();
     if (!TATA) {
-      MINE.forEach((w, i) => list.push({ id: 'm:' + w.slug, type: 'mine', slug: w.slug, x: 1140 + i * 40, y: 700 + i * 30 }));
       if (SITE.features.visitorStickies) stickies.forEach(s => list.push({ ...s, type: 'user' }));
     }
     return list;
@@ -659,7 +663,7 @@
     return `<div class="row${child ? ' child' : ''}${selected.has(w.slug) ? ' sel' : ''}${extra}" data-slug="${w.slug}" style="--k:${k}">
       ${docIcon(w)}
       <div class="r-text">
-        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) || w.mine ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
+        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
         <p class="r-sub">${esc(shortName(w.file))} ${kb(w.bytes)}</p>
         <p class="r-note" contenteditable="true" spellcheck="false" data-note="${w.slug}" aria-label="Catatan untuk ${esc(w.title)}">${esc(notes[w.slug] || '')}</p>
       </div>
@@ -672,7 +676,7 @@
   function renderRows(animate, justOpened) {
     const items = shelfItems(shelf);
     const topYear = WORKS[0].date.slice(0, 4);
-    const top = items.filter(w => w.mine || w.date.startsWith(topYear));
+    const top = items.filter(w => w.date.startsWith(topYear));
     const years = [...new Set(items.filter(w => !top.includes(w)).map(w => w.date.slice(0, 4)))].sort().reverse();
     let html = '', k = 0;
     if (top.length) {
@@ -712,7 +716,7 @@
     if (cb) {
       if (cb.dataset.sel) { selected.has(cb.dataset.sel) ? selected.delete(cb.dataset.sel) : selected.add(cb.dataset.sel); }
       if (cb.dataset.yearSel) {
-        const ws = shelfItems(shelf).filter(w => w.date.startsWith(cb.dataset.yearSel) && !w.mine);
+        const ws = shelfItems(shelf).filter(w => w.date.startsWith(cb.dataset.yearSel));
         const allOn = ws.every(w => selected.has(w.slug));
         ws.forEach(w => (allOn ? selected.delete(w.slug) : selected.add(w.slug)));
         openYears.add(cb.dataset.yearSel);
@@ -764,49 +768,6 @@
     b.textContent = n; b.classList.toggle('zero', n === 0);
     renderGreet(false);
   }
-
-  /* ---------- tulisan yang dijatuhkan pengunjung ---------- */
-  async function addFile(file) {
-    if (!file || !SITE.features.visitorUploads) return;
-    if (file.size > 1024 * 1024) { toast('Berkasnya lebih dari 1 MB. Coba yang lebih kecil.'); return; }
-    if (!/\.(txt|md|markdown)$/i.test(file.name) && !/^text\//.test(file.type)) { toast('Hanya berkas teks (.txt atau .md) yang bisa dibaca.'); return; }
-    const raw = (await file.text()).replace(/\r/g, '').trim();
-    if (!raw) { toast('Berkasnya kosong.'); return; }
-    const lines = raw.split('\n');
-    let title = file.name.replace(/\.[^.]+$/, '');
-    if (/^#\s+/.test(lines[0]) || (lines[0].length < 80 && lines[1] === '')) title = lines.shift().replace(/^#+\s*/, '');
-    const text = lines.join('\n').trim();
-    const blocks = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
-    const short = text.split('\n').filter(Boolean);
-    const poem = short.length > 3 && short.reduce((a, l) => a + l.length, 0) / short.length < 48;
-    const now = new Date();
-    const w = prep({
-      slug: 'u-' + now.getTime().toString(36), title: title.slice(0, 90), cat: 'milikmu', form: poem ? 'puisi' : 'prosa', mine: true,
-      date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), excerpt: '', line: '',
-      body: poem ? blocks : blocks.map(b => b.replace(/\n/g, ' '))
-    });
-    w.no = '—';
-    MINE.unshift(w);
-    store.set('mine', MINE.map(({ slug, title, cat, form, mine, date, time, excerpt, line, body }) => ({ slug, title, cat, form, mine, date, time, excerpt, line, body })));
-    renderCanvas(false); renderList(false);
-    toast(`“${w.title}” ditambahkan ke meja.`);
-    openWork(w.slug);
-  }
-  $('#fileIn').addEventListener('change', e => { addFile(e.target.files[0]); e.target.value = ''; });
-  const drop = $('#drop');
-  ['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => {
-    if (!SITE.features.visitorUploads || ![...(e.dataTransfer?.types || [])].includes('Files')) return;
-    e.preventDefault(); drop.classList.add('over');
-  }));
-  ['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => {
-    if (t === 'dragleave' && e.relatedTarget) return;
-    drop.classList.remove('over');
-  }));
-  document.addEventListener('drop', e => {
-    if (!e.dataTransfer?.files?.length) return;
-    e.preventDefault();
-    addFile(e.dataTransfer.files[0]);
-  });
 
   /* ======================================================================
      PANEL SAPA
@@ -1093,7 +1054,7 @@
       }
       onScroll();
     });
-    if (!w.mine && !readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
+    if (!readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
     updateBadge(); renderRows(false); if (feedMode === 'list') renderFeed(false);
     document.title = `${w.title} · ${SITE.title}`;
     if (!PREVIEW) scroller.focus({ preventScroll: true });
@@ -1279,6 +1240,54 @@
   mobileMQ.addEventListener?.('change', () => { if (view === 'sapa' && !isMobile()) setView('kanvas'); syncPill(); });
   let rt;
   addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); syncPill(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
+
+  /* ======================================================================
+     PROFIL PENULIS
+     ====================================================================== */
+  $('#pfName').textContent = SITE.author;
+  $('#pfBio').textContent = SITE.description || '';
+  $('#pfWorks').textContent = num(WORKS.length);
+  $('#pfWords').textContent = num(WORKS.reduce((a, w) => a + w.words, 0));
+  $('#pfSince').textContent = WORKS[WORKS.length - 1].date.slice(0, 4);
+  $('.profile').setAttribute('aria-label', 'Tentang ' + SITE.author);
+
+  /* ======================================================================
+     PWA: pasang di layar utama, baca tanpa sinyal
+     ====================================================================== */
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let installEvt = null;
+  root.classList.toggle('standalone', standalone);
+  function showInstall(on) {
+    $('#installBtn').hidden = !on;
+    $('#chipInstall').hidden = !on;
+  }
+  async function install() {
+    if (installEvt) {
+      installEvt.prompt();
+      const { outcome } = await installEvt.userChoice;
+      installEvt = null;
+      if (outcome === 'accepted') showInstall(false);
+      return;
+    }
+    if (isIOS) {
+      $('#iosHint').hidden = false;
+      toast('Di iPhone: ketuk Bagikan, lalu “Tambahkan ke Layar Utama”.', null, 6000);
+    }
+  }
+  if (!standalone && !PREVIEW) {
+    addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstall(true); });
+    if (isIOS) showInstall(true);
+  }
+  addEventListener('appinstalled', () => { showInstall(false); toast(`${SITE.title} terpasang di perangkatmu.`); });
+  $('#installBtn').addEventListener('click', install);
+  $('#chipInstall').addEventListener('click', install);
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !PREVIEW && !TATA) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* tanpa service worker situs tetap jalan */ });
+  }
+  addEventListener('offline', () => toast('Kamu sedang offline. Tulisan yang sudah pernah dimuat tetap bisa dibaca.', null, 4500));
+  addEventListener('online', () => toast('Tersambung lagi.'));
 
   /* ======================================================================
      MULAI

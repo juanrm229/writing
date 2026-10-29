@@ -38,6 +38,16 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `F` fokus, `Esc` kembali.
 
+## Aplikasi (PWA)
+
+Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sinyal.
+
+- **Android dan Chrome/Edge di komputer:** tombol **Pasang di layar utama** muncul di kartu profil (tampilan Daftar) dan chip **Pasang aplikasi** di panel sapa.
+- **iPhone dan iPad:** buka di Safari, ketuk **Bagikan**, lalu **Tambahkan ke Layar Utama**. Situs menampilkan petunjuk ini sendiri.
+- **Offline:** `sw.js` menyimpan salinan halaman, kode, dan konten. Saat ada sinyal, tulisan terbaru selalu diambil dari jaringan. Saat tidak ada, salinan terakhir yang dipakai.
+- **Nama aplikasi** mengikuti *Judul situs* dan *Nama penulis* di admin. `manifest.webmanifest` diperbarui otomatis saat kamu menyimpan.
+- **Ikon** ada di `assets/icons/`. Ganti berkas PNG-nya dengan ukuran yang sama kalau ingin ikon lain.
+
 ## Menjalankan di komputer
 
 ```bash
