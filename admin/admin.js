@@ -14,7 +14,7 @@
 
   const DEFAULT_SITE = {
     title: 'Juan Menulis', description: '', author: 'Juan', handle: 'juan/menulis', email: '', avatar: '', readerName: 'pembaca',
-    accent: '#1662FF', sticky: '#E3F46B', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
+    accent: '#1662FF', sticky: '#E3F46B', theme: 'auto', backdrop: 'auto', defaultView: 'putar', readerFont: 'newsreader', readerPaper: 'putih',
     features: { dock: true, visitorStickies: true, rotatingQuotes: true, connections: true, replay: true, ambience: true },
     categories: [
       { id: 'esai', label: 'Esai', tag: 'ESAI', ink: '#2F5BFF', red: false },

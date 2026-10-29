@@ -223,7 +223,7 @@
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const VIEWS = ['kanvas', 'daftar', 'sapa'];
+  const VIEWS = ['putar', 'kanvas', 'daftar', 'sapa'];
   let view = 'kanvas', prevView = 'kanvas';
 
   function setView(v) {
@@ -1068,6 +1068,7 @@
     });
     if (!readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
     updateBadge(); renderRows(false); if (feedMode === 'list') renderFeed(false);
+    renderSheet(); rerank();
     document.title = `${w.title} · ${SITE.title}`;
     if (!PREVIEW) scroller.focus({ preventScroll: true });
   }
@@ -1262,7 +1263,7 @@
     }
   });
 
-  const startView = () => (isMobile() && SITE.features.dock ? 'sapa' : (VIEWS.includes(SITE.defaultView) ? SITE.defaultView : 'kanvas'));
+  const startView = () => (VIEWS.includes(SITE.defaultView) && !(SITE.defaultView === 'sapa' && !isMobile()) ? SITE.defaultView : 'putar');
   function route() {
     vt(() => {
       const h = decodeURIComponent(location.hash.slice(1));
@@ -1684,6 +1685,237 @@
   if (!SITE.features.ambience) $('#ambWrap').hidden = true;
 
   /* ======================================================================
+     PIRINGAN: halaman awal. Setiap tulisan adalah satu piringan hitam.
+     ====================================================================== */
+  const crate = $('#crate');
+  const PV = Object.assign({ min: 5, form: 'semua', amb: 'hening', spin: true }, store.get('putar', {}));
+  const savePv = () => store.set('putar', PV);
+  const discKind = w => (w.form === 'puisi' ? 'splat' : ['cerpen', 'mini'].includes(w.cat) ? 'pic' : 'black');
+  function splatSVG(w) {
+    const r = seeded(w.slug + '/splat');
+    let blobs = '';
+    for (let i = 0; i < 9; i++) {
+      const ang = r() * 360, dist = 24 + r() * 22, rx = 4 + r() * 9, ry = 1.6 + r() * 3.2;
+      blobs += `<ellipse cx="${(50 + Math.cos(ang * Math.PI / 180) * dist).toFixed(1)}" cy="${(50 + Math.sin(ang * Math.PI / 180) * dist).toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" transform="rotate(${(ang + 70 + r() * 40).toFixed(0)} ${(50 + Math.cos(ang * Math.PI / 180) * dist).toFixed(1)} ${(50 + Math.sin(ang * Math.PI / 180) * dist).toFixed(1)})" fill="#FFF" opacity="${(.7 + r() * .3).toFixed(2)}"/>`;
+    }
+    return `<svg viewBox="0 0 100 100" aria-hidden="true">${blobs}</svg>`;
+  }
+  const discs = new Map();
+  WORKS.forEach(w => {
+    const c = catOf(w.cat), k = discKind(w);
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'disc disc-' + k;
+    el.dataset.slug = w.slug;
+    el.style.setProperty('--lc', c.ink);
+    el.style.setProperty('--vc', c.ink);
+    el.setAttribute('aria-label', `Putar “${w.title}”, ${c.label}, ${w.minutes} menit`);
+    el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}
+      <span class="disc-label"><canvas></canvas><b>${esc(w.title)}</b><small>${esc(c.label)} · No. ${w.no}</small></span><i class="disc-hole"></i></span>`;
+    crate.append(el);
+    discs.set(w.slug, el);
+  });
+  function paintDiscs() {
+    discs.forEach((el, slug) => {
+      const w = bySlug(slug), size = el.offsetWidth || 300;
+      const lab = $('.disc-label canvas', el);
+      drawThread(lab, fullText(w), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: slug, pins: false, weight: .9 });
+      const pic = $('canvas.pic', el);
+      if (pic) drawThread(pic, fullText(w), { w: size * .92, h: size * .92, pad: 10, color: catOf(w.cat).ink, seed: slug, weight: 1.6 });
+    });
+  }
+  let crateOrder = [];
+  function rankWorks() {
+    const pool = WORKS.filter(w => PV.form === 'semua' || w.form === PV.form);
+    const score = w => Math.abs(w.minutes - PV.min) + (w.minutes > PV.min ? 3 : 0) + (readSet.has(w.slug) ? .6 : 0);
+    return [...pool.sort((a, b) => score(a) - score(b)), ...WORKS.filter(w => !pool.includes(w))];
+  }
+  function layoutCrate() {
+    crateOrder.forEach((w, i) => {
+      const el = discs.get(w.slug);
+      el.style.setProperty('--i', i);
+      el.style.zIndex = 60 - i;
+      el.classList.toggle('top', i === 0);
+      el.dataset.hide = String(i > 3);
+      el.tabIndex = i === 0 ? 0 : -1;
+    });
+    renderMatch();
+  }
+  function rerank() { crateOrder = rankWorks(); layoutCrate(); }
+  function renderMatch() {
+    const w = crateOrder[0]; if (!w) return;
+    const fits = w.minutes <= PV.min;
+    $('#tsMatchH').textContent = fits ? `Cocok untuk ${PV.min} menit` : `Paling dekat dengan ${PV.min} menit`;
+    const row = $('#tsMatch');
+    row.innerHTML = `<span class="mini" aria-hidden="true"><i style="--lc:${catOf(w.cat).ink}"></i></span>
+      <span><b>${esc(w.title)}</b><small>${w.minutes} mnt · ${esc(catOf(w.cat).label)} · ${readSet.has(w.slug) ? 'sudah dibaca' : 'belum dibaca'}</small></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
+    row.setAttribute('aria-label', `Baca ${w.title}`);
+    row.classList.remove('swap'); void row.offsetWidth; row.classList.add('swap');
+  }
+  function nextDisc(dir = 1) {
+    if (crateOrder.length < 2) return;
+    if (dir > 0) {
+      const top = discs.get(crateOrder[0].slug);
+      if (!reduced) {
+        top.classList.add('fly');
+        setTimeout(() => { top.classList.remove('fly'); crateOrder.push(crateOrder.shift()); layoutCrate(); }, 380);
+        return;
+      }
+      crateOrder.push(crateOrder.shift());
+    } else crateOrder.unshift(crateOrder.pop());
+    layoutCrate();
+  }
+  function playTop() {
+    const w = crateOrder[0]; if (!w) return;
+    if (SITE.features.ambience && PV.amb !== 'hening') Amb.set(PV.amb);
+    crate.classList.add('playing');
+    openWork(w.slug, $('.disc-spin', discs.get(w.slug)));
+    setTimeout(() => crate.classList.remove('playing'), 900);
+  }
+  crate.addEventListener('click', e => {
+    const d = e.target.closest('.disc');
+    if (!d || crate._swiped) return;
+    if (d.classList.contains('top')) { playTop(); return; }
+    const w = bySlug(d.dataset.slug);
+    crateOrder = [w, ...crateOrder.filter(x => x !== w)];
+    layoutCrate();
+  });
+  // geser ke atas / bawah untuk berpindah piringan
+  let sy = null;
+  crate.addEventListener('pointerdown', e => { sy = e.clientY; crate._swiped = false; });
+  crate.addEventListener('pointerup', e => {
+    if (sy == null) return;
+    const dy = e.clientY - sy; sy = null;
+    if (Math.abs(dy) > 40) { crate._swiped = true; nextDisc(dy < 0 ? 1 : -1); setTimeout(() => { crate._swiped = false; }, 50); }
+  });
+  let wheelLock = 0;
+  crate.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) < 12 || performance.now() < wheelLock) return;
+    e.preventDefault(); wheelLock = performance.now() + 480;
+    nextDisc(e.deltaY > 0 ? 1 : -1);
+  }, { passive: false });
+  crate.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); nextDisc(e.key === 'ArrowDown' ? 1 : -1); requestAnimationFrame(() => discs.get(crateOrder[0].slug).focus()); }
+  });
+  $('#crateShuffle').addEventListener('click', () => {
+    crateOrder = [...WORKS].sort(() => Math.random() - .5);
+    layoutCrate();
+  });
+  function setSpin(on) {
+    PV.spin = on; savePv();
+    crate.classList.toggle('paused', !on);
+    $('#spinToggle').setAttribute('aria-pressed', String(on));
+    $('#spinToggle').setAttribute('aria-label', on ? 'Hentikan putaran piringan' : 'Putar piringan');
+  }
+  $('#spinToggle').addEventListener('click', () => setSpin(!PV.spin));
+
+  /* ---------- jam, tanggal, persentase dibaca ---------- */
+  function tick() {
+    const d = new Date();
+    $('#thHH').textContent = String(d.getHours()).padStart(2, '0');
+    $('#thMM').textContent = String(d.getMinutes()).padStart(2, '0');
+    $('#thClock').setAttribute('aria-label', `Pukul ${d.getHours()}.${String(d.getMinutes()).padStart(2, '0')}`);
+  }
+  function renderSheet() {
+    $('#thDate').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+    const pct = WORKS.length ? Math.round(WORKS.filter(w => readSet.has(w.slug)).length / WORKS.length * 100) : 0;
+    $('#thPct').textContent = pct + '%';
+    requestAnimationFrame(() => { $('#thArc').style.strokeDashoffset = String(1 - pct / 100); });
+  }
+  const [hName, ...hRest] = (SITE.handle || SITE.author).split('/');
+  $('#thTitle').innerHTML = `<span>${esc(hName)}</span>${hRest.length ? `<span>${esc(hRest.join('/'))}</span>` : ''}`;
+  $('#thTitle').setAttribute('aria-label', SITE.title);
+
+  /* ---------- roda menit luang ---------- */
+  const MINS = Array.from({ length: 20 }, (_, i) => i + 1);
+  const track = $('#wheelTrack'), wheelEl = $('#minWheel');
+  track.innerHTML = MINS.map(m => `<span>${String(m).padStart(2, '0')}</span>`).join('');
+  const itemH = () => track.firstElementChild.offsetHeight || 96;
+  function setMin(m, animate = true) {
+    PV.min = clamp(Math.round(m), 1, MINS.length);
+    track.style.transition = animate && !reduced ? 'transform .55s cubic-bezier(.34, 1.36, .5, 1)' : 'none';
+    track.style.transform = `translateY(${-(PV.min - 1) * itemH()}px)`;
+    [...track.children].forEach((s, i) => s.classList.toggle('on', i === PV.min - 1));
+    wheelEl.setAttribute('aria-valuenow', PV.min);
+    wheelEl.setAttribute('aria-valuetext', PV.min + ' menit');
+    savePv(); rerank();
+  }
+  let wy = null, wBase = 0;
+  wheelEl.addEventListener('pointerdown', e => { wy = e.clientY; wBase = -(PV.min - 1) * itemH(); wheelEl.setPointerCapture(e.pointerId); track.style.transition = 'none'; });
+  wheelEl.addEventListener('pointermove', e => {
+    if (wy == null) return;
+    const off = clamp(wBase + (e.clientY - wy), -(MINS.length - 1) * itemH() - 40, 40);
+    track.style.transform = `translateY(${off}px)`;
+    const m = Math.round(-off / itemH()) + 1;
+    [...track.children].forEach((s, i) => s.classList.toggle('on', i === m - 1));
+  });
+  wheelEl.addEventListener('pointerup', e => {
+    if (wy == null) return;
+    const dy = e.clientY - wy; wy = null;
+    if (Math.abs(dy) < 6) {
+      const r = wheelEl.getBoundingClientRect(), y = e.clientY - r.top;
+      setMin(PV.min + (y < r.height / 3 ? -1 : y > r.height * 2 / 3 ? 1 : 0));
+    } else setMin(1 - (wBase + dy) / itemH());
+  });
+  let wAcc = 0;
+  wheelEl.addEventListener('wheel', e => {
+    e.preventDefault(); wAcc += e.deltaY;
+    if (Math.abs(wAcc) > 40) { setMin(PV.min + Math.sign(wAcc)); wAcc = 0; }
+  }, { passive: false });
+  wheelEl.addEventListener('keydown', e => {
+    const d = { ArrowUp: -1, ArrowDown: 1, PageUp: -5, PageDown: 5 }[e.key];
+    if (d) { e.preventDefault(); setMin(PV.min + d); }
+    if (e.key === 'Home') setMin(1);
+    if (e.key === 'End') setMin(MINS.length);
+  });
+
+  /* ---------- empat kontrol ---------- */
+  const FORMS = ['puisi', 'semua', 'prosa'];
+  const AMBS = ['hening', 'hujan', 'ombak', 'perapian'];
+  const SIZES = [17, 19, 21, 23];
+  const PAPERS = { putih: ['#F4F4F5', 'Putih'], sepia: ['#F2E4C9', 'Sepia'], gelap: ['#2A2A2E', 'Gelap'], custom: [rd.custom, 'Milikmu'] };
+  function renderControls() {
+    const f = $('#tcForm');
+    f.dataset.v = PV.form;
+    f.style.setProperty('--p', { puisi: '0%', semua: '50%', prosa: '100%' }[PV.form]);
+    f.setAttribute('aria-label', `Bentuk: ${PV.form}. Ketuk untuk mengganti.`);
+    const a = $('#tcAmb'), ai = AMBS.indexOf(PV.amb);
+    a.style.setProperty('--a', (-60 + ai * 40) + 'deg');
+    $('#tcAmbV').textContent = { hening: 'Hening', hujan: 'Hujan', ombak: 'Ombak', perapian: 'Api' }[PV.amb];
+    a.setAttribute('aria-label', `Suasana saat membaca: ${PV.amb}. Ketuk untuk mengganti.`);
+    $('#tcSizeV').textContent = rd.size;
+    const spread = (rd.size - 13) * 3.2;
+    $('#tcField').innerHTML = Array.from({ length: 9 }, (_, i) => {
+      const k = (i - 4) / 4, x = 80 + k * spread * 2.4;
+      return `<path d="M80 76 Q${(80 + k * spread * 4).toFixed(1)} ${(14 + Math.abs(k) * 22).toFixed(1)} ${x.toFixed(1)} 4"/>`;
+    }).join('');
+    $('#tcSize').setAttribute('aria-label', `Ukuran huruf ${rd.size}. Ketuk untuk mengganti.`);
+    const p = $('#tcPaper'), pp = PAPERS[rd.rt] || PAPERS.putih;
+    p.dataset.v = rd.rt; p.style.setProperty('--pp', rd.rt === 'custom' ? rd.custom : pp[0]);
+    $('#tcPaperV').textContent = pp[1];
+    p.setAttribute('aria-label', `Kertas ${pp[1]}. Ketuk untuk mengganti.`);
+  }
+  $('#tcForm').addEventListener('click', () => { PV.form = FORMS[(FORMS.indexOf(PV.form) + 1) % FORMS.length]; savePv(); renderControls(); rerank(); });
+  $('#tcAmb').addEventListener('click', () => { PV.amb = AMBS[(AMBS.indexOf(PV.amb) + 1) % AMBS.length]; savePv(); renderControls(); });
+  $('#tcSize').addEventListener('click', () => { rd.size = SIZES[(SIZES.indexOf(rd.size) + 1) % SIZES.length] || 19; saveRd(); applyRd(); renderControls(); });
+  $('#tcPaper').addEventListener('click', () => { const order = ['putih', 'sepia', 'gelap']; rd.rt = order[(order.indexOf(rd.rt) + 1) % order.length]; saveRd(); applyRd(); renderControls(); });
+  $('#tsMatch').addEventListener('click', playTop);
+  $('#tsPlay').addEventListener('click', playTop);
+  if (!SITE.features.ambience) $('#tcAmbCell').hidden = true;
+
+  function initPutar() {
+    tick(); setInterval(tick, 10000);
+    renderSheet(); renderControls(); setSpin(PV.spin);
+    setMin(PV.min, false);
+    requestAnimationFrame(() => {
+      paintDiscs(); setMin(PV.min, false);
+      if (!reduced) { crate.classList.add('enter'); setTimeout(() => crate.classList.remove('enter'), 2200); }
+    });
+  }
+  addEventListener('resize', () => { clearTimeout(initPutar._t); initPutar._t = setTimeout(() => { paintDiscs(); setMin(PV.min, false); }, 200); });
+
+  /* ======================================================================
      PROFIL PENULIS
      ====================================================================== */
   $('#pfName').textContent = SITE.author;
@@ -1740,6 +1972,7 @@
   renderGreet(true);
   renderFeed(false);
   applyRd();
+  initPutar();
   route();
   requestAnimationFrame(() => { canvasFit(false); syncPill(); win.classList.add('ready'); booted = true; });
   if (PREVIEW) root.classList.add('is-preview');
