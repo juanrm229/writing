@@ -1065,6 +1065,7 @@ output.bump { animation: bump .35s var(--spring); }
 .turn-setup { display: flex; flex-direction: column; align-items: stretch; padding: 30px 22px 22px; overflow-y: auto; scrollbar-width: none; }
 .turn-setup::-webkit-scrollbar { display: none; }
 .turn-setup > * { flex: none; }
+.ts-peek, .ts-scrim { display: none; }
 .ts-h { text-align: center; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 .ts-wheel { position: relative; margin: 18px 0 26px; height: calc(var(--it) * 2.05); border-radius: 40px; overflow: hidden; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); --it: 96px; }
 .wheel {
@@ -1117,14 +1118,43 @@ output.bump { animation: bump .35s var(--spring); }
 
 @media (max-width: 1100px) { .view-putar { gap: 16px; padding-inline: 14px; } .turn { width: min(400px, 49%); } :root { --d: min(300px, 80vw); } }
 @media (max-width: 860px) {
-  .view-putar { flex-direction: column; justify-content: flex-start; gap: 10px; padding: 56px 0 0; overflow-y: auto; overscroll-behavior: contain; }
-  .turn { width: auto; height: auto; max-height: none; flex: none; border-radius: 34px 34px 0 0; margin: 0 6px; box-shadow: none; }
-  .turn-hero { height: calc(100% - 4px); min-height: 560px; }
-  .turn-setup { overflow: visible; border-radius: 34px; margin-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
+  /* satu layar: panel pengaturan menjadi lembar bawah yang bisa ditarik ke atas */
+  .view-putar { display: block; padding: 56px 0 0; overflow: clip; }
+  .win[data-view="putar"] .view-putar { display: block; }
+  .turn { width: auto; max-height: none; box-shadow: none; }
+  .turn-hero { height: 100%; margin: 0 6px; border-radius: 34px 34px 0 0; }
+  .th-sheet { margin-bottom: 0; border-radius: 34px 34px 0 0; }
+  .crate { top: 34%; }
+  :root { --d: min(310px, 82vw); --peek: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .turn-setup {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; height: calc(100% - 120px);
+    margin: 0; border-radius: 30px 30px 0 0; padding: 0 20px max(18px, env(safe-area-inset-bottom, 0px));
+    overflow: hidden; background: #111113; box-shadow: 0 -18px 40px -12px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .06);
+    transform: translateY(calc(100% - var(--peek))); transition: transform .55s cubic-bezier(.32, .9, .28, 1);
+    animation: none;
+  }
+  .turn-setup.open { transform: translateY(0); overflow-y: auto; }
+  .turn-setup.dragging { transition: none; }
+  .ts-peek { display: block; position: sticky; top: 0; z-index: 2; margin: 0 -20px; padding: 0 20px; background: #111113; touch-action: none; cursor: grab; }
+  .ts-handle { display: block; width: 100%; height: 22px; border: 0; background: none; cursor: grab; }
+  .ts-handle i { display: block; width: 40px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: #3A3A3E; }
+  .ts-sum { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; height: 62px; transition: opacity .3s, height .45s var(--ease-out); }
+  .turn-setup.open .ts-sum { opacity: 0; height: 0; pointer-events: none; overflow: hidden; }
+  .ts-sum-min { display: flex; align-items: baseline; gap: 4px; }
+  .ts-sum-min b { font: 900 34px/1 "Doto", ui-monospace, monospace; }
+  .ts-sum-min small { font: 700 12px "Doto", ui-monospace, monospace; color: var(--t-muted); }
+  .ts-sum-t { display: grid; min-width: 0; }
+  .ts-sum-t small { font-size: 11.5px; color: var(--t-muted); }
+  .ts-sum-t b { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ts-sum-play { height: 42px; padding: 0 20px; border: 0; border-radius: 21px; background: var(--t-ink); color: var(--t-bg); font-weight: 600; font-size: 14.5px; cursor: pointer; transition: transform .3s var(--spring); }
+  .ts-sum-play:active { transform: scale(.94); }
+  .turn-setup .ts-h { margin-top: 6px; }
   .ts-wheel { --it: 84px; }
-  :root { --d: min(310px, 82vw); }
-  .crate { top: 36%; }
+  .ts-next { margin-top: 4px; }
+  .ts-scrim { display: block; position: absolute; inset: 0; z-index: 19; background: rgb(0 0 0 / .55); opacity: 0; pointer-events: none; transition: opacity .45s; }
+  .ts-scrim.on { opacity: 1; pointer-events: auto; }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .disc.top .disc-spin, .ts-row .mini i { animation: none !important; }
 }

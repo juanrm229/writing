@@ -99,7 +99,16 @@
           </div>
         </div>
 
-        <div class="turn turn-setup">
+        <div class="ts-scrim" id="tsScrim" aria-hidden="true"></div>
+        <div class="turn turn-setup" id="tsSheet">
+          <div class="ts-peek" id="tsPeek">
+            <button class="ts-handle" id="tsHandle" type="button" aria-expanded="false" aria-controls="tsSheet" aria-label="Buka pengaturan bacaan"><i></i></button>
+            <div class="ts-sum">
+              <span class="ts-sum-min"><b id="tsSumMin">05</b><small>mnt</small></span>
+              <span class="ts-sum-t"><small id="tsSumH">Cocok untuk 5 menit</small><b id="tsSumT"></b></span>
+              <button class="ts-sum-play" id="tsSumPlay" type="button">Putar</button>
+            </div>
+          </div>
           <p class="ts-h">Menit luang</p>
           <div class="ts-wheel">
             <div class="wheel" id="minWheel" role="spinbutton" tabindex="0" aria-label="Menit luang" aria-valuemin="1" aria-valuemax="20" aria-valuenow="5">
