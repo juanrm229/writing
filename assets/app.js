@@ -1247,6 +1247,7 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette.hidden ? openPalette() : closePalette(); return; }
     if (e.key === 'Escape') {
       if (!palette.hidden) return closePalette();
+      if ($('#tsSheet').classList.contains('open')) return setSheetOpen(false);
       if (!$('#quoteModal').hidden) return closeQuote();
       if (RP.token) return stopReplay(true);
       if (!$('#rdFind').hidden) return closeFind();
@@ -1752,6 +1753,9 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
     row.setAttribute('aria-label', `Baca ${w.title}`);
     row.classList.remove('swap'); void row.offsetWidth; row.classList.add('swap');
+    $('#tsSumMin').textContent = String(PV.min).padStart(2, '0');
+    $('#tsSumH').textContent = $('#tsMatchH').textContent;
+    $('#tsSumT').textContent = w.title;
   }
   function nextDisc(dir = 1) {
     if (crateOrder.length < 2) return;
@@ -1768,6 +1772,7 @@
   }
   function playTop() {
     const w = crateOrder[0]; if (!w) return;
+    if (typeof setSheetOpen === 'function') setSheetOpen(false);
     if (SITE.features.ambience && PV.amb !== 'hening') Amb.set(PV.amb);
     crate.classList.add('playing');
     openWork(w.slug, $('.disc-spin', discs.get(w.slug)));
@@ -1903,6 +1908,52 @@
   $('#tsMatch').addEventListener('click', playTop);
   $('#tsPlay').addEventListener('click', playTop);
   if (!SITE.features.ambience) $('#tcAmbCell').hidden = true;
+
+  /* ---------- lembar bawah di ponsel: semuanya muat satu layar ---------- */
+  const sheet = $('#tsSheet'), scrim = $('#tsScrim');
+  function setSheetOpen(open) {
+    sheet.classList.toggle('open', open);
+    scrim.classList.toggle('on', open);
+    sheet.style.transform = '';
+    $('#tsHandle').setAttribute('aria-expanded', String(open));
+    $('#tsHandle').setAttribute('aria-label', open ? 'Tutup pengaturan bacaan' : 'Buka pengaturan bacaan');
+    if (!open) sheet.scrollTop = 0;
+  }
+  let sd = null;
+  $('#tsPeek').addEventListener('pointerdown', e => {
+    if (!isMobile() || e.target.closest('.ts-sum-play')) return;
+    sd = { y: e.clientY, t: performance.now(), open: sheet.classList.contains('open'), h: sheet.offsetHeight, moved: false, last: e.clientY };
+    $('#tsPeek').setPointerCapture(e.pointerId);
+  });
+  $('#tsPeek').addEventListener('pointermove', e => {
+    if (!sd) return;
+    const dy = e.clientY - sd.y;
+    if (!sd.moved && Math.abs(dy) < 6) return;
+    sd.moved = true; sd.last = e.clientY;
+    const peek = parseFloat(getComputedStyle(sheet).getPropertyValue('--peek')) || 92;
+    const base = sd.open ? 0 : sd.h - peek;
+    const y = clamp(base + dy, -12, sd.h - peek + 30);
+    sheet.classList.add('dragging');
+    sheet.style.transform = `translateY(${y}px)`;
+    scrim.style.opacity = String(1 - y / (sd.h - peek));
+  });
+  const endSheet = e => {
+    if (!sd) return;
+    const d = sd; sd = null;
+    sheet.classList.remove('dragging'); scrim.style.opacity = '';
+    if (!d.moved) { setSheetOpen(!d.open); return; }
+    const dy = e.clientY - d.y, v = dy / Math.max(1, performance.now() - d.t);
+    setSheetOpen(Math.abs(v) > .5 ? v < 0 : (d.open ? dy < d.h * .25 : dy < -d.h * .2));
+  };
+  $('#tsPeek').addEventListener('pointerup', endSheet);
+  $('#tsPeek').addEventListener('pointercancel', endSheet);
+  $('#tsPeek').addEventListener('keydown', e => { if (e.key === 'Escape') setSheetOpen(false); });
+  scrim.addEventListener('click', () => setSheetOpen(false));
+  $('#tsSumPlay').addEventListener('click', playTop);
+  // lembar terbuka tapi digulir ke atas sampai mentok lalu ditarik turun: tutup
+  let pullY = null;
+  sheet.addEventListener('touchstart', e => { pullY = sheet.classList.contains('open') && sheet.scrollTop <= 0 && !e.target.closest('.wheel') ? e.touches[0].clientY : null; }, { passive: true });
+  sheet.addEventListener('touchmove', e => { if (pullY != null && e.touches[0].clientY - pullY > 90) { pullY = null; setSheetOpen(false); } }, { passive: true });
 
   function initPutar() {
     tick(); setInterval(tick, 10000);
