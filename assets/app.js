@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   'use strict';
 
   /* ======================================================================
@@ -6,40 +6,91 @@
      ====================================================================== */
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-  const SITE = window.SITE;
-  const WORKS = [...window.WORKS].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
-  [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mobileMQ = matchMedia('(max-width: 860px)');
   const isMobile = () => mobileMQ.matches;
+  const qs = new URLSearchParams(location.search);
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const plain = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(\S(?:.*?\S)?)\*/g, '$1');
+  const rich = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const wait = ms => new Promise(r => setTimeout(r, ms));
   const fmt = (d, o) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', o);
   const fmtShort = d => fmt(d, { day: 'numeric', month: 'short', year: 'numeric' });
   const fmtLong = d => fmt(d, { day: 'numeric', month: 'long', year: 'numeric' });
   const num = n => n.toLocaleString('id-ID');
 
-  const CATS = {
-    esai:    { label: 'Esai',       tag: 'ESAI',  ink: '#2F5BFF' },
-    puisi:   { label: 'Puisi',      tag: 'PUISI', ink: '#D2338A', red: true },
-    cerpen:  { label: 'Cerpen',     tag: 'CERPEN', ink: '#0E8A5C' },
-    mini:    { label: 'Fiksi Mini', tag: 'MINI',  ink: '#E0571C' },
-    catatan: { label: 'Catatan',    tag: 'CATATAN', ink: '#6A4DF0' },
-    milikmu: { label: 'Milikmu',    tag: 'TXT',   ink: '#111214' }
-  };
-  const FOLDER_TITLES = { esai: 'Esai tentang hal-hal kecil', puisi: 'Puisi yang dicoret berkali-kali' };
-
   let toastT;
   function toast(msg) {
     const t = $('#toast');
     t.textContent = msg; t.classList.add('on');
-    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2800);
+  }
+
+  /* ======================================================================
+     KONTEN: content/*.json, atau draf pratinjau dari panel admin
+     ====================================================================== */
+  const PREVIEW = qs.has('preview');
+  async function loadContent() {
+    if (PREVIEW) {
+      try { const p = JSON.parse(localStorage.getItem('jm:preview')); if (p) return p; } catch (e) { /* jatuh ke berkas */ }
+    }
+    const get = f => fetch('content/' + f, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+    const [site, works, layout] = await Promise.all([get('site.json'), get('works.json'), get('layout.json')]);
+    return { site, works, layout };
+  }
+  const content = await loadContent();
+
+  const DEFAULT_CATS = [
+    { id: 'esai', label: 'Esai', tag: 'ESAI', ink: '#2F5BFF' },
+    { id: 'puisi', label: 'Puisi', tag: 'PUISI', ink: '#D2338A', red: true },
+    { id: 'cerpen', label: 'Cerpen', tag: 'CERPEN', ink: '#0E8A5C' },
+    { id: 'mini', label: 'Fiksi Mini', tag: 'MINI', ink: '#E0571C' },
+    { id: 'catatan', label: 'Catatan', tag: 'CATATAN', ink: '#6A4DF0' }
+  ];
+  const site = content.site || {};
+  const SITE = {
+    title: 'Juan Menulis', author: 'Juan', handle: 'juan/menulis', email: '', avatar: '', readerName: 'pembaca',
+    accent: '', sticky: '', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
+    folders: {}, years: {}, categories: DEFAULT_CATS,
+    ...site,
+    features: { dock: true, visitorUploads: true, visitorStickies: true, rotatingQuotes: true, ...(site.features || {}) }
+  };
+  const CATS = {};
+  (SITE.categories && SITE.categories.length ? SITE.categories : DEFAULT_CATS).forEach(c => { CATS[c.id] = c; });
+  CATS.milikmu = { id: 'milikmu', label: 'Milikmu', tag: 'TXT', ink: '#111214' };
+  const catOf = id => CATS[id] || (CATS[id] = { id, label: id, tag: String(id).toUpperCase().slice(0, 7), ink: '#111214' });
+
+  const WORKS = (Array.isArray(content.works) ? content.works : [])
+    .filter(w => w && w.slug && w.title && Array.isArray(w.body) && (PREVIEW || !w.draft))
+    .map(w => ({ form: 'prosa', time: '', excerpt: '', line: '', ...w }))
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
+
+  /* ---------- pengaturan dari admin ---------- */
+  const root = document.documentElement;
+  document.title = SITE.title;
+  if (SITE.description) $('meta[name="description"]')?.setAttribute('content', SITE.description);
+  if (SITE.accent) root.style.setProperty('--tk-blue', SITE.accent);
+  if (SITE.sticky) root.style.setProperty('--lime', SITE.sticky);
+  if (!store.get('theme', null) && SITE.theme !== 'auto') root.setAttribute('data-theme', SITE.theme === 'gelap' ? 'dark' : 'light');
+  $('.tk-title').textContent = SITE.handle;
+  const win = $('#win');
+  if (!SITE.features.dock) win.classList.add('no-dock');
+  if (!SITE.features.visitorUploads) { $('#drop').hidden = true; $('.ask-clip').hidden = true; }
+  if (!SITE.features.visitorStickies) $('#addNote').hidden = true;
+  if (SITE.email) { $('#chipMail').hidden = false; $('#mailName').textContent = 'ke ' + SITE.author; }
+
+  if (!WORKS.length) {
+    $('.views').innerHTML = `<div class="empty"><p class="empty-t">Belum ada tulisan yang terbit.</p><p>${location.protocol === 'file:' ? 'Buka situs ini lewat server (misalnya <code>python3 -m http.server</code>), bukan langsung dari berkas.' : 'Tulis yang pertama di <a href="admin/">panel admin</a>.'}</p></div>`;
+    win.classList.add('dock-off', 'ready'); win.dataset.view = 'daftar';
+    return;
   }
 
   /* ---------- analisis ringan ---------- */
@@ -49,20 +100,20 @@
     const flat = text.replace(/\s*\n+\s*/g, ' ');
     return (flat.match(/[^.!?…]+(?:[.!?…]+[”"’)]*|$)/g) || []).map(s => s.trim()).filter(s => /[a-z]/i.test(s));
   }
-  const fullText = w => w.body.join('\n\n');
+  const fullText = w => plain(w.body.join('\n\n'));
   function prep(w) {
     const t = fullText(w);
-    const words = wordsOf(t).length;
-    w.words = words;
-    w.minutes = Math.max(1, Math.round(words / 170));
+    w.words = wordsOf(t).length;
+    w.minutes = Math.max(1, Math.round(w.words / 170));
     w.lens = units(t, w.form === 'puisi').map(u => wordsOf(u).length).filter(Boolean);
     w.bytes = new Blob([t]).size;
-    w.file = (w.title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) + '.md';
+    w.file = fold(w.title).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.md';
+    if (!w.excerpt) w.excerpt = plain(w.body[0] || '').replace(/\n/g, ' ').slice(0, 160);
+    if (!w.line) w.line = (units(t, w.form === 'puisi')[0] || w.title).slice(0, 90);
     return w;
   }
   WORKS.forEach(prep);
 
-  // tulisan yang dijatuhkan pengunjung (hanya di peramban mereka)
   let MINE = store.get('mine', []).map(prep);
   const all = () => [...MINE, ...WORKS];
   const bySlug = slug => all().find(w => w.slug === slug);
@@ -70,7 +121,7 @@
   const notes = store.get('notes', {});
 
   /* ======================================================================
-     SENI BENANG: 26 huruf di lingkaran, benang mengikuti urutan huruf teks
+     SENI BENANG
      ====================================================================== */
   const ABC = 'abcdefghijklmnopqrstuvwxyz';
   function seeded(str) {
@@ -96,26 +147,32 @@
     const seq = fold(text).replace(/[^a-z]/g, '').slice(0, o.max || 1600);
     const rnd = seeded(o.seed || 'x');
     const j = r * 0.02;
-    let n = 0;
-    ctx.strokeStyle = o.color || '#111';
-    ctx.lineWidth = o.lw || Math.max(0.45, r / 170);
-    const segs = Math.max(1, seq.length - 1);
-    ctx.globalAlpha = clamp(6 / Math.sqrt(segs + 4), 0.05, 0.6) * (o.weight || 1);
+    const segs = [];
     for (let i = 1; i < seq.length; i++) {
       const a = P[seq.charCodeAt(i - 1) - 97], b = P[seq.charCodeAt(i) - 97];
-      if (a === b) continue;
-      ctx.beginPath();
-      ctx.moveTo(a[0] + (rnd() - .5) * j, a[1] + (rnd() - .5) * j);
-      ctx.lineTo(b[0] + (rnd() - .5) * j, b[1] + (rnd() - .5) * j);
-      ctx.stroke(); n++;
+      if (a !== b) segs.push([a[0] + (rnd() - .5) * j, a[1] + (rnd() - .5) * j, b[0] + (rnd() - .5) * j, b[1] + (rnd() - .5) * j]);
     }
-    if (o.pins !== false) {
-      ctx.globalAlpha = 1; ctx.fillStyle = o.color || '#111';
+    const color = o.color || '#111';
+    const alpha = clamp(6 / Math.sqrt(segs.length + 4), 0.05, 0.6) * (o.weight || 1);
+    const lw = o.lw || Math.max(0.45, r / 170);
+    const strokes = (from, to) => {
+      ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = lw;
+      for (let i = from; i < to; i++) { const s = segs[i]; ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); ctx.stroke(); }
+    };
+    const pins = () => {
+      if (o.pins === false) return;
+      ctx.globalAlpha = 1; ctx.fillStyle = color;
       P.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.7, r / 120), 0, Math.PI * 2); ctx.fill(); });
-    }
-    return n;
+    };
+    cancelAnimationFrame(canvas._raf);
+    if (!o.animate || reduced) { strokes(0, segs.length); pins(); return; }
+    pins();
+    const per = Math.max(1, Math.ceil(segs.length / (o.frames || 60)));
+    let i = 0;
+    const step = () => { strokes(i, Math.min(i + per, segs.length)); i += per; if (i < segs.length) canvas._raf = requestAnimationFrame(step); };
+    step();
   }
-  const coverOf = (canvas, w, o = {}) => drawThread(canvas, fullText(w), { color: CATS[w.cat].ink, seed: w.slug, ...o });
+  const coverOf = (canvas, w, o = {}) => drawThread(canvas, fullText(w), { color: catOf(w.cat).ink, seed: w.slug, ...o });
   function mini(w, size = 36) {
     const c = document.createElement('canvas');
     c.style.width = c.style.height = size + 'px';
@@ -123,11 +180,38 @@
     requestAnimationFrame(() => coverOf(c, w, { w: size, h: size, pad: 3, pins: false, weight: 1.2 }));
     return c;
   }
+  function avatarInto(host, size) {
+    host.innerHTML = '';
+    if (SITE.avatar) {
+      const img = new Image();
+      img.alt = SITE.author; img.src = SITE.avatar; img.decoding = 'async';
+      host.append(img);
+    } else {
+      const c = document.createElement('canvas');
+      host.append(c);
+      requestAnimationFrame(() => drawThread(c, SITE.author + ' menulis setiap hari', { w: size, h: size, pad: size > 40 ? 8 : 2, color: '#7A2448', seed: 'me', weight: 1.3, pins: size > 40 }));
+    }
+  }
+
+  /* ======================================================================
+     TRANSISI ANTAR TAMPILAN (View Transitions bila didukung)
+     ====================================================================== */
+  let morphFrom = null, booted = false;
+  function vt(update) {
+    const from = morphFrom; morphFrom = null;
+    if (!document.startViewTransition || reduced || !booted) { update(); return; }
+    if (from) from.style.viewTransitionName = 'doc';
+    const t = document.startViewTransition(() => {
+      if (from) from.style.viewTransitionName = '';
+      update();
+      if (from && win.dataset.view === 'baca') $('#rdCard').style.viewTransitionName = 'doc';
+    });
+    t.finished.finally(() => { $('#rdCard').style.viewTransitionName = ''; });
+  }
 
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const win = $('#win');
   const VIEWS = ['kanvas', 'daftar', 'sapa'];
   let view = 'kanvas', prevView = 'kanvas';
 
@@ -138,17 +222,24 @@
     win.dataset.view = v;
     syncPill();
     if (v === 'kanvas') canvasFit(false);
-    if (v !== 'baca') { stopSpeech(); releaseLock(); }
+    if (v !== 'baca') { stopSpeech(); releaseLock(); setSheet(false); document.title = SITE.title; }
   }
   function syncPill() {
-    $$('.pill [data-go]').forEach(b => {
-      const on = b.dataset.go === 'sapa' ? (isMobile() ? view === 'sapa' : !win.classList.contains('dock-off')) : b.dataset.go === view;
+    const btns = $$('.pill [data-go]');
+    let idx = -1;
+    btns.forEach((b, i) => {
+      const isView = b.dataset.go === view;
+      const on = b.dataset.go === 'sapa' && !isMobile() ? !win.classList.contains('dock-off') && !win.classList.contains('no-dock') : isView;
       b.setAttribute('aria-current', on ? 'true' : 'false');
+      if (isView) idx = i;
     });
+    const th = $('.pill-thumb');
+    th.style.opacity = idx < 0 ? '0' : '1';
+    if (idx >= 0) th.style.setProperty('--x', btns[idx].offsetLeft + 'px');
   }
   function go(v) {
     if (v === 'sapa' && !isMobile()) { toggleDock(); return; }
-    if (location.hash === '#' + v) setView(v); else location.hash = v;
+    if (location.hash === '#' + v) vt(() => setView(v)); else location.hash = v;
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-go]');
@@ -156,25 +247,27 @@
   });
 
   function toggleDock(force) {
+    if (win.classList.contains('no-dock')) return;
     const off = force != null ? !force : !win.classList.contains('dock-off');
     win.classList.toggle('dock-off', off);
     $('#dockToggle').setAttribute('aria-pressed', String(!off));
     store.set('dockOff', off);
     syncPill();
-    setTimeout(() => canvasClamp(), 480);
+    setTimeout(canvasClamp, 520);
   }
   $('#dockToggle').addEventListener('click', () => toggleDock());
   if (store.get('dockOff', false)) toggleDock(false);
+  if (win.classList.contains('no-dock')) $('#dockToggle').hidden = true;
 
   const darkMQ = matchMedia('(prefers-color-scheme: dark)');
-  const isDark = () => {
-    const t = document.documentElement.getAttribute('data-theme');
-    return t ? t === 'dark' : darkMQ.matches;
-  };
+  const isDark = () => { const t = root.getAttribute('data-theme'); return t ? t === 'dark' : darkMQ.matches; };
   function setTheme(dark) {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    store.set('theme', dark ? 'dark' : 'light');
-    $('#chipDark').setAttribute('aria-checked', String(dark));
+    const apply = () => {
+      root.setAttribute('data-theme', dark ? 'dark' : 'light');
+      store.set('theme', dark ? 'dark' : 'light');
+      $('#chipDark').setAttribute('aria-checked', String(dark));
+    };
+    if (document.startViewTransition && !reduced) document.startViewTransition(apply); else apply();
   }
   $('#chipDark').setAttribute('aria-checked', String(isDark()));
   $('#chipDark').addEventListener('click', () => setTheme(!isDark()));
@@ -182,10 +275,9 @@
 
   const BACKDROPS = ['auto', 'senja', 'kabut', 'malam'];
   const BD_NAMES = { auto: 'Otomatis', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
-  let backdrop = store.get('backdrop', 'auto');
+  let backdrop = store.get('backdrop', SITE.backdrop || 'auto');
   function applyBackdrop() {
-    if (backdrop === 'auto') document.documentElement.removeAttribute('data-backdrop');
-    else document.documentElement.setAttribute('data-backdrop', backdrop);
+    if (backdrop === 'auto') root.removeAttribute('data-backdrop'); else root.setAttribute('data-backdrop', backdrop);
     $('#bdNext').textContent = BD_NAMES[BACKDROPS[(BACKDROPS.indexOf(backdrop) + 1) % BACKDROPS.length]];
   }
   $('#chipBackdrop').addEventListener('click', () => {
@@ -202,11 +294,11 @@
   const viewport = $('#viewport'), world = $('#world');
   const WORLD = { w: 2600, h: 1100 };
   const cam = { x: 0, y: 0, s: 1 };
-  const pos = store.get('pos', {});
+  const TATA = qs.has('tata');
   let stickies = store.get('stickies', []);
   let zTop = 10;
 
-  const LAYOUT = [
+  const DEFAULT_LAYOUT = [
     { id: 's:peta', type: 'sticky', slug: 'peta-tersesat', x: 60, y: 560 },
     { id: 'p:draf-ketujuh', type: 'paper', slug: 'draf-ketujuh', x: 250, y: 420, peek: 'bahasa-ibu' },
     { id: 'f:puisi', type: 'folder', cat: 'puisi', x: 520, y: 400 },
@@ -219,26 +311,48 @@
     { id: 'p:penjual-senin', type: 'paper', slug: 'penjual-senin', x: 1960, y: 392 },
     { id: 'f:esai', type: 'folder', cat: 'esai', x: 2220, y: 404 }
   ];
+  const onCanvas = w => w && w.canvas !== false;
+  function buildLayout() {
+    const src = content.layout && Array.isArray(content.layout.objects) ? content.layout.objects : DEFAULT_LAYOUT;
+    const objs = src.filter(o => {
+      if (o.slug && !onCanvas(WORKS.find(w => w.slug === o.slug))) return false;
+      if (o.type === 'folder') return WORKS.filter(w => w.cat === o.cat && onCanvas(w)).length > 1;
+      return true;
+    }).map(o => ({ ...o, peek: o.peek && onCanvas(WORKS.find(w => w.slug === o.peek)) ? o.peek : undefined }));
+    // tulisan baru yang belum punya tempat: taruh berderet di kanan
+    const folderCats = new Set(objs.filter(o => o.type === 'folder').map(o => o.cat));
+    const shown = new Set(objs.flatMap(o => [o.slug, o.peek]).filter(Boolean));
+    const missing = WORKS.filter(w => onCanvas(w) && !shown.has(w.slug) && !folderCats.has(w.cat));
+    const maxX = Math.max(400, ...objs.map(o => o.x + 200));
+    missing.forEach((w, i) => objs.push({ id: 'p:' + w.slug, type: 'paper', slug: w.slug, x: maxX + 60 + i * 240, y: 392 + (i % 2 ? 24 : -10) }));
+    WORLD.w = Math.max(2600, ...objs.map(o => o.x + 520));
+    return objs;
+  }
+  const LAYOUT = buildLayout();
+  const layoutSig = JSON.stringify(LAYOUT.map(o => [o.id, o.x, o.y]));
+  let pos = store.get('posSig', '') === layoutSig ? store.get('pos', {}) : {};
+  if (TATA) pos = {};
 
   function tinyOf(w) {
-    if (w.form === 'puisi') return `<div class="tiny"><p class="poem">${esc(w.body.slice(0, 3).join('\n\n'))}</p></div>`;
-    const sents = units(w.body.slice(1).join(' '), false).slice(0, 3);
-    return `<div class="tiny"><p>${esc(w.body[0])}</p><b>${esc(w.line)}</b>${sents.map(s => `<p class="li">${esc(s)}</p>`).join('')}</div>`;
+    if (w.form === 'puisi') return `<div class="tiny"><p class="poem">${esc(plain(w.body.slice(0, 3).join('\n\n')))}</p></div>`;
+    const sents = units(plain(w.body.slice(1).join(' ')), false).slice(0, 3);
+    return `<div class="tiny"><p>${esc(plain(w.body[0]))}</p><b>${esc(plain(w.line))}</b>${sents.map(s => `<p class="li">${esc(s)}</p>`).join('')}</div>`;
   }
+  const hoverPill = w => `<span class="read-pill" aria-hidden="true">Baca · ${w.minutes} mnt</span>`;
   function objHTML(o) {
     const w = o.slug && bySlug(o.slug);
-    if (o.type === 'paper') return `
-      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, ${CATS[w.cat].label}">
-        ${o.peek ? (() => { const pw = bySlug(o.peek); return `<div class="peek" data-open="${pw.slug}">${esc(pw.body[0].replace(/\n/g, ' '))}…</div>`; })() : ''}
-        <div class="sheet"><p class="k">${CATS[w.cat].label}</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>
+    if (o.type === 'paper' || o.type === 'mine') return `
+      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, ${esc(catOf(w.cat).label)}">
+        ${o.peek ? (() => { const pw = bySlug(o.peek); return `<div class="peek" data-open="${pw.slug}">${esc(plain(pw.body[0]).replace(/\n/g, ' '))}…</div>`; })() : ''}
+        <div class="sheet"><p class="k">${esc(catOf(w.cat).label)}</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>${hoverPill(w)}
       </article>`;
     if (o.type === 'folder') {
-      const items = WORKS.filter(x => x.cat === o.cat);
+      const items = WORKS.filter(x => x.cat === o.cat && onCanvas(x));
       return `
-      <article class="obj folder" tabindex="0" data-shelf="${o.cat}" aria-label="Kumpulan ${CATS[o.cat].label}, ${items.length} tulisan">
-        <div class="in-paper"><p class="t">${esc(items[0].body[0])}</p></div><div class="in-paper"></div><div class="in-lime"></div>
+      <article class="obj folder" tabindex="0" data-shelf="${o.cat}" aria-label="Kumpulan ${esc(catOf(o.cat).label)}, ${items.length} tulisan">
+        <div class="in-paper"><p class="t">${esc(plain(items[0].body[0]))}</p></div><div class="in-paper"></div><div class="in-lime"></div>
         <svg class="shape" viewBox="0 0 176 250" preserveAspectRatio="none" aria-hidden="true"><path d="M10 0H166Q176 0 176 10V58C176 80 144 76 144 102V150C144 176 176 172 176 194V240Q176 250 166 250H10Q0 250 0 240V10Q0 0 10 0Z"/></svg>
-        <div class="f-label"><p>Kumpulan · ${items.length}</p><h3>${esc(FOLDER_TITLES[o.cat] || CATS[o.cat].label)}</h3></div>
+        <div class="f-label"><p>Kumpulan · ${items.length}</p><h3>${esc((SITE.folders || {})[o.cat] || catOf(o.cat).label)}</h3></div>
       </article>`;
     }
     if (o.type === 'img') return `
@@ -246,13 +360,9 @@
         <canvas data-thread="${w.slug}"></canvas><span class="cap">benang dari “${esc(w.title)}”</span>
       </article>`;
     if (o.type === 'note') return `
-      <button class="obj note" type="button" data-open="${w.slug}">Gambar ini dirajut dari huruf-huruf cerpennya. Ketuk untuk membaca.</button>`;
+      <button class="obj note" type="button" data-open="${w.slug}">${esc(o.text || 'Gambar ini dirajut dari huruf-huruf cerpennya. Ketuk untuk membaca.')}</button>`;
     if (o.type === 'sticky') return `
-      <article class="obj sticky" tabindex="0" data-open="${w.slug}" aria-label="Baris dari ${esc(w.title)}">${esc(w.line)}<span class="from">— ${esc(w.title)}</span></article>`;
-    if (o.type === 'mine') return `
-      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, tulisanmu">
-        <div class="sheet"><p class="k">Milikmu</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>
-      </article>`;
+      <article class="obj sticky" tabindex="0" data-open="${w.slug}" aria-label="Baris dari ${esc(w.title)}">${esc(plain(w.line))}<span class="from">— ${esc(w.title)}</span></article>`;
     if (o.type === 'user') return `
       <article class="obj sticky" data-sticky="${o.id}">
         <button class="x" type="button" aria-label="Hapus catatan">×</button>
@@ -261,24 +371,33 @@
     return '';
   }
   function canvasObjects() {
-    const list = LAYOUT.filter(o => !o.slug || bySlug(o.slug)).slice();
-    MINE.forEach((w, i) => list.push({ id: 'm:' + w.slug, type: 'mine', slug: w.slug, x: 1140 + i * 40, y: 700 + i * 30 }));
-    stickies.forEach(s => list.push({ ...s, type: 'user' }));
+    const list = LAYOUT.slice();
+    if (!TATA) {
+      MINE.forEach((w, i) => list.push({ id: 'm:' + w.slug, type: 'mine', slug: w.slug, x: 1140 + i * 40, y: 700 + i * 30 }));
+      if (SITE.features.visitorStickies) stickies.forEach(s => list.push({ ...s, type: 'user' }));
+    }
     return list;
   }
-  function renderCanvas() {
+  function renderCanvas(enter) {
     const objs = canvasObjects();
     world.innerHTML = objs.map(objHTML).join('');
+    world.style.width = WORLD.w + 'px';
     [...world.children].forEach((el, i) => {
       const o = objs[i], p = pos[o.id] || o;
       el.dataset.id = o.id;
       el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
       el.style.zIndex = p.z || (i + 1);
       zTop = Math.max(zTop, p.z || 0, i + 1);
+      if (enter && !reduced) {
+        el.classList.add('enter');
+        el.style.setProperty('--k', i);
+        el.style.setProperty('--r0', ((seeded(o.id)() - .5) * 16).toFixed(1) + 'deg');
+        el.addEventListener('animationend', () => el.classList.remove('enter'), { once: true });
+      }
     });
-    $$('canvas[data-thread]', world).forEach(c => drawThread(c, fullText(bySlug(c.dataset.thread)), { color: '#2A2620', seed: c.dataset.thread, weight: 1.3, pad: 12 }));
+    $$('canvas[data-thread]', world).forEach(c => drawThread(c, fullText(bySlug(c.dataset.thread)), { color: '#2A2620', seed: c.dataset.thread, weight: 1.3, pad: 12, animate: enter, frames: 110 }));
   }
-  function applyCam() { world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})`; }
+  function applyCam() { world.style.transform = `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.s})`; }
   function canvasClamp() {
     const vw = viewport.clientWidth, vh = viewport.clientHeight;
     cam.x = clamp(cam.x, vw - WORLD.w * cam.s - 120, 120);
@@ -291,45 +410,62 @@
     const vw = viewport.clientWidth, vh = viewport.clientHeight;
     if (!vw) return;
     fitted = true;
-    const saved = store.get('cam', null);
+    const saved = TATA ? null : store.get('cam', null);
     if (saved && !force) { Object.assign(cam, saved); canvasClamp(); return; }
     cam.s = clamp(Math.min(vh / 620, vw / 900), 0.6, 1);
     cam.x = vw / 2 - 1150 * cam.s;
     cam.y = vh / 2 - 520 * cam.s;
     canvasClamp();
   }
-  const saveCam = () => store.set('cam', { x: Math.round(cam.x), y: Math.round(cam.y), s: +cam.s.toFixed(3) });
+  const saveCam = () => { if (!TATA) store.set('cam', { x: Math.round(cam.x), y: Math.round(cam.y), s: +cam.s.toFixed(3) }); };
+  function animateCam(to, ms = 520) {
+    const from = { ...cam }, t0 = performance.now();
+    cancelAnimationFrame(animateCam.raf);
+    const ease = t => 1 - Math.pow(1 - t, 4);
+    const step = now => {
+      const t = Math.min(1, (now - t0) / ms), e = ease(t);
+      cam.x = from.x + (to.x - from.x) * e; cam.y = from.y + (to.y - from.y) * e; cam.s = from.s + (to.s - from.s) * e;
+      canvasClamp();
+      if (t < 1) animateCam.raf = requestAnimationFrame(step); else saveCam();
+    };
+    animateCam.raf = requestAnimationFrame(step);
+  }
 
-  // interaksi: geser latar, pindahkan objek, cubit untuk zoom
+  // geser latar (berinersia), pindahkan objek (miring mengikuti kecepatan), cubit untuk zoom
   const pointers = new Map();
-  let act = null, pinch = null;
+  let act = null, pinch = null, inertia = 0;
   const hideHint = () => $('#canvasHint').classList.add('gone');
   viewport.addEventListener('pointerdown', e => {
     if (e.target.closest('.edit, .x')) return;
+    cancelAnimationFrame(inertia); cancelAnimationFrame(animateCam.raf);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     viewport.setPointerCapture(e.pointerId);
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: cam.s, x: cam.x, y: cam.y, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
-      if (act?.obj) act.obj.classList.remove('dragging');
+      if (act?.obj) { act.obj.classList.remove('dragging'); act.obj.style.rotate = ''; }
       act = null; return;
     }
     const obj = e.target.closest('.obj');
-    if (obj) act = { obj, sx: e.clientX, sy: e.clientY, ox: parseFloat(obj.style.left), oy: parseFloat(obj.style.top), moved: false, target: e.target };
-    else { act = { pan: true, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y }; viewport.classList.add('panning'); }
+    const t = performance.now();
+    if (obj) act = { obj, sx: e.clientX, sy: e.clientY, ox: parseFloat(obj.style.left), oy: parseFloat(obj.style.top), moved: false, target: e.target, lx: e.clientX, lt: t, vx: 0 };
+    else { act = { pan: true, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, samples: [[e.clientX, e.clientY, t]] }; viewport.classList.add('panning'); }
   });
   viewport.addEventListener('pointermove', e => {
     if (!pointers.has(e.pointerId)) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && pointers.size === 2) {
       const [a, b] = [...pointers.values()];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      zoomAt(pinch.mx, pinch.my, clamp(pinch.s * d / pinch.d, 0.45, 1.6), pinch);
+      zoomAt(pinch.mx, pinch.my, clamp(pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, 0.45, 1.6), pinch);
       return;
     }
     if (!act) return;
-    const dx = e.clientX - act.sx, dy = e.clientY - act.sy;
-    if (act.pan) { cam.x = act.cx + dx; cam.y = act.cy + dy; canvasClamp(); hideHint(); return; }
+    const dx = e.clientX - act.sx, dy = e.clientY - act.sy, t = performance.now();
+    if (act.pan) {
+      cam.x = act.cx + dx; cam.y = act.cy + dy; canvasClamp(); hideHint();
+      act.samples.push([e.clientX, e.clientY, t]); if (act.samples.length > 5) act.samples.shift();
+      return;
+    }
     if (!act.moved && Math.hypot(dx, dy) > 5) {
       act.moved = true; act.obj.classList.add('dragging');
       act.obj.style.zIndex = ++zTop; hideHint();
@@ -337,6 +473,9 @@
     if (act.moved) {
       act.obj.style.left = Math.round(act.ox + dx / cam.s) + 'px';
       act.obj.style.top = Math.round(act.oy + dy / cam.s) + 'px';
+      const v = (e.clientX - act.lx) / Math.max(8, t - act.lt);
+      act.vx = act.vx * .7 + v * .3; act.lx = e.clientX; act.lt = t;
+      act.obj.style.rotate = clamp(act.vx * 9, -9, 9).toFixed(2) + 'deg';
     }
   });
   const endPointer = e => {
@@ -345,51 +484,75 @@
     viewport.classList.remove('panning');
     if (!act) { saveCam(); return; }
     const a = act; act = null;
-    if (a.pan) { saveCam(); return; }
+    if (a.pan) {
+      const s = a.samples, f = s[0], l = s[s.length - 1], dt = Math.max(1, l[2] - f[2]);
+      let vx = (l[0] - f[0]) / dt * 16, vy = (l[1] - f[1]) / dt * 16;
+      if (reduced || performance.now() - l[2] > 80) { saveCam(); return; }
+      const glide = () => {
+        vx *= .93; vy *= .93; cam.x += vx; cam.y += vy; canvasClamp();
+        if (Math.hypot(vx, vy) > .3) inertia = requestAnimationFrame(glide); else saveCam();
+      };
+      inertia = requestAnimationFrame(glide);
+      return;
+    }
     a.obj.classList.remove('dragging');
+    a.obj.style.rotate = '';
     if (a.moved) {
+      a.obj.classList.add('settle');
+      setTimeout(() => a.obj.classList.remove('settle'), 600);
       pos[a.obj.dataset.id] = { x: parseFloat(a.obj.style.left), y: parseFloat(a.obj.style.top), z: +a.obj.style.zIndex };
-      store.set('pos', pos);
-      const s = stickies.find(s => s.id === a.obj.dataset.id);
-      if (s) { s.x = pos[s.id].x; s.y = pos[s.id].y; store.set('stickies', stickies); }
-    } else if (e.type === 'pointerup') activate(a.obj, a.target);
+      if (TATA) { tataDirty(true); return; }
+      store.set('pos', pos); store.set('posSig', layoutSig);
+      const st = stickies.find(s => s.id === a.obj.dataset.id);
+      if (st) { st.x = pos[st.id].x; st.y = pos[st.id].y; store.set('stickies', stickies); }
+    } else if (e.type === 'pointerup' && !TATA) activate(a.obj, a.target);
   };
   viewport.addEventListener('pointerup', endPointer);
   viewport.addEventListener('pointercancel', endPointer);
   function zoomAt(px, py, s, base = cam) {
     const r = viewport.getBoundingClientRect();
     const wx = (px - r.left - base.x) / base.s, wy = (py - r.top - base.y) / base.s;
-    cam.s = s;
-    cam.x = px - r.left - wx * s; cam.y = py - r.top - wy * s;
+    cam.s = s; cam.x = px - r.left - wx * s; cam.y = py - r.top - wy * s;
     canvasClamp();
   }
   viewport.addEventListener('wheel', e => {
     e.preventDefault();
+    cancelAnimationFrame(inertia);
     if (e.ctrlKey || e.metaKey) zoomAt(e.clientX, e.clientY, clamp(cam.s * Math.exp(-e.deltaY * 0.01), 0.45, 1.6));
     else { cam.x -= e.shiftKey ? e.deltaY : e.deltaX; cam.y -= e.shiftKey ? 0 : e.deltaY; canvasClamp(); }
     hideHint();
     clearTimeout(viewport._t); viewport._t = setTimeout(saveCam, 300);
   }, { passive: false });
+  viewport.addEventListener('dblclick', e => {
+    if (e.target.closest('.obj')) return;
+    const r = viewport.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    const s = cam.s < 1.15 ? clamp(cam.s * 1.35, .45, 1.6) : clamp(Math.min(viewport.clientHeight / 620, viewport.clientWidth / 900), .6, 1);
+    const wx = (px - cam.x) / cam.s, wy = (py - cam.y) / cam.s;
+    animateCam({ s, x: px - wx * s, y: py - wy * s });
+  });
   viewport.addEventListener('keydown', e => {
     if (e.target.closest('.edit')) return;
-    const step = { ArrowLeft: [90, 0], ArrowRight: [-90, 0], ArrowUp: [0, 90], ArrowDown: [0, -90] }[e.key];
-    if (step && e.target === viewport) { e.preventDefault(); cam.x += step[0]; cam.y += step[1]; canvasClamp(); saveCam(); }
-    if (e.key === 'Enter' && e.target.classList.contains('obj')) activate(e.target, e.target);
+    const step = { ArrowLeft: [140, 0], ArrowRight: [-140, 0], ArrowUp: [0, 120], ArrowDown: [0, -120] }[e.key];
+    if (step && e.target === viewport) { e.preventDefault(); animateCam({ s: cam.s, x: cam.x + step[0], y: cam.y + step[1] }, 320); }
+    if (e.key === 'Enter' && e.target.classList.contains('obj') && !TATA) activate(e.target, e.target);
   });
   function activate(obj, target) {
     const open = (target && target.closest('[data-open]')) || obj;
-    if (obj.dataset.shelf) { shelf = obj.dataset.shelf; renderList(); go('daftar'); return; }
-    if (open.dataset.open) openWork(open.dataset.open);
+    if (obj.dataset.shelf) { shelf = obj.dataset.shelf; renderList(true); go('daftar'); return; }
+    if (open.dataset.open) openWork(open.dataset.open, open.classList.contains('peek') ? open : ($('.sheet', obj) || obj));
   }
 
-  // catatan tempel milik pengunjung
+  // catatan tempel pengunjung
   function addSticky() {
+    if (TATA) return;
     if (view !== 'kanvas') go('kanvas');
     const vw = viewport.clientWidth, vh = viewport.clientHeight;
     const s = { id: 'u:' + Date.now().toString(36), text: '', x: Math.round((vw / 2 - cam.x) / cam.s - 59), y: Math.round((vh / 2 - cam.y) / cam.s - 59) };
     stickies.push(s); store.set('stickies', stickies);
-    renderCanvas();
-    $(`[data-sticky="${s.id}"] .edit`)?.focus();
+    renderCanvas(false);
+    const el = $(`[data-sticky="${s.id}"]`);
+    el.classList.add('enter'); el.style.setProperty('--k', 0); el.style.setProperty('--r0', '-8deg');
+    $('.edit', el).focus();
   }
   $('#addNote').addEventListener('click', addSticky);
   world.addEventListener('input', e => {
@@ -400,36 +563,78 @@
   });
   world.addEventListener('focusout', e => {
     const el = e.target.closest('[data-sticky]');
-    if (!el || !e.target.classList.contains('edit')) return;
-    if (!e.target.textContent.trim()) removeSticky(el.dataset.sticky);
+    if (el && e.target.classList.contains('edit') && !e.target.textContent.trim()) removeSticky(el.dataset.sticky);
   });
   world.addEventListener('click', e => {
     const x = e.target.closest('.x');
     if (x) removeSticky(x.closest('[data-sticky]').dataset.sticky);
   });
-  function removeSticky(id) {
+  async function removeSticky(id) {
+    const el = $(`[data-sticky="${id}"]`);
+    if (el && !reduced) { el.classList.add('leave'); await wait(260); }
     stickies = stickies.filter(s => s.id !== id); store.set('stickies', stickies);
     delete pos[id]; store.set('pos', pos);
-    renderCanvas();
+    renderCanvas(false);
+  }
+
+  /* ---------- mode tata letak (penulis) ---------- */
+  let tataChanged = false;
+  function tataDirty(v) { tataChanged = v; $('#tataSave').disabled = !v; $('#tataMsg').textContent = v ? 'Ada perubahan yang belum disimpan.' : 'Mode tata letak. Seret kertas, map, dan catatan, lalu simpan.'; }
+  if (TATA) {
+    win.classList.add('tata');
+    $('#tataBar').hidden = false;
+    tataDirty(false);
+    if (!window.GH || !GH.cfg()) {
+      $('#tataMsg').textContent = 'Masuk dulu di panel admin supaya tata letak bisa disimpan.';
+      $('#tataSave').hidden = true;
+      $('#tataExit').href = 'admin/';
+      $('#tataExit').textContent = 'Ke panel admin';
+    }
+    $('#tataReset').addEventListener('click', () => {
+      let x = 120;
+      LAYOUT.forEach(o => {
+        if (o.type === 'note') { o.x = x - 330 + 210; o.y = 370; return; }
+        o.x = x; o.y = o.type === 'sticky' ? 560 : 400;
+        x += o.type === 'img' ? 330 : 240;
+      });
+      pos = {}; renderCanvas(true); tataDirty(true);
+    });
+    $('#tataSave').addEventListener('click', async () => {
+      const objects = LAYOUT.map(o => {
+        const p = pos[o.id] || o;
+        const { id, type, slug, cat, peek, text } = o;
+        return Object.fromEntries(Object.entries({ id, type, slug, cat, peek, text, x: Math.round(p.x), y: Math.round(p.y) }).filter(([, v]) => v !== undefined));
+      });
+      $('#tataSave').disabled = true; $('#tataMsg').textContent = 'Menyimpan ke GitHub…';
+      try {
+        await GH.get('content/layout.json');
+        await GH.putJSON('content/layout.json', { objects }, 'Atur tata letak kanvas');
+        tataChanged = false;
+        $('#tataMsg').textContent = 'Tersimpan. Situs diperbarui dalam ±1 menit.';
+        toast('Tata letak tersimpan.');
+      } catch (err) { $('#tataSave').disabled = false; $('#tataMsg').textContent = err.message; }
+    });
+    addEventListener('beforeunload', e => { if (tataChanged) { e.preventDefault(); e.returnValue = ''; } });
   }
 
   /* ======================================================================
      DAFTAR
      ====================================================================== */
   let shelf = 'semua';
-  const openYears = new Set(store.get('openYears', ['2025']));
+  const firstOlderYear = WORKS.find(w => w.date.slice(0, 4) !== WORKS[0].date.slice(0, 4))?.date.slice(0, 4);
+  const openYears = new Set(store.get('openYears', firstOlderYear ? [firstOlderYear] : []));
   const selected = new Set();
   let queue = [];
 
-  function shelfItems(k) { return k === 'semua' ? all() : all().filter(w => w.cat === k); }
+  const shelfItems = k => (k === 'semua' ? all() : all().filter(w => w.cat === k));
   function renderShelves() {
     const keys = ['semua', ...Object.keys(CATS).filter(k => all().some(w => w.cat === k))];
     const host = $('#shelves');
-    host.innerHTML = keys.map(k => {
+    host.innerHTML = keys.map((k, i) => {
       const items = shelfItems(k);
-      return `<button class="shelf" type="button" data-shelf="${k}" aria-pressed="${k === shelf}">
+      return `<button class="shelf" type="button" data-shelf="${k}" aria-pressed="${k === shelf}" style="--k:${i}">
         <span class="n">${items.length}</span><span class="dots3" aria-hidden="true"></span>
-        <h3>${k === 'semua' ? 'Semua tulisan' : CATS[k].label}</h3>
+        <h3>${k === 'semua' ? 'Semua tulisan' : esc(catOf(k).label)}</h3>
         <span class="d">${fmtLong(items[0].date)}</span>
         <span class="avas"></span></button>`;
     }).join('');
@@ -444,57 +649,62 @@
     if (!b) return;
     shelf = b.dataset.shelf;
     $$('#shelves .shelf').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    renderRows();
+    renderRows(true);
   });
 
-  const shortName = f => f.length > 24 ? f.slice(0, 12) + '…' + f.slice(-10) : f;
+  const shortName = f => (f.length > 24 ? f.slice(0, 12) + '…' + f.slice(-10) : f);
   const kb = b => (b / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' KB';
-  function docIcon(w) {
-    return `<div class="doc" aria-hidden="true"><div class="pg"></div><span class="tag${CATS[w.cat].red ? ' red' : ''}">${CATS[w.cat].tag}</span></div>`;
-  }
-  function rowHTML(w, child) {
-    return `<div class="row${child ? ' child' : ''}${selected.has(w.slug) ? ' sel' : ''}" data-slug="${w.slug}">
+  const docIcon = w => `<div class="doc" aria-hidden="true"><div class="pg"></div><span class="tag${catOf(w.cat).red ? ' red' : ''}">${esc(catOf(w.cat).tag)}</span></div>`;
+  function rowHTML(w, child, k, extra = '') {
+    return `<div class="row${child ? ' child' : ''}${selected.has(w.slug) ? ' sel' : ''}${extra}" data-slug="${w.slug}" style="--k:${k}">
       ${docIcon(w)}
       <div class="r-text">
-        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
+        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) || w.mine ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
         <p class="r-sub">${esc(shortName(w.file))} ${kb(w.bytes)}</p>
         <p class="r-note" contenteditable="true" spellcheck="false" data-note="${w.slug}" aria-label="Catatan untuk ${esc(w.title)}">${esc(notes[w.slug] || '')}</p>
       </div>
       <p class="r-date">${fmtShort(w.date)} ${w.time || ''}</p>
     </div>`;
   }
-  const cbHTML = (state, label, data) => `<button class="cb" type="button" role="checkbox" aria-checked="${state}" aria-label="${esc(label)}" ${data}></button>`;
+  const cbHTML = (state, label, data, k, extra = '') => `<button class="cb${extra}" type="button" role="checkbox" aria-checked="${state}" aria-label="${esc(label)}" ${data} style="--k:${k}"></button>`;
   const cbState = items => { const n = items.filter(w => selected.has(w.slug)).length; return n === 0 ? 'false' : n === items.length ? 'true' : 'mixed'; };
 
-  function renderRows() {
+  function renderRows(animate, justOpened) {
     const items = shelfItems(shelf);
     const topYear = WORKS[0].date.slice(0, 4);
     const top = items.filter(w => w.mine || w.date.startsWith(topYear));
     const years = [...new Set(items.filter(w => !top.includes(w)).map(w => w.date.slice(0, 4)))].sort().reverse();
-    let html = '';
+    let html = '', k = 0;
     if (top.length) {
-      html += `<div class="grp flat"><div class="grp-cbs">${top.map(w => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`)).join('')}</div>
-        <div class="grp-panel" style="background:none;box-shadow:none">${top.map(w => rowHTML(w, false)).join('')}</div></div>`;
+      const ks = top.map(() => k++);
+      html += `<div class="grp flat"><div class="grp-cbs">${top.map((w, i) => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`, ks[i])).join('')}</div>
+        <div class="grp-panel">${top.map((w, i) => rowHTML(w, false, ks[i])).join('')}</div></div>`;
     }
     years.forEach(y => {
       const ws = items.filter(w => !top.includes(w) && w.date.startsWith(y));
       const open = openYears.has(y);
-      html += `<div class="grp${open ? ' open' : ''}">
-        <div class="grp-cbs">${cbHTML(cbState(ws), 'Pilih semua dari ' + y, `data-year-sel="${y}"`)}${open ? ws.map(w => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`)).join('') : ''}</div>
+      const k0 = k++;
+      const ks = open ? ws.map(() => k++) : [];
+      const fresh = justOpened === y ? ' row-in' : '';
+      html += `<div class="grp${open ? ' open' : ''}${fresh ? ' opening' : ''}">
+        <div class="grp-cbs">${cbHTML(cbState(ws), 'Pilih semua dari ' + y, `data-year-sel="${y}"`, k0)}${open ? ws.map((w, i) => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`, i, fresh)).join('') : ''}</div>
         <div class="grp-panel">
-          <div class="row folder-row" data-year="${y}" role="button" tabindex="0" aria-expanded="${open}">
-            <div class="fold-ic" aria-hidden="true"><svg viewBox="0 0 62 52"><path class="bg" d="M14 4h12l4 4h22a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H14a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z"/><path class="bg" d="M7 12h12l4 4h29a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5z"/></svg></div>
+          <div class="row folder-row" data-year="${y}" role="button" tabindex="0" aria-expanded="${open}" style="--k:${k0}">
+            <div class="fold-ic" aria-hidden="true"><svg viewBox="0 0 62 52"><path class="bg" d="M14 4h12l4 4h22a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H14a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z"/><path class="bg front" d="M7 12h12l4 4h29a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5z"/></svg></div>
             <div class="r-text"><p class="r-title">${y}</p><p class="r-sub">${ws.length} tulisan</p><p class="r-note" style="cursor:inherit">${esc((SITE.years || {})[y] || '')}</p></div>
             <p class="r-date">${fmtShort(ws[0].date)} ${ws[0].time || ''}</p>
           </div>
-          ${open ? ws.map(w => rowHTML(w, true)).join('') : ''}
+          ${open ? ws.map((w, i) => rowHTML(w, true, fresh ? i : ks[i], fresh)).join('') : ''}
         </div></div>`;
     });
-    $('#libRows').innerHTML = html || '<p style="padding:24px;color:var(--muted)">Belum ada tulisan di rak ini.</p>';
+    const host = $('#libRows');
+    host.innerHTML = html || '<p class="lib-empty">Belum ada tulisan di rak ini.</p>';
+    host.classList.remove('reveal'); void host.offsetWidth;
+    if (animate && !reduced) host.classList.add('reveal');
     $('#cbAll').setAttribute('aria-checked', cbState(items));
     syncSelbar();
   }
-  function renderList() { renderShelves(); renderRows(); updateBadge(); }
+  function renderList(animate) { renderShelves(); renderRows(animate); updateBadge(); }
 
   $('#libRows').addEventListener('click', e => {
     if (e.target.closest('.r-note[data-note]')) return;
@@ -504,15 +714,15 @@
       if (cb.dataset.yearSel) {
         const ws = shelfItems(shelf).filter(w => w.date.startsWith(cb.dataset.yearSel) && !w.mine);
         const allOn = ws.every(w => selected.has(w.slug));
-        ws.forEach(w => allOn ? selected.delete(w.slug) : selected.add(w.slug));
+        ws.forEach(w => (allOn ? selected.delete(w.slug) : selected.add(w.slug)));
         openYears.add(cb.dataset.yearSel);
       }
-      renderRows(); return;
+      renderRows(false); return;
     }
     const fr = e.target.closest('.folder-row');
     if (fr) { toggleYear(fr.dataset.year); return; }
     const row = e.target.closest('.row[data-slug]');
-    if (row) openWork(row.dataset.slug);
+    if (row) openWork(row.dataset.slug, $('.doc', row));
   });
   $('#libRows').addEventListener('keydown', e => {
     const fr = e.target.closest('.folder-row');
@@ -520,9 +730,10 @@
     if (e.target.matches('.r-note') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
   });
   function toggleYear(y) {
-    openYears.has(y) ? openYears.delete(y) : openYears.add(y);
+    const opening = !openYears.has(y);
+    opening ? openYears.add(y) : openYears.delete(y);
     store.set('openYears', [...openYears]);
-    renderRows();
+    renderRows(false, opening ? y : null);
     $(`.folder-row[data-year="${y}"]`)?.focus({ preventScroll: true });
   }
   $('#libRows').addEventListener('input', e => {
@@ -535,14 +746,14 @@
   $('#cbAll').addEventListener('click', () => {
     const items = shelfItems(shelf);
     const allOn = items.every(w => selected.has(w.slug));
-    items.forEach(w => allOn ? selected.delete(w.slug) : selected.add(w.slug));
-    renderRows();
+    items.forEach(w => (allOn ? selected.delete(w.slug) : selected.add(w.slug)));
+    renderRows(false);
   });
   function syncSelbar() {
     $('#selbar').hidden = selected.size === 0;
     $('#selCount').textContent = selected.size + ' dipilih';
   }
-  $('#selClear').addEventListener('click', () => { selected.clear(); renderRows(); });
+  $('#selClear').addEventListener('click', () => { selected.clear(); renderRows(false); });
   $('#selRead').addEventListener('click', () => {
     queue = all().filter(w => selected.has(w.slug)).map(w => w.slug);
     if (queue.length) { toast(`Membaca ${queue.length} tulisan berurutan.`); openWork(queue[0]); }
@@ -551,19 +762,19 @@
     const n = WORKS.filter(w => !readSet.has(w.slug)).length;
     const b = $('#unreadBadge');
     b.textContent = n; b.classList.toggle('zero', n === 0);
-    renderGreet();
+    renderGreet(false);
   }
 
-  /* ---------- tulisan yang dijatuhkan ---------- */
+  /* ---------- tulisan yang dijatuhkan pengunjung ---------- */
   async function addFile(file) {
-    if (!file) return;
+    if (!file || !SITE.features.visitorUploads) return;
     if (file.size > 1024 * 1024) { toast('Berkasnya lebih dari 1 MB. Coba yang lebih kecil.'); return; }
     if (!/\.(txt|md|markdown)$/i.test(file.name) && !/^text\//.test(file.type)) { toast('Hanya berkas teks (.txt atau .md) yang bisa dibaca.'); return; }
     const raw = (await file.text()).replace(/\r/g, '').trim();
     if (!raw) { toast('Berkasnya kosong.'); return; }
-    let lines = raw.split('\n');
+    const lines = raw.split('\n');
     let title = file.name.replace(/\.[^.]+$/, '');
-    if (/^#\s+/.test(lines[0]) || (lines[0].length < 80 && lines[1] === '')) { title = lines.shift().replace(/^#+\s*/, ''); }
+    if (/^#\s+/.test(lines[0]) || (lines[0].length < 80 && lines[1] === '')) title = lines.shift().replace(/^#+\s*/, '');
     const text = lines.join('\n').trim();
     const blocks = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
     const short = text.split('\n').filter(Boolean);
@@ -571,21 +782,20 @@
     const now = new Date();
     const w = prep({
       slug: 'u-' + now.getTime().toString(36), title: title.slice(0, 90), cat: 'milikmu', form: poem ? 'puisi' : 'prosa', mine: true,
-      date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5),
-      excerpt: blocks[0].slice(0, 140), line: (units(text, poem)[0] || title).slice(0, 90),
+      date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), excerpt: '', line: '',
       body: poem ? blocks : blocks.map(b => b.replace(/\n/g, ' '))
     });
     w.no = '—';
     MINE.unshift(w);
     store.set('mine', MINE.map(({ slug, title, cat, form, mine, date, time, excerpt, line, body }) => ({ slug, title, cat, form, mine, date, time, excerpt, line, body })));
-    renderCanvas(); renderList();
+    renderCanvas(false); renderList(false);
     toast(`“${w.title}” ditambahkan ke meja.`);
     openWork(w.slug);
   }
   $('#fileIn').addEventListener('change', e => { addFile(e.target.files[0]); e.target.value = ''; });
   const drop = $('#drop');
   ['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => {
-    if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+    if (!SITE.features.visitorUploads || ![...(e.dataTransfer?.types || [])].includes('Files')) return;
     e.preventDefault(); drop.classList.add('over');
   }));
   ['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => {
@@ -603,50 +813,49 @@
      ====================================================================== */
   const dock = $('#dock');
   let statsMode = false;
-  function renderGreet() {
+  function renderGreet(animate) {
     const unread = WORKS.filter(w => !readSet.has(w.slug));
     const latest = WORKS[0];
     const month = fmt(latest.date, { month: 'long', year: 'numeric' });
     const sameMonth = WORKS.filter(w => w.date.slice(0, 7) === latest.date.slice(0, 7)).length;
     const total = WORKS.reduce((a, w) => a + w.words, 0);
+    const kinds = [...new Set(WORKS.map(w => catOf(w.cat).label.toLowerCase()))];
     const g = $('#tkGreet');
     if (statsMode) {
-      const long = WORKS.reduce((a, w) => w.words > a.words ? w : a), short = WORKS.reduce((a, w) => w.words < a.words ? w : a);
-      g.innerHTML = `<span class="dim">Totalnya</span> ${num(total)} kata <span class="dim">dalam</span> ${WORKS.length} tulisan<span class="dim">. Paling panjang</span>
+      const long = WORKS.reduce((a, w) => (w.words > a.words ? w : a)), short = WORKS.reduce((a, w) => (w.words < a.words ? w : a));
+      g.innerHTML = `<span class="dim">Totalnya</span> <span>${num(total)} kata</span> <span class="dim">dalam</span> <span>${WORKS.length} tulisan.</span> <span class="dim">Paling panjang</span>
         <button type="button" data-act="open" data-slug="${long.slug}">“${esc(long.title)}”</button> <span class="dim">(${long.words}), paling singkat</span>
         <button type="button" data-act="open" data-slug="${short.slug}">“${esc(short.title)}”</button><span class="dim"> (${short.words}).</span>`;
     } else {
-      g.innerHTML = `<span class="dim">Hai,</span> <span class="ava-in"><canvas id="tkAva"></canvas></span> pembaca.
+      g.innerHTML = `<span class="dim">Hai,</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
         <span class="dim">Meja ini</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><button type="button" data-act="list">${WORKS.length} tulisan</button></span>
-        <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">esai</span></span> <span class="dim">sampai puisi. Kamu punya</span>
+        <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">${esc(kinds[0] || '')}</span></span> <span class="dim">${kinds.length > 1 ? 'sampai ' + esc(kinds[kinds.length - 1]) + '.' : '.'} Kamu punya</span>
         <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="unread">${unread.length ? unread.length + ' belum' : 'semua sudah'}</button></span> <button type="button" data-act="unread">dibaca</button>
         <span class="dim">dan</span> <span class="nw"><span class="ico-cal" aria-hidden="true"><b>${new Date(latest.date + 'T00:00:00').getDate()}</b></span><button type="button" data-act="open" data-slug="${latest.slug}">${sameMonth} terbit</button></span> <button type="button" data-act="open" data-slug="${latest.slug}">${esc(month)}.</button>`;
-      const ava = $('#tkAva');
-      requestAnimationFrame(() => drawThread(ava, SITE.author + ' menulis', { w: 24, h: 24, pad: 2, color: '#7A2448', seed: 'me', pins: false, weight: 1.4 }));
+      avatarInto($('#tkAva'), 24);
       const st = $('#tkStack');
-      ['esai', 'cerpen', 'puisi'].map(c => WORKS.find(w => w.cat === c)).filter(Boolean).forEach(w => st.append(mini(w, 22)));
+      [...new Set(WORKS.map(w => w.cat))].slice(0, 3).map(c => WORKS.find(w => w.cat === c)).forEach(w => st.append(mini(w, 22)));
     }
+    [...g.children].forEach((el, i) => el.style.setProperty('--k', i));
+    g.classList.remove('reveal'); void g.offsetWidth;
+    if (animate && !reduced) g.classList.add('reveal');
     $('#tkMeta').innerHTML = `
       <span>diperbarui ${fmt(latest.date, { day: 'numeric', month: 'short' })}</span><i class="sep"></i>
       <span title="tulisan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 11.5-6.4 6.4a4.2 4.2 0 0 1-6-6l7.1-7.1a2.8 2.8 0 0 1 4 4l-7 7a1.4 1.4 0 0 1-2-2l6.4-6.4"/></svg>${WORKS.length}</span><i class="sep"></i>
-      <span title="jenis tulisan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M3.5 9.5h17"/></svg>${new Set(WORKS.map(w => w.cat)).size}</span><i class="sep"></i>
+      <span title="jenis tulisan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M3.5 9.5h17"/></svg>${kinds.length}</span><i class="sep"></i>
       <span title="kata"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>${num(total)} kata</span>`;
   }
   $('#tkGreet').addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
-    if (b.dataset.act === 'list') { shelf = 'semua'; renderList(); go('daftar'); }
+    if (b.dataset.act === 'list') { shelf = 'semua'; renderList(true); go('daftar'); }
     if (b.dataset.act === 'unread') { const u = WORKS.find(w => !readSet.has(w.slug)); if (u) openWork(u.slug); else go('daftar'); }
     if (b.dataset.act === 'open') openWork(b.dataset.slug);
   });
-  $('#tkStats').addEventListener('click', e => {
-    statsMode = !statsMode; e.currentTarget.setAttribute('aria-pressed', String(statsMode));
-    renderGreet();
-  });
+  $('#tkStats').addEventListener('click', e => { statsMode = !statsMode; e.currentTarget.setAttribute('aria-pressed', String(statsMode)); renderGreet(true); });
   $('#tkGear').addEventListener('click', () => { $('#chipDark').scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' }); $('#chipDark').focus({ preventScroll: true }); });
   $('#tkBack').addEventListener('click', () => go(isMobile() ? 'kanvas' : (view === 'kanvas' ? 'daftar' : 'kanvas')));
 
-  // pegangan: ketuk atau tarik untuk menciutkan kartu biru
   const grip = $('#tkGrip');
   function setCollapsed(c) { dock.classList.toggle('collapsed', c); grip.setAttribute('aria-expanded', String(!c)); grip.setAttribute('aria-label', c ? 'Bentangkan kartu sapaan' : 'Ciutkan kartu sapaan'); }
   let gy = null;
@@ -658,38 +867,45 @@
   });
   grip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!dock.classList.contains('collapsed')); } });
 
-  // isi bawah: kutipan bergilir, daftar baca, atau hasil cari
   const feed = $('#tkFeed');
   let feedMode = 'feed', feedIdx = Math.floor(Math.random() * WORKS.length), feedT;
-  const noteOf = w => `Dari ${CATS[w.cat].label.toLowerCase()} <button type="button" data-open="${w.slug}">“${esc(w.title)}”</button> <span class="spark"><canvas data-spark="${w.slug}"></canvas></span> ditulis ${fmtLong(w.date)}, ${w.words} kata, kira-kira ${w.minutes} menit membaca.`;
-  function renderFeed() {
+  const noteOf = w => `Dari ${esc(catOf(w.cat).label.toLowerCase())} <button type="button" data-open="${w.slug}">“${esc(w.title)}”</button> <span class="spark"><canvas data-spark="${w.slug}"></canvas></span> ditulis ${fmtLong(w.date)}, ${w.words} kata, kira-kira ${w.minutes} menit membaca.`;
+  async function renderFeed(rotate) {
     clearTimeout(feedT);
     feed.classList.toggle('plain', feedMode !== 'feed');
     $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === feedMode)));
+    $('.tk-seg').style.setProperty('--x', feedMode === 'list' ? '0' : '1');
     if (feedMode === 'list') {
-      feed.innerHTML = `<ul class="tk-list">${all().map(w => `<li><a href="#baca-${w.slug}"><b>${esc(w.title)}</b><span class="${readSet.has(w.slug) ? 'ok' : ''}">${readSet.has(w.slug) ? '✓ dibaca' : w.minutes + ' mnt'}</span><span>${CATS[w.cat].label} · ${fmtShort(w.date)}</span></a></li>`).join('')}</ul>`;
+      feed.innerHTML = `<ul class="tk-list">${all().map((w, i) => `<li style="--k:${i}"><a href="#baca-${w.slug}"><b>${esc(w.title)}</b><span class="${readSet.has(w.slug) ? 'ok' : ''}">${readSet.has(w.slug) ? '✓ dibaca' : w.minutes + ' mnt'}</span><span>${esc(catOf(w.cat).label)} · ${fmtShort(w.date)}</span></a></li>`).join('')}</ul>`;
       return;
     }
     if (feedMode !== 'feed') return;
+    const old = $('.fd', feed);
+    if (rotate && old && !reduced) { old.classList.add('out'); await wait(420); }
+    if (feedMode !== 'feed') return;
     const w = WORKS[feedIdx % WORKS.length], prev = WORKS[(feedIdx + WORKS.length - 1) % WORKS.length];
-    const para = w.body[Math.min(1, w.body.length - 1)];
+    const para = plain(w.body[Math.min(1, w.body.length - 1)]);
     feed.innerHTML = `<div class="fd">
       <p class="fd-pre">${noteOf(prev).replace(/<[^>]+>/g, '')}</p>
       <p class="fd-quote">${esc(para.length > 260 ? para.slice(0, 260) + '…' : para).replace(/\n/g, '<br>')}</p>
       <p class="fd-note">${noteOf(w)}</p></div>`;
     $$('canvas[data-spark]', feed).forEach(c => requestAnimationFrame(() => drawThread(c, fullText(bySlug(c.dataset.spark)), { w: 26, h: 20, pad: 1, color: '#fff', seed: c.dataset.spark, pins: false, weight: 1.3 })));
-    if (!reduced) feedT = setTimeout(() => { if (!feed.matches(':hover') && !document.hidden) feedIdx++; renderFeed(); }, 9000);
+    if (!reduced && SITE.features.rotatingQuotes) feedT = setTimeout(() => { if (!feed.matches(':hover') && !document.hidden) feedIdx++; renderFeed(true); }, 9000);
   }
   $('.tk-seg').addEventListener('click', e => {
     const b = e.target.closest('[data-mode]');
-    if (b) { feedMode = b.dataset.mode; renderFeed(); }
+    if (b) { feedMode = b.dataset.mode; renderFeed(false); }
   });
   feed.addEventListener('click', e => {
     const b = e.target.closest('[data-open]');
     if (b) openWork(b.dataset.open);
-    if (e.target.closest('[data-clear]')) { $('#tkInput').value = ''; feedMode = 'feed'; renderFeed(); }
+    if (e.target.closest('[data-clear]')) { $('#tkInput').value = ''; feedMode = 'feed'; renderFeed(false); }
   });
   $('#chipRandom').addEventListener('click', () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug));
+  $('#chipMail').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(SITE.email); toast(`Alamat ${SITE.email} disalin.`); }
+    catch (e) { toast('Alamat surat: ' + SITE.email); }
+  });
   $('#tkAsk').addEventListener('submit', e => {
     e.preventDefault();
     const q = $('#tkInput').value.trim();
@@ -699,7 +915,7 @@
     feed.classList.add('plain');
     $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
     feed.innerHTML = `<p class="tk-res-h"><span>${res.length} hasil untuk “${esc(q)}”</span><button type="button" data-clear>hapus</button></p>
-      <ul class="tk-list">${res.map(r => `<li><a href="#baca-${r.w.slug}"><b>${esc(r.w.title)}</b><span>${CATS[r.w.cat].label}</span><span style="grid-column:1/-1">${r.snip}</span></a></li>`).join('') || '<li style="color:var(--dock-muted);padding:10px 12px">Tidak ada kalimat yang cocok. Coba “hujan” atau “Senin”.</li>'}</ul>`;
+      <ul class="tk-list">${res.map((r, i) => `<li style="--k:${i}"><a href="#baca-${r.w.slug}"><b>${esc(r.w.title)}</b><span>${esc(catOf(r.w.cat).label)}</span><span style="grid-column:1/-1">${r.snip}</span></a></li>`).join('') || '<li style="color:var(--dock-muted);padding:10px 12px">Tidak ada kalimat yang cocok.</li>'}</ul>`;
   });
 
   /* ======================================================================
@@ -714,7 +930,8 @@
     { id: 'geist', name: 'Geist', css: '"Geist", system-ui, sans-serif' }
   ];
   const WEIGHTS = [300, 400, 500, 600];
-  const rd = Object.assign({ rt: 'putih', custom: '#F3E9DC', font: 'newsreader', size: 19, weight: 400, liga: true, align: 'start', bright: 100 }, store.get('rd', {}));
+  const RT = ['putih', 'sepia', 'gelap', 'custom'];
+  const rd = Object.assign({ rt: SITE.readerPaper, custom: '#F3E9DC', font: SITE.readerFont, size: 19, weight: 400, liga: true, align: 'start', bright: 100 }, store.get('rd', {}));
   let focusMode = false, current = null;
   const card = $('#rdCard'), body = $('#rdBody'), scroller = $('#rdScroll');
   const saveRd = () => store.set('rd', rd);
@@ -742,6 +959,7 @@
     card.style.setProperty('--r-liga', rd.liga ? 'normal' : 'none');
     $('#rdDim').style.opacity = ((100 - rd.bright) / 100 * 0.9).toFixed(2);
     $$('.theme-pill [data-rt]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.rt === rd.rt)));
+    $('.theme-pill').style.setProperty('--i', Math.max(0, RT.indexOf(rd.rt)));
     $$('#fonts [data-font]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.font === rd.font)));
     $$('.aligns [data-align]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.align === rd.align)));
     $('#swLiga').setAttribute('aria-checked', String(rd.liga));
@@ -764,9 +982,9 @@
       rd[key] = Math.round(min + clamp((r.bottom - y) / r.height, 0, 1) * (max - min));
       applyRd(); saveRd();
     };
-    el.addEventListener('pointerdown', e => { on = true; el.setPointerCapture(e.pointerId); setFrom(e.clientY); });
+    el.addEventListener('pointerdown', e => { on = true; el.classList.add('active'); el.setPointerCapture(e.pointerId); setFrom(e.clientY); });
     el.addEventListener('pointermove', e => { if (on) setFrom(e.clientY); });
-    el.addEventListener('pointerup', () => { on = false; });
+    el.addEventListener('pointerup', () => { on = false; el.classList.remove('active'); });
     el.addEventListener('keydown', e => {
       const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
       if (!d) return;
@@ -798,30 +1016,39 @@
     if (b.dataset.step === 'size') rd.size = clamp(rd.size + d, 15, 28);
     else rd.weight = WEIGHTS[clamp(WEIGHTS.indexOf(rd.weight) + d, 0, WEIGHTS.length - 1)];
     applyRd(); saveRd();
+    const out = b.parentElement.querySelector('output');
+    out.classList.remove('bump'); void out.offsetWidth; out.classList.add('bump');
   });
   $('#swLiga').addEventListener('click', () => { rd.liga = !rd.liga; applyRd(); saveRd(); });
   $('.aligns').addEventListener('click', e => { const b = e.target.closest('[data-align]'); if (b) { rd.align = b.dataset.align; applyRd(); saveRd(); } });
-  $('#rsText').addEventListener('click', () => { $('#rsMain').hidden = true; $('#rsAdv').hidden = false; $('#rs').scrollTop = 0; $('#advBack').focus({ preventScroll: true }); });
-  $('#advBack').addEventListener('click', () => { $('#rsAdv').hidden = true; $('#rsMain').hidden = false; $('#rsText').focus({ preventScroll: true }); });
+  function rsPage(adv) {
+    const show = adv ? $('#rsAdv') : $('#rsMain'), hide = adv ? $('#rsMain') : $('#rsAdv');
+    hide.hidden = true; show.hidden = false;
+    show.classList.remove('push-in', 'pop-in'); void show.offsetWidth;
+    if (!reduced) show.classList.add(adv ? 'push-in' : 'pop-in');
+    $('#rs').scrollTop = 0;
+    (adv ? $('#advBack') : $('#rsText')).focus({ preventScroll: true });
+  }
+  $('#rsText').addEventListener('click', () => rsPage(true));
+  $('#advBack').addEventListener('click', () => rsPage(false));
   $('#rsFocus').addEventListener('click', () => { focusMode = !focusMode; $('#rsFocus').setAttribute('aria-pressed', String(focusMode)); body.classList.toggle('focus', focusMode); onScroll(); });
 
-  // lembar pengaturan di ponsel
   const rs = $('#rs');
   function setSheet(open) { rs.classList.toggle('open', open); $('#aaFab').setAttribute('aria-expanded', String(open)); }
   $('#aaFab').addEventListener('click', () => setSheet(!rs.classList.contains('open')));
   $('#rsHandle').addEventListener('click', () => { if (isMobile()) setSheet(false); else rs.scrollTo({ top: 0, behavior: 'smooth' }); });
 
-  function renderBody(q) {
+  function renderBody(q, reveal) {
     const w = current;
     const mark = t => {
-      if (!q) return esc(t);
-      const lt = t.toLowerCase(), lq = q.toLowerCase();
+      if (!q) return rich(t);
+      const p = plain(t), lt = p.toLowerCase(), lq = q.toLowerCase();
       let out = '', i = 0, k;
-      while ((k = lt.indexOf(lq, i)) >= 0) { out += esc(t.slice(i, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>'; i = k + q.length; }
-      return out + esc(t.slice(i));
+      while ((k = lt.indexOf(lq, i)) >= 0) { out += esc(p.slice(i, k)) + '<mark>' + esc(p.slice(k, k + q.length)) + '</mark>'; i = k + q.length; }
+      return out + esc(p.slice(i));
     };
-    body.className = 'rd-body' + (focusMode ? ' focus' : '');
-    body.innerHTML = w.body.map(p => w.form === 'puisi' ? `<p class="stanza">${mark(p)}</p>` : `<p>${mark(p)}</p>`).join('');
+    body.className = 'rd-body' + (focusMode ? ' focus' : '') + (reveal && !reduced ? ' reveal' : '');
+    body.innerHTML = w.body.map((p, i) => `<p${w.form === 'puisi' ? ' class="stanza"' : ''} style="--k:${Math.min(i, 10)}">${mark(p)}</p>`).join('');
   }
   function rhythm(host, lens) {
     const n = lens.length, W = 600, H = 64;
@@ -829,7 +1056,7 @@
     const max = Math.max(...lens), bw = W / n, bar = Math.max(2, Math.min(bw * .6, 18));
     host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${n} kalimat, terpanjang ${max} kata">${lens.map((l, i) => {
       const h = Math.max(3, l / max * (H - 4));
-      return `<rect x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} kata</title></rect>`;
+      return `<rect style="--k:${i}" x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} kata</title></rect>`;
     }).join('')}</svg>`;
   }
   const navList = () => (queue.includes(current?.slug) ? queue.map(bySlug).filter(Boolean) : all());
@@ -845,16 +1072,16 @@
     current = w;
     setView('baca');
     $('#rdBackLabel').textContent = prevView === 'daftar' ? 'Daftar' : prevView === 'sapa' ? 'Sapa' : 'Kanvas';
-    $('#rdCrumb').textContent = `${CATS[w.cat].label} · ${w.title}`;
-    $('#rdMeta').innerHTML = `<span>${CATS[w.cat].label}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>`;
+    $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.title}`;
+    $('#rdMeta').innerHTML = `<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
-    renderBody('');
+    renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     const { prev, next } = neighbors();
     $('#rdNextLink').href = '#baca-' + next.slug;
     $('b', $('#rdNextLink')).textContent = next.title;
     $('#rdPrev').dataset.slug = prev.slug; $('#rdNext').dataset.slug = next.slug;
-    $('#advPreview').textContent = w.body[0].replace(/\n/g, ' ');
+    $('#advPreview').textContent = plain(w.body[0]).replace(/\n/g, ' ');
     applyRd();
     scroller.scrollTop = 0;
     const marks = store.get('marks', {});
@@ -867,13 +1094,15 @@
       onScroll();
     });
     if (!w.mine && !readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
-    updateBadge(); renderRows(); if (feedMode === 'list') renderFeed();
-    document.title = `${w.title} · Juan Menulis`;
-    scroller.focus({ preventScroll: true });
+    updateBadge(); renderRows(false); if (feedMode === 'list') renderFeed(false);
+    document.title = `${w.title} · ${SITE.title}`;
+    if (!PREVIEW) scroller.focus({ preventScroll: true });
   }
   scroller.tabIndex = -1;
-  function openWork(slug) {
-    if (location.hash === '#baca-' + slug) showReader(slug); else location.hash = 'baca-' + slug;
+  function openWork(slug, fromEl) {
+    if (TATA) return;
+    if (fromEl) morphFrom = fromEl;
+    if (location.hash === '#baca-' + slug) vt(() => showReader(slug)); else location.hash = 'baca-' + slug;
   }
   $('#rdBack').addEventListener('click', () => go(prevView === 'baca' ? 'kanvas' : prevView));
   $('#rdPrev').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
@@ -881,7 +1110,7 @@
 
   function onScroll() {
     const max = scroller.scrollHeight - scroller.clientHeight;
-    $('#rdProg').style.width = (max > 0 ? scroller.scrollTop / max * 100 : 100) + '%';
+    $('#rdProg').style.transform = `scaleX(${max > 0 ? scroller.scrollTop / max : 1})`;
     if (!focusMode) return;
     const r0 = scroller.getBoundingClientRect(), mid = r0.top + r0.height * .45;
     let best = null, bd = Infinity;
@@ -890,7 +1119,6 @@
   }
   scroller.addEventListener('scroll', onScroll, { passive: true });
 
-  // tandai posisi
   $('#rsMark').addEventListener('click', () => {
     const marks = store.get('marks', {});
     if (marks[current.slug] != null) { delete marks[current.slug]; toast('Tanda dihapus.'); }
@@ -903,7 +1131,6 @@
     $('#rsMark').setAttribute('aria-pressed', String(marks[current.slug] != null));
   });
 
-  // layar tetap menyala
   let lock = null;
   async function releaseLock() { if (lock) { try { await lock.release(); } catch (e) { /* sudah lepas */ } lock = null; } $('#rsLock').setAttribute('aria-pressed', 'false'); }
   $('#rsLock').addEventListener('click', async () => {
@@ -916,7 +1143,6 @@
     } catch (e) { toast('Peramban ini tidak mengizinkan layar tetap menyala.'); }
   });
 
-  // dengarkan
   let speaking = false;
   function stopSpeech() {
     speaking = false;
@@ -945,13 +1171,12 @@
     next(0);
   });
 
-  // cari di dalam tulisan
   let hits = [], hit = 0;
   function openFind() { $('#rdFind').hidden = false; $('#findIn').focus(); if (isMobile()) setSheet(false); }
-  function closeFind() { $('#rdFind').hidden = true; $('#findIn').value = ''; $('#findCount').textContent = ''; if (current) renderBody(''); }
+  function closeFind() { $('#rdFind').hidden = true; $('#findIn').value = ''; $('#findCount').textContent = ''; if (current) renderBody('', false); }
   function runFind() {
     const q = $('#findIn').value.trim();
-    renderBody(q.length > 1 ? q : '');
+    renderBody(q.length > 1 ? q : '', false);
     hits = $$('mark', body); hit = 0;
     $('#findCount').textContent = q.length > 1 ? (hits.length ? `1/${hits.length}` : 'tidak ada') : '';
     showHit();
@@ -980,7 +1205,7 @@
     all().forEach(w => {
       let score = 0, snip = '';
       if (fold(w.title).includes(nq)) score += 5;
-      if (fold(CATS[w.cat].label).includes(nq)) score += 2;
+      if (fold(catOf(w.cat).label).includes(nq)) score += 2;
       const text = fullText(w).replace(/\s+/g, ' '), ft = fold(text), idx = ft.indexOf(nq);
       if (idx >= 0) {
         score += 2 + Math.min(3, ft.split(nq).length - 2);
@@ -997,7 +1222,7 @@
     pItems = search(pInput.value);
     pSel = Math.min(pSel, Math.max(0, pItems.length - 1));
     pResults.innerHTML = pItems.length
-      ? pItems.map((r, i) => `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
+      ? pItems.map((r, i) => `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}" style="--k:${Math.min(i, 8)}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
       : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, misalnya “hujan” atau “Senin”.</li>';
     pInput.setAttribute('aria-activedescendant', pItems.length ? 'po-' + pSel : '');
   }
@@ -1009,7 +1234,9 @@
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       pSel = clamp(pSel + (e.key === 'ArrowDown' ? 1 : -1), 0, pItems.length - 1);
-      renderPalette(); $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' });
+      $$('#pResults [role="option"]').forEach((li, i) => li.setAttribute('aria-selected', String(i === pSel)));
+      pInput.setAttribute('aria-activedescendant', 'po-' + pSel);
+      $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' });
     }
     if (e.key === 'Enter' && pItems[pSel]) { closePalette(); openWork(pItems[pSel].w.slug); }
   });
@@ -1026,7 +1253,7 @@
       if (!palette.hidden) return closePalette();
       if (!$('#rdFind').hidden) return closeFind();
       if (rs.classList.contains('open')) return setSheet(false);
-      if (!$('#rsAdv').hidden && view === 'baca') return $('#advBack').click();
+      if (!$('#rsAdv').hidden && view === 'baca') return rsPage(false);
       if (view === 'baca') return $('#rdBack').click();
     }
     if (typing) return;
@@ -1038,26 +1265,31 @@
     }
   });
 
+  const startView = () => (isMobile() && SITE.features.dock ? 'sapa' : (VIEWS.includes(SITE.defaultView) ? SITE.defaultView : 'kanvas'));
   function route() {
-    const h = decodeURIComponent(location.hash.slice(1));
-    const m = h.match(/^baca-([\w-]+)$/);
-    if (m && bySlug(m[1])) { showReader(m[1]); return; }
-    if (VIEWS.includes(h)) { setView(h); return; }
-    setView(isMobile() ? 'sapa' : 'kanvas');
+    vt(() => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      const m = h.match(/^baca-([\w-]+)$/);
+      if (m && bySlug(m[1]) && !TATA) { showReader(m[1]); return; }
+      if (VIEWS.includes(h)) { setView(TATA ? 'kanvas' : h); return; }
+      setView(TATA ? 'kanvas' : startView());
+    });
   }
   addEventListener('hashchange', route);
   mobileMQ.addEventListener?.('change', () => { if (view === 'sapa' && !isMobile()) setView('kanvas'); syncPill(); });
   let rt;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); syncPill(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
 
   /* ======================================================================
      MULAI
      ====================================================================== */
-  drawThread($('#meAvatar'), SITE.author + ' menulis setiap hari', { w: 84, h: 84, pad: 8, color: '#7A2448', seed: 'me', weight: 1.2 });
-  renderCanvas();
-  renderList();
-  renderFeed();
+  avatarInto($('#meAvatar'), 84);
+  renderCanvas(true);
+  renderList(false);
+  renderGreet(true);
+  renderFeed(false);
   applyRd();
   route();
-  requestAnimationFrame(() => canvasFit(false));
+  requestAnimationFrame(() => { canvasFit(false); syncPill(); win.classList.add('ready'); booted = true; });
+  if (PREVIEW) root.classList.add('is-preview');
 })();

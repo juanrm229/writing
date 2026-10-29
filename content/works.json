@@ -1,37 +1,15 @@
-/*
- * Semua isi situs ada di file ini.
- * Ganti, tambah, atau hapus tulisan di WORKS; ubah profil di SITE.
- *
- * cat   : "esai" | "puisi" | "cerpen" | "mini" | "catatan"
- * form  : "prosa" (body = paragraf) | "puisi" (body = bait, baris dipisah \n)
- * line  : satu baris favorit, muncul di pita berjalan di beranda
- * date  : YYYY-MM-DD
- * time  : jam selesai ditulis (HH:MM), tampil di Daftar
- */
-
-window.SITE = {
-  author: "Juan",
-  handle: "juan/menulis",
-  email: "juan@example.com", // ganti dengan alamat email aslimu
-  // catatan kecil untuk setiap map tahun di tampilan Daftar
-  years: {
-    "2025": "Tahun belajar tersesat dengan sengaja.",
-    "2024": "Draf, laci, dan hari Senin yang dicuci.",
-    "2023": "Puisi pertama yang dibacakan keras-keras."
-  }
-};
-
-window.WORKS = [
+[
   {
-    slug: "jendela",
-    title: "Jendela yang Tak Pernah Kututup",
-    cat: "esai",
-    form: "prosa",
-    date: "2026-03-14",
-    time: "23:14",
-    excerpt: "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Awalnya kuanggap kerusakan. Belakangan kuanggap guru.",
-    line: "Ingatan itu penulis yang malas.",
-    body: [
+    "slug": "jendela",
+    "title": "Jendela yang Tak Pernah Kututup",
+    "cat": "esai",
+    "form": "prosa",
+    "date": "2026-03-14",
+    "time": "23:14",
+    "draft": false,
+    "excerpt": "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Awalnya kuanggap kerusakan. Belakangan kuanggap guru.",
+    "line": "Ingatan itu penulis yang malas.",
+    "body": [
       "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Ia tidak bisa ditutup rapat; selalu ada celah selebar dua jari yang membiarkan apa saja masuk: suara motor tukang sayur jam lima pagi, bau tanah setelah hujan, percakapan tetangga yang tidak pernah selesai. Awalnya aku menganggapnya kerusakan. Belakangan aku menganggapnya guru.",
       "Menulis, kupikir, adalah seni membiarkan celah itu tetap terbuka. Kita terlalu sering menulis dengan jendela tertutup: rapat, kedap, aman. Kalimat-kalimat kita jadi bersih tapi pengap, seperti ruangan ber-AC yang tidak pernah kemasukan angin. Tidak ada yang salah, tapi tidak ada yang hidup.",
       "Celah dua jari itu mengajariku untuk mendengar sebelum bicara. Tukang sayur itu, misalnya, selalu menyebut harga cabai dengan nada orang yang sedang mengabarkan cuaca buruk. Dari dia aku belajar bahwa informasi paling kering pun punya musik, asal kita mau mendengarnya cukup lama.",
@@ -41,15 +19,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "kopi-kedua",
-    title: "Kopi Kedua",
-    cat: "mini",
-    form: "prosa",
-    date: "2025-11-02",
-    time: "07:52",
-    excerpt: "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak.",
-    line: "Maaf, Yah. Aku terlambat sebelas tahun.",
-    body: [
+    "slug": "kopi-kedua",
+    "title": "Kopi Kedua",
+    "cat": "mini",
+    "form": "prosa",
+    "date": "2025-11-02",
+    "time": "07:52",
+    "draft": false,
+    "excerpt": "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak.",
+    "line": "Maaf, Yah. Aku terlambat sebelas tahun.",
+    "body": [
       "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak. Pelayan baru di kedai itu selalu bertanya, “Menunggu teman, Pak?” dan ia selalu menjawab, “Iya, sebentar lagi datang.”",
       "Kopi hitam ia minum pelan-pelan sambil membaca koran yang tidak pernah ia balik halamannya. Kopi susu ia biarkan berkeringat di seberang meja, esnya mencair menjadi lingkaran air di atas kayu, seperti jam yang tidak punya jarum.",
       "Pelayan lama tahu ceritanya, tapi tidak pernah menceritakannya kepada pelayan baru. Ada hal-hal yang lebih sopan dibiarkan menjadi kebiasaan daripada dijelaskan.",
@@ -58,15 +37,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "peta-tersesat",
-    title: "Peta untuk Orang yang Sengaja Tersesat",
-    cat: "esai",
-    form: "prosa",
-    date: "2025-06-21",
-    time: "16:05",
-    excerpt: "Ponselku tahu jalan tercepat ke mana pun. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan.",
-    line: "Pasar Lama berjarak tiga obrolan dari rumahku.",
-    body: [
+    "slug": "peta-tersesat",
+    "title": "Peta untuk Orang yang Sengaja Tersesat",
+    "cat": "esai",
+    "form": "prosa",
+    "date": "2025-06-21",
+    "time": "16:05",
+    "draft": false,
+    "excerpt": "Ponselku tahu jalan tercepat ke mana pun. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan.",
+    "line": "Pasar Lama berjarak tiga obrolan dari rumahku.",
+    "body": [
       "Ponselku tahu jalan tercepat ke mana pun. Ia tahu di mana macet, di mana jalan ditutup, di mana ada pom bensin terdekat. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan, atau warung bakso yang hanya buka kalau pemiliknya sedang tidak patah hati.",
       "Beberapa bulan terakhir aku punya kebiasaan aneh: setiap Sabtu, aku mematikan navigasi dan berjalan ke arah mana pun yang terasa menarik. Aturannya sederhana. Belok kalau ada sesuatu yang membuatku penasaran. Berhenti kalau ada sesuatu yang membuatku ingin duduk. Pulang kalau kakiku sudah lebih lelah daripada rasa ingin tahuku.",
       "Hasilnya adalah peta yang tidak bisa dipakai orang lain. Di peta itu, jarak tidak diukur dengan kilometer, tetapi dengan jumlah percakapan. Pasar Lama berjarak tiga obrolan dari rumahku. Taman kota berjarak satu lagu yang kudengar dari radio tukang parkir.",
@@ -76,15 +56,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "hujan-mei",
-    title: "Hujan di Bulan Mei",
-    cat: "puisi",
-    form: "puisi",
-    date: "2025-05-09",
-    time: "21:42",
-    excerpt: "hujan datang terlambat, seperti surat yang dialamatkan ke rumah yang sudah dijual",
-    line: "seperti surat yang dialamatkan ke rumah yang sudah dijual",
-    body: [
+    "slug": "hujan-mei",
+    "title": "Hujan di Bulan Mei",
+    "cat": "puisi",
+    "form": "puisi",
+    "date": "2025-05-09",
+    "time": "21:42",
+    "draft": false,
+    "excerpt": "hujan datang terlambat, seperti surat yang dialamatkan ke rumah yang sudah dijual",
+    "line": "seperti surat yang dialamatkan ke rumah yang sudah dijual",
+    "body": [
       "hujan datang terlambat\nseperti surat yang dialamatkan\nke rumah yang sudah dijual",
       "ia mengetuk genteng\ndengan sopan,\nbertanya apakah kemarau\nmasih tinggal di sini",
       "ibu menjawab dari dapur:\nsudah pindah, Nak,\nsejak bulan lalu,\ntapi silakan masuk,\nair panas baru saja mendidih",
@@ -92,15 +73,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "arsip-kecil",
-    title: "Arsip Hal-Hal Kecil",
-    cat: "puisi",
-    form: "puisi",
-    date: "2024-12-30",
-    time: "23:26",
-    excerpt: "aku menyimpan karcis bioskop yang tintanya pudar, tutup pulpen yang digigit saat ujian, dan kamu.",
-    line: "di laci yang sama dengan hal-hal yang tidak sanggup kubuang",
-    body: [
+    "slug": "arsip-kecil",
+    "title": "Arsip Hal-Hal Kecil",
+    "cat": "puisi",
+    "form": "puisi",
+    "date": "2024-12-30",
+    "time": "23:26",
+    "draft": false,
+    "excerpt": "aku menyimpan karcis bioskop yang tintanya pudar, tutup pulpen yang digigit saat ujian, dan kamu.",
+    "line": "di laci yang sama dengan hal-hal yang tidak sanggup kubuang",
+    "body": [
       "aku menyimpan:\nkarcis bioskop yang tintanya pudar,\ntutup pulpen yang digigit saat ujian,\nsatu kancing dari kemeja yang sudah jadi lap,",
       "suara ayah menyebut namaku\ndengan nada yang hanya ia pakai\nketika aku demam,",
       "bau buku perpustakaan sekolah,\npukul tiga sore di bulan Agustus\nketika semua orang sudah pulang\ndan debu menari di cahaya jendela,",
@@ -108,15 +90,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "penjual-senin",
-    title: "Lelaki yang Menjual Hari Senin",
-    cat: "cerpen",
-    form: "prosa",
-    date: "2024-08-17",
-    time: "02:10",
-    excerpt: "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu bertuliskan: DIJUAL — HARI SENIN, MASIH SEGAR.",
-    line: "Senin itu sebenarnya tidak jahat.",
-    body: [
+    "slug": "penjual-senin",
+    "title": "Lelaki yang Menjual Hari Senin",
+    "cat": "cerpen",
+    "form": "prosa",
+    "date": "2024-08-17",
+    "time": "02:10",
+    "draft": false,
+    "excerpt": "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu bertuliskan: DIJUAL — HARI SENIN, MASIH SEGAR.",
+    "line": "Senin itu sebenarnya tidak jahat.",
+    "body": [
       "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu yang ditutup terpal biru. Di sisi gerobak itu tertulis dengan cat putih yang sudah mengelupas: DIJUAL — HARI SENIN, MASIH SEGAR.",
       "Awalnya tidak ada yang percaya. Pak RT tertawa paling keras, lalu bertanya berapa harganya. Lelaki itu menjawab dengan tenang, “Tergantung, Pak. Mau Senin yang biasa, atau Senin yang tidak terasa seperti Senin?”",
       "Ternyata ada banyak jenis. Ada Senin yang hujan rintik-rintik sehingga semua rapat dibatalkan. Ada Senin yang dimulai dengan sarapan nasi uduk dan kabar baik. Ada Senin yang panjangnya hanya empat jam, khusus untuk mereka yang sudah terlalu lelah. Yang paling mahal adalah Senin yang terasa seperti Jumat sore, dan stoknya selalu habis sebelum azan magrib.",
@@ -128,15 +111,16 @@ window.WORKS = [
     ]
   },
   {
-    slug: "draf-ketujuh",
-    title: "Draf Ketujuh",
-    cat: "catatan",
-    form: "prosa",
-    date: "2024-02-11",
-    time: "10:37",
-    excerpt: "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar.",
-    line: "Kalimat itu indah dan egois.",
-    body: [
+    "slug": "draf-ketujuh",
+    "title": "Draf Ketujuh",
+    "cat": "catatan",
+    "form": "prosa",
+    "date": "2024-02-11",
+    "time": "10:37",
+    "draft": false,
+    "excerpt": "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar.",
+    "line": "Kalimat itu indah dan egois.",
+    "body": [
       "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar. Draf ketiga kuhapus sebelum selesai karena aku sedang lapar dan semua kalimatnya terdengar seperti keluhan.",
       "Draf keempat dan kelima adalah draf yang paling panjang dan paling tidak berguna. Isinya penjelasan tentang hal-hal yang tidak perlu dijelaskan, semacam catatan kaki yang lupa bahwa ia catatan kaki.",
       "Draf keenam hampir benar. Tapi ada satu kalimat di tengahnya yang terlalu kusukai, dan karena terlalu kusukai, semua kalimat lain harus membungkuk untuk melayaninya. Kalimat itu indah dan egois. Aku menghapusnya dengan perasaan seperti membuang surat cinta.",
@@ -145,18 +129,19 @@ window.WORKS = [
     ]
   },
   {
-    slug: "bahasa-ibu",
-    title: "Bahasa Ibu",
-    cat: "puisi",
-    form: "puisi",
-    date: "2023-10-28",
-    time: "19:03",
-    excerpt: "ibu tidak pernah bilang aku mencintaimu. ia bilang: sudah makan?",
-    line: "sudah makan? bawa jaket, nanti hujan.",
-    body: [
+    "slug": "bahasa-ibu",
+    "title": "Bahasa Ibu",
+    "cat": "puisi",
+    "form": "puisi",
+    "date": "2023-10-28",
+    "time": "19:03",
+    "draft": false,
+    "excerpt": "ibu tidak pernah bilang aku mencintaimu. ia bilang: sudah makan?",
+    "line": "sudah makan? bawa jaket, nanti hujan.",
+    "body": [
       "ibu tidak pernah bilang\naku mencintaimu",
       "ia bilang\nsudah makan?\nbawa jaket, nanti hujan.\nkabari kalau sudah sampai.",
       "butuh dua puluh tahun\ndan satu kamus yang tidak pernah dicetak\nuntuk mengerti\nbahwa semua itu\nkalimat yang sama"
     ]
   }
-];
+]

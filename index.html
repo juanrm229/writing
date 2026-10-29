@@ -43,6 +43,7 @@
     <!-- ============ view pill ============ -->
     <nav class="viewpill" aria-label="Tampilan">
       <div class="pill">
+        <i class="pill-thumb" aria-hidden="true"></i>
         <button type="button" data-go="daftar" aria-label="Daftar" title="Daftar">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r=".9" class="f"/><circle cx="4.5" cy="12" r=".9" class="f"/><circle cx="4.5" cy="17" r=".9" class="f"/></svg>
         </button>
@@ -70,7 +71,7 @@
       <section class="view view-daftar" id="vDaftar" aria-label="Daftar tulisan">
         <aside class="lib-side">
           <div class="lib-me">
-            <canvas class="me-avatar" id="meAvatar" aria-label="Juan"></canvas>
+            <div class="me-avatar" id="meAvatar" role="img" aria-label="Penulis"></div>
             <button class="sq-btn" type="button" data-go="kanvas" aria-label="Buka kanvas">
               <svg viewBox="0 0 24 24" aria-hidden="true"><g class="f"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></g></svg>
             </button>
@@ -150,6 +151,7 @@
               <div class="rs-grid">
                 <div class="rs-cell c-theme">
                   <div class="theme-pill" role="radiogroup" aria-label="Warna kertas">
+                    <i class="tp-thumb" aria-hidden="true"></i>
                     <button type="button" role="radio" data-rt="putih" aria-label="Putih"><i></i></button>
                     <button type="button" role="radio" data-rt="sepia" aria-label="Sepia"><i></i></button>
                     <button type="button" role="radio" data-rt="gelap" aria-label="Gelap"><i></i></button>
@@ -306,6 +308,10 @@
           <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" class="f"/><circle cx="15" cy="15" r="1.2" class="f"/><circle cx="15" cy="9" r="1.2" class="f"/><circle cx="9" cy="15" r="1.2" class="f"/></svg>
           <span>Buka satu<br>secara acak</span>
         </button>
+        <button class="tk-chip" id="chipMail" type="button" hidden>
+          <svg class="cd-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 7.5 7.5 6 7.5-6"/></svg>
+          <span>Kirim surat<br><b id="mailName">ke penulis</b></span>
+        </button>
       </div>
       <form class="tk-ask" id="tkAsk" role="search">
         <svg class="ask-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10-10M14.5 4.5v3M13 6h3M19 9.5v2.5M17.8 10.8h2.5M18.5 3.5l.9.9"/></svg>
@@ -330,11 +336,20 @@
   </div>
 </div>
 
+<!-- ============ mode tata letak (hanya untuk penulis yang sudah masuk di /admin) ============ -->
+<div class="tata-bar" id="tataBar" hidden>
+  <span class="tata-dot" aria-hidden="true"></span>
+  <span id="tataMsg">Mode tata letak. Seret kertas, map, dan catatan, lalu simpan.</span>
+  <button type="button" id="tataReset">Rapikan ulang</button>
+  <button type="button" id="tataSave" class="primary">Simpan ke situs</button>
+  <a href="./" id="tataExit">Keluar</a>
+</div>
+
 <input type="file" id="fileIn" accept=".txt,.md,text/plain,text/markdown" hidden>
 <input type="color" id="colorIn" value="#F3E9DC" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/works.js"></script>
+<script src="assets/gh.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

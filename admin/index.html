@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Meja Penulis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ============ MASUK ============ -->
+<main class="login" id="login" hidden>
+  <div class="login-card">
+    <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="eyebrow">Meja Penulis</p>
+    <h1>Masuk untuk <em>menulis.</em></h1>
+    <p class="lead">Panel ini menyimpan tulisan dan pengaturanmu langsung ke repo GitHub. Setiap kali kamu menekan <b>Simpan</b>, GitHub Pages memperbarui situs dalam sekitar satu menit.</p>
+    <form id="loginForm" novalidate>
+      <div class="two">
+        <label for="lgOwner">Pemilik repo<input id="lgOwner" autocomplete="off" spellcheck="false" placeholder="juanrm229" required></label>
+        <label for="lgRepo">Nama repo<input id="lgRepo" autocomplete="off" spellcheck="false" placeholder="writing" required></label>
+      </div>
+      <label for="lgToken">Token GitHub<input id="lgToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required></label>
+      <details class="how">
+        <summary>Cara membuat token (sekitar 2 menit)</summary>
+        <ol>
+          <li>Buka <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+          <li>Beri nama, misalnya <i>Meja Penulis</i>, dan pilih masa berlaku.</li>
+          <li>Di <b>Repository access</b>, pilih <b>Only select repositories</b> lalu pilih repo situs ini.</li>
+          <li>Di <b>Permissions → Repository permissions</b>, atur <b>Contents</b> menjadi <b>Read and write</b>.</li>
+          <li>Tekan <b>Generate token</b>, salin, lalu tempel di atas.</li>
+        </ol>
+        <p>Token hanya disimpan di peramban ini dan hanya dikirim ke api.github.com.</p>
+      </details>
+      <details class="how">
+        <summary>Lanjutan</summary>
+        <label for="lgBranch">Branch (kosongkan untuk memakai branch utama repo)<input id="lgBranch" autocomplete="off" spellcheck="false" placeholder="main"></label>
+      </details>
+      <label class="check" for="lgRemember"><input type="checkbox" id="lgRemember" checked> Ingat di perangkat ini</label>
+      <p class="err" id="lgErr" role="alert" hidden></p>
+      <button class="btn-ink btn-lg" type="submit" id="lgSubmit">Masuk</button>
+    </form>
+  </div>
+</main>
+
+<!-- ============ APLIKASI ============ -->
+<div class="app" id="app" hidden>
+  <header class="topbar">
+    <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+    <nav class="tabs" aria-label="Bagian">
+      <i class="tabs-thumb" aria-hidden="true"></i>
+      <button type="button" data-tab="tulis" aria-current="true">Tulisan</button>
+      <button type="button" data-tab="tampilan" aria-current="false">Tampilan</button>
+      <button type="button" data-tab="riwayat" aria-current="false">Riwayat</button>
+    </nav>
+    <div class="top-r">
+      <span class="status" id="status" data-state="clean"><i aria-hidden="true"></i><span id="statusText">Tersimpan</span></span>
+      <a class="btn-ghost" id="viewSite" href="../" target="_blank" rel="noopener">Lihat situs <span aria-hidden="true">↗</span></a>
+      <button class="btn-ink" id="saveBtn" type="button" disabled><span class="sb-label">Simpan</span></button>
+      <button class="me" id="meBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Akun"><img id="meImg" alt=""></button>
+      <div class="me-menu" id="meMenu" hidden>
+        <p id="meName"></p>
+        <p class="sub" id="meRepo"></p>
+        <button type="button" id="reloadBtn">Muat ulang dari GitHub</button>
+        <button type="button" id="logoutBtn">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <span id="bannerText"></span>
+    <button type="button" id="bannerYes">Pulihkan</button>
+    <button type="button" id="bannerNo">Buang</button>
+  </div>
+
+  <!-- ---------- TULISAN ---------- -->
+  <section class="tab tab-tulis" id="tab-tulis">
+    <aside class="side">
+      <div class="side-head">
+        <label class="sr-only" for="q">Cari tulisan</label>
+        <input id="q" type="search" placeholder="Cari tulisan" autocomplete="off">
+        <button class="round-ink" id="newWork" type="button" aria-label="Tulisan baru" title="Tulisan baru">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <div class="chips" id="sideFilter" role="group" aria-label="Saring"></div>
+      <ul class="worklist" id="workList"></ul>
+    </aside>
+
+    <main class="editor-wrap" id="editorWrap">
+      <div class="paper-card" id="paperCard">
+        <div class="ed-toolbar" role="toolbar" aria-label="Format">
+          <button type="button" data-fmt="b" title="Tebal (⌘B)"><b>B</b></button>
+          <button type="button" data-fmt="i" title="Miring (⌘I)"><i>I</i></button>
+          <span class="sep" aria-hidden="true"></span>
+          <button type="button" id="mkLine" title="Jadikan teks terpilih sebagai baris favorit">❝ Baris favorit</button>
+          <span class="grow"></span>
+          <button type="button" id="zenBtn" aria-pressed="false" title="Mode fokus (Esc untuk keluar)">Fokus</button>
+          <button type="button" id="previewBtn" aria-pressed="false">Pratinjau</button>
+        </div>
+        <div class="ed-scroll" id="edScroll">
+          <label class="sr-only" for="edTitle">Judul</label>
+          <textarea class="ed-title" id="edTitle" rows="1" placeholder="Judul"></textarea>
+          <p class="ed-meta" id="edMeta"></p>
+          <label class="sr-only" for="edBody">Isi tulisan</label>
+          <textarea class="ed-body" id="edBody" placeholder="Mulai menulis… Pisahkan paragraf (atau bait) dengan satu baris kosong."></textarea>
+        </div>
+        <footer class="ed-foot"><span id="edCount"></span><span id="edLocal"></span></footer>
+      </div>
+      <div class="preview-pane" id="previewPane" hidden>
+        <iframe id="previewFrame" title="Pratinjau tulisan"></iframe>
+      </div>
+      <div class="empty-ed" id="emptyEd" hidden>
+        <p class="empty-t">Belum ada tulisan.</p>
+        <button class="btn-ink" type="button" id="emptyNew">Tulis yang pertama</button>
+      </div>
+    </main>
+
+    <aside class="details" id="details" aria-label="Detail tulisan">
+      <div class="group">
+        <div class="line">
+          <span class="ln-name">Terbitkan<small id="pubHint">Draf tidak tampil di situs.</small></span>
+          <button class="switch" id="dPub" type="button" role="switch" aria-checked="false" aria-label="Terbitkan"><i></i></button>
+        </div>
+        <div class="line">
+          <span class="ln-name">Tampil di kanvas<small>Kertasnya muncul di meja.</small></span>
+          <button class="switch" id="dCanvas" type="button" role="switch" aria-checked="true" aria-label="Tampil di kanvas"><i></i></button>
+        </div>
+      </div>
+      <p class="g-h">Jenis</p>
+      <div class="chips" id="dCat" role="radiogroup" aria-label="Jenis tulisan"></div>
+      <p class="g-h">Bentuk</p>
+      <div class="seg" id="dForm" role="radiogroup" aria-label="Bentuk">
+        <button type="button" role="radio" data-v="prosa" aria-checked="true">Prosa</button>
+        <button type="button" role="radio" data-v="puisi" aria-checked="false">Puisi</button>
+      </div>
+      <div class="two">
+        <label for="dDate">Tanggal<input id="dDate" type="date"></label>
+        <label for="dTime">Jam<input id="dTime" type="time"></label>
+      </div>
+      <label for="dSlug">Alamat<span class="slug-prefix">#baca-</span><input id="dSlug" spellcheck="false" autocomplete="off"></label>
+      <p class="field-err" id="slugErr" hidden></p>
+      <label for="dExcerpt">Ringkasan <button type="button" class="mini-link" id="autoExcerpt">isi otomatis</button>
+        <textarea id="dExcerpt" rows="3" placeholder="Muncul di kartu dan hasil cari."></textarea></label>
+      <label for="dLine">Baris favorit
+        <textarea id="dLine" rows="2" placeholder="Muncul di catatan tempel dan pita kutipan."></textarea></label>
+      <div class="danger">
+        <button type="button" id="delBtn">Hapus tulisan ini</button>
+        <div class="confirm" id="delConfirm" hidden>
+          <span>Hapus permanen setelah disimpan?</span>
+          <button type="button" id="delYes" class="red">Hapus</button>
+          <button type="button" id="delNo">Batal</button>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ---------- TAMPILAN ---------- -->
+  <section class="tab tab-tampilan" id="tab-tampilan" hidden>
+    <div class="set-col" id="setCol">
+      <h2 class="set-h">Identitas</h2>
+      <div class="group">
+        <label class="row-f" for="sTitle"><span>Judul situs</span><input id="sTitle" data-k="title"></label>
+        <label class="row-f" for="sAuthor"><span>Nama penulis</span><input id="sAuthor" data-k="author"></label>
+        <label class="row-f" for="sHandle"><span>Nama pendek</span><input id="sHandle" data-k="handle" placeholder="juan/menulis"></label>
+        <label class="row-f" for="sReader"><span>Sapaan untuk pembaca</span><input id="sReader" data-k="readerName" placeholder="pembaca"></label>
+        <label class="row-f" for="sEmail"><span>Email (opsional)</span><input id="sEmail" data-k="email" type="email" placeholder="kamu@contoh.com"></label>
+        <label class="row-f col" for="sDesc"><span>Deskripsi singkat</span><textarea id="sDesc" data-k="description" rows="2"></textarea></label>
+        <div class="row-f">
+          <span>Foto profil<small>Kosong = avatar benang dari namamu.</small></span>
+          <div class="avatar-edit">
+            <span class="av" id="avPrev"></span>
+            <label class="btn-ghost sm" for="avIn">Unggah</label>
+            <input id="avIn" type="file" accept="image/*" hidden>
+            <button type="button" class="btn-ghost sm" id="avDel">Hapus</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="set-h">Warna &amp; suasana</h2>
+      <div class="group">
+        <div class="row-f"><span>Kartu sapaan</span><div class="swatches" data-k="accent" data-presets="#1662FF,#111214,#E5483D,#0E8A5C,#6A4DF0,#FF7A1A"></div></div>
+        <div class="row-f"><span>Catatan tempel</span><div class="swatches" data-k="sticky" data-presets="#E3F46B,#FFE16B,#FFB8D2,#A9E8FF,#C9F2C7,#F3E9DC"></div></div>
+        <div class="row-f"><span>Latar bawaan</span><div class="seg" data-k="backdrop" data-opts="auto:Otomatis,senja:Senja,kabut:Kabut,malam:Malam"></div></div>
+        <div class="row-f"><span>Tema bawaan</span><div class="seg" data-k="theme" data-opts="auto:Otomatis,terang:Terang,gelap:Gelap"></div></div>
+        <div class="row-f"><span>Halaman pembuka</span><div class="seg" data-k="defaultView" data-opts="kanvas:Kanvas,daftar:Daftar"></div></div>
+      </div>
+
+      <h2 class="set-h">Bacaan</h2>
+      <div class="group">
+        <div class="row-f col"><span>Huruf bawaan</span><div class="fonts" id="sFonts" role="radiogroup" aria-label="Huruf bawaan"></div></div>
+        <div class="row-f"><span>Kertas bawaan</span><div class="seg" data-k="readerPaper" data-opts="putih:Putih,sepia:Sepia,gelap:Gelap"></div></div>
+      </div>
+
+      <h2 class="set-h">Jenis tulisan</h2>
+      <div class="group" id="catEditor"></div>
+      <button type="button" class="btn-ghost sm add" id="addCat">+ Jenis baru</button>
+
+      <h2 class="set-h">Kanvas</h2>
+      <div class="group" id="folderEditor"></div>
+      <a class="btn-ghost sm add" id="tataLink" href="../?tata=1#kanvas" target="_blank" rel="noopener">Atur tata letak kanvas dengan menyeret ↗</a>
+      <p class="hint">Simpan perubahan tulisan dulu, lalu atur posisinya di situs. Tata letak tersimpan sebagai commit terpisah.</p>
+
+      <h2 class="set-h">Catatan map tahun</h2>
+      <div class="group" id="yearEditor"></div>
+
+      <h2 class="set-h">Fitur</h2>
+      <div class="group">
+        <div class="line"><span class="ln-name">Panel sapa<small>Panel hitam berkartu biru di kanan.</small></span><button class="switch" type="button" role="switch" data-f="dock" aria-label="Panel sapa"><i></i></button></div>
+        <div class="line"><span class="ln-name">Kutipan bergilir<small>Isi panel sapa berganti tiap 9 detik.</small></span><button class="switch" type="button" role="switch" data-f="rotatingQuotes" aria-label="Kutipan bergilir"><i></i></button></div>
+        <div class="line"><span class="ln-name">Pengunjung boleh menjatuhkan berkas<small>Tulisan mereka hanya tersimpan di peramban mereka.</small></span><button class="switch" type="button" role="switch" data-f="visitorUploads" aria-label="Unggahan pengunjung"><i></i></button></div>
+        <div class="line"><span class="ln-name">Pengunjung boleh menempel catatan<small>Tombol + di kanvas.</small></span><button class="switch" type="button" role="switch" data-f="visitorStickies" aria-label="Catatan pengunjung"><i></i></button></div>
+      </div>
+    </div>
+
+    <div class="set-preview">
+      <div class="pv-bar">
+        <div class="seg" id="pvDevice" role="radiogroup" aria-label="Ukuran pratinjau">
+          <button type="button" role="radio" data-v="desktop" aria-checked="true">Desktop</button>
+          <button type="button" role="radio" data-v="phone" aria-checked="false">Ponsel</button>
+        </div>
+        <span class="pv-note">Pratinjau langsung, belum tersimpan</span>
+      </div>
+      <div class="pv-stage" id="pvStage"><div class="pv-frame" id="pvFrameBox"><iframe id="pvFrame" title="Pratinjau situs"></iframe></div></div>
+    </div>
+  </section>
+
+  <!-- ---------- RIWAYAT ---------- -->
+  <section class="tab tab-riwayat" id="tab-riwayat" hidden>
+    <div class="hist">
+      <h2 class="set-h">Riwayat perubahan</h2>
+      <p class="hint">Setiap Simpan menjadi satu commit. Buka di GitHub untuk melihat perbedaan atau mengembalikan versi lama.</p>
+      <ol class="hist-list" id="histList"></ol>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../assets/gh.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "title": "Juan Menulis",
+  "description": "Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan.",
+  "author": "Juan",
+  "handle": "juan/menulis",
+  "email": "juan@example.com",
+  "avatar": "",
+  "readerName": "pembaca",
+  "accent": "#1662FF",
+  "sticky": "#E3F46B",
+  "theme": "auto",
+  "backdrop": "auto",
+  "defaultView": "kanvas",
+  "readerFont": "newsreader",
+  "readerPaper": "putih",
+  "features": {
+    "dock": true,
+    "visitorUploads": true,
+    "visitorStickies": true,
+    "rotatingQuotes": true
+  },
+  "categories": [
+    {
+      "id": "esai",
+      "label": "Esai",
+      "tag": "ESAI",
+      "ink": "#2F5BFF",
+      "red": false
+    },
+    {
+      "id": "puisi",
+      "label": "Puisi",
+      "tag": "PUISI",
+      "ink": "#D2338A",
+      "red": true
+    },
+    {
+      "id": "cerpen",
+      "label": "Cerpen",
+      "tag": "CERPEN",
+      "ink": "#0E8A5C",
+      "red": false
+    },
+    {
+      "id": "mini",
+      "label": "Fiksi Mini",
+      "tag": "MINI",
+      "ink": "#E0571C",
+      "red": false
+    },
+    {
+      "id": "catatan",
+      "label": "Catatan",
+      "tag": "CATATAN",
+      "ink": "#6A4DF0",
+      "red": false
+    }
+  ],
+  "folders": {
+    "esai": "Esai tentang hal-hal kecil",
+    "puisi": "Puisi yang dicoret berkali-kali"
+  },
+  "years": {
+    "2023": "Puisi pertama yang dibacakan keras-keras.",
+    "2024": "Draf, laci, dan hari Senin yang dicuci.",
+    "2025": "Tahun belajar tersesat dengan sengaja."
+  }
+}
