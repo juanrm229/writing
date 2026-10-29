@@ -31,6 +31,14 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 ## Situs
 
+- **Benang merah.** Tombol merah di bilah atas menarik benang sungguhan antar-kertas di kanvas, ala papan detektif. Benangnya menghubungkan tulisan-tulisan yang berbagi kata khas (dihitung dengan TF-IDF langsung di peramban), dengan kata penghubungnya tertulis di benang. Sorot satu kertas untuk menyorot benangnya. Di akhir setiap tulisan ada daftar tulisan yang terhubung.
+- **Membaca = merajut.** Di pojok kartu baca, seni benang tulisan itu terajut sedikit demi sedikit sesuai seberapa jauh kamu membaca.
+- **Saksikan ditulis.** Tulisan diketik ulang di depan pembaca dengan ritme alami (jeda di tanda baca, sesekali salah ketik yang dihapus lalu diperbaiki). Bisa dijeda, dipercepat 2× atau 4×, atau dilewati.
+- **Kartu kutipan.** Pilih kalimat mana pun untuk membuat gambar kutipan (empat warna) lalu bagikan langsung ke aplikasi lain di ponsel, unduh, atau salin. Tombol bagikan di atas pembaca mengirim tautan tulisan.
+- **Suasana.** Pengaturan Lanjutan → Suasana: hujan, ombak, atau perapian, disintesis dengan Web Audio tanpa berkas suara.
+- **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam. Di kanvas ada lampu meja yang mengikuti kursor, dan kertas miring 3D saat disorot.
+- **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: benang merah, mode gelap, tulisan acak, ganti latar, pasang aplikasi.
+
 - **Kanvas.** Kertas bertumpuk, map berlekuk, catatan tempel, dan kartu benang yang bisa digeser (dengan inersia), dicubit-zoom, dan diklik ganda untuk memperbesar.
 - **Daftar.** Rak per jenis, centang, map per tahun, catatan pribadi per tulisan, dan *Baca berurutan*.
 - **Pembaca.** Tema kertas, Suara, Cari, Fokus, ukuran, kecerahan, Tandai, Layar menyala, serta Pengaturan Lanjutan (huruf, ketebalan, ligatur, perataan).

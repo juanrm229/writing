@@ -68,7 +68,7 @@
     accent: '', sticky: '', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
     folders: {}, years: {}, categories: DEFAULT_CATS,
     ...site,
-    features: { dock: true, visitorStickies: true, rotatingQuotes: true, ...(site.features || {}) }
+    features: { dock: true, visitorStickies: true, rotatingQuotes: true, connections: true, replay: true, ambience: true, ...(site.features || {}) }
   };
   const CATS = {};
   (SITE.categories && SITE.categories.length ? SITE.categories : DEFAULT_CATS).forEach(c => { CATS[c.id] = c; });
@@ -79,6 +79,10 @@
     .map(w => ({ form: 'prosa', time: '', excerpt: '', line: '', ...w }))
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
+
+  /* ---------- waktu setempat ---------- */
+  const hourNow = new Date().getHours() + new Date().getMinutes() / 60;
+  const dayPart = hourNow < 4 ? 'malam' : hourNow < 10.5 ? 'pagi' : hourNow < 15 ? 'siang' : hourNow < 18.5 ? 'sore' : 'malam';
 
   /* ---------- pengaturan dari admin ---------- */
   const root = document.documentElement;
@@ -170,6 +174,7 @@
       P.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(.7, r / 120), 0, Math.PI * 2); ctx.fill(); });
     };
     cancelAnimationFrame(canvas._raf);
+    if (o.frac != null) { pins(); strokes(0, Math.round(segs.length * clamp(o.frac, 0, 1))); return segs.length; }
     if (!o.animate || reduced) { strokes(0, segs.length); pins(); return; }
     pins();
     const per = Math.max(1, Math.ceil(segs.length / (o.frames || 60)));
@@ -227,7 +232,7 @@
     win.dataset.view = v;
     syncPill();
     if (v === 'kanvas') canvasFit(false);
-    if (v !== 'baca') { stopSpeech(); releaseLock(); setSheet(false); document.title = SITE.title; }
+    if (v !== 'baca') { stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
     const btns = $$('.pill [data-go]');
@@ -271,18 +276,20 @@
       root.setAttribute('data-theme', dark ? 'dark' : 'light');
       store.set('theme', dark ? 'dark' : 'light');
       $('#chipDark').setAttribute('aria-checked', String(dark));
+      if (typeof applyBackdrop === 'function') applyBackdrop();
     };
     if (document.startViewTransition && !reduced) document.startViewTransition(apply); else apply();
   }
   $('#chipDark').setAttribute('aria-checked', String(isDark()));
   $('#chipDark').addEventListener('click', () => setTheme(!isDark()));
-  darkMQ.addEventListener?.('change', () => $('#chipDark').setAttribute('aria-checked', String(isDark())));
+  darkMQ.addEventListener?.('change', () => { $('#chipDark').setAttribute('aria-checked', String(isDark())); applyBackdrop(); });
 
-  const BACKDROPS = ['auto', 'senja', 'kabut', 'malam'];
-  const BD_NAMES = { auto: 'Otomatis', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
+  const BACKDROPS = ['auto', 'fajar', 'siang', 'senja', 'kabut', 'malam'];
+  const BD_NAMES = { auto: 'ikut jam', fajar: 'Fajar', siang: 'Siang', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
+  const clockBackdrop = () => (isDark() ? 'malam' : { pagi: 'fajar', siang: 'siang', sore: 'senja', malam: 'malam' }[dayPart]);
   let backdrop = store.get('backdrop', SITE.backdrop || 'auto');
   function applyBackdrop() {
-    if (backdrop === 'auto') root.removeAttribute('data-backdrop'); else root.setAttribute('data-backdrop', backdrop);
+    root.setAttribute('data-backdrop', backdrop === 'auto' ? clockBackdrop() : backdrop);
     $('#bdNext').textContent = BD_NAMES[BACKDROPS[(BACKDROPS.indexOf(backdrop) + 1) % BACKDROPS.length]];
   }
   $('#chipBackdrop').addEventListener('click', () => {
@@ -400,6 +407,7 @@
       }
     });
     $$('canvas[data-thread]', world).forEach(c => drawThread(c, fullText(bySlug(c.dataset.thread)), { color: '#2A2620', seed: c.dataset.thread, weight: 1.3, pad: 12, animate: enter, frames: 110 }));
+    if (threadsOn) buildThreads(enter);
   }
   function applyCam() { world.style.transform = `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.s})`; }
   function canvasClamp() {
@@ -480,6 +488,7 @@
       const v = (e.clientX - act.lx) / Math.max(8, t - act.lt);
       act.vx = act.vx * .7 + v * .3; act.lx = e.clientX; act.lt = t;
       act.obj.style.rotate = clamp(act.vx * 9, -9, 9).toFixed(2) + 'deg';
+      if (threadsOn) updateThreads();
     }
   });
   const endPointer = e => {
@@ -501,6 +510,7 @@
     }
     a.obj.classList.remove('dragging');
     a.obj.style.rotate = '';
+    if (threadsOn) requestAnimationFrame(updateThreads);
     if (a.moved) {
       a.obj.classList.add('settle');
       setTimeout(() => a.obj.classList.remove('settle'), 600);
@@ -788,7 +798,7 @@
         <button type="button" data-act="open" data-slug="${long.slug}">“${esc(long.title)}”</button> <span class="dim">(${long.words}), paling singkat</span>
         <button type="button" data-act="open" data-slug="${short.slug}">“${esc(short.title)}”</button><span class="dim"> (${short.words}).</span>`;
     } else {
-      g.innerHTML = `<span class="dim">Hai,</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
+      g.innerHTML = `<span class="dim">Selamat ${dayPart},</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
         <span class="dim">Meja ini</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><button type="button" data-act="list">${WORKS.length} tulisan</button></span>
         <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">${esc(kinds[0] || '')}</span></span> <span class="dim">${kinds.length > 1 ? 'sampai ' + esc(kinds[kinds.length - 1]) + '.' : '.'} Kamu punya</span>
         <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="unread">${unread.length ? unread.length + ' belum' : 'semua sudah'}</button></span> <button type="button" data-act="unread">dibaca</button>
@@ -1029,7 +1039,7 @@
   function showReader(slug) {
     const w = bySlug(slug);
     if (!w) return;
-    stopSpeech(); closeFind();
+    stopSpeech(); closeFind(); stopReplay(false); hideQuotePop();
     current = w;
     setView('baca');
     $('#rdBackLabel').textContent = prevView === 'daftar' ? 'Daftar' : prevView === 'sapa' ? 'Sapa' : 'Kanvas';
@@ -1039,6 +1049,7 @@
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     const { prev, next } = neighbors();
+    renderRelated(w);
     $('#rdNextLink').href = '#baca-' + next.slug;
     $('b', $('#rdNextLink')).textContent = next.title;
     $('#rdPrev').dataset.slug = prev.slug; $('#rdNext').dataset.slug = next.slug;
@@ -1071,7 +1082,9 @@
 
   function onScroll() {
     const max = scroller.scrollHeight - scroller.clientHeight;
-    $('#rdProg').style.transform = `scaleX(${max > 0 ? scroller.scrollTop / max : 1})`;
+    const frac = max > 0 ? scroller.scrollTop / max : 1;
+    $('#rdProg').style.transform = `scaleX(${frac})`;
+    weave(frac);
     if (!focusMode) return;
     const r0 = scroller.getBoundingClientRect(), mid = r0.top + r0.height * .45;
     let best = null, bd = Infinity;
@@ -1179,12 +1192,28 @@
   }
   const palette = $('#palette'), pInput = $('#pInput'), pResults = $('#pResults');
   let pSel = 0, pItems = [];
+  const commands = () => [
+    { label: threadsOn ? 'Sembunyikan benang merah' : 'Tampilkan benang merah', hint: 'hubungan antar-tulisan', run: () => { if (view !== 'kanvas') go('kanvas'); setThreads(!threadsOn); }, show: !!SITE.features.connections },
+    { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
+    { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
+    { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
+    { label: 'Ke kanvas', hint: 'tampilan', run: () => go('kanvas') },
+    { label: 'Ke daftar', hint: 'tampilan', run: () => go('daftar') },
+    { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
+    { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#installBtn').hidden }
+  ].filter(c => c.show !== false);
   function renderPalette() {
-    pItems = search(pInput.value);
+    const raw = pInput.value.trim();
+    const cmdMode = raw.startsWith('>');
+    const q = fold(cmdMode ? raw.slice(1).trim() : raw);
+    const cmds = commands().filter(c => !q || fold(c.label).includes(q)).map(c => ({ cmd: c }));
+    pItems = cmdMode ? cmds : [...(q ? cmds.slice(0, 2) : []), ...search(raw)];
     pSel = Math.min(pSel, Math.max(0, pItems.length - 1));
     pResults.innerHTML = pItems.length
-      ? pItems.map((r, i) => `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}" style="--k:${Math.min(i, 8)}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
-      : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, misalnya “hujan” atau “Senin”.</li>';
+      ? pItems.map((r, i) => r.cmd
+        ? `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-cmd="${i}" class="p-cmd" style="--k:${Math.min(i, 8)}"><span class="p-kbd" aria-hidden="true">›</span><span class="p-title">${esc(r.cmd.label)}</span><span class="p-snip">${esc(r.cmd.hint || 'perintah')}</span></li>`
+        : `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}" style="--k:${Math.min(i, 8)}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
+      : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, atau ketik > untuk melihat perintah.</li>';
     pInput.setAttribute('aria-activedescendant', pItems.length ? 'po-' + pSel : '');
   }
   function openPalette() { palette.hidden = false; pInput.value = ''; pSel = 0; renderPalette(); pInput.focus(); }
@@ -1199,9 +1228,13 @@
       pInput.setAttribute('aria-activedescendant', 'po-' + pSel);
       $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' });
     }
-    if (e.key === 'Enter' && pItems[pSel]) { closePalette(); openWork(pItems[pSel].w.slug); }
+    if (e.key === 'Enter' && pItems[pSel]) { const it = pItems[pSel]; closePalette(); it.cmd ? it.cmd.run() : openWork(it.w.slug); }
   });
-  pResults.addEventListener('click', e => { const li = e.target.closest('[data-slug]'); if (li) { closePalette(); openWork(li.dataset.slug); } });
+  pResults.addEventListener('click', e => {
+    const li = e.target.closest('[data-slug], [data-cmd]'); if (!li) return;
+    closePalette();
+    if (li.dataset.cmd) pItems[+li.dataset.cmd].cmd.run(); else openWork(li.dataset.slug);
+  });
   palette.addEventListener('click', e => { if (e.target === palette) closePalette(); });
 
   /* ======================================================================
@@ -1212,6 +1245,8 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette.hidden ? openPalette() : closePalette(); return; }
     if (e.key === 'Escape') {
       if (!palette.hidden) return closePalette();
+      if (!$('#quoteModal').hidden) return closeQuote();
+      if (RP.token) return stopReplay(true);
       if (!$('#rdFind').hidden) return closeFind();
       if (rs.classList.contains('open')) return setSheet(false);
       if (!$('#rsAdv').hidden && view === 'baca') return rsPage(false);
@@ -1240,6 +1275,412 @@
   mobileMQ.addEventListener?.('change', () => { if (view === 'sapa' && !isMobile()) setView('kanvas'); syncPill(); });
   let rt;
   addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); syncPill(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
+
+  /* ======================================================================
+     BENANG MERAH: tulisan yang berbagi kata khas dihubungkan benang
+     ====================================================================== */
+  const LINK_STOP = new Set(('yang dan di ke dari itu ini aku kamu ia dia kita kami mereka dengan untuk pada ada tidak tapi tetapi juga akan sudah saja karena seperti adalah sebagai atau dalam bahwa lalu kalau jika apa satu setiap lebih sangat hanya masih bisa harus pun oleh kepada para si sang begitu sampai belum telah sedang agar supaya maka namun mau ingin lagi sebuah seorang pak bu yah iya ya tak kan hal demi tanpa sejak antara setelah sebelum selalu pernah mungkin kupikir sebenarnya terlalu semua dua tiga entah kenapa sesuatu bukan tetap paling membuat menjadi punya tahu hari kali orang biasa banyak balik jadi benar awal awalnya mana daripada pertama kedua sama tentang masuk datang tahun ketika sering memang akhirnya sedikit besar kecil baru lama dulu sekarang nanti cukup sambil hingga bahkan justru kembali dapat sana sini situ apakah bagaimana berapa siapa juga suatu terasa terus kemudian rasa sendiri saat waktu lain').split(' '));
+  const LINKS = (() => {
+    const docs = WORKS.map(w => {
+      const tf = {};
+      (fold(fullText(w) + ' ' + w.title).match(/[a-z]+/g) || []).filter(t => t.length > 3 && !LINK_STOP.has(t)).forEach(t => { tf[t] = (tf[t] || 0) + 1; });
+      return { w, tf };
+    });
+    const df = {};
+    docs.forEach(d => Object.keys(d.tf).forEach(t => { df[t] = (df[t] || 0) + 1; }));
+    const N = docs.length;
+    docs.forEach(d => {
+      d.v = {}; let n = 0;
+      for (const [t, c] of Object.entries(d.tf)) { if (df[t] < 2 || df[t] > N * .6) continue; d.v[t] = (1 + Math.log(c)) * Math.log((N + 1) / (df[t] + .5)); n += d.v[t] ** 2; }
+      d.n = Math.sqrt(n) || 1;
+    });
+    const pairs = [];
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+      const a = docs[i], b = docs[j], shared = [];
+      let dot = 0;
+      for (const t in a.v) if (b.v[t]) { dot += a.v[t] * b.v[t]; shared.push([t, a.v[t] * b.v[t]]); }
+      const sim = dot / (a.n * b.n);
+      if (sim > .1) pairs.push({ a: a.w.slug, b: b.w.slug, sim, words: shared.sort((x, y) => y[1] - x[1]).slice(0, 2).map(x => x[0]) });
+    }
+    // tiap tulisan menyimpan dua tetangga terdekatnya
+    const keep = new Set();
+    WORKS.forEach(w => pairs.filter(p => p.a === w.slug || p.b === w.slug).sort((x, y) => y.sim - x.sim).slice(0, 2).forEach(p => keep.add(p)));
+    return [...keep];
+  })();
+  const linksOf = slug => LINKS.filter(l => l.a === slug || l.b === slug).sort((x, y) => y.sim - x.sim);
+
+  let threadsOn = !!SITE.features.connections && store.get('threads', false);
+  let threadEdges = [];
+  function anchorOf(slug) {
+    const w = bySlug(slug);
+    return $(`.obj.paper[data-open="${slug}"]`, world) || $(`.obj.imgcard[data-open="${slug}"]`, world) ||
+      $(`.obj.sticky[data-open="${slug}"]`, world) || $(`.obj.folder[data-shelf="${w?.cat}"]`, world) ||
+      $(`.peek[data-open="${slug}"]`, world)?.closest('.obj');
+  }
+  const pinOf = el => [parseFloat(el.style.left) + el.offsetWidth / 2, parseFloat(el.style.top) + 14];
+  function curve(p, q) {
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, sag = Math.min(170, Math.hypot(q[0] - p[0], q[1] - p[1]) * .2);
+    const c = [mx, my + sag];
+    return { d: `M${p[0].toFixed(1)} ${p[1].toFixed(1)} Q${c[0].toFixed(1)} ${c[1].toFixed(1)} ${q[0].toFixed(1)} ${q[1].toFixed(1)}`, mid: [.25 * p[0] + .5 * c[0] + .25 * q[0], .25 * p[1] + .5 * c[1] + .25 * q[1]] };
+  }
+  function buildThreads(animate) {
+    $$('.threads, .thread-tag, .thread-pin', world).forEach(n => n.remove());
+    threadEdges = [];
+    if (!threadsOn) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'threads');
+    svg.setAttribute('width', WORLD.w); svg.setAttribute('height', WORLD.h);
+    svg.setAttribute('aria-hidden', 'true');
+    const pinned = new Set();
+    LINKS.forEach((l, i) => {
+      const A = anchorOf(l.a), B = anchorOf(l.b);
+      if (!A || !B || A === B) return;
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('pathLength', '1');
+      path.style.setProperty('--k', i);
+      if (animate && !reduced) path.classList.add('draw');
+      svg.append(path);
+      const tag = document.createElement('span');
+      tag.className = 'thread-tag'; tag.textContent = l.words.join(' · ');
+      tag.style.setProperty('--k', i);
+      world.append(tag);
+      threadEdges.push({ l, A, B, path, tag });
+      pinned.add(A); pinned.add(B);
+    });
+    world.append(svg);
+    pinned.forEach(el => { const p = document.createElement('i'); p.className = 'thread-pin'; p._for = el; world.append(p); });
+    updateThreads();
+  }
+  function updateThreads() {
+    threadEdges.forEach(e => {
+      const { d, mid } = curve(pinOf(e.A), pinOf(e.B));
+      e.path.setAttribute('d', d);
+      e.tag.style.left = mid[0] + 'px'; e.tag.style.top = mid[1] + 'px';
+    });
+    $$('.thread-pin', world).forEach(p => { const [x, y] = pinOf(p._for); p.style.left = x + 'px'; p.style.top = y + 'px'; });
+  }
+  function setThreads(on) {
+    threadsOn = on && !!SITE.features.connections;
+    store.set('threads', threadsOn);
+    $('#threadToggle').setAttribute('aria-pressed', String(threadsOn));
+    win.classList.toggle('threads-on', threadsOn);
+    buildThreads(true);
+    if (threadsOn) toast(`${threadEdges.length} benang merah: tulisan yang berbagi kata khas saling terhubung.`);
+  }
+  $('#threadToggle').addEventListener('click', () => { if (view !== 'kanvas') go('kanvas'); setThreads(!threadsOn); });
+  if (!SITE.features.connections) $('#threadToggle').hidden = true;
+  $('#threadToggle').setAttribute('aria-pressed', String(threadsOn));
+  win.classList.toggle('threads-on', threadsOn);
+  // sorot benang milik objek yang disentuh kursor
+  world.addEventListener('pointerover', e => {
+    if (!threadsOn) return;
+    const obj = e.target.closest('.obj');
+    threadEdges.forEach(t => { const hot = obj && (t.A === obj || t.B === obj); t.path.classList.toggle('hot', hot); t.tag.classList.toggle('hot', hot); });
+    world.classList.toggle('thread-focus', !!obj && threadEdges.some(t => t.A === obj || t.B === obj));
+  });
+  world.addEventListener('pointerleave', () => world.classList.remove('thread-focus'));
+
+  function renderRelated(w) {
+    const host = $('#rdRelated');
+    const links = SITE.features.connections ? linksOf(w.slug).slice(0, 3) : [];
+    host.hidden = !links.length;
+    host.innerHTML = links.length ? `<p class="rd-end-label">benang merah</p>` + links.map(l => {
+      const o = bySlug(l.a === w.slug ? l.b : l.a);
+      return `<a class="rel" href="#baca-${o.slug}"><svg class="rel-thread" viewBox="0 0 34 18" aria-hidden="true"><path d="M4 13Q15 19 30 4"/><circle cx="4" cy="13" r="3"/><circle cx="30" cy="4" r="3"/></svg><span class="rel-t"><b>${esc(o.title)}</b><small>terhubung lewat ${l.words.map(x => `<i>${esc(x)}</i>`).join(' dan ')}</small></span></a>`;
+    }).join('') : '';
+  }
+
+  /* ---------- lampu meja & kertas yang miring 3D ---------- */
+  if (matchMedia('(pointer: fine)').matches && !reduced) {
+    viewport.addEventListener('pointermove', e => {
+      const r = viewport.getBoundingClientRect();
+      viewport.style.setProperty('--lx', (e.clientX - r.left) + 'px');
+      viewport.style.setProperty('--ly', (e.clientY - r.top) + 'px');
+      if (act) return;
+      const obj = e.target.closest('.obj');
+      if (obj !== viewport._tilt) { if (viewport._tilt) viewport._tilt.style.removeProperty('--rx'), viewport._tilt.style.removeProperty('--ry'); viewport._tilt = obj; }
+      if (!obj) return;
+      const b = obj.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5;
+      obj.style.setProperty('--ry', (x * 14).toFixed(2) + 'deg');
+      obj.style.setProperty('--rx', (-y * 10).toFixed(2) + 'deg');
+    });
+    viewport.addEventListener('pointerleave', () => { if (viewport._tilt) { viewport._tilt.style.removeProperty('--rx'); viewport._tilt.style.removeProperty('--ry'); viewport._tilt = null; } });
+  }
+
+  /* ======================================================================
+     MEMBACA = MERAJUT: benang tulisan terajut seiring kamu membaca
+     ====================================================================== */
+  let weaveRaf = 0, weaveDone = false;
+  function weave(frac) {
+    if (!current) return;
+    cancelAnimationFrame(weaveRaf);
+    weaveRaf = requestAnimationFrame(() => {
+      const c = $('#weaveCanvas');
+      drawThread(c, fullText(current), { color: catOf(current.cat).ink, seed: current.slug, pad: 4, frac, weight: 1.15 });
+      const pct = Math.round(frac * 100);
+      $('#weavePct').textContent = pct >= 100 ? 'terajut' : pct + '%';
+      const done = pct >= 99;
+      if (done && !weaveDone && scroller.scrollHeight > scroller.clientHeight + 40) { $('#weave').classList.remove('done'); void $('#weave').offsetWidth; $('#weave').classList.add('done'); }
+      weaveDone = done;
+    });
+  }
+
+  /* ======================================================================
+     SAKSIKAN DITULIS: tulisan diketik ulang, lengkap dengan ragu dan revisi
+     ====================================================================== */
+  const RP = { token: null, paused: false, speed: 1 };
+  const SPEEDS = [1, 2, 4];
+  const sleep = async (ms, tok) => {
+    let left = ms;
+    while (left > 0) {
+      if (RP.token !== tok) throw new Error('berhenti');
+      const step = Math.min(left, 40);
+      await wait(step);
+      if (!RP.paused) left -= step * RP.speed;
+    }
+  };
+  function stopReplay(finish) {
+    if (!RP.token) return;
+    RP.token = null; RP.paused = false;
+    $('#replayBar').hidden = true;
+    $('#rdReplay').setAttribute('aria-pressed', 'false');
+    body.classList.remove('replaying');
+    if (finish !== false && current) renderBody('', false);
+  }
+  async function startReplay() {
+    if (!current) return;
+    if (RP.token) { stopReplay(); return; }
+    stopSpeech(); closeFind(); hideQuotePop();
+    const w = current, tok = {};
+    RP.token = tok; RP.paused = false;
+    $('#rpPause').textContent = 'Jeda'; $('#rpSpeed').textContent = RP.speed + '×';
+    $('#replayBar').hidden = false;
+    $('#rdReplay').setAttribute('aria-pressed', 'true');
+    body.className = 'rd-body replaying';
+    body.innerHTML = w.body.map(() => `<p${w.form === 'puisi' ? ' class="stanza"' : ''}></p>`).join('');
+    scroller.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    const rnd = seeded(w.slug + '/ketik');
+    const follow = el => {
+      const r = el.getBoundingClientRect(), s = scroller.getBoundingClientRect();
+      if (r.bottom > s.bottom - 140) scroller.scrollTop += r.bottom - (s.bottom - 140);
+    };
+    try {
+      for (let i = 0; i < w.body.length; i++) {
+        const el = body.children[i], text = plain(w.body[i]);
+        el.classList.add('typing');
+        let out = '', typos = 1;
+        const put = async (ch, ms) => { out += ch; el.textContent = out; follow(el); await sleep(ms, tok); };
+        for (const tk of text.split(/(\s+)/)) {
+          // sesekali salah ketik, lalu dihapus dan diperbaiki
+          if (typos && tk.length > 5 && /^[a-z]/i.test(tk) && rnd() < .06) {
+            typos--;
+            const k = 1 + Math.floor(rnd() * (tk.length - 3));
+            const wrong = tk.slice(0, k) + tk[k + 1] + tk[k] + tk.slice(k + 2, k + 3);
+            for (const ch of wrong) await put(ch, 45 + rnd() * 40);
+            await sleep(380, tok);
+            for (let d = 0; d < wrong.length; d++) { out = out.slice(0, -1); el.textContent = out; await sleep(55, tok); }
+            await sleep(160, tok);
+          }
+          for (const ch of tk) {
+            const pause = /[.!?…]/.test(ch) ? 360 : /[,;:—]/.test(ch) ? 170 : ch === '\n' ? 260 : 0;
+            await put(ch, 22 + rnd() * 34 + pause);
+          }
+        }
+        el.classList.remove('typing');
+        el.innerHTML = rich(w.body[i]);
+        await sleep(520, tok);
+      }
+      RP.token = null;
+      $('#replayBar').hidden = true;
+      $('#rdReplay').setAttribute('aria-pressed', 'false');
+      body.classList.remove('replaying');
+      toast('Selesai ditulis.');
+    } catch (e) { /* dihentikan */ }
+  }
+  $('#rdReplay').addEventListener('click', startReplay);
+  $('#rpPause').addEventListener('click', () => { RP.paused = !RP.paused; $('#rpPause').textContent = RP.paused ? 'Lanjut' : 'Jeda'; $('#replayBar').classList.toggle('paused', RP.paused); });
+  $('#rpSpeed').addEventListener('click', () => { RP.speed = SPEEDS[(SPEEDS.indexOf(RP.speed) + 1) % SPEEDS.length]; $('#rpSpeed').textContent = RP.speed + '×'; });
+  $('#rpSkip').addEventListener('click', () => stopReplay(true));
+  if (!SITE.features.replay) $('#rdReplay').hidden = true;
+
+  /* ======================================================================
+     KARTU KUTIPAN & BERBAGI
+     ====================================================================== */
+  const qpop = $('#quotePop');
+  let qText = '';
+  function hideQuotePop() { qpop.hidden = true; }
+  function checkSelection() {
+    const sel = getSelection();
+    const t = sel && sel.toString().trim().replace(/\s+/g, ' ');
+    if (!t || t.length < 8 || t.length > 360 || !body.contains(sel.anchorNode) || RP.token) { hideQuotePop(); return; }
+    qText = t;
+    const r = sel.getRangeAt(0).getBoundingClientRect();
+    qpop.style.left = clamp(r.left + r.width / 2, 110, innerWidth - 110) + 'px';
+    qpop.style.top = clamp(r.top, 70, innerHeight - 20) + 'px';
+    qpop.hidden = false;
+  }
+  body.addEventListener('mouseup', () => setTimeout(checkSelection, 10));
+  body.addEventListener('keyup', checkSelection);
+  document.addEventListener('selectionchange', () => { if (view === 'baca' && matchMedia('(pointer: coarse)').matches) checkSelection(); });
+  scroller.addEventListener('scroll', hideQuotePop, { passive: true });
+  qpop.addEventListener('mousedown', e => e.preventDefault());
+  qpop.addEventListener('click', () => { hideQuotePop(); openQuote(qText); });
+
+  const QSW = [
+    { id: 'kertas', bg: '#FAF8F4', fg: '#1D1D1F', sub: '#7A7670' },
+    { id: 'aksen', bg: () => SITE.accent || '#1662FF', fg: '#FFFFFF', sub: 'rgba(255,255,255,.7)' },
+    { id: 'malam', bg: '#111214', fg: '#F2F2F4', sub: '#8E8E93' },
+    { id: 'pastel', bg: '#F3E1EA', fg: '#2A1E24', sub: '#8A6E7B' }
+  ];
+  let qsw = 'kertas';
+  const val = v => (typeof v === 'function' ? v() : v);
+  function wrapLines(ctx, text, maxW) {
+    const out = []; let line = '';
+    text.split(' ').forEach(word => { const t = line ? line + ' ' + word : word; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = word; } else line = t; });
+    if (line) out.push(line);
+    return out;
+  }
+  function paintQuote() {
+    const c = $('#quoteCanvas'), ctx = c.getContext('2d'), W = c.width, H = c.height, w = current, sw = QSW.find(x => x.id === qsw);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+    ctx.fillStyle = val(sw.bg); ctx.fillRect(0, 0, W, H);
+    // benang tulisannya sebagai tanda air
+    const tmp = document.createElement('canvas');
+    drawThread(tmp, fullText(w), { w: 620, h: 620, pad: 10, color: qsw === 'kertas' || qsw === 'pastel' ? catOf(w.cat).ink : '#FFFFFF', seed: w.slug, weight: .9 });
+    ctx.globalAlpha = .55; ctx.drawImage(tmp, W - 520, -120, 620, 620); ctx.globalAlpha = 1;
+    ctx.fillStyle = sw.fg;
+    ctx.font = 'italic 200px "Instrument Serif", Georgia, serif';
+    ctx.fillText('“', 84, 470);
+    let size = 76, lines;
+    do { ctx.font = `400 ${size}px Newsreader, Georgia, serif`; lines = wrapLines(ctx, qText, W - 180); size -= 4; } while (lines.length * size * 1.3 > 600 && size > 38);
+    size += 4;
+    let y = 560;
+    lines.forEach(l => { ctx.fillText(l, 90, y); y += size * 1.3; });
+    ctx.fillStyle = sw.sub;
+    ctx.font = '500 30px Geist, system-ui, sans-serif';
+    ctx.fillText(`— ${SITE.author}, “${w.title}”`, 90, Math.min(H - 170, y + 36));
+    ctx.font = '600 26px Geist, system-ui, sans-serif';
+    ctx.fillText(SITE.handle, 90, H - 84);
+    ctx.textAlign = 'right'; ctx.fillText(location.host || '', W - 90, H - 84); ctx.textAlign = 'left';
+  }
+  function openQuote(text) {
+    qText = text;
+    $('#quoteSw').innerHTML = QSW.map(s => `<button type="button" role="radio" data-sw="${s.id}" aria-label="${s.id}" aria-checked="${s.id === qsw}" style="--sw:${val(s.bg)}"></button>`).join('');
+    $('#quoteModal').hidden = false;
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(paintQuote);
+    $('#quoteShare').focus();
+  }
+  const closeQuote = () => { $('#quoteModal').hidden = true; };
+  $('#quoteSw').addEventListener('click', e => { const b = e.target.closest('[data-sw]'); if (!b) return; qsw = b.dataset.sw; $$('#quoteSw button').forEach(x => x.setAttribute('aria-checked', String(x === b))); paintQuote(); });
+  $('#quoteClose').addEventListener('click', closeQuote);
+  $('#quoteModal').addEventListener('click', e => { if (e.target.id === 'quoteModal') closeQuote(); });
+  const quoteBlob = () => new Promise(r => $('#quoteCanvas').toBlob(r, 'image/png'));
+  async function saveBlob(blob, name) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  $('#quoteSave').addEventListener('click', async () => { const b = await quoteBlob(); if (b) { saveBlob(b, `kutipan-${current.slug}.png`); toast('Kartu kutipan diunduh.'); } });
+  $('#quoteShare').addEventListener('click', async () => {
+    const b = await quoteBlob(); if (!b) return;
+    const file = new File([b], `kutipan-${current.slug}.png`, { type: 'image/png' });
+    const link = location.href.split('#')[0] + '#baca-' + current.slug;
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: current.title, text: `“${qText}” — ${SITE.author}\n${link}` });
+      else { saveBlob(b, file.name); toast('Perangkat ini belum bisa berbagi gambar langsung, jadi kartunya diunduh.'); }
+    } catch (e) { /* dibatalkan */ }
+  });
+  $('#quoteCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(`“${qText}”\n— ${SITE.author}, ${current.title}`); toast('Kutipan disalin.'); } catch (e) { toast('Tidak bisa menyalin otomatis.'); }
+  });
+  $('#rdShare').addEventListener('click', async () => {
+    const url = location.href.split('#')[0] + '#baca-' + current.slug;
+    try {
+      if (navigator.share) await navigator.share({ title: current.title, text: `${current.title} — ${SITE.author}`, url });
+      else { await navigator.clipboard.writeText(url); toast('Tautan tulisan disalin.'); }
+    } catch (e) { if (e.name !== 'AbortError') toast('Tautan: ' + url); }
+  });
+
+  /* ======================================================================
+     SUASANA: hujan, ombak, perapian, disintesis langsung di peramban
+     ====================================================================== */
+  const Amb = (() => {
+    let ac = null, master = null, parts = [], timers = [], kind = 'hening';
+    const bufs = {};
+    function noise(type) {
+      if (bufs[type]) return bufs[type];
+      const len = ac.sampleRate * 4, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0);
+      let last = 0, b0 = 0, b1 = 0, b2 = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        if (type === 'brown') { last = (last + .02 * w) / 1.02; d[i] = last * 3.5; }
+        else if (type === 'pink') { b0 = .997 * b0 + w * .029591; b1 = .985 * b1 + w * .032534; b2 = .95 * b2 + w * .048056; d[i] = (b0 + b1 + b2 + w * .1848) * .5; }
+        else d[i] = w;
+      }
+      return (bufs[type] = b);
+    }
+    const src = type => { const s = ac.createBufferSource(); s.buffer = noise(type); s.loop = true; s.start(); parts.push(s); return s; };
+    const filt = (type, f, q = .7) => { const n = ac.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; return n; };
+    const gain = v => { const g = ac.createGain(); g.gain.value = v; return g; };
+    const lfo = (hz, depth, target) => { const o = ac.createOscillator(); o.frequency.value = hz; const g = gain(depth); o.connect(g).connect(target); o.start(); parts.push(o); };
+    const burst = (dur, f, q, vol, type = 'bandpass') => {
+      const s = ac.createBufferSource(); s.buffer = noise('white');
+      const g = gain(0), bp = filt(type, f, q), t = ac.currentTime;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      s.connect(bp).connect(g).connect(master); s.start(t, Math.random() * 3); s.stop(t + dur + .05);
+    };
+    function build(k) {
+      if (k === 'hujan') {
+        src('pink').connect(filt('highpass', 500)).connect(filt('lowpass', 7000)).connect(gain(.32)).connect(master);
+        src('brown').connect(filt('lowpass', 400)).connect(gain(.35)).connect(master);
+        timers.push(setInterval(() => { if (Math.random() < .55) burst(.03 + Math.random() * .05, 2200 + Math.random() * 3500, 6, .05 + Math.random() * .08); }, 70));
+      }
+      if (k === 'ombak') {
+        const lp = filt('lowpass', 700), g = gain(.35);
+        src('brown').connect(lp).connect(g).connect(master);
+        lfo(.085, 520, lp.frequency); lfo(.085, .28, g.gain);
+        src('pink').connect(filt('highpass', 2500)).connect(gain(.04)).connect(master);
+      }
+      if (k === 'perapian') {
+        src('brown').connect(filt('lowpass', 900)).connect(gain(.28)).connect(master);
+        timers.push(setInterval(() => {
+          if (Math.random() < .35) burst(.008 + Math.random() * .02, 1800 + Math.random() * 3000, 1.2, .1 + Math.random() * .25, 'highpass');
+          if (Math.random() < .02) for (let i = 0; i < 4; i++) setTimeout(() => burst(.01, 3000, 1, .2, 'highpass'), i * (20 + Math.random() * 40));
+        }, 45));
+      }
+    }
+    function teardown(old) {
+      const { m, p, t } = old;
+      t.forEach(clearInterval);
+      if (!m) return;
+      m.gain.setTargetAtTime(0, ac.currentTime, .4);
+      setTimeout(() => { p.forEach(n => { try { n.stop(); } catch (e) { /* */ } }); m.disconnect(); }, 1600);
+    }
+    function set(k) {
+      if (k === kind) return;
+      teardown({ m: master, p: parts, t: timers });
+      parts = []; timers = []; master = null; kind = k;
+      $$('#ambience [data-amb]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.amb === k)));
+      $('#rd-amb')?.remove();
+      if (k === 'hening') return;
+      try {
+        ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+        ac.resume();
+        master = gain(0); master.connect(ac.destination);
+        build(k);
+        master.gain.setTargetAtTime(.55, ac.currentTime, .8);
+        const chip = document.createElement('button');
+        chip.id = 'rd-amb'; chip.type = 'button'; chip.className = 'amb-chip';
+        chip.innerHTML = `<i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>${({ hujan: 'Hujan', ombak: 'Ombak', perapian: 'Perapian' })[k]}`;
+        chip.title = 'Matikan suasana';
+        chip.addEventListener('click', () => set('hening'));
+        $('.rd-top').append(chip);
+      } catch (e) { kind = 'hening'; toast('Peramban ini belum bisa memutar suasana.'); }
+    }
+    return { set };
+  })();
+  $('#ambience').addEventListener('click', e => { const b = e.target.closest('[data-amb]'); if (b) Amb.set(b.dataset.amb); });
+  if (!SITE.features.ambience) $('#ambWrap').hidden = true;
 
   /* ======================================================================
      PROFIL PENULIS
