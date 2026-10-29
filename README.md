@@ -42,7 +42,13 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 - **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam.
 - **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: balik sisi, mode gelap, tulisan acak, pilih piringan, ganti latar, pasang aplikasi. Pencarian juga menemukan kalimat dari Sisi B.
 - **Pembaca.** Tema kertas, Suara, Cari, Fokus, ukuran, kecerahan, Tandai, Layar menyala, serta Pengaturan Lanjutan (huruf, ketebalan, ligatur, perataan).
-- **Sapa.** Kartu biru yang bisa diciutkan (termasuk berapa tulisan yang punya Sisi B), kutipan bergilir, daftar piringan, ganti latar, mode gelap, pasang aplikasi, dan *Cari kalimat…*.
+- **Sapa.** Panel yang mengingat perjalanan bacamu, semuanya hanya di perangkat ini:
+  - **Diputar**: piringan yang terakhir kamu putar, sampai mana, berapa lama lagi, tombol *Lanjutkan* dan *Balik ke Sisi B*. Di bawahnya ada **Berikutnya untukmu**, dipilih dengan alasan yang tertulis: sisi lain dari yang baru kamu baca, Sisi B yang belum kamu balik, tulisan yang terhubung lewat benang merah, atau yang pas dengan menit luangmu. Ada juga angka menit diputar, sisi selesai, piringan dibalik, dan hari beruntun.
+  - **Koleksi**: semua piringan dengan dua cincin progres, A dan B. Saring: belum diputar, dua sisi, selesai.
+  - **Kutipan**: kalimat bergilir dari kedua sisi. **Baca dari kalimat ini** membuka tulisan tepat di paragraf itu dan menyorotnya.
+  - **Cari kalimat**: setiap hasil (juga di palet `⌘K`) membuka tulisan di paragraf yang cocok dengan katanya disorot.
+  - Kartu biru menyapa dengan keadaanmu (berapa sisi belum diputar, tulisan yang masih di tengah), tombol grafik menampilkan jejak dengarmu, dan tombol acak memutar sisi yang belum kamu dengar. Kartunya menciut sendiri saat isi panel digulir.
+- **Selesai satu sisi.** Saat kamu sampai di akhir Sisi A, muncul tawaran **Balik piringan** ke Sisi B, dan sebaliknya.
 
 Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `B` balik sisi, `F` fokus, `Esc` kembali.
 
