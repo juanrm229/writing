@@ -10,7 +10,7 @@
   "sticky": "#E3F46B",
   "theme": "auto",
   "backdrop": "auto",
-  "defaultView": "kanvas",
+  "defaultView": "putar",
   "readerFont": "newsreader",
   "readerPaper": "putih",
   "features": {

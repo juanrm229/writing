@@ -16,7 +16,7 @@
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <script>
   try {
@@ -58,6 +58,9 @@
     <nav class="viewpill" aria-label="Tampilan">
       <div class="pill">
         <i class="pill-thumb" aria-hidden="true"></i>
+        <button type="button" data-go="putar" aria-label="Piringan" title="Piringan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5" class="thin"/></svg>
+        </button>
         <button type="button" data-go="daftar" aria-label="Daftar" title="Daftar">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r=".9" class="f"/><circle cx="4.5" cy="12" r=".9" class="f"/><circle cx="4.5" cy="17" r=".9" class="f"/></svg>
         </button>
@@ -72,6 +75,70 @@
     </nav>
 
     <main class="views">
+
+      <!-- ============ PIRINGAN (halaman awal) ============ -->
+      <section class="view view-putar" id="vPutar" aria-label="Piringan">
+        <div class="turn turn-hero">
+          <div class="th-top">
+            <button class="th-round" id="spinToggle" type="button" aria-pressed="true" aria-label="Hentikan putaran piringan">
+              <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7v10M15 7v10"/></svg>
+              <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8.5 6.5v11l9-5.5z"/></svg>
+            </button>
+            <p class="th-clock" id="thClock" aria-live="off"><span id="thHH">00</span><i>:</i><span id="thMM">00</span></p>
+            <button class="th-pill" id="crateShuffle" type="button">Acak</button>
+          </div>
+          <div class="th-sheet" id="thSheet">
+            <div class="th-status">
+              <span id="thDate"></span>
+              <i class="th-grab" aria-hidden="true"></i>
+              <span class="th-pct" id="thPct" title="Bagian koleksi yang sudah kamu baca">0%</span>
+              <svg class="th-arc" viewBox="0 0 120 70" aria-hidden="true"><path class="base" d="M2 8H82Q112 8 112 38V70"/><path id="thArc" d="M2 8H82Q112 8 112 38V70" pathLength="1"/></svg>
+            </div>
+            <h1 class="th-title" id="thTitle"></h1>
+            <div class="crate" id="crate" aria-label="Tumpukan piringan. Geser ke atas untuk piringan berikutnya, ketuk untuk membaca."></div>
+          </div>
+        </div>
+
+        <div class="turn turn-setup">
+          <p class="ts-h">Menit luang</p>
+          <div class="ts-wheel">
+            <div class="wheel" id="minWheel" role="spinbutton" tabindex="0" aria-label="Menit luang" aria-valuemin="1" aria-valuemax="20" aria-valuenow="5">
+              <div class="wheel-track" id="wheelTrack"></div>
+            </div>
+            <p class="wheel-unit" aria-hidden="true">mnt</p>
+          </div>
+          <p class="ts-sub" id="tsMatchH">Cocok untuk 5 menit</p>
+          <button class="ts-row" id="tsMatch" type="button"></button>
+          <div class="ts-grid">
+            <div class="tc-cell">
+              <button class="tc tc-form" id="tcForm" type="button">
+                <span class="tf-a">Puisi</span><span class="tf-line" aria-hidden="true"><i></i></span><span class="tf-b">Prosa</span>
+              </button>
+              <span>Bentuk</span>
+            </div>
+            <div class="tc-cell" id="tcAmbCell">
+              <button class="tc tc-amb" id="tcAmb" type="button">
+                <svg viewBox="0 0 160 80" aria-hidden="true"><path d="M20 70Q80 -10 140 70"/><circle cx="20" cy="70" r="2.5"/><circle cx="140" cy="70" r="2.5"/></svg>
+                <i class="knob" aria-hidden="true"></i>
+                <b id="tcAmbV">Hening</b>
+              </button>
+              <span>Suasana</span>
+            </div>
+            <div class="tc-cell">
+              <button class="tc tc-size" id="tcSize" type="button">
+                <svg viewBox="0 0 160 90" aria-hidden="true"><g id="tcField"></g></svg>
+                <b id="tcSizeV">19</b><i class="dot" aria-hidden="true"></i>
+              </button>
+              <span>Ukuran huruf</span>
+            </div>
+            <div class="tc-cell">
+              <button class="tc tc-paper" id="tcPaper" type="button"><span><b id="tcPaperV">Putih</b></span></button>
+              <span>Kertas</span>
+            </div>
+          </div>
+          <button class="ts-next" id="tsPlay" type="button">Putar</button>
+        </div>
+      </section>
 
       <!-- ============ KANVAS ============ -->
       <section class="view view-kanvas" id="vKanvas" aria-label="Kanvas tulisan">

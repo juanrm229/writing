@@ -31,6 +31,7 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 ## Situs
 
+- **Piringan (halaman awal).** Setiap tulisan adalah satu piringan hitam: esai berlabel warna, puisi berupa vinyl berwarna bercipratan, cerita berupa *picture disc* bergambar benang. Di atas ada jam dot-matrix dan nama situs dalam huruf titik-titik, lalu tumpukan piringan yang bisa digeser ke atas atau bawah, diacak, dan diketuk untuk dibaca. Di sebelahnya (di ponsel: di bawahnya) ada roda **Menit luang**: pilih punya berapa menit, dan tumpukan langsung tersusun ulang dengan tulisan yang paling pas di atas. Empat kontrol mengatur Bentuk (puisi/semua/prosa), Suasana, Ukuran huruf, dan Kertas, lalu **Putar** membuka tulisan dengan pengaturan itu. Halaman pembuka bisa diganti di admin.
 - **Benang merah.** Tombol merah di bilah atas menarik benang sungguhan antar-kertas di kanvas, ala papan detektif. Benangnya menghubungkan tulisan-tulisan yang berbagi kata khas (dihitung dengan TF-IDF langsung di peramban), dengan kata penghubungnya tertulis di benang. Sorot satu kertas untuk menyorot benangnya. Di akhir setiap tulisan ada daftar tulisan yang terhubung.
 - **Membaca = merajut.** Di pojok kartu baca, seni benang tulisan itu terajut sedikit demi sedikit sesuai seberapa jauh kamu membaca.
 - **Saksikan ditulis.** Tulisan diketik ulang di depan pembaca dengan ritme alami (jeda di tanda baca, sesekali salah ketik yang dihapus lalu diperbaiki). Bisa dijeda, dipercepat 2× atau 4×, atau dilewati.
