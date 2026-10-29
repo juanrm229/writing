@@ -1,5 +1,5 @@
 /*
- * Klien kecil GitHub Contents API. Dipakai panel admin dan mode tata letak kanvas.
+ * Klien kecil GitHub Contents API untuk panel admin.
  * Token disimpan di perangkat ini saja (localStorage, atau sessionStorage kalau
  * "ingat di perangkat ini" tidak dicentang) dan hanya dikirim ke api.github.com.
  */

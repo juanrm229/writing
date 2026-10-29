@@ -14,16 +14,15 @@
 
   const DEFAULT_SITE = {
     title: 'Juan Menulis', description: '', author: 'Juan', handle: 'juan/menulis', email: '', avatar: '', readerName: 'pembaca',
-    accent: '#1662FF', sticky: '#E3F46B', theme: 'auto', backdrop: 'auto', defaultView: 'putar', readerFont: 'newsreader', readerPaper: 'putih',
-    features: { dock: true, visitorStickies: true, rotatingQuotes: true, connections: true, replay: true, ambience: true },
+    accent: '#1662FF', theme: 'auto', backdrop: 'auto', defaultView: 'putar', readerFont: 'newsreader', readerPaper: 'putih',
+    features: { dock: true, rotatingQuotes: true, connections: true, replay: true, ambience: true },
     categories: [
       { id: 'esai', label: 'Esai', tag: 'ESAI', ink: '#2F5BFF', red: false },
       { id: 'puisi', label: 'Puisi', tag: 'PUISI', ink: '#D2338A', red: true },
       { id: 'cerpen', label: 'Cerpen', tag: 'CERPEN', ink: '#0E8A5C', red: false },
       { id: 'mini', label: 'Fiksi Mini', tag: 'MINI', ink: '#E0571C', red: false },
       { id: 'catatan', label: 'Catatan', tag: 'CATATAN', ink: '#6A4DF0', red: false }
-    ],
-    folders: {}, years: {}
+    ]
   };
   const FONTS = [
     { id: 'newsreader', name: 'Newsreader', css: '"Newsreader", Georgia, serif' },
@@ -44,7 +43,7 @@
   /* ======================================================================
      STATE
      ====================================================================== */
-  const S = { site: null, works: [], layout: null, base: { site: '', works: '' }, sel: null, filter: 'semua', q: '', tab: 'tulis', avatarData: null };
+  const S = { site: null, works: [], base: { site: '', works: '' }, sel: null, side: 'a', filter: 'semua', q: '', tab: 'tulis', avatarData: null };
   const clean = works => works.map(w => Object.fromEntries(Object.entries(w).filter(([k]) => !k.startsWith('_'))));
   const snapWorks = () => JSON.stringify(clean(S.works));
   const snapSite = () => JSON.stringify(S.site);
@@ -112,10 +111,9 @@
   });
 
   async function loadAll() {
-    const [site, works, layout] = await Promise.all([GH.getJSON('content/site.json'), GH.getJSON('content/works.json'), GH.getJSON('content/layout.json').catch(() => null)]);
+    const [site, works] = await Promise.all([GH.getJSON('content/site.json'), GH.getJSON('content/works.json')]);
     S.site = { ...DEFAULT_SITE, ...(site || {}), features: { ...DEFAULT_SITE.features, ...((site || {}).features || {}) } };
     S.works = Array.isArray(works) ? works : [];
-    S.layout = layout;
     S.base = { site: snapSite(), works: snapWorks() };
     S.sel = sortedWorks()[0]?.slug || null;
     setStatus('clean', 'Tersimpan');
@@ -203,8 +201,8 @@
         { src: 'assets/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
       ],
       shortcuts: [
-        { name: 'Kanvas', url: './#kanvas', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
-        { name: 'Daftar tulisan', url: './#daftar', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] }
+        { name: 'Pilih piringan', url: './#pilih', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+        { name: 'Sapa', url: './#sapa', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] }
       ]
     });
   }
@@ -262,14 +260,14 @@
     const q = fold(S.q.trim());
     const list = sortedWorks().filter(w =>
       (S.filter === 'semua' || (S.filter === 'draf' ? w.draft : w.cat === S.filter)) &&
-      (!q || fold(w.title + ' ' + w.body.join(' ')).includes(q)));
+      (!q || fold(w.title + ' ' + w.body.join(' ') + ' ' + (w.sideB ? (w.sideB.title || '') + ' ' + w.sideB.body.join(' ') : '')).includes(q)));
     const bm = baseMap();
     $('#workList').innerHTML = list.map((w, i) => {
-      const c = catOf(w.cat), n = words(w.body.join(' '));
+      const c = catOf(w.cat);
       const dirty = bm[w.slug] !== JSON.stringify(clean([w])[0]);
       return `<li style="--k:${Math.min(i, 14)}"><button class="wl-item" type="button" data-slug="${esc(w.slug)}" aria-current="${w.slug === S.sel}">
         <div class="doc" aria-hidden="true"><div class="pg"></div><span class="tag${c.red ? ' red' : ''}">${esc(c.tag)}</span></div>
-        <span class="wl-t"><b>${esc(w.title || 'Tanpa judul')}</b><span>${w.draft ? '<span class="pill-draft">draf</span>' : ''}${esc(c.label)} · ${n} kata</span></span>
+        <span class="wl-t">${wlText(w)}</span>
         ${dirty ? '<i class="wl-dot" title="belum disimpan"></i>' : '<span></span>'}
       </button></li>`;
     }).join('') || '<li class="hint" style="padding:12px">Tidak ada yang cocok.</li>';
@@ -287,9 +285,12 @@
       if (dirty && !last.classList.contains('wl-dot')) last.outerHTML = '<i class="wl-dot" title="belum disimpan"></i>';
       if (!dirty && last.classList.contains('wl-dot')) last.outerHTML = '<span></span>';
       const t = b.querySelector('.wl-t');
-      t.innerHTML = `<b>${esc(w.title || 'Tanpa judul')}</b><span>${w.draft ? '<span class="pill-draft">draf</span>' : ''}${esc(catOf(w.cat).label)} · ${words(w.body.join(' '))} kata</span>`;
+      t.innerHTML = wlText(w);
+      const tag = b.querySelector('.doc .tag'), c = catOf(w.cat);
+      tag.textContent = c.tag; tag.classList.toggle('red', !!c.red);
     });
   }
+  const wlText = w => `<b>${esc(w.title || 'Tanpa judul')}</b><span>${w.draft ? '<span class="pill-draft">draf</span>' : ''}${w.sideB ? '<span class="pill-ab">A/B</span>' : ''}${esc(catOf(w.cat).label)} · ${words(w.body.join(' '))} kata</span>`;
   $('#workList').addEventListener('click', e => { const b = e.target.closest('[data-slug]'); if (b) selectWork(b.dataset.slug); });
 
   function newWork() {
@@ -317,30 +318,70 @@
   };
   function grow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 
-  function selectWork(slug) {
+  // Sisi B disimpan sebagai w.sideB = { pov, title, body }. Ia baru dibuat saat ada isinya,
+  // dan dihapus lagi kalau semua isinya dikosongkan.
+  const sideB = w => w.sideB || { pov: '', title: '', body: [''] };
+  const ensureB = w => (w.sideB = w.sideB || { pov: '', title: '', body: [''] });
+  function pruneB(w) {
+    const b = w.sideB;
+    if (b && !b.title.trim() && !b.pov.trim() && !b.body.some(p => p.trim())) delete w.sideB;
+  }
+  function selectWork(slug, keepSide) {
     S.sel = slug;
+    if (!keepSide) S.side = 'a';
     const w = cur();
     renderList();
     if (!w) return;
-    $('#edTitle').value = w.title;
-    $('#edBody').value = toText(w);
-    $('#edBody').dataset.form = w.form;
-    grow($('#edTitle')); grow($('#edBody'));
+    fillEditor();
     const pc = $('#paperCard'); pc.classList.remove('swap'); void pc.offsetWidth; pc.classList.add('swap');
     $('#edScroll').scrollTop = 0;
-    renderDetails(); renderCount();
+    renderDetails();
     pushPreview(true);
   }
+  function fillEditor() {
+    const w = cur(); if (!w) return;
+    const b = S.side === 'b';
+    const d = b ? sideB(w) : w;
+    $('#edTitle').value = d.title;
+    $('#edTitle').placeholder = b ? `Judul Sisi B (kosong = “${w.title || 'sama dengan Sisi A'}”)` : 'Judul';
+    $('#edBody').value = toText(d);
+    $('#edBody').placeholder = b ? 'Cerita yang sama, dari sisi yang lain… Pisahkan paragraf dengan satu baris kosong.' : 'Mulai menulis… Pisahkan paragraf (atau bait) dengan satu baris kosong.';
+    $('#edBody').dataset.form = w.form;
+    $('#edPov').value = (b ? sideB(w).pov : w.pov) || '';
+    $('#edPov').placeholder = b ? 'misalnya: anaknya, si penjual, kucing tetangga' : 'siapa yang bercerita? (boleh kosong)';
+    $('#edSideNote').hidden = !b;
+    $('#mkLine').hidden = b;
+    $$('#edSide [data-side]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.side === S.side)));
+    $('#edSide').style.setProperty('--i', b ? 1 : 0);
+    $('#edSideDot').hidden = !w.sideB;
+    $('#paperCard').dataset.side = S.side;
+    grow($('#edTitle')); grow($('#edBody'));
+    renderCount();
+  }
+  function setSide(side) {
+    if (side === S.side) return;
+    S.side = side;
+    const pc = $('#paperCard');
+    pc.classList.remove('flip'); void pc.offsetWidth; pc.classList.add('flip');
+    fillEditor();
+    $('#edScroll').scrollTop = 0;
+    pushPreview(true);
+  }
+  $('#edSide').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (b) setSide(b.dataset.side); });
   function renderCount() {
     const w = cur(); if (!w) return;
-    const n = words(w.body.join(' '));
-    const paras = w.body.filter(p => p.trim()).length;
-    $('#edCount').textContent = `${n.toLocaleString('id-ID')} kata · ${Math.max(1, Math.round(n / 170))} menit baca · ${paras} ${w.form === 'puisi' ? 'bait' : 'paragraf'}`;
-    $('#edMeta').textContent = `${catOf(w.cat).label} · ${new Date(w.date + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}${w.draft ? ' · draf' : ''}`;
+    const d = S.side === 'b' ? sideB(w) : w;
+    const n = words(d.body.join(' '));
+    const paras = d.body.filter(p => p.trim()).length;
+    $('#edCount').textContent = `${S.side === 'b' ? 'Sisi B · ' : ''}${n.toLocaleString('id-ID')} kata · ${Math.max(1, Math.round(n / 170))} menit baca · ${paras} ${w.form === 'puisi' ? 'bait' : 'paragraf'}`;
+    const pov = S.side === 'b' ? sideB(w).pov : w.pov;
+    $('#edMeta').textContent = `${S.side === 'b' ? 'Sisi B' : w.sideB ? 'Sisi A' : catOf(w.cat).label}${pov ? ' · dari sisi ' + pov : ''} · ${new Date(w.date + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}${w.draft ? ' · draf' : ''}`;
   }
   $('#edTitle').addEventListener('input', e => {
     const w = cur(); if (!w) return;
-    w.title = e.target.value.replace(/\n/g, ' ');
+    const v = e.target.value.replace(/\n/g, ' ');
+    if (S.side === 'b') { ensureB(w).title = v; pruneB(w); grow(e.target); fillSideDot(); changed(); return; }
+    w.title = v;
     if (w._autoSlug) {
       let base = slugify(w.title) || 'tulisan-baru', slug = base, i = 2;
       while (S.works.some(x => x !== w && x.slug === slug)) slug = base + '-' + i++;
@@ -348,12 +389,22 @@
     }
     grow(e.target); changed();
   });
-  $('#edTitle').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edBody').focus(); } });
+  $('#edTitle').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edPov').focus(); } });
+  $('#edPov').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edBody').focus(); } });
+  $('#edPov').addEventListener('input', e => {
+    const w = cur(); if (!w) return;
+    const v = e.target.value;
+    if (S.side === 'b') { ensureB(w).pov = v; pruneB(w); fillSideDot(); }
+    else if (v.trim()) w.pov = v; else delete w.pov;
+    renderCount(); changed();
+  });
   $('#edBody').addEventListener('input', e => {
     const w = cur(); if (!w) return;
-    w.body = fromText(e.target.value, w.form);
+    if (S.side === 'b') { ensureB(w).body = fromText(e.target.value, w.form); pruneB(w); fillSideDot(); }
+    else w.body = fromText(e.target.value, w.form);
     grow(e.target); renderCount(); changed();
   });
+  function fillSideDot() { const w = cur(); $('#edSideDot').hidden = !w?.sideB; }
 
   function wrapSel(mark) {
     const ta = $('#edBody'), a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
@@ -385,7 +436,6 @@
     const w = cur(); if (!w) return;
     $('#dPub').setAttribute('aria-checked', String(!w.draft));
     $('#pubHint').textContent = w.draft ? 'Draf tidak tampil di situs.' : 'Tampil di situs setelah disimpan.';
-    $('#dCanvas').setAttribute('aria-checked', String(w.canvas !== false));
     $('#dCat').innerHTML = catList().map(c => `<button class="chip" type="button" role="radio" data-v="${esc(c.id)}" aria-checked="${c.id === w.cat}" style="--c:${esc(c.ink)}"><i></i>${esc(c.label)}</button>`).join('');
     $$('#dForm [data-v]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === w.form)));
     $('#dDate').value = w.date; $('#dTime').value = w.time || '';
@@ -395,11 +445,11 @@
   }
   const flip = (btn, key, invert) => { const w = cur(); const on = btn.getAttribute('aria-checked') !== 'true'; btn.setAttribute('aria-checked', String(on)); w[key] = invert ? !on : on; };
   $('#dPub').addEventListener('click', e => { flip(e.currentTarget, 'draft', true); renderDetails(); renderCount(); changed(); });
-  $('#dCanvas').addEventListener('click', e => { const w = cur(); const on = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', String(on)); if (on) delete w.canvas; else w.canvas = false; changed(); });
   $('#dCat').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; cur().cat = b.dataset.v; renderDetails(); renderCount(); changed(); });
   $('#dForm').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if (!b) return;
-    const w = cur(); w.form = b.dataset.v; w.body = fromText($('#edBody').value, w.form);
+    const w = cur(); w.form = b.dataset.v;
+    if (S.side === 'b') { if (w.sideB) w.sideB.body = fromText($('#edBody').value, w.form); } else w.body = fromText($('#edBody').value, w.form);
     renderDetails(); renderCount(); changed();
   });
   $('#dDate').addEventListener('change', e => { if (e.target.value) { cur().date = e.target.value; renderCount(); changed(); } });
@@ -436,14 +486,14 @@
   function previewPayload() {
     const site = { ...S.site };
     if (S.avatarData && site.avatar) site.avatar = S.avatarData;
-    return { site, works: clean(S.works), layout: S.layout };
+    return { site, works: clean(S.works) };
   }
   const pushPreview = debounce(force => {
     if (!S.site) return;
     try { localStorage.setItem('jm:preview', JSON.stringify(previewPayload())); } catch (e) { return; }
     const w = cur();
     if (!$('#previewPane').hidden) {
-      const src = '../?preview=1#baca-' + (w ? w.slug : '');
+      const src = '../?preview=1#baca-' + (w ? w.slug + (S.side === 'b' && w.sideB ? ':b' : '') : '');
       const f = $('#previewFrame');
       if (force || !f.src.endsWith(src.slice(2))) f.src = src; else f.contentWindow?.location.reload();
     }
@@ -489,7 +539,7 @@
     });
     $('#sFonts').innerHTML = FONTS.map(f => `<button type="button" role="radio" data-v="${f.id}" aria-checked="${s.readerFont === f.id}"><b style="font-family:${f.css}">Aa</b><small>${f.name}</small></button>`).join('');
     $$('[data-f]', $('#setCol')).forEach(b => b.setAttribute('aria-checked', String(!!s.features[b.dataset.f])));
-    renderAvatar(); renderCats(); renderFolders(); renderYears();
+    renderAvatar(); renderCats();
     requestAnimationFrame(fitPreview);
   }
   const setCol = $('#setCol');
@@ -559,7 +609,7 @@
   });
   $('#catEditor').addEventListener('click', e => {
     const b = e.target.closest('.cat-del'); if (!b || b.disabled) return;
-    S.site.categories.splice(+b.closest('.cat-row').dataset.i, 1); renderCats(); renderFolders(); changed();
+    S.site.categories.splice(+b.closest('.cat-row').dataset.i, 1); renderCats(); changed();
   });
   $('#addCat').addEventListener('click', () => {
     let id = 'jenis-baru', i = 2;
@@ -568,26 +618,6 @@
     renderCats(); changed();
     $('#catEditor .cat-row:last-child input[data-ck="label"]').select();
   });
-  function renderFolders() {
-    $('#folderEditor').innerHTML = catList().map(c => `<label class="row-f"><span>Map ${esc(c.label)}<small>judul map di kanvas</small></span><input data-folder="${esc(c.id)}" value="${esc((S.site.folders || {})[c.id] || '')}" placeholder="${esc(c.label)}"></label>`).join('');
-  }
-  $('#folderEditor').addEventListener('input', e => {
-    const id = e.target.dataset.folder; if (!id) return;
-    S.site.folders = { ...(S.site.folders || {}) };
-    if (e.target.value.trim()) S.site.folders[id] = e.target.value; else delete S.site.folders[id];
-    changed();
-  });
-  function renderYears() {
-    const years = [...new Set(S.works.map(w => w.date.slice(0, 4)))].sort().reverse();
-    $('#yearEditor').innerHTML = years.map(y => `<label class="row-f"><span>${y}</span><input data-year="${y}" value="${esc((S.site.years || {})[y] || '')}" placeholder="Satu kalimat tentang tahun ini"></label>`).join('') || '<p class="hint" style="padding:12px 0">Belum ada tulisan.</p>';
-  }
-  $('#yearEditor').addEventListener('input', e => {
-    const y = e.target.dataset.year; if (!y) return;
-    S.site.years = { ...(S.site.years || {}) };
-    if (e.target.value.trim()) S.site.years[y] = e.target.value; else delete S.site.years[y];
-    changed();
-  });
-
   /* ======================================================================
      RIWAYAT
      ====================================================================== */
