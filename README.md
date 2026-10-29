@@ -31,12 +31,30 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 ## Situs
 
+- **Benang merah.** Tombol merah di bilah atas menarik benang sungguhan antar-kertas di kanvas, ala papan detektif. Benangnya menghubungkan tulisan-tulisan yang berbagi kata khas (dihitung dengan TF-IDF langsung di peramban), dengan kata penghubungnya tertulis di benang. Sorot satu kertas untuk menyorot benangnya. Di akhir setiap tulisan ada daftar tulisan yang terhubung.
+- **Membaca = merajut.** Di pojok kartu baca, seni benang tulisan itu terajut sedikit demi sedikit sesuai seberapa jauh kamu membaca.
+- **Saksikan ditulis.** Tulisan diketik ulang di depan pembaca dengan ritme alami (jeda di tanda baca, sesekali salah ketik yang dihapus lalu diperbaiki). Bisa dijeda, dipercepat 2× atau 4×, atau dilewati.
+- **Kartu kutipan.** Pilih kalimat mana pun untuk membuat gambar kutipan (empat warna) lalu bagikan langsung ke aplikasi lain di ponsel, unduh, atau salin. Tombol bagikan di atas pembaca mengirim tautan tulisan.
+- **Suasana.** Pengaturan Lanjutan → Suasana: hujan, ombak, atau perapian, disintesis dengan Web Audio tanpa berkas suara.
+- **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam. Di kanvas ada lampu meja yang mengikuti kursor, dan kertas miring 3D saat disorot.
+- **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: benang merah, mode gelap, tulisan acak, ganti latar, pasang aplikasi.
+
 - **Kanvas.** Kertas bertumpuk, map berlekuk, catatan tempel, dan kartu benang yang bisa digeser (dengan inersia), dicubit-zoom, dan diklik ganda untuk memperbesar.
 - **Daftar.** Rak per jenis, centang, map per tahun, catatan pribadi per tulisan, dan *Baca berurutan*.
 - **Pembaca.** Tema kertas, Suara, Cari, Fokus, ukuran, kecerahan, Tandai, Layar menyala, serta Pengaturan Lanjutan (huruf, ketebalan, ligatur, perataan).
 - **Sapa.** Kartu biru yang bisa diciutkan, kutipan bergilir, daftar baca, ganti latar, mode gelap, dan *Cari kalimat…*.
 
 Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `F` fokus, `Esc` kembali.
+
+## Aplikasi (PWA)
+
+Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sinyal.
+
+- **Android dan Chrome/Edge di komputer:** tombol **Pasang di layar utama** muncul di kartu profil (tampilan Daftar) dan chip **Pasang aplikasi** di panel sapa.
+- **iPhone dan iPad:** buka di Safari, ketuk **Bagikan**, lalu **Tambahkan ke Layar Utama**. Situs menampilkan petunjuk ini sendiri.
+- **Offline:** `sw.js` menyimpan salinan halaman, kode, dan konten. Saat ada sinyal, tulisan terbaru selalu diambil dari jaringan. Saat tidak ada, salinan terakhir yang dipakai.
+- **Nama aplikasi** mengikuti *Judul situs* dan *Nama penulis* di admin. `manifest.webmanifest` diperbarui otomatis saat kamu menyimpan.
+- **Ikon** ada di `assets/icons/`. Ganti berkas PNG-nya dengan ukuran yang sama kalau ingin ikon lain.
 
 ## Menjalankan di komputer
 

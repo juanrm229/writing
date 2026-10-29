@@ -15,7 +15,7 @@
   const DEFAULT_SITE = {
     title: 'Juan Menulis', description: '', author: 'Juan', handle: 'juan/menulis', email: '', avatar: '', readerName: 'pembaca',
     accent: '#1662FF', sticky: '#E3F46B', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
-    features: { dock: true, visitorUploads: true, visitorStickies: true, rotatingQuotes: true },
+    features: { dock: true, visitorStickies: true, rotatingQuotes: true, connections: true, replay: true, ambience: true },
     categories: [
       { id: 'esai', label: 'Esai', tag: 'ESAI', ink: '#2F5BFF', red: false },
       { id: 'puisi', label: 'Puisi', tag: 'PUISI', ink: '#D2338A', red: true },
@@ -166,7 +166,10 @@
         const msg = titles.length === 1 ? `Perbarui tulisan: ${titles[0]}` : titles.length ? `Perbarui ${titles.length} tulisan` : 'Perbarui tulisan';
         await GH.putJSON('content/works.json', clean(S.works), msg);
       }
-      if (siteChanged) await GH.putJSON('content/site.json', S.site, 'Perbarui tampilan situs');
+      if (siteChanged) {
+        await GH.putJSON('content/site.json', S.site, 'Perbarui tampilan situs');
+        if (manifestOf(S.site) !== manifestOf(JSON.parse(S.base.site || '{}'))) await GH.putJSON('manifest.webmanifest', JSON.parse(manifestOf(S.site)), 'Perbarui manifest aplikasi');
+      }
       S.base = { site: snapSite(), works: snapWorks() };
       S.works.forEach(w => { delete w._new; });
       try { localStorage.removeItem(backupKey()); } catch (e) { /* */ }
@@ -187,6 +190,23 @@
     try { base = JSON.parse(S.base.works); } catch (e) { /* */ }
     const map = Object.fromEntries(base.map(w => [w.slug, JSON.stringify(w)]));
     return clean(S.works).filter(w => map[w.slug] !== JSON.stringify(w)).map(w => w.title || w.slug);
+  }
+  // nama dan deskripsi aplikasi saat dipasang di layar utama ikut pengaturan situs
+  function manifestOf(site) {
+    return JSON.stringify({
+      name: site.title || 'Meja Tulis', short_name: (site.author || site.title || 'Tulis').slice(0, 12),
+      description: site.description || '', lang: 'id', start_url: './', scope: './', display: 'standalone', orientation: 'any',
+      background_color: '#ECE8F0', theme_color: '#C6D1EE',
+      icons: [
+        { src: 'assets/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: 'assets/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ],
+      shortcuts: [
+        { name: 'Kanvas', url: './#kanvas', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+        { name: 'Daftar tulisan', url: './#daftar', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] }
+      ]
+    });
   }
   $('#saveBtn').addEventListener('click', save);
   addEventListener('beforeunload', e => { if (S.site && isDirty()) { e.preventDefault(); e.returnValue = ''; } });
