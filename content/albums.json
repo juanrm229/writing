@@ -1,0 +1,14 @@
+[
+  {
+    "id": "dua-sisi",
+    "title": "Dua Sisi",
+    "note": "Dua cerita, masing-masing dibaca dari kedua sisinya. Dengarkan berurutan: sisi A dulu, lalu balik piringannya.",
+    "tracks": ["kopi-kedua", "kopi-kedua:b", "penjual-senin", "penjual-senin:b"]
+  },
+  {
+    "id": "pulang",
+    "title": "Pulang",
+    "note": "Tentang jendela yang dibiarkan terbuka, kopi yang ditunggu, dan hujan yang selalu tahu jalan pulang.",
+    "tracks": ["jendela", "kopi-kedua", "hujan-mei", "arsip-kecil", "bahasa-ibu"]
+  }
+]

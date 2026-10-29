@@ -50,8 +50,8 @@
       try { const p = JSON.parse(localStorage.getItem('jm:preview')); if (p) return p; } catch (e) { /* jatuh ke berkas */ }
     }
     const get = f => fetch('content/' + f, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
-    const [site, works] = await Promise.all([get('site.json'), get('works.json')]);
-    return { site, works };
+    const [site, works, albums] = await Promise.all([get('site.json'), get('works.json'), get('albums.json')]);
+    return { site, works, albums };
   }
   const content = await loadContent();
 
@@ -230,7 +230,7 @@
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const VIEWS = ['putar', 'pilih', 'sapa'];
+  const VIEWS = ['putar', 'pilih', 'album', 'sapa'];
   let view = 'putar', prevView = 'putar';
 
   function setView(v) {
@@ -425,7 +425,8 @@
     if (last) {
       const p = progOf(last), left = Math.max(0, Math.round(secsOf(last) * (1 - p)));
       const other = last.A.B ? (last.side === 'b' ? last.A : last.A.B) : null;
-      html += `<p class="np-h"><span>${p >= .97 ? 'Terakhir diputar' : 'Sedang diputar'}</span><span>${ago(L.at)}</span></p>
+      const al = playing();
+      html += `<p class="np-h"><span>${p >= .97 ? 'Terakhir diputar' : 'Sedang diputar'}</span><span>${ago(L.at)}</span></p>${al ? `<a class="np-album" href="#album-${esc(al.id)}"><canvas data-cover="${esc(al.id)}"></canvas><span>Dari album <b>${esc(al.title)}</b> · ${PLAY.order.indexOf(PLAY.i) + 1} dari ${al.tracks.length}</span></a>` : ''}
         <div class="np-card">
           <button type="button" class="np-disc" data-pick="${last.key}" aria-label="Buka ${esc(last.title)}">${mdisc(last, 'big spin')}</button>
           <div class="np-t"><small>${last.A.B ? (last.side === 'b' ? 'Sisi B' : 'Sisi A') + ' · ' : ''}${esc(catOf(last.cat).label)}${last.pov ? ' · dari sisi ' + esc(last.pov) : ''}</small>
@@ -478,7 +479,7 @@
     const mi = MODES.indexOf(feedMode);
     $('.tk-seg').style.setProperty('--x', Math.max(0, mi));
     $('.tk-seg').classList.toggle('none', mi < 0);
-    if (feedMode === 'now') { feed.innerHTML = `<div class="np">${nowHTML()}</div>`; return; }
+    if (feedMode === 'now') { feed.innerHTML = `<div class="np">${nowHTML()}</div>`; $$('canvas[data-cover]', feed).forEach(c => paintCover(c, albumOf(c.dataset.cover), 40)); return; }
     if (feedMode === 'koleksi') { feed.innerHTML = koleksiHTML(); return; }
     if (feedMode !== 'feed') return;
     const old = $('.fd', feed);
@@ -672,6 +673,11 @@
     }).join('')}</svg>`;
   }
   function neighbors() {
+    const al = playing();
+    if (al) {
+      const order = PLAY.order, at = order.indexOf(PLAY.i), t = al.tracks;
+      return { prev: t[order[Math.max(0, at - 1)]], next: at + 1 < order.length ? t[order[at + 1]] : null, album: al, pos: at + 1, len: order.length };
+    }
     const list = all(), i = list.findIndex(w => w.slug === current.slug);
     return { prev: list[(i - 1 + list.length) % list.length], next: list[(i + 1) % list.length] };
   }
@@ -696,19 +702,23 @@
     if (!w) return;
     stopSpeech(); closeFind(); stopReplay(false); hideQuotePop();
     current = w;
+    syncPlay(w);
     setView('baca');
-    $('#rdBackLabel').textContent = { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan' }[prevView] || 'Piringan';
+    $('#rdBackLabel').textContent = playing() ? 'Album' : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
-    $('#rdMeta').innerHTML = `${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
+    const al = playing();
+    $('#rdMeta').innerHTML = `${al ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
-    const { prev, next } = neighbors();
+    const nb = neighbors(), { prev, next } = nb;
     renderRelated(w.A);
-    $('#rdNextLink').href = '#baca-' + next.slug;
-    $('b', $('#rdNextLink')).textContent = next.title;
-    $('#rdPrev').dataset.slug = prev.slug; $('#rdNext').dataset.slug = next.slug;
+    $('#rdNextLink').href = next ? hrefOf(next) : '#album-' + nb.album.id;
+    $('span', $('#rdNextLink')).textContent = nb.album ? (next ? `berikutnya di album “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `album “${nb.album.title}” selesai`) : 'berikutnya';
+    $('b', $('#rdNextLink')).textContent = next ? next.title : 'Kembali ke album';
+    $('#rdPrev').dataset.key = prev.key; $('#rdNext').dataset.key = (next || prev).key;
+    $('#rdNext').disabled = !next;
     $('#advPreview').textContent = plain(w.body[0]).replace(/\n/g, ' ');
     applyRd();
     scroller.scrollTop = 0;
@@ -767,10 +777,16 @@
     const h = '#baca-' + slug + (side === 'b' ? ':b' : '');
     if (location.hash === h) vt(() => showReader(slug, side)); else location.hash = h.slice(1);
   }
-  $('#rdBack').addEventListener('click', () => { if (prevView === 'pilih' && PK.slug) openPicker(PK.slug, PK.side); else go(prevView === 'sapa' ? 'sapa' : 'putar'); });
+  $('#rdBack').addEventListener('click', () => {
+    const al = playing();
+    if (al) location.hash = 'album-' + al.id;
+    else if (prevView === 'pilih' && PK.slug) openPicker(PK.slug, PK.side);
+    else go(['sapa', 'album'].includes(prevView) ? prevView : 'putar');
+  });
   $('#rdFlip').addEventListener('click', () => { if (current?.A.B) location.hash = hrefOf(current.side === 'b' ? current.A : current.A.B).slice(1); });
-  $('#rdPrev').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
-  $('#rdNext').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
+  const openKey = k => { const d = docByKey(k); if (d) { if (playing()) pendingStart = 0; openWork(d.slug, null, d.side); } };
+  $('#rdPrev').addEventListener('click', e => openKey(e.currentTarget.dataset.key));
+  $('#rdNext').addEventListener('click', e => openKey(e.currentTarget.dataset.key));
 
   function onScroll() {
     const max = scroller.scrollHeight - scroller.clientHeight;
@@ -910,6 +926,7 @@
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
     { label: 'Pilih piringan', hint: 'sisi A atau B', run: () => go('pilih') },
     { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
+    ...ALBUMS.map(a => ({ label: 'Putar album “' + a.title + '”', hint: a.tracks.length + ' sisi', run: () => playAlbum(a.id, 0) })),
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
     { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#chipInstall').hidden }
   ].filter(c => c.show !== false);
@@ -968,8 +985,8 @@
     if (typing) return;
     if (e.key === '/' && palette.hidden) { e.preventDefault(); openPalette(); return; }
     if (view === 'baca' && palette.hidden) {
-      if (e.key === 'ArrowRight') openWork($('#rdNext').dataset.slug);
-      if (e.key === 'ArrowLeft') openWork($('#rdPrev').dataset.slug);
+      if (e.key === 'ArrowRight' && !$('#rdNext').disabled) $('#rdNext').click();
+      if (e.key === 'ArrowLeft') $('#rdPrev').click();
       if (e.key.toLowerCase() === 'f') $('#rsFocus').click();
       if (e.key.toLowerCase() === 'b' && current?.A.B) $('#rdFlip').click();
     }
@@ -986,9 +1003,11 @@
     if (m && bySlug(m[1]) && view === 'baca' && current?.slug === m[1] && current.side !== (m[2] ? 'b' : 'a') && docOf(m[1], m[2] ? 'b' : 'a')) { flipReader(m[1], m[2] ? 'b' : 'a'); return; }
     vt(() => {
       if (m && bySlug(m[1])) { showReader(m[1], m[2] && bySlug(m[1]).B ? 'b' : 'a'); return; }
+      const am = h.match(/^album(?:-([\w-]+))?$/);
+      if (am) { showAlbum(am[1] && albumOf(am[1]) ? am[1] : null); return; }
       const pk = h.match(/^pilih(?:-([\w-]+?)(:b)?)?$/);
       if (pk && (!pk[1] || bySlug(pk[1]))) { showPicker(pk[1] || PK.slug || crateOrder[0]?.slug || WORKS[0].slug, pk[2] ? 'b' : (pk[1] ? 'a' : PK.side)); return; }
-      if (VIEWS.includes(h) && h !== 'pilih' && !(h === 'sapa' && !SITE.features.dock)) { setView(h); return; }
+      if (VIEWS.includes(h) && h !== 'pilih' && h !== 'album' && !(h === 'sapa' && !SITE.features.dock)) { setView(h); return; }
       setView(startView());
     });
   }
@@ -1622,7 +1641,7 @@
   function selectPk(slug, animate, dir = 1) {
     const w = bySlug(slug); if (!w) return;
     PK.slug = slug; PK.fr = {};
-    pkDisc.innerHTML = '<div class="pk-flip"><div class="pk-face a"></div><div class="pk-face b"></div></div>';
+    pkDisc.innerHTML = '<div class="pk-flip"><div class="pk-face a"></div><div class="pk-face b"></div></div><svg class="pk-arm" viewBox="0 0 60 220" aria-hidden="true"><circle class="arm-base" cx="30" cy="22" r="17"/><circle class="arm-pivot" cx="30" cy="22" r="7"/><path class="arm-rod" d="M30 22 L30 168 Q30 182 22 190"/><rect class="arm-head" x="10" y="184" width="18" height="28" rx="4" transform="rotate(18 19 198)"/></svg>';
     const a = makeDisc(w, 'span'), b = makeDisc(w.B, 'span', w);
     $('.pk-face.a', pkDisc).append(a); $('.pk-face.b', pkDisc).append(b);
     requestAnimationFrame(() => { paintDisc(a, w, pkDisc.offsetWidth); paintDisc(b, w.B, pkDisc.offsetWidth); });
@@ -1680,10 +1699,25 @@
     if (d) { e.preventDefault(); PK.frac = clamp(PK.frac + d / (TICKS - 1), 0, 1); renderScrub(); }
     if (e.key === 'Home') { PK.frac = 0; renderScrub(); }
   });
+  // membalik piringan dalam dua langkah: berputar sampai tegak lurus, sisi ditukar, lalu berputar kembali.
+  // Hanya satu sisi yang pernah dirender, jadi tidak ada sisi belakang yang berkedip menembus.
+  let flipTok = 0;
+  async function flipDisc(toB) {
+    const el = $('.pk-flip', pkDisc), tok = ++flipTok;
+    if (!el || reduced || !el.animate || view !== 'pilih') { pkDisc.classList.toggle('side-b', toB); return; }
+    const dir = toB ? 1 : -1;
+    pkDisc.classList.add('flipping');
+    el.getAnimations().forEach(a => a.cancel());
+    await el.animate([{ transform: 'perspective(1400px) rotateY(0)' }, { transform: `perspective(1400px) rotateY(${dir * 90}deg) scale(.94)` }], { duration: 200, easing: 'cubic-bezier(.55, 0, .9, .45)' }).finished.catch(() => {});
+    if (tok !== flipTok) return;
+    pkDisc.classList.toggle('side-b', toB);
+    await el.animate([{ transform: `perspective(1400px) rotateY(${dir * -90}deg) scale(.94)` }, { transform: 'perspective(1400px) rotateY(0)' }], { duration: 560, easing: 'cubic-bezier(.2, 1.35, .4, 1)' }).finished.catch(() => {});
+    if (tok === flipTok) pkDisc.classList.remove('flipping');
+  }
   function setSide(side, fromUser = true) {
     const changed = side !== PK.side;
     PK.side = side;
-    pkDisc.classList.toggle('side-b', side === 'b');
+    if (fromUser && changed) flipDisc(side === 'b'); else pkDisc.classList.toggle('side-b', side === 'b');
     $$('.pk-sides [data-side]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.side === side)));
     const btn = $(`.pk-sides [data-side="${side}"]`);
     $('.pk-dot').style.setProperty('--x', (btn.offsetLeft + btn.offsetWidth / 2) + 'px');
@@ -1731,7 +1765,116 @@
     const d = pkDoc(); if (!d) return;
     pendingStart = PK.frac; pendingListen = PV.listen;
     if (SITE.features.ambience && PV.amb !== 'hening' && !pendingListen) Amb.set(PV.amb);
-    openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc), PK.side);
+    // jarum turun ke piringan, piringan berputar kencang, baru tulisannya dibuka
+    if (reduced) { openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc), PK.side); return; }
+    pkDisc.classList.add('needle');
+    $('#pkGo').disabled = true;
+    setTimeout(() => {
+      pkDisc.classList.remove('needle'); $('#pkGo').disabled = false;
+      openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc), PK.side);
+    }, 620);
+  });
+
+  /* ======================================================================
+     ALBUM: sisi-sisi pilihan penulis, diputar berurutan seperti playlist
+     ====================================================================== */
+  const ALBUMS = (Array.isArray(content.albums) ? content.albums : [])
+    .map(a => ({ id: String(a.id || ''), title: String(a.title || ''), note: String(a.note || ''), tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
+    .filter(a => a.id && a.title && a.tracks.length);
+  const albumOf = id => ALBUMS.find(a => a.id === id);
+  if (!ALBUMS.length) $('.pill [data-go="album"]').hidden = true;
+  // PLAY: album yang sedang diputar, posisi, dan urutannya (urutan acak juga diingat)
+  let PLAY = store.get('play', null);
+  if (PLAY && !(albumOf(PLAY.album) && Array.isArray(PLAY.order))) PLAY = null;
+  const savePlay = () => store.set('play', PLAY);
+  const playing = () => (PLAY && albumOf(PLAY.album)) || null;
+  function syncPlay(d) {
+    const al = playing(); if (!al) return;
+    const idx = al.tracks.findIndex((t, i) => t.key === d.key && i === PLAY.i);
+    const any = idx >= 0 ? idx : al.tracks.findIndex(t => t.key === d.key);
+    if (any < 0) { PLAY = null; savePlay(); return; }
+    PLAY.i = any; savePlay();
+  }
+  const albumMins = a => a.tracks.reduce((n, t) => n + t.minutes, 0);
+  // sampul mosaik ala playlist: empat petak seni benang dari sisi-sisi di album
+  function paintCover(c, a, size) {
+    if (!c || !a) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), S = Math.round(size * dpr);
+    c.width = c.height = S; c.style.width = c.style.height = size + 'px';
+    const ctx = c.getContext('2d');
+    const picks = a.tracks.length >= 4 ? a.tracks.slice(0, 4) : a.tracks.length === 1 ? [a.tracks[0]] : [a.tracks[0], a.tracks[1], a.tracks[1], a.tracks[0]];
+    const n = picks.length === 1 ? 1 : 2, T = S / n;
+    picks.forEach((d, i) => {
+      const x = (i % n) * T, y = Math.floor(i / n) * T, ink = catOf(d.cat).ink, b = d.side === 'b';
+      ctx.fillStyle = b ? '#F4F4F5' : ink; ctx.fillRect(x, y, T, T);
+      const tmp = document.createElement('canvas');
+      drawThread(tmp, fullText(d), { w: T / dpr, h: T / dpr, pad: T / dpr * .08, color: b ? ink : '#0D0D0E', seed: d.key + (i > 1 ? '/2' : ''), pins: false, weight: 1.15 });
+      ctx.drawImage(tmp, x, y, T, T);
+    });
+  }
+  const sleeve = (a, size, spin) => `<span class="al-sleeve${spin ? ' on' : ''}"><span class="al-rec${spin ? ' spin' : ''}" style="--lc:${catOf(a.tracks[0].cat).ink}" aria-hidden="true"><i></i></span><canvas data-cover="${esc(a.id)}" data-size="${size}"></canvas></span>`;
+  function showAlbum(id) {
+    setView('album');
+    const host = $('#alScroll'), now = playing();
+    if (!id) {
+      host.innerHTML = `<header class="al-head"><p class="al-kicker">Koleksi</p><h2>Album</h2><p class="al-sub">Sisi-sisi pilihan, disusun untuk didengar berurutan.</p></header>
+        <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
+          <b>${esc(a.title)}</b><small>${a.tracks.length} sisi · ${albumMins(a)} menit${now && now.id === a.id ? ' · sedang diputar' : ''}</small></button>`).join('') || '<p class="al-empty">Belum ada album. Buat yang pertama di panel admin.</p>'}</div>`;
+      document.title = 'Album · ' + SITE.title;
+    } else {
+      const a = albumOf(id), on = now && now.id === a.id;
+      host.innerHTML = `<button type="button" class="al-back" data-album=""><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>Semua album</button>
+        <div class="al-detail">
+          <div class="al-art">${sleeve(a, 300, on)}</div>
+          <div class="al-info">
+            <p class="al-kicker">Album · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
+            <h2>${esc(a.title)}</h2>
+            ${a.note ? `<p class="al-note">${esc(a.note)}</p>` : ''}
+            <div class="al-actions">
+              <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? 'Lanjutkan' : 'Putar'}</button>
+              <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
+              <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="Bagikan album"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
+            </div>
+            <ol class="al-tracks">${a.tracks.map((t, i) => {
+              const cur = on && PLAY.i === i;
+              return `<li style="--k:${i}"><button type="button" data-track="${i}" data-album="${esc(a.id)}" class="${cur ? 'cur' : ''}" aria-label="Putar ${esc(t.title)}">
+                <span class="al-no">${cur ? '<i class="eq" aria-hidden="true"><i></i><i></i><i></i></i>' : i + 1}</span>${mdisc(t)}
+                <span class="sg-t"><b>${esc(t.title)}${t.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${t.side === 'b' ? 'Sisi B' : 'Sisi A'}${t.pov ? ' · dari sisi ' + esc(t.pov) : ''} · ${esc(catOf(t.cat).label)}</span></span>
+                <span class="al-len">${fmtMS(secsOf(t))}</span>${sideRing(t, t.side === 'b' ? 'B' : 'A')}</button></li>`;
+            }).join('')}</ol>
+          </div>
+        </div>`;
+      document.title = a.title + ' · ' + SITE.title;
+    }
+    $$('canvas[data-cover]', host).forEach(c => requestAnimationFrame(() => paintCover(c, albumOf(c.dataset.cover), Math.min(+c.dataset.size, c.parentElement.clientWidth || +c.dataset.size))));
+    host.scrollTop = 0;
+  }
+  function playAlbum(id, i = 0, shuffle = false) {
+    const a = albumOf(id); if (!a) return;
+    const order = a.tracks.map((_, k) => k);
+    if (shuffle) { for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; } i = order[0]; }
+    PLAY = { album: id, i, order }; savePlay();
+    const t = a.tracks[i];
+    pendingStart = 0;
+    if (SITE.features.ambience && PV.amb !== 'hening') Amb.set(PV.amb);
+    openWork(t.slug, null, t.side);
+  }
+  $('#alScroll').addEventListener('click', async e => {
+    const tr = e.target.closest('[data-track]');
+    if (tr) { playAlbum(tr.dataset.album, +tr.dataset.track); return; }
+    const pl = e.target.closest('[data-play]');
+    if (pl) { const on = playing(); if (on && on.id === pl.dataset.play) playAlbum(on.id, PLAY.i); else playAlbum(pl.dataset.play, 0); return; }
+    const sh = e.target.closest('[data-shuffle]');
+    if (sh) { playAlbum(sh.dataset.shuffle, 0, true); return; }
+    const share = e.target.closest('[data-share]');
+    if (share) {
+      const a = albumOf(share.dataset.share), url = location.href.split('#')[0] + '#album-' + a.id;
+      try { if (navigator.share) await navigator.share({ title: a.title, text: `Album “${a.title}” — ${SITE.author}`, url }); else { await navigator.clipboard.writeText(url); toast('Tautan album disalin.'); } }
+      catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url); }
+      return;
+    }
+    const al = e.target.closest('[data-album]');
+    if (al) location.hash = al.dataset.album ? 'album-' + al.dataset.album : 'album';
   });
 
   function initPutar() {

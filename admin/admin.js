@@ -43,11 +43,12 @@
   /* ======================================================================
      STATE
      ====================================================================== */
-  const S = { site: null, works: [], base: { site: '', works: '' }, sel: null, side: 'a', filter: 'semua', q: '', tab: 'tulis', avatarData: null };
+  const S = { site: null, works: [], albums: [], base: { site: '', works: '', albums: '' }, sel: null, side: 'a', selAlbum: null, filter: 'semua', q: '', tab: 'tulis', avatarData: null };
   const clean = works => works.map(w => Object.fromEntries(Object.entries(w).filter(([k]) => !k.startsWith('_'))));
   const snapWorks = () => JSON.stringify(clean(S.works));
   const snapSite = () => JSON.stringify(S.site);
-  const isDirty = () => snapWorks() !== S.base.works || snapSite() !== S.base.site;
+  const snapAlbums = () => JSON.stringify(clean(S.albums));
+  const isDirty = () => snapWorks() !== S.base.works || snapSite() !== S.base.site || snapAlbums() !== S.base.albums;
   const backupKey = () => { const c = GH.cfg(); return `jm-admin-backup:${c.owner}/${c.repo}`; };
   const cur = () => S.works.find(w => w.slug === S.sel);
   const catList = () => S.site.categories || [];
@@ -61,9 +62,10 @@
     const d = isDirty();
     $('#saveBtn').disabled = !d;
     if ($('#status').dataset.state !== 'saving') setStatus(d ? 'dirty' : 'clean', d ? 'Belum disimpan' : 'Tersimpan');
-    try { if (d) localStorage.setItem(backupKey(), JSON.stringify({ at: Date.now(), site: S.site, works: clean(S.works) })); else localStorage.removeItem(backupKey()); } catch (e) { /* */ }
+    try { if (d) localStorage.setItem(backupKey(), JSON.stringify({ at: Date.now(), site: S.site, works: clean(S.works), albums: clean(S.albums) })); else localStorage.removeItem(backupKey()); } catch (e) { /* */ }
     $('#edLocal').textContent = d ? 'cadangan lokal tersimpan' : '';
     renderListDots();
+    if (S.tab === 'album') renderAlbumList();
     pushPreview();
   }, 250);
 
@@ -111,10 +113,12 @@
   });
 
   async function loadAll() {
-    const [site, works] = await Promise.all([GH.getJSON('content/site.json'), GH.getJSON('content/works.json')]);
+    const [site, works, albums] = await Promise.all([GH.getJSON('content/site.json'), GH.getJSON('content/works.json'), GH.getJSON('content/albums.json')]);
     S.site = { ...DEFAULT_SITE, ...(site || {}), features: { ...DEFAULT_SITE.features, ...((site || {}).features || {}) } };
     S.works = Array.isArray(works) ? works : [];
-    S.base = { site: snapSite(), works: snapWorks() };
+    S.albums = Array.isArray(albums) ? albums : [];
+    S.base = { site: snapSite(), works: snapWorks(), albums: snapAlbums() };
+    S.selAlbum = S.albums[0]?.id || null;
     S.sel = sortedWorks()[0]?.slug || null;
     setStatus('clean', 'Tersimpan');
     $('#saveBtn').disabled = true;
@@ -130,10 +134,10 @@
   function checkBackup() {
     let b = null;
     try { b = JSON.parse(localStorage.getItem(backupKey()) || 'null'); } catch (e) { /* */ }
-    if (!b || (JSON.stringify(b.works) === S.base.works && JSON.stringify(b.site) === S.base.site)) return;
+    if (!b || (JSON.stringify(b.works) === S.base.works && JSON.stringify(b.site) === S.base.site && JSON.stringify(b.albums || []) === S.base.albums)) return;
     $('#bannerText').textContent = `Ada perubahan yang belum disimpan dari ${new Date(b.at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}.`;
     $('#banner').hidden = false;
-    $('#bannerYes').onclick = () => { S.works = b.works; S.site = b.site; S.sel = sortedWorks()[0]?.slug || null; $('#banner').hidden = true; renderAll(); changed(); toast('Perubahan dipulihkan. Tekan Simpan untuk menerbitkan.'); };
+    $('#bannerYes').onclick = () => { S.works = b.works; S.site = b.site; if (b.albums) S.albums = b.albums; S.sel = sortedWorks()[0]?.slug || null; $('#banner').hidden = true; renderAll(); changed(); toast('Perubahan dipulihkan. Tekan Simpan untuk menerbitkan.'); };
     $('#bannerNo').onclick = () => { try { localStorage.removeItem(backupKey()); } catch (e) { /* */ } $('#banner').hidden = true; };
   }
 
@@ -148,28 +152,38 @@
       if (seen.has(w.slug)) return [w, `Alamat “${w.slug}” dipakai dua kali.`];
       seen.add(w.slug);
     }
+    const ids = new Set();
+    for (const a of S.albums) {
+      if (!a.title.trim()) return [null, 'Ada album tanpa judul.', a];
+      if (!/^[a-z0-9-]+$/.test(a.id)) return [null, `Alamat album “${a.id}” hanya boleh huruf kecil, angka, dan tanda hubung.`, a];
+      if (ids.has(a.id)) return [null, `Alamat album “${a.id}” dipakai dua kali.`, a];
+      if (!a.tracks.length) return [null, `Album “${a.title}” belum punya sisi.`, a];
+      ids.add(a.id);
+    }
     return null;
   }
   async function save() {
     if (!isDirty()) return;
     const bad = validate();
-    if (bad) { selectWork(bad[0].slug); toast(bad[1], true); return; }
+    if (bad) { if (bad[0]) { setTab('tulis'); selectWork(bad[0].slug); } else { S.selAlbum = bad[2].id; setTab('album'); } toast(bad[1], true); return; }
     const btn = $('#saveBtn');
     btn.classList.add('busy'); btn.disabled = true;
     setStatus('saving', 'Menyimpan ke GitHub…');
-    const worksChanged = snapWorks() !== S.base.works, siteChanged = snapSite() !== S.base.site;
+    const worksChanged = snapWorks() !== S.base.works, siteChanged = snapSite() !== S.base.site, albumsChanged = snapAlbums() !== S.base.albums;
     const titles = worksChanged ? changedTitles() : [];
     try {
       if (worksChanged) {
         const msg = titles.length === 1 ? `Perbarui tulisan: ${titles[0]}` : titles.length ? `Perbarui ${titles.length} tulisan` : 'Perbarui tulisan';
         await GH.putJSON('content/works.json', clean(S.works), msg);
       }
+      if (albumsChanged) await GH.putJSON('content/albums.json', clean(S.albums), 'Perbarui album');
       if (siteChanged) {
         await GH.putJSON('content/site.json', S.site, 'Perbarui tampilan situs');
         if (manifestOf(S.site) !== manifestOf(JSON.parse(S.base.site || '{}'))) await GH.putJSON('manifest.webmanifest', JSON.parse(manifestOf(S.site)), 'Perbarui manifest aplikasi');
       }
-      S.base = { site: snapSite(), works: snapWorks() };
+      S.base = { site: snapSite(), works: snapWorks(), albums: snapAlbums() };
       S.works.forEach(w => { delete w._new; });
+      S.albums.forEach(a => { delete a._autoId; });
       try { localStorage.removeItem(backupKey()); } catch (e) { /* */ }
       setStatus('clean', 'Tersimpan · situs diperbarui ±1 menit');
       btn.classList.remove('busy'); btn.classList.add('done'); btn.querySelector('.sb-label').textContent = 'Tersimpan';
@@ -219,6 +233,7 @@
     moveThumb();
     if (t === 'tampilan') { renderSettings(); pushPreview(true); }
     if (t === 'riwayat') renderHistory();
+    if (t === 'album') renderAlbums();
   }
   function moveThumb() {
     const b = $(`.tabs [data-tab="${S.tab}"]`), th = $('.tabs-thumb');
@@ -385,7 +400,7 @@
     if (w._autoSlug) {
       let base = slugify(w.title) || 'tulisan-baru', slug = base, i = 2;
       while (S.works.some(x => x !== w && x.slug === slug)) slug = base + '-' + i++;
-      if (w.slug !== slug) { w.slug = slug; S.sel = slug; $('#dSlug').value = slug; renderList(); }
+      if (w.slug !== slug) { renameInAlbums(w.slug, slug); w.slug = slug; S.sel = slug; $('#dSlug').value = slug; renderList(); }
     }
     grow(e.target); changed();
   });
@@ -458,7 +473,7 @@
     const w = cur(), v = e.target.value.trim();
     const err = !/^[a-z0-9-]+$/.test(v) ? 'Hanya huruf kecil, angka, dan tanda hubung.' : S.works.some(x => x !== w && x.slug === v) ? 'Alamat ini sudah dipakai tulisan lain.' : '';
     $('#slugErr').hidden = !err; $('#slugErr').textContent = err;
-    if (!err) { w.slug = v; S.sel = v; delete w._autoSlug; renderList(); changed(); }
+    if (!err) { renameInAlbums(w.slug, v); w.slug = v; S.sel = v; delete w._autoSlug; renderList(); changed(); }
   });
   $('#dExcerpt').addEventListener('input', e => { cur().excerpt = e.target.value; changed(); });
   $('#dLine').addEventListener('input', e => { cur().line = e.target.value; changed(); });
@@ -472,6 +487,7 @@
   $('#delYes').addEventListener('click', () => {
     const w = cur(); if (!w) return;
     S.works = S.works.filter(x => x !== w);
+    S.albums.forEach(a => { a.tracks = a.tracks.filter(k => k.split(':')[0] !== w.slug); });
     toast(`“${w.title || 'Tanpa judul'}” dihapus. Tekan Simpan untuk menerapkan.`);
     S.sel = sortedWorks()[0]?.slug || null;
     renderFilter();
@@ -486,7 +502,7 @@
   function previewPayload() {
     const site = { ...S.site };
     if (S.avatarData && site.avatar) site.avatar = S.avatarData;
-    return { site, works: clean(S.works) };
+    return { site, works: clean(S.works), albums: clean(S.albums) };
   }
   const pushPreview = debounce(force => {
     if (!S.site) return;
@@ -619,6 +635,140 @@
     $('#catEditor .cat-row:last-child input[data-ck="label"]').select();
   });
   /* ======================================================================
+     ALBUM: urutan sisi (A atau B) yang diputar berurutan di situs
+     ====================================================================== */
+  const curAlbum = () => S.albums.find(a => a.id === S.selAlbum);
+  function renameInAlbums(from, to) {
+    if (!from || from === to) return;
+    S.albums.forEach(a => { a.tracks = a.tracks.map(k => { const [sl, b] = k.split(':'); return sl === from ? to + (b ? ':' + b : '') : k; }); });
+  }
+  function trackDoc(k) {
+    const [slug, b] = k.split(':'), w = S.works.find(x => x.slug === slug);
+    if (!w) return null;
+    if (b === 'b') return w.sideB ? { w, side: 'b', title: (w.sideB.title || '').trim() || w.title, pov: w.sideB.pov || '', n: words(w.sideB.body.join(' ')) } : null;
+    return { w, side: 'a', title: w.title || 'Tanpa judul', pov: w.pov || '', n: words(w.body.join(' ')) };
+  }
+  // sama seperti di situs: tiap sisi dibulatkan ke menit, minimal satu
+  const albumMins = a => a.tracks.map(trackDoc).filter(Boolean).reduce((n, d) => n + Math.max(1, Math.round(d.n / 170)), 0);
+  const tile = d => (d ? `<i style="--c:${esc(catOf(d.w.cat).ink)}" class="${d.side === 'b' ? 'b' : ''}"></i>` : '<i></i>');
+  function coverTiles(a) {
+    const ds = a.tracks.map(trackDoc).filter(Boolean);
+    const picks = ds.length >= 4 ? ds.slice(0, 4) : ds.length === 1 ? [ds[0]] : ds.length ? [ds[0], ds[1], ds[1], ds[0]] : [];
+    return `<span class="mos${picks.length === 1 ? ' one' : ''}">${picks.map(tile).join('') || '<i></i>'}</span>`;
+  }
+  function renderAlbumList() {
+    $('#albumList').innerHTML = S.albums.map((a, i) => {
+      const mins = albumMins(a);
+      return `<li style="--k:${i}"><button class="wl-item" type="button" data-album="${esc(a.id)}" aria-current="${a.id === S.selAlbum}">
+        ${coverTiles(a)}<span class="wl-t"><b>${esc(a.title || 'Album tanpa judul')}</b><span>${a.tracks.length} sisi · ${mins} menit</span></span><span></span></button></li>`;
+    }).join('');
+  }
+  function renderAlbums() {
+    if (S.selAlbum && !curAlbum()) S.selAlbum = S.albums[0]?.id || null;
+    renderAlbumList();
+    const a = curAlbum();
+    $('#aeEmpty').hidden = !!a; $('#aeCard').hidden = !a;
+    $('.ae-pool').style.visibility = a ? '' : 'hidden';
+    if (!a) return;
+    $('#aeTitle').value = a.title; $('#aeId').value = a.id; $('#aeNote').value = a.note || '';
+    $('#aeIdErr').hidden = true;
+    $('#aeDelConfirm').hidden = true; $('#aeDel').hidden = false;
+    renderTracks(); renderPool();
+  }
+  function renderTracks() {
+    const a = curAlbum(); if (!a) return;
+    $('#aeCover').innerHTML = coverTiles(a);
+    const ds = a.tracks.map(trackDoc);
+    $('#aeLen').textContent = `${a.tracks.length} sisi · ${albumMins(a)} menit`;
+    $('#aePreview').href = '../?preview=1#album-' + a.id;
+    $('#aeTracks').innerHTML = a.tracks.map((k, i) => {
+      const d = ds[i];
+      return `<li draggable="true" data-i="${i}" class="${d ? '' : 'gone'}">
+        <span class="ae-grip" aria-hidden="true">⋮⋮</span><span class="ae-no">${i + 1}</span>${tile(d)}
+        <span class="ae-t"><b>${d ? esc(d.title) : esc(k)}</b><small>${d ? (d.side === 'b' ? 'Sisi B' : 'Sisi A') + (d.pov ? ' · dari sisi ' + esc(d.pov) : '') + ' · ' + esc(catOf(d.w.cat).label) : 'Tidak ditemukan. Mungkin tulisannya dihapus atau Sisi B-nya dikosongkan.'}</small></span>
+        <span class="ae-btns"><button type="button" data-mv="-1" aria-label="Naikkan" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" data-mv="1" aria-label="Turunkan" ${i === a.tracks.length - 1 ? 'disabled' : ''}>↓</button><button type="button" data-rm aria-label="Keluarkan dari album">×</button></span></li>`;
+    }).join('') || '<li class="ae-none">Belum ada sisi. Tambahkan dari daftar di kanan.</li>';
+  }
+  function renderPool() {
+    const a = curAlbum(); if (!a) return;
+    const q = fold($('#aeQ').value.trim());
+    const list = sortedWorks().filter(w => !q || fold(w.title + ' ' + (w.sideB?.title || '')).includes(q));
+    $('#aePool').innerHTML = list.map(w => {
+      const ka = w.slug, kb = w.slug + ':b', ina = a.tracks.includes(ka), inb = a.tracks.includes(kb);
+      return `<li><span class="ae-t"><b>${esc(w.title || 'Tanpa judul')}</b><small>${esc(catOf(w.cat).label)}${w.draft ? ' · draf' : ''}</small></span>
+        <button type="button" class="ae-add${ina ? ' on' : ''}" data-key="${esc(ka)}" aria-pressed="${ina}" title="${ina ? 'Keluarkan Sisi A' : 'Tambahkan Sisi A'}">${ina ? '✓' : '+'} A</button>
+        <button type="button" class="ae-add b${inb ? ' on' : ''}" data-key="${esc(kb)}" aria-pressed="${inb}" ${w.sideB ? '' : 'disabled title="Belum ada Sisi B"'} title="${inb ? 'Keluarkan Sisi B' : 'Tambahkan Sisi B'}">${inb ? '✓' : '+'} B</button></li>`;
+    }).join('') || '<li class="hint">Tidak ada yang cocok.</li>';
+  }
+  function newAlbum() {
+    let id = 'album-baru', i = 2;
+    while (S.albums.some(a => a.id === id)) id = 'album-baru-' + i++;
+    S.albums.push({ id, title: '', note: '', tracks: [], _autoId: true });
+    S.selAlbum = id;
+    renderAlbums(); $('#aeTitle').focus(); changed();
+  }
+  $('#newAlbum').addEventListener('click', newAlbum);
+  $('#aeEmptyNew').addEventListener('click', newAlbum);
+  $('#albumList').addEventListener('click', e => { const b = e.target.closest('[data-album]'); if (b) { S.selAlbum = b.dataset.album; renderAlbums(); } });
+  $('#aeTitle').addEventListener('input', e => {
+    const a = curAlbum(); if (!a) return;
+    a.title = e.target.value;
+    if (a._autoId) {
+      let base = slugify(a.title) || 'album-baru', id = base, i = 2;
+      while (S.albums.some(x => x !== a && x.id === id)) id = base + '-' + i++;
+      a.id = id; S.selAlbum = id; $('#aeId').value = id; $('#aePreview').href = '../?preview=1#album-' + id;
+    }
+    renderAlbumList(); changed();
+  });
+  $('#aeId').addEventListener('input', e => {
+    const a = curAlbum(), v = e.target.value.trim();
+    const err = !/^[a-z0-9-]+$/.test(v) ? 'Hanya huruf kecil, angka, dan tanda hubung.' : S.albums.some(x => x !== a && x.id === v) ? 'Alamat ini sudah dipakai album lain.' : '';
+    $('#aeIdErr').hidden = !err; $('#aeIdErr').textContent = err;
+    if (!err) { a.id = v; S.selAlbum = v; delete a._autoId; renderAlbumList(); $('#aePreview').href = '../?preview=1#album-' + v; changed(); }
+  });
+  $('#aeNote').addEventListener('input', e => { const a = curAlbum(); if (a) { a.note = e.target.value; changed(); } });
+  $('#aeQ').addEventListener('input', renderPool);
+  $('#aePool').addEventListener('click', e => {
+    const b = e.target.closest('.ae-add'); if (!b || b.disabled) return;
+    const a = curAlbum(), k = b.dataset.key;
+    a.tracks = a.tracks.includes(k) ? a.tracks.filter(x => x !== k) : [...a.tracks, k];
+    renderTracks(); renderPool(); changed();
+    if (a.tracks.includes(k)) { const li = $('#aeTracks li:last-child'); li?.classList.add('in'); }
+  });
+  $('#aeTracks').addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]'); if (!li) return;
+    const a = curAlbum(), i = +li.dataset.i;
+    const mv = e.target.closest('[data-mv]');
+    if (mv && !mv.disabled) { const j = i + +mv.dataset.mv; [a.tracks[i], a.tracks[j]] = [a.tracks[j], a.tracks[i]]; renderTracks(); changed(); $(`#aeTracks li[data-i="${j}"]`)?.classList.add('moved'); }
+    if (e.target.closest('[data-rm]')) { a.tracks.splice(i, 1); renderTracks(); renderPool(); changed(); }
+  });
+  // seret untuk mengurutkan
+  let dragI = null;
+  $('#aeTracks').addEventListener('dragstart', e => { const li = e.target.closest('li[data-i]'); if (!li) return; dragI = +li.dataset.i; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  $('#aeTracks').addEventListener('dragover', e => {
+    const li = e.target.closest('li[data-i]'); if (dragI == null || !li) return;
+    e.preventDefault();
+    $$('#aeTracks li').forEach(x => x.classList.toggle('over', x === li && +li.dataset.i !== dragI));
+  });
+  $('#aeTracks').addEventListener('drop', e => {
+    const li = e.target.closest('li[data-i]'); if (dragI == null || !li) return;
+    e.preventDefault();
+    const a = curAlbum(), to = +li.dataset.i, [k] = a.tracks.splice(dragI, 1);
+    a.tracks.splice(to, 0, k); dragI = null;
+    renderTracks(); changed();
+  });
+  $('#aeTracks').addEventListener('dragend', () => { dragI = null; $$('#aeTracks li').forEach(x => x.classList.remove('dragging', 'over')); });
+  $('#aeDel').addEventListener('click', () => { $('#aeDel').hidden = true; $('#aeDelConfirm').hidden = false; $('#aeDelNo').focus(); });
+  $('#aeDelNo').addEventListener('click', () => { $('#aeDelConfirm').hidden = true; $('#aeDel').hidden = false; });
+  $('#aeDelYes').addEventListener('click', () => {
+    const a = curAlbum(); if (!a) return;
+    S.albums = S.albums.filter(x => x !== a);
+    toast(`Album “${a.title || 'tanpa judul'}” dihapus. Tekan Simpan untuk menerapkan.`);
+    S.selAlbum = S.albums[0]?.id || null;
+    renderAlbums(); changed();
+  });
+
+  /* ======================================================================
      RIWAYAT
      ====================================================================== */
   async function renderHistory() {
@@ -649,6 +799,7 @@
     renderFilter();
     if (S.sel) selectWork(S.sel); else renderList();
     if (S.tab === 'tampilan') renderSettings();
+    if (S.tab === 'album') renderAlbums();
     setTab(S.tab);
   }
 

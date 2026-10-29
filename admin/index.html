@@ -54,6 +54,7 @@
     <nav class="tabs" aria-label="Bagian">
       <i class="tabs-thumb" aria-hidden="true"></i>
       <button type="button" data-tab="tulis" aria-current="true">Tulisan</button>
+      <button type="button" data-tab="album" aria-current="false">Album</button>
       <button type="button" data-tab="tampilan" aria-current="false">Tampilan</button>
       <button type="button" data-tab="riwayat" aria-current="false">Riwayat</button>
     </nav>
@@ -160,6 +161,55 @@
           <button type="button" id="delNo">Batal</button>
         </div>
       </div>
+    </aside>
+  </section>
+
+  <!-- ---------- ALBUM ---------- -->
+  <section class="tab tab-album" id="tab-album" hidden>
+    <aside class="side">
+      <div class="side-head">
+        <p class="side-t">Album<small>Susun sisi-sisi menjadi playlist.</small></p>
+        <button class="round-ink" id="newAlbum" type="button" aria-label="Album baru" title="Album baru">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <ul class="worklist" id="albumList"></ul>
+    </aside>
+
+    <main class="album-ed" id="albumEd">
+      <div class="ae-empty" id="aeEmpty" hidden>
+        <p class="empty-t">Belum ada album.</p>
+        <p class="hint">Album adalah urutan sisi yang diputar berurutan, seperti playlist. Satu tulisan bisa masuk ke banyak album, dan Sisi A maupun Sisi B bisa dipilih sendiri-sendiri.</p>
+        <button class="btn-ink" type="button" id="aeEmptyNew">Buat album pertama</button>
+      </div>
+      <div class="ae-card" id="aeCard">
+        <div class="ae-top">
+          <div class="ae-cover" id="aeCover" aria-hidden="true"></div>
+          <div class="ae-fields">
+            <label for="aeTitle">Judul album<input id="aeTitle" autocomplete="off" placeholder="misalnya: Pulang"></label>
+            <label for="aeId">Alamat<span class="slug-prefix">#album-</span><input id="aeId" spellcheck="false" autocomplete="off"></label>
+            <p class="field-err" id="aeIdErr" hidden></p>
+            <label for="aeNote">Catatan sampul<textarea id="aeNote" rows="3" placeholder="Satu atau dua kalimat tentang album ini."></textarea></label>
+          </div>
+        </div>
+        <div class="ae-h"><span>Urutan sisi</span><span id="aeLen"></span><a class="btn-ghost sm" id="aePreview" href="#" target="_blank" rel="noopener">Pratinjau ↗</a></div>
+        <ol class="ae-tracks" id="aeTracks"></ol>
+        <div class="danger">
+          <button type="button" id="aeDel">Hapus album ini</button>
+          <div class="confirm" id="aeDelConfirm" hidden>
+            <span>Hapus album setelah disimpan? Tulisannya tidak ikut terhapus.</span>
+            <button type="button" id="aeDelYes" class="red">Hapus</button>
+            <button type="button" id="aeDelNo">Batal</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="details ae-pool" aria-label="Tambahkan sisi">
+      <p class="g-h">Tambahkan sisi</p>
+      <label class="sr-only" for="aeQ">Cari tulisan</label>
+      <input id="aeQ" type="search" placeholder="Cari tulisan" autocomplete="off">
+      <ul class="ae-pool-list" id="aePool"></ul>
     </aside>
   </section>
 
