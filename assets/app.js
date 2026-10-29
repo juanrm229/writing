@@ -469,7 +469,7 @@
     html += `<p class="np-h"><span>Antreanmu${qd.length ? ' · ' + qd.length : ''}</span>${qd.length ? '<button type="button" class="np-link" data-qclear>Kosongkan</button>' : ''}</p>`;
     html += qd.length
       ? `<ul class="tk-list q">${qd.map((d, i) => `<li style="--k:${i}"><button type="button" data-qplay="${i}">${mdisc(d)}<span class="sg-t"><b>${esc(d.title)}${d.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${i === 0 ? 'Berikutnya · ' : ''}${esc(catOf(d.cat).label)} · ${d.minutes} mnt</span></span></button><span class="q-btns"><button type="button" data-qup="${i}" aria-label="Naikkan" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" data-qrm="${i}" aria-label="Keluarkan dari antrean">×</button></span></li>`).join('')}</ul>
-        <div class="np-actions"><button type="button" class="np-go" data-qplay="0">Putar antrean</button></div>`
+        <div class="np-actions"><button type="button" class="np-go" data-qplay="0">Putar antrean</button><button type="button" data-qshare>${QICON.replace('M17.5 14v6M14.5 17h6', 'M15 17.5l3-3 3 3M18 14.5V21')}Bagikan sebagai racikan</button></div>`
       : `<p class="np-empty">Tekan <b>Tambah ke antrean</b> di pemilih piringan atau di halaman album untuk menyusun urutan bacamu sendiri. Antrean diputar lebih dulu, lalu album dilanjutkan.</p>`;
     const sug = suggestions(last);
     if (sug.length) html += `<p class="np-h"><span>Berikutnya untukmu</span></p><ul class="tk-list sug">${sug.map((s, i) => `<li style="--k:${i}"><button type="button" data-pick="${s.d.key}">${mdisc(s.d)}<span class="sg-t"><b>${esc(s.d.title)}${s.d.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${s.why}</span></span><span class="sg-m">${s.d.minutes} mnt</span></button></li>`).join('')}</ul>`;
@@ -536,6 +536,7 @@
     if (qu && !qu.disabled) { const i = +qu.dataset.qup; [QUEUE[i - 1], QUEUE[i]] = [QUEUE[i], QUEUE[i - 1]]; saveQ(); return; }
     const qr = e.target.closest('[data-qrm]');
     if (qr) { QUEUE.splice(+qr.dataset.qrm, 1); saveQ(); return; }
+    if (e.target.closest('[data-qshare]')) { openMix(QUEUE.slice()); return; }
     if (e.target.closest('[data-qclear]')) { const old = QUEUE; QUEUE = []; saveQ(); toast('Antrean dikosongkan.', { label: 'Urungkan', run: () => { QUEUE = old; saveQ(); } }); return; }
     const kf = e.target.closest('[data-kf]');
     if (kf) { kFilter = kf.dataset.kf; renderFeed(false); return; }
@@ -745,7 +746,7 @@
     // sisi dari antrean tidak memutus album: album lanjut dari posisinya setelah antrean habis
     if (!viaQ) syncPlay(w);
     setView('baca');
-    $('#rdBackLabel').textContent = playing() ? 'Album' : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
+    $('#rdBackLabel').textContent = playing() ? (playing().shared ? 'Racikan' : 'Album') : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
     const al = playing(), inAlbum = al && al.tracks[PLAY.i]?.key === w.key;
     $('#rdMeta').innerHTML = `${viaQ ? `<span class="q-tag">${QICON}dari antrean</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
@@ -1046,6 +1047,7 @@
     { label: current?.side === 'b' ? 'Balik ke Sisi A' : 'Balik ke Sisi B', hint: current?.A.B ? (current.side === 'b' ? current.A.title : current.A.B.title) : '', run: () => $('#rdFlip').click(), show: view === 'baca' && !!current?.A.B },
     { label: PV.autoplay === false ? 'Nyalakan putar terus' : 'Matikan putar terus', hint: 'sisi berikutnya menyusul otomatis', run: () => { PV.autoplay = PV.autoplay === false; savePv(); toast(PV.autoplay ? 'Putar terus menyala.' : 'Putar terus dimatikan.'); } },
     { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
+    { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + ' sisi', run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
     { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
@@ -1102,6 +1104,7 @@
       if (!palette.hidden) return closePalette();
       if ($('#tsSheet').classList.contains('open')) return setSheetOpen(false);
       if (!$('#quoteModal').hidden) return closeQuote();
+      if (!$('#mixModal').hidden) return closeMix();
       if (RP.token) return stopReplay(true);
       if (!$('#upNext').hidden) return $('#unCancel').click();
       if (!$('#rdFind').hidden) return closeFind();
@@ -1126,7 +1129,9 @@
 
   const startView = () => (VIEWS.includes(SITE.defaultView) && SITE.defaultView !== 'pilih' && !(SITE.defaultView === 'sapa' && !SITE.features.dock) ? SITE.defaultView : 'putar');
   function route() {
-    const h = decodeURIComponent(location.hash.slice(1));
+    const raw = location.hash.slice(1);
+    if (raw.startsWith('racikan?')) { const id = receiveMix(raw.slice(8)); vt(() => { if (id) { $('.pill [data-go="album"]').hidden = false; showAlbum(id); } else setView(startView()); }); return; }
+    const h = decodeURIComponent(raw);
     const m = h.match(/^baca-([\w-]+?)(:b)?$/);
     if (m && bySlug(m[1]) && view === 'baca' && current?.slug === m[1] && current.side !== (m[2] ? 'b' : 'a') && docOf(m[1], m[2] ? 'b' : 'a')) { flipReader(m[1], m[2] ? 'b' : 'a'); return; }
     vt(() => {
@@ -1921,8 +1926,74 @@
   const ALBUMS = (Array.isArray(content.albums) ? content.albums : [])
     .map(a => ({ id: String(a.id || ''), title: String(a.title || ''), note: String(a.note || ''), tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
     .filter(a => a.id && a.title && a.tracks.length);
-  const albumOf = id => ALBUMS.find(a => a.id === id);
-  if (!ALBUMS.length) $('.pill [data-go="album"]').hidden = true;
+  /* ---------- RACIKAN: playlist pembaca yang dibagikan lewat tautan, tanpa server ---------- */
+  // isinya ada di tautan itu sendiri: #racikan?s=kopi-kedua,kopi-kedua:b&t=Judul&n=Pengirim
+  let MIXES = store.get('mixes', []).filter(m => m && m.id && Array.isArray(m.keys));
+  const saveMixes = () => store.set('mixes', MIXES.slice(0, 12));
+  const hashId = str => { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  const mixAlbum = m => ({ id: m.id, title: m.title, from: m.from || '', mine: !!m.mine, at: m.at, shared: true, keys: m.keys,
+    note: m.mine ? `Racikanmu${m.from ? ', dari ' + m.from : ''}. Siapa pun yang membuka tautannya mendapat urutan yang sama.` : `Racikan${m.from ? ' dari ' + m.from : ''}, dibagikan lewat tautan.`,
+    tracks: m.keys.map(docByKey).filter(Boolean) });
+  const mixUrl = a => location.href.split('#')[0] + '#racikan?s=' + a.keys.join(',') + '&t=' + encodeURIComponent(a.title) + (a.from ? '&n=' + encodeURIComponent(a.from) : '');
+  function keepMix(keys, title, from, mine) {
+    keys = keys.filter(k => docByKey(k)).slice(0, 40);
+    if (!keys.length) return null;
+    title = (title || '').trim().slice(0, 60) || 'Racikan tanpa nama';
+    from = (from || '').trim().slice(0, 40);
+    const id = 'racikan-' + hashId(keys.join(',') + '|' + title + '|' + from);
+    const old = MIXES.find(m => m.id === id);
+    MIXES = [{ id, keys, title, from, mine: mine || !!old?.mine, at: old?.at || Date.now() }, ...MIXES.filter(m => m.id !== id)];
+    saveMixes();
+    return { id, fresh: !old };
+  }
+  function receiveMix(raw) {
+    const q = new URLSearchParams(raw);
+    const keys = (q.get('s') || '').split(',').map(k => k.trim()).filter(Boolean);
+    const r = keepMix(keys, q.get('t'), q.get('n'), false);
+    if (!r) { toast('Racikan ini kosong, atau tulisannya sudah tidak ada.'); return null; }
+    if (r.fresh) { const a = albumOf(r.id); toast(`Racikan “${a.title}”${a.from ? ' dari ' + a.from : ''} · ${a.tracks.length} sisi. Tersimpan di rak Album.`, null, 4500); }
+    return r.id;
+  }
+  // kartu "bagikan racikan": nama, pengirim, sampul mosaik, lalu tautan
+  let mixKeys = [];
+  function openMix(keys) {
+    mixKeys = keys.filter(k => docByKey(k));
+    if (!mixKeys.length) { toast('Antreanmu masih kosong.'); return; }
+    $('#mixTitle').value = 'Racikan ' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
+    $('#mixFrom').value = store.get('mixFrom', '');
+    const ds = mixKeys.map(docByKey);
+    $('#mixList').innerHTML = ds.map(d => `<li>${mdisc(d)}<span>${esc(d.title)}${d.side === 'b' ? ' <i class="ab">B</i>' : ''}</span><small>${d.minutes} mnt</small></li>`).join('');
+    $('#mixCount').textContent = `${ds.length} sisi · ${ds.reduce((n, d) => n + d.minutes, 0)} menit`;
+    $('#mixModal').hidden = false;
+    requestAnimationFrame(() => paintCover($('#mixCover'), { tracks: ds }, Math.min(300, $('.mix-art').clientWidth || 260)));
+    $('#mixTitle').select();
+  }
+  const closeMix = () => { $('#mixModal').hidden = true; };
+  function makeMix() {
+    store.set('mixFrom', $('#mixFrom').value.trim());
+    const r = keepMix(mixKeys, $('#mixTitle').value, $('#mixFrom').value, true);
+    $('.pill [data-go="album"]').hidden = false;
+    return r && albumOf(r.id);
+  }
+  $('#mixShare').addEventListener('click', async () => {
+    const a = makeMix(); if (!a) return;
+    const url = mixUrl(a);
+    try {
+      if (navigator.share) { await navigator.share({ title: a.title, text: `“${a.title}”: ${a.tracks.length} sisi dari ${SITE.title}`, url }); closeMix(); }
+      else { await navigator.clipboard.writeText(url); toast('Tautan racikan disalin. Racikannya juga tersimpan di rak Album.'); closeMix(); }
+    } catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url, null, 8000); }
+  });
+  $('#mixCopy').addEventListener('click', async () => {
+    const a = makeMix(); if (!a) return;
+    const url = mixUrl(a);
+    try { await navigator.clipboard.writeText(url); toast('Tautan racikan disalin.', { label: 'Lihat di rak', run: () => { location.hash = 'album-' + a.id; } }); closeMix(); }
+    catch (err) { toast('Tautan: ' + url, null, 8000); }
+  });
+  $('#mixClose').addEventListener('click', closeMix);
+  $('#mixModal').addEventListener('click', e => { if (e.target.id === 'mixModal') closeMix(); });
+
+  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id)));
+  if (!ALBUMS.length && !MIXES.length) $('.pill [data-go="album"]').hidden = true;
   // PLAY: album yang sedang diputar, posisi, dan urutannya (urutan acak juga diingat)
   let PLAY = store.get('play', null);
   if (PLAY && !(albumOf(PLAY.album) && Array.isArray(PLAY.order))) PLAY = null;
@@ -1959,7 +2030,10 @@
     if (!id) {
       host.innerHTML = `<header class="al-head"><p class="al-kicker">Koleksi</p><h2>Album</h2><p class="al-sub">Sisi-sisi pilihan, disusun untuk didengar berurutan.</p></header>
         <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
-          <b>${esc(a.title)}</b><small>${a.tracks.length} sisi · ${albumMins(a)} menit${now && now.id === a.id ? ' · sedang diputar' : ''}</small></button>`).join('') || '<p class="al-empty">Belum ada album. Buat yang pertama di panel admin.</p>'}</div>`;
+          <b>${esc(a.title)}</b><small>${a.tracks.length} sisi · ${albumMins(a)} menit${now && now.id === a.id ? ' · sedang diputar' : ''}</small></button>`).join('') || '<p class="al-empty">Belum ada album. Buat yang pertama di panel admin.</p>'}</div>
+        ${MIXES.length ? `<header class="al-head al-head-sm"><p class="al-kicker">Racikan</p><p class="al-sub">Urutan baca yang kamu buat atau yang dibagikan padamu lewat tautan.</p></header>
+        <div class="al-grid">${MIXES.map(mixAlbum).filter(a => a.tracks.length).map((a, i) => `<button type="button" class="al-card mix" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
+          <b>${esc(a.title)}</b><small>${a.mine ? 'Racikanmu' : a.from ? 'dari ' + esc(a.from) : 'dibagikan padamu'} · ${a.tracks.length} sisi</small></button>`).join('')}</div>` : ''}`;
       document.title = 'Album · ' + SITE.title;
     } else {
       const a = albumOf(id), on = now && now.id === a.id;
@@ -1967,14 +2041,15 @@
         <div class="al-detail">
           <div class="al-art">${sleeve(a, 300, on)}</div>
           <div class="al-info">
-            <p class="al-kicker">Album · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
+            <p class="al-kicker">${a.shared ? 'Racikan' : 'Album'} · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
             <h2>${esc(a.title)}</h2>
-            ${a.note ? `<p class="al-note">${esc(a.note)}</p>` : ''}
+            ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">Diterima ${ago(a.at)}.</span>` : ''}</p>` : ''}
             <div class="al-actions">
               <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? 'Lanjutkan' : 'Putar'}</button>
               <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
               <button type="button" class="al-btn" data-qalbum="${esc(a.id)}" aria-label="Tambahkan album ke antrean" title="Tambahkan ke antrean">${QICON}</button>
-              <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="Bagikan album"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
+              ${a.shared ? `<button type="button" class="al-btn" data-unmix="${esc(a.id)}" aria-label="Hapus racikan dari rak" title="Hapus dari rak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>` : ''}
+              <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="Bagikan ${a.shared ? 'racikan' : 'album'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
             </div>
             <ol class="al-tracks">${a.tracks.map((t, i) => {
               const cur = on && PLAY.i === i;
@@ -2011,9 +2086,18 @@
     if (sh) { playAlbum(sh.dataset.shuffle, 0, true); return; }
     const share = e.target.closest('[data-share]');
     if (share) {
-      const a = albumOf(share.dataset.share), url = location.href.split('#')[0] + '#album-' + a.id;
+      const a = albumOf(share.dataset.share), url = a.shared ? mixUrl(a) : location.href.split('#')[0] + '#album-' + a.id;
       try { if (navigator.share) await navigator.share({ title: a.title, text: `Album “${a.title}” — ${SITE.author}`, url }); else { await navigator.clipboard.writeText(url); toast('Tautan album disalin.'); } }
       catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url); }
+      return;
+    }
+    const um = e.target.closest('[data-unmix]');
+    if (um) {
+      const gone = MIXES.find(m => m.id === um.dataset.unmix);
+      MIXES = MIXES.filter(m => m !== gone); saveMixes();
+      if (PLAY && PLAY.album === gone.id) { PLAY = null; savePlay(); }
+      location.hash = 'album';
+      toast('Racikan dihapus dari rak.', { label: 'Urungkan', run: () => { MIXES = [gone, ...MIXES]; saveMixes(); location.hash = 'album-' + gone.id; } });
       return;
     }
     const al = e.target.closest('[data-album]');

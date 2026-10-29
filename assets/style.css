@@ -1096,7 +1096,7 @@ output.bump { animation: bump .35s var(--spring); }
 @keyframes spinOut { from { transform: translateX(44%) rotate(0); } to { transform: translateX(44%) rotate(1turn); } }
 
 /* detail */
-.al-back { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 8px; margin: 0 0 18px; border: 0; border-radius: 18px; background: var(--t-btn); color: var(--t-ink); font: 500 14px var(--f-ui); cursor: pointer; }
+.al-back { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 8px; margin: 0 0 18px; border: 0; border-radius: 18px; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: var(--t-ink); font: 500 14px var(--f-ui); cursor: pointer; }
 .al-back svg { width: 18px; height: 18px; stroke-width: 2.2; }
 .al-detail { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: minmax(240px, 360px) minmax(0, 1fr); gap: 56px; align-items: start; }
 .al-art { position: sticky; top: 0; padding-right: 30%; }
@@ -1106,13 +1106,13 @@ output.bump { animation: bump .35s var(--spring); }
 .al-actions { display: flex; align-items: center; gap: 10px; margin: 22px 0 18px; }
 .al-play { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 26px 0 20px; border: 0; border-radius: 26px; background: var(--go); color: #0D1A05; font: 600 16px var(--f-ui); cursor: pointer; transition: transform .35s var(--spring); }
 .al-play svg { width: 20px; height: 20px; }
-.al-btn { width: 46px; height: 46px; border: 0; border-radius: 50%; background: var(--t-btn); color: var(--t-ink); display: grid; place-items: center; cursor: pointer; transition: transform .35s var(--spring); }
+.al-btn { width: 46px; height: 46px; border: 0; border-radius: 50%; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: var(--t-ink); display: grid; place-items: center; cursor: pointer; transition: transform .35s var(--spring); }
 .al-btn svg { width: 20px; height: 20px; }
 .al-play:active, .al-btn:active { transform: scale(.93); }
 .al-tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .al-tracks li { animation: rowIn .5s var(--ease-out) both; animation-delay: calc(var(--k, 0) * 45ms + 150ms); }
 .al-tracks button { width: 100%; display: grid; grid-template-columns: 26px 36px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-radius: 16px; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; transition: background-color .2s; }
-.al-tracks button:hover { background: var(--t-btn); }
+.al-tracks button:hover { background: var(--t-card); }
 .al-tracks button.cur { background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); }
 .al-tracks button.cur .sg-t b { color: var(--go); }
 .al-no { font: 700 15px "Doto", ui-monospace, monospace; color: var(--t-muted); text-align: center; }
@@ -1204,3 +1204,25 @@ output.bump { animation: bump .35s var(--spring); }
 .q-tag svg { width: 14px; height: 14px; }
 /* di pemilih, kabar muncul di atas supaya tidak menutupi tombol putar */
 @media (max-width: 860px) { body:has(.win[data-view="pilih"]) .toast { bottom: auto; top: max(64px, calc(env(safe-area-inset-top, 0px) + 58px)); transform: translate(-50%, -16px); } body:has(.win[data-view="pilih"]) .toast.on { transform: translate(-50%, 0); } }
+
+/* ================================================================
+   RACIKAN: kartu bagikan, dan rak racikan di halaman album
+   ================================================================ */
+.mixcard { align-items: stretch; max-width: min(720px, 100%); }
+.mix-art { position: relative; width: min(300px, 70vw); display: grid; gap: 10px; align-content: start; }
+.mix-art canvas { width: 100% !important; height: auto !important; aspect-ratio: 1; border-radius: 8px; box-shadow: var(--shadow-card); }
+.mix-count { font-size: 13px; color: var(--muted); }
+.mix-sub { font-size: 13px; line-height: 1.45; color: var(--muted); margin: -4px 0 6px; max-width: 32ch; }
+.mix-f { display: grid; gap: 5px; font-size: 12.5px; color: var(--muted); }
+.mix-f input { height: 40px; padding: 0 12px; border: 1.5px solid transparent; border-radius: 12px; background: var(--chip-2); color: var(--ink); font: 15px var(--f-ui); outline: none; }
+.mix-f input:focus { border-color: var(--navy); }
+.mix-list { list-style: none; margin: 4px 0 6px; padding: 0; display: grid; gap: 4px; max-height: 168px; overflow-y: auto; }
+.mix-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 13.5px; }
+.mix-list .mdisc { width: 26px; height: 26px; }
+.mix-list span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mix-list small { color: var(--muted); }
+.mix-list .ab { padding: 0 5px; border-radius: 5px; background: var(--chip); font: 600 10px var(--f-ui); font-style: normal; }
+.al-head-sm { margin-top: 44px; }
+.al-ago { font-size: 13px; font-family: var(--f-ui); }
+.al-card.mix .al-sleeve::after { content: "racikan"; position: absolute; z-index: 2; left: 8px; top: 8px; padding: 2px 8px; border-radius: 8px; background: #0E0F11; color: #fff; font: 600 11px var(--f-ui); letter-spacing: .02em; }
+.np-actions button svg { width: 18px; height: 18px; }
