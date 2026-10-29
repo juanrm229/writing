@@ -239,7 +239,7 @@
     win.dataset.view = v;
     syncPill();
     if (v === 'sapa' && typeof renderGreet === 'function') { renderGreet(true); if (feedMode !== 'search') renderFeed(false); }
-    if (v !== 'baca') { stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
+    if (v !== 'baca') { if (typeof hideUpNext === 'function') hideUpNext(); stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
     const btns = $$('.pill [data-go]');
@@ -727,6 +727,7 @@
     const startAt = pendingStart, listen = pendingListen, focusAt = pendingFocus;
     pendingStart = null; pendingListen = false; pendingFocus = null;
     openedAt = Date.now();
+    hideUpNext(); UN.shownFor = null;
     requestAnimationFrame(() => {
       const maxS = scroller.scrollHeight - scroller.clientHeight;
       if (focusAt) { focusPara(focusAt.para, focusAt.q); onScroll(); return; }
@@ -795,7 +796,8 @@
     onScroll.t = setTimeout(() => { if (current) { const pr = store.get('prog', {}); pr[current.key] = +frac.toFixed(3); store.set('prog', pr); prog[current.key] = pr[current.key]; } }, 500);
     $('#rdProg').style.transform = `scaleX(${frac})`;
     weave(frac);
-    if (current && frac > .97 && Date.now() - openedAt > 4000 && !ST.done.includes(current.key)) finished(current);
+    if (current && frac > .97 && Date.now() - openedAt > Math.max(4000, Math.min(secsOf(current) * 350, 25000)) && !speaking) finished(current);
+    else if (frac < .85 && !unEl.hidden && !UN.listen) { hideUpNext(); UN.shownFor = null; }
     if (!focusMode) return;
     const r0 = scroller.getBoundingClientRect(), mid = r0.top + r0.height * .45;
     let best = null, bd = Infinity;
@@ -806,11 +808,82 @@
 
   // satu sisi selesai: catat, lalu tawarkan sisi lainnya kalau belum didengar
   function finished(d) {
-    ST.done = [...ST.done, d.key]; saveST();
-    const other = d.A.B ? (d.side === 'b' ? d.A : d.A.B) : null;
-    if (other && !ST.done.includes(other.key)) toast(`${d.side === 'b' ? 'Sisi B' : 'Sisi A'} selesai. Sisi lainnya: dari sisi ${other.pov || 'yang lain'}.`, { label: 'Balik piringan', run: () => { location.hash = hrefOf(other).slice(1); } });
-    else if (other) toast('Dua sisi piringan ini sudah selesai kamu dengar.');
+    if (!ST.done.includes(d.key)) { ST.done = [...ST.done, d.key]; saveST(); }
+    showUpNext(d, false);
   }
+
+  /* ---------- PUTAR TERUS: sisi berikutnya menyusul dengan hitung mundur ---------- */
+  const UN = { next: null, left: 0, total: 0, listen: false, raf: 0, last: 0, shownFor: null };
+  const unEl = $('#upNext');
+  function upNextOf(d) {
+    const al = playing();
+    if (al) { const nb = neighbors(); return nb.next ? { d: nb.next, why: `Album “${al.title}” · ${nb.pos + 1} dari ${nb.len}` } : { end: al }; }
+    const other = d.A.B ? (d.side === 'b' ? d.A : d.A.B) : null;
+    if (other && !ST.done.includes(other.key)) return { d: other, why: other.side === 'b' ? `Balik piringannya · dari sisi ${esc(other.pov || 'yang lain')}` : 'Kembali ke Sisi A, cerita aslinya' };
+    const s = suggestions(d).find(x => x.d.key !== d.key);
+    return s ? { d: s.d, why: s.why } : null;
+  }
+  function showUpNext(d, listen) {
+    if (!d || view !== 'baca' || UN.shownFor === d.key) return;
+    const n = upNextOf(d);
+    if (!n) return;
+    UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen;
+    unEl.classList.toggle('end', !!n.end);
+    if (n.end) {
+      $('#unWhy').textContent = 'Album selesai';
+      $('#unTitle').textContent = n.end.title;
+      $('#unMeta').innerHTML = `<button type="button" data-again="${esc(n.end.id)}">Putar lagi</button> <a href="#album-${esc(n.end.id)}">Ke album</a>`;
+      $('#unDisc').style.setProperty('--lc', catOf(n.end.tracks[0].cat).ink);
+      $('#unDisc').classList.remove('b');
+    } else {
+      $('#unWhy').innerHTML = 'Berikutnya · ' + n.why;
+      $('#unTitle').textContent = n.d.title;
+      $('#unMeta').textContent = `${n.d.A.B ? (n.d.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${catOf(n.d.cat).label} · ${n.d.minutes} menit${listen ? ' · dibacakan' : ''}`;
+      $('#unDisc').style.setProperty('--lc', catOf(n.d.cat).ink);
+      $('#unDisc').classList.toggle('b', n.d.side === 'b');
+    }
+    unEl.hidden = false; win.classList.add('upnext-on');
+    unEl.classList.remove('in'); void unEl.offsetWidth; unEl.classList.add('in');
+    const auto = PV.autoplay !== false && !n.end;
+    $('#unAuto').setAttribute('aria-checked', String(PV.autoplay !== false));
+    unEl.classList.toggle('manual', !auto);
+    cancelAnimationFrame(UN.raf);
+    UN.total = UN.left = (listen ? 5 : 10) * 1000;
+    setArc(1);
+    if (auto && !reduced) { UN.last = performance.now(); UN.raf = requestAnimationFrame(tickUpNext); }
+  }
+  const setArc = f => { $('#unArc').style.strokeDashoffset = String(1 - f); };
+  function tickUpNext(now) {
+    const dt = now - UN.last; UN.last = now;
+    // berhenti sejenak saat kartu disentuh kursor atau halaman tidak terlihat
+    if (!document.hidden && !unEl.matches(':hover')) UN.left -= dt;
+    setArc(Math.max(0, UN.left / UN.total));
+    if (UN.left <= 0) { playUpNext(); return; }
+    UN.raf = requestAnimationFrame(tickUpNext);
+  }
+  function hideUpNext() { cancelAnimationFrame(UN.raf); unEl.hidden = true; UN.next = null; win.classList.remove('upnext-on'); }
+  function playUpNext() {
+    const d = UN.next, listen = UN.listen;
+    hideUpNext();
+    if (!d) return;
+    pendingStart = 0; pendingListen = listen;
+    if (current && current.slug === d.slug) {
+      // sisi lain piringan yang sama: kartu baca ikut berbalik
+      location.hash = hrefOf(d).slice(1);
+    } else openWork(d.slug, null, d.side);
+  }
+  $('#unGo').addEventListener('click', () => { if (UN.next) playUpNext(); });
+  $('#unCancel').addEventListener('click', hideUpNext);
+  $('#unAuto').addEventListener('click', () => {
+    PV.autoplay = PV.autoplay === false; savePv();
+    $('#unAuto').setAttribute('aria-checked', String(PV.autoplay));
+    unEl.classList.toggle('manual', !PV.autoplay);
+    cancelAnimationFrame(UN.raf);
+    if (PV.autoplay && UN.next && !reduced) { UN.left = UN.total; UN.last = performance.now(); UN.raf = requestAnimationFrame(tickUpNext); }
+    else setArc(1);
+    toast(PV.autoplay ? 'Putar terus: sisi berikutnya menyusul otomatis.' : 'Putar terus dimatikan.');
+  });
+  unEl.addEventListener('click', e => { const ag = e.target.closest('[data-again]'); if (ag) { hideUpNext(); playAlbum(ag.dataset.again, 0); } });
   // waktu dengar dihitung hanya selama halaman baca terbuka dan terlihat
   setInterval(() => {
     if (view !== 'baca' || !current || document.hidden || PREVIEW) return;
@@ -841,6 +914,11 @@
     } catch (e) { toast('Peramban ini tidak mengizinkan layar tetap menyala.'); }
   });
 
+  // gulir hanya di dalam kertas baca; scrollIntoView ikut menggeser wadah luarnya di ponsel
+  function scrollToPara(el) {
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    scroller.scrollTo({ top: Math.max(0, top - scroller.clientHeight * .4), behavior: reduced ? 'auto' : 'smooth' });
+  }
   let speaking = false;
   function stopSpeech() {
     speaking = false;
@@ -857,9 +935,10 @@
     const voice = speechSynthesis.getVoices().find(v => /^id|indones/i.test(v.lang + v.name));
     const next = j => {
       $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
-      if (!speaking || j >= paras.length) { stopSpeech(); return; }
+      if (speaking && j >= paras.length) { stopSpeech(); if (current) { if (!ST.done.includes(current.key)) { ST.done = [...ST.done, current.key]; saveST(); } UN.shownFor = null; showUpNext(current, true); } return; }
+      if (!speaking) { stopSpeech(); return; }
       paras[j].classList.add('speaking');
-      paras[j].scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+      scrollToPara(paras[j]);
       const u = new SpeechSynthesisUtterance(paras[j].textContent);
       u.lang = 'id-ID'; if (voice) u.voice = voice; u.rate = .95;
       u.onend = () => next(j + 1); u.onerror = () => stopSpeech();
@@ -882,7 +961,7 @@
   }
   function showHit() {
     hits.forEach((m, i) => m.classList.toggle('on', i === hit));
-    if (hits[hit]) { hits[hit].scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' }); $('#findCount').textContent = `${hit + 1}/${hits.length}`; }
+    if (hits[hit]) { scrollToPara(hits[hit]); $('#findCount').textContent = `${hit + 1}/${hits.length}`; }
   }
   $('#rsSearch').addEventListener('click', openFind);
   $('#findIn').addEventListener('input', runFind);
@@ -920,6 +999,7 @@
   let pSel = 0, pItems = [];
   const commands = () => [
     { label: current?.side === 'b' ? 'Balik ke Sisi A' : 'Balik ke Sisi B', hint: current?.A.B ? (current.side === 'b' ? current.A.title : current.A.B.title) : '', run: () => $('#rdFlip').click(), show: view === 'baca' && !!current?.A.B },
+    { label: PV.autoplay === false ? 'Nyalakan putar terus' : 'Matikan putar terus', hint: 'sisi berikutnya menyusul otomatis', run: () => { PV.autoplay = PV.autoplay === false; savePv(); toast(PV.autoplay ? 'Putar terus menyala.' : 'Putar terus dimatikan.'); } },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
@@ -976,6 +1056,7 @@
       if ($('#tsSheet').classList.contains('open')) return setSheetOpen(false);
       if (!$('#quoteModal').hidden) return closeQuote();
       if (RP.token) return stopReplay(true);
+      if (!$('#upNext').hidden) return $('#unCancel').click();
       if (!$('#rdFind').hidden) return closeFind();
       if (rs.classList.contains('open')) return setSheet(false);
       if (!$('#rsAdv').hidden && view === 'baca') return rsPage(false);

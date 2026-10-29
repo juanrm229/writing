@@ -1142,3 +1142,42 @@ output.bump { animation: bump .35s var(--spring); }
   .al-tracks .ring { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .al-rec.spin i, .eq i { animation: none; } }
+
+/* ================================================================
+   PUTAR TERUS: kartu "berikutnya" dengan cincin hitung mundur
+   ================================================================ */
+.upnext {
+  position: absolute; left: 50%; bottom: 28px; z-index: 5; width: min(520px, calc(100% - 28px)); translate: -50% 0;
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 14px 12px 12px;
+  border-radius: 26px; background: #0E0F11; color: #F4F4F5; box-shadow: 0 24px 50px -18px rgb(0 0 0 / .6), 0 0 0 1px rgb(255 255 255 / .06);
+  font-family: var(--f-ui);
+}
+.upnext.in { animation: unIn .6s var(--spring); }
+@keyframes unIn { from { opacity: 0; translate: -50% 24px; scale: .96; } }
+.un-go { position: relative; width: 64px; height: 64px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; display: grid; place-items: center; }
+.un-ring { position: absolute; inset: 0; width: 100%; height: 100%; rotate: -90deg; }
+.un-ring circle { fill: none; stroke-width: 3; }
+.un-ring .base { stroke: rgb(255 255 255 / .14); }
+.un-ring .arc { stroke: var(--go); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.un-go .mdisc { width: 50px; height: 50px; animation: spin 4s linear infinite; }
+.un-play { position: absolute; width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: #fff; color: #0E0F11; opacity: 0; scale: .6; transition: opacity .25s, scale .35s var(--spring); }
+.un-go:hover .un-play, .upnext.manual .un-play { opacity: 1; scale: 1; }
+.un-t { display: grid; gap: 2px; min-width: 0; }
+.un-t small { font-size: 11.5px; color: #9A9AA1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.un-t small i { font-family: var(--f-read); color: #FF8A95; }
+.un-t b { font: 500 19px/1.2 var(--f-read); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.un-t span { font-size: 12px; color: #9A9AA1; }
+.un-t span button, .un-t span a { height: 28px; padding: 0 12px; margin: 4px 4px 0 0; border: 0; border-radius: 14px; background: #fff; color: #0E0F11; font: 500 12.5px var(--f-ui); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.un-t span a { background: #2C2D31; color: #fff; }
+.un-act { display: grid; gap: 6px; justify-items: end; }
+.un-act button { height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: #2C2D31; color: #fff; font: 500 12.5px var(--f-ui); cursor: pointer; white-space: nowrap; }
+.un-auto { display: inline-flex; align-items: center; gap: 6px; background: none !important; color: #9A9AA1 !important; padding: 0 2px !important; }
+.un-auto i { width: 26px; height: 16px; border-radius: 8px; background: #3A3A3C; position: relative; transition: background-color .25s; }
+.un-auto i::after { content: ""; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .3s var(--spring); }
+.un-auto[aria-checked="true"] i { background: var(--go); }
+.un-auto[aria-checked="true"] i::after { transform: translateX(10px); }
+.upnext.end .un-ring, .upnext.end .un-play, .upnext.end .un-auto { display: none; }
+@media (max-width: 860px) { .upnext { bottom: max(18px, env(safe-area-inset-bottom, 0px)); grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; } .un-go { width: 56px; height: 56px; } .un-go .mdisc { width: 44px; height: 44px; } .un-t b { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .un-go .mdisc { animation: none; } }
+.aa-fab { transition: opacity .25s, transform .35s var(--spring); }
+.win.upnext-on .aa-fab { opacity: 0; transform: scale(.6); pointer-events: none; }

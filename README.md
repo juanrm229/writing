@@ -51,7 +51,7 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
   - **Kutipan**: kalimat bergilir dari kedua sisi. **Baca dari kalimat ini** membuka tulisan tepat di paragraf itu dan menyorotnya.
   - **Cari kalimat**: setiap hasil (juga di palet `⌘K`) membuka tulisan di paragraf yang cocok dengan katanya disorot.
   - Kartu biru menyapa dengan keadaanmu (berapa sisi belum diputar, tulisan yang masih di tengah), tombol grafik menampilkan jejak dengarmu, dan tombol acak memutar sisi yang belum kamu dengar. Kartunya menciut sendiri saat isi panel digulir.
-- **Selesai satu sisi.** Saat kamu sampai di akhir Sisi A, muncul tawaran **Balik piringan** ke Sisi B, dan sebaliknya.
+- **Putar terus.** Saat satu sisi selesai (dibaca sampai akhir, atau selesai dibacakan), kartu **Berikutnya** muncul dengan cincin hitung mundur: 10 detik saat membaca, 5 detik saat dibacakan. Urutannya: sisi berikutnya di album yang sedang diputar; kalau tidak sedang memutar album, sisi lain dari piringan yang sama (kartu baca ikut berbalik); kalau tidak ada, tulisan yang terhubung lewat benang merah atau yang pas dengan menit luangmu. Mode dibacakan bersambung seperti radio. Hitung mundur berhenti saat kartu disentuh kursor, **Batal** atau `Esc` menutupnya, dan sakelar *Putar terus* (juga di palet `⌘K`) mematikannya. Di akhir album muncul **Putar lagi** dan **Ke album**.
 
 Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `B` balik sisi, `F` fokus, `Esc` kembali.
 
