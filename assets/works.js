@@ -1,0 +1,158 @@
+/*
+ * Semua isi situs ada di file ini.
+ * Ganti, tambah, atau hapus tulisan di WORKS; ubah profil di SITE.
+ *
+ * cat   : "esai" | "puisi" | "cerpen" | "mini" | "catatan"
+ * form  : "prosa" (body = paragraf) | "puisi" (body = bait, baris dipisah \n)
+ * line  : satu baris favorit, muncul di pita berjalan di beranda
+ * date  : YYYY-MM-DD
+ */
+
+window.SITE = {
+  author: "Juan",
+  handle: "juan/menulis",
+  email: "juan@example.com", // ganti dengan alamat email aslimu
+  nowWriting: { title: "Rumah di Ujung Rel", kind: "novela", draft: 2, progress: 0.62 },
+  // jumlah kalimat yang dihapus tapi disimpan di berkas "nanti"
+  savedSentences: 412,
+  timeline: [
+    { year: "2017", title: "Buku tulis bergaris", text: "Puisi pertama ditulis di halaman belakang buku tulis matematika, di antara rumus luas trapesium.", tag: "awal" },
+    { year: "2019", title: "Blog yang dibaca tiga orang", text: "Satu di antaranya ibu. Satu lagi mesin pencari. Yang ketiga masih misteri.", tag: "blog" },
+    { year: "2021", title: "100 hari, 100 puisi", text: "Tantangan menulis harian. Selesai 71. Sisanya mengajari bahwa berhenti juga bagian dari latihan.", tag: "tantangan" },
+    { year: "2023", title: "Bahasa Ibu", text: "Puisi pertama yang berani dibacakan di depan orang lain. Tangan gemetar, suara tidak.", tag: "puisi", slug: "bahasa-ibu" },
+    { year: "2024", title: "Berkas bernama nanti", text: "Mulai menyimpan kalimat yang dihapus dari setiap draf. Sekarang isinya lebih dari empat ratus.", tag: "kebiasaan", slug: "draf-ketujuh" },
+    { year: "2026", title: "Situs ini", text: "Semua tulisan akhirnya pindah ke satu rumah, dengan jendela yang sengaja dibiarkan terbuka.", tag: "sekarang", slug: "jendela" }
+  ]
+};
+
+window.WORKS = [
+  {
+    slug: "jendela",
+    title: "Jendela yang Tak Pernah Kututup",
+    cat: "esai",
+    form: "prosa",
+    date: "2026-03-14",
+    excerpt: "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Awalnya kuanggap kerusakan. Belakangan kuanggap guru.",
+    line: "Ingatan itu penulis yang malas.",
+    body: [
+      "Di kamar kosku ada satu jendela yang engselnya sudah lama menyerah. Ia tidak bisa ditutup rapat; selalu ada celah selebar dua jari yang membiarkan apa saja masuk: suara motor tukang sayur jam lima pagi, bau tanah setelah hujan, percakapan tetangga yang tidak pernah selesai. Awalnya aku menganggapnya kerusakan. Belakangan aku menganggapnya guru.",
+      "Menulis, kupikir, adalah seni membiarkan celah itu tetap terbuka. Kita terlalu sering menulis dengan jendela tertutup: rapat, kedap, aman. Kalimat-kalimat kita jadi bersih tapi pengap, seperti ruangan ber-AC yang tidak pernah kemasukan angin. Tidak ada yang salah, tapi tidak ada yang hidup.",
+      "Celah dua jari itu mengajariku untuk mendengar sebelum bicara. Tukang sayur itu, misalnya, selalu menyebut harga cabai dengan nada orang yang sedang mengabarkan cuaca buruk. Dari dia aku belajar bahwa informasi paling kering pun punya musik, asal kita mau mendengarnya cukup lama.",
+      "Ada hari-hari ketika celah itu terasa seperti gangguan. Hujan masuk dan membasahi tumpukan kertas. Nyamuk menemukan jalan. Tetangga bertengkar soal hal yang tidak kupahami pukul dua dini hari. Pada hari-hari seperti itu aku menyumpalnya dengan kaus bekas dan berjanji akan memanggil tukang. Tapi aku tidak pernah benar-benar memanggilnya.",
+      "Mungkin karena aku tahu, begitu jendela itu bisa ditutup rapat, aku akan menutupnya. Dan begitu aku menutupnya, aku akan mulai menulis tentang dunia dari ingatan, bukan dari kenyataan. Ingatan itu penulis yang malas; ia suka mengulang cerita yang sama dengan sedikit hiasan.",
+      "Jadi biarlah engsel itu tetap rusak. Biarlah dunia terus menyusup dua jari demi dua jari. Tulisan yang baik, aku curiga, bukan tulisan yang menutup semua celah, melainkan tulisan yang tahu celah mana yang harus dibiarkan terbuka."
+    ]
+  },
+  {
+    slug: "kopi-kedua",
+    title: "Kopi Kedua",
+    cat: "mini",
+    form: "prosa",
+    date: "2025-11-02",
+    excerpt: "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak.",
+    line: "Maaf, Yah. Aku terlambat sebelas tahun.",
+    body: [
+      "Setiap pagi ia memesan dua gelas kopi. Satu hitam tanpa gula, satu lagi susu dengan es yang banyak. Pelayan baru di kedai itu selalu bertanya, “Menunggu teman, Pak?” dan ia selalu menjawab, “Iya, sebentar lagi datang.”",
+      "Kopi hitam ia minum pelan-pelan sambil membaca koran yang tidak pernah ia balik halamannya. Kopi susu ia biarkan berkeringat di seberang meja, esnya mencair menjadi lingkaran air di atas kayu, seperti jam yang tidak punya jarum.",
+      "Pelayan lama tahu ceritanya, tapi tidak pernah menceritakannya kepada pelayan baru. Ada hal-hal yang lebih sopan dibiarkan menjadi kebiasaan daripada dijelaskan.",
+      "Suatu pagi di bulan Juni, seorang perempuan muda duduk di kursi seberang tanpa bertanya. Ia mengambil gelas kopi susu itu, meminumnya sampai habis, lalu berkata, “Maaf, Yah. Aku terlambat sebelas tahun.”",
+      "Lelaki itu melipat korannya untuk pertama kali. “Esnya sudah cair,” katanya. “Besok Ayah pesankan yang baru.”"
+    ]
+  },
+  {
+    slug: "peta-tersesat",
+    title: "Peta untuk Orang yang Sengaja Tersesat",
+    cat: "esai",
+    form: "prosa",
+    date: "2025-06-21",
+    excerpt: "Ponselku tahu jalan tercepat ke mana pun. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan.",
+    line: "Pasar Lama berjarak tiga obrolan dari rumahku.",
+    body: [
+      "Ponselku tahu jalan tercepat ke mana pun. Ia tahu di mana macet, di mana jalan ditutup, di mana ada pom bensin terdekat. Yang tidak ia tahu adalah gang kecil di belakang pasar yang dindingnya penuh mural ikan, atau warung bakso yang hanya buka kalau pemiliknya sedang tidak patah hati.",
+      "Beberapa bulan terakhir aku punya kebiasaan aneh: setiap Sabtu, aku mematikan navigasi dan berjalan ke arah mana pun yang terasa menarik. Aturannya sederhana. Belok kalau ada sesuatu yang membuatku penasaran. Berhenti kalau ada sesuatu yang membuatku ingin duduk. Pulang kalau kakiku sudah lebih lelah daripada rasa ingin tahuku.",
+      "Hasilnya adalah peta yang tidak bisa dipakai orang lain. Di peta itu, jarak tidak diukur dengan kilometer, tetapi dengan jumlah percakapan. Pasar Lama berjarak tiga obrolan dari rumahku. Taman kota berjarak satu lagu yang kudengar dari radio tukang parkir.",
+      "Tersesat dengan sengaja ternyata berbeda dengan tersesat karena terpaksa. Yang pertama membuatmu memperhatikan; yang kedua membuatmu panik. Bedanya hanya satu: apakah kamu mengizinkan dirimu untuk tidak tahu.",
+      "Aku rasa menulis juga begitu. Draf pertama yang paling jujur biasanya lahir ketika aku belum tahu ke mana kalimat akan pergi. Kerangka karangan itu seperti navigasi: berguna, efisien, tapi kadang membuatmu melewatkan gang dengan mural ikan.",
+      "Peta ini masih belum selesai. Mungkin tidak akan pernah. Tapi setiap Sabtu, aku menambahkan satu tempat baru yang tidak punya titik koordinat, hanya punya cerita."
+    ]
+  },
+  {
+    slug: "hujan-mei",
+    title: "Hujan di Bulan Mei",
+    cat: "puisi",
+    form: "puisi",
+    date: "2025-05-09",
+    excerpt: "hujan datang terlambat, seperti surat yang dialamatkan ke rumah yang sudah dijual",
+    line: "seperti surat yang dialamatkan ke rumah yang sudah dijual",
+    body: [
+      "hujan datang terlambat\nseperti surat yang dialamatkan\nke rumah yang sudah dijual",
+      "ia mengetuk genteng\ndengan sopan,\nbertanya apakah kemarau\nmasih tinggal di sini",
+      "ibu menjawab dari dapur:\nsudah pindah, Nak,\nsejak bulan lalu,\ntapi silakan masuk,\nair panas baru saja mendidih",
+      "dan hujan pun duduk\ndi beranda,\nmenghabiskan sore\nbercerita tentang laut\nyang tidak pernah kita kunjungi"
+    ]
+  },
+  {
+    slug: "arsip-kecil",
+    title: "Arsip Hal-Hal Kecil",
+    cat: "puisi",
+    form: "puisi",
+    date: "2024-12-30",
+    excerpt: "aku menyimpan karcis bioskop yang tintanya pudar, tutup pulpen yang digigit saat ujian, dan kamu.",
+    line: "di laci yang sama dengan hal-hal yang tidak sanggup kubuang",
+    body: [
+      "aku menyimpan:\nkarcis bioskop yang tintanya pudar,\ntutup pulpen yang digigit saat ujian,\nsatu kancing dari kemeja yang sudah jadi lap,",
+      "suara ayah menyebut namaku\ndengan nada yang hanya ia pakai\nketika aku demam,",
+      "bau buku perpustakaan sekolah,\npukul tiga sore di bulan Agustus\nketika semua orang sudah pulang\ndan debu menari di cahaya jendela,",
+      "dan kamu,\nyang tidak pernah tahu\nbahwa kamu disimpan\ndi laci yang sama\ndengan hal-hal yang tidak sanggup kubuang."
+    ]
+  },
+  {
+    slug: "penjual-senin",
+    title: "Lelaki yang Menjual Hari Senin",
+    cat: "cerpen",
+    form: "prosa",
+    date: "2024-08-17",
+    excerpt: "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu bertuliskan: DIJUAL — HARI SENIN, MASIH SEGAR.",
+    line: "Senin itu sebenarnya tidak jahat.",
+    body: [
+      "Ia datang ke kota kami pada suatu Minggu sore, membawa gerobak kayu yang ditutup terpal biru. Di sisi gerobak itu tertulis dengan cat putih yang sudah mengelupas: DIJUAL — HARI SENIN, MASIH SEGAR.",
+      "Awalnya tidak ada yang percaya. Pak RT tertawa paling keras, lalu bertanya berapa harganya. Lelaki itu menjawab dengan tenang, “Tergantung, Pak. Mau Senin yang biasa, atau Senin yang tidak terasa seperti Senin?”",
+      "Ternyata ada banyak jenis. Ada Senin yang hujan rintik-rintik sehingga semua rapat dibatalkan. Ada Senin yang dimulai dengan sarapan nasi uduk dan kabar baik. Ada Senin yang panjangnya hanya empat jam, khusus untuk mereka yang sudah terlalu lelah. Yang paling mahal adalah Senin yang terasa seperti Jumat sore, dan stoknya selalu habis sebelum azan magrib.",
+      "Dalam seminggu, separuh warga kampung sudah menjadi pelanggan tetap. Bu Ratmi membeli Senin yang tidak ada cucian. Mas Didit, yang baru saja diputus pacarnya, membeli Senin tanpa lagu-lagu sedih di radio. Anak-anak menabung uang jajan untuk Senin yang upacaranya dibatalkan.",
+      "Aku tidak pernah membeli. Bukan karena tidak punya uang, tetapi karena aku penasaran apa yang terjadi pada Senin-Senin lama yang ditukar. Suatu malam aku mengikuti lelaki itu sampai ke pinggir sungai. Di sana ia membuka terpal birunya, dan aku melihat ratusan Senin bekas bertumpuk seperti pakaian kotor: kusut, berat, sebagian masih menyimpan bunyi alarm.",
+      "“Mau diapakan semua itu?” tanyaku dari balik pohon.",
+      "Ia tidak terkejut. “Dicuci,” katanya. “Senin itu sebenarnya tidak jahat. Ia cuma terlalu sering dipakai untuk memulai hal-hal yang tidak ingin kita mulai.” Ia mencelupkan satu Senin ke air sungai, dan kulihat warnanya berubah dari abu-abu menjadi biru muda, seperti langit pukul enam pagi.",
+      "Minggu berikutnya ia pergi tanpa pamit. Gerobaknya hilang, terpalnya hilang. Senin datang seperti biasa, dengan rapat dan cucian dan lagu-lagu sedih. Tapi entah kenapa, warnanya sedikit lebih biru dari yang kuingat."
+    ]
+  },
+  {
+    slug: "draf-ketujuh",
+    title: "Draf Ketujuh",
+    cat: "catatan",
+    form: "prosa",
+    date: "2024-02-11",
+    excerpt: "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar.",
+    line: "Kalimat itu indah dan egois.",
+    body: [
+      "Tulisan ini adalah draf ketujuh. Draf pertama terlalu marah. Draf kedua terlalu berusaha terdengar pintar. Draf ketiga kuhapus sebelum selesai karena aku sedang lapar dan semua kalimatnya terdengar seperti keluhan.",
+      "Draf keempat dan kelima adalah draf yang paling panjang dan paling tidak berguna. Isinya penjelasan tentang hal-hal yang tidak perlu dijelaskan, semacam catatan kaki yang lupa bahwa ia catatan kaki.",
+      "Draf keenam hampir benar. Tapi ada satu kalimat di tengahnya yang terlalu kusukai, dan karena terlalu kusukai, semua kalimat lain harus membungkuk untuk melayaninya. Kalimat itu indah dan egois. Aku menghapusnya dengan perasaan seperti membuang surat cinta.",
+      "Yang kupelajari dari tujuh draf ini: revisi bukan memperbaiki tulisan, tetapi mengenali tulisan. Draf pertama adalah orang asing yang kebetulan memakai bajumu. Setiap revisi adalah percakapan, sampai akhirnya kamu dan tulisanmu sepakat tentang apa yang sebenarnya ingin dikatakan.",
+      "Kalimat yang kuhapus dari draf keenam masih kusimpan di sebuah berkas bernama “nanti”. Berkas itu sudah berisi empat ratus kalimat. Mungkin suatu hari mereka akan menemukan rumahnya masing-masing. Mungkin juga tidak. Tapi menulis, kupikir, memang soal belajar merelakan kalimat yang indah demi tulisan yang jujur."
+    ]
+  },
+  {
+    slug: "bahasa-ibu",
+    title: "Bahasa Ibu",
+    cat: "puisi",
+    form: "puisi",
+    date: "2023-10-28",
+    excerpt: "ibu tidak pernah bilang aku mencintaimu. ia bilang: sudah makan?",
+    line: "sudah makan? bawa jaket, nanti hujan.",
+    body: [
+      "ibu tidak pernah bilang\naku mencintaimu",
+      "ia bilang\nsudah makan?\nbawa jaket, nanti hujan.\nkabari kalau sudah sampai.",
+      "butuh dua puluh tahun\ndan satu kamus yang tidak pernah dicetak\nuntuk mengerti\nbahwa semua itu\nkalimat yang sama"
+    ]
+  }
+];
