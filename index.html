@@ -235,6 +235,18 @@
             </div>
             <div class="rd-dim" id="rdDim" aria-hidden="true"></div>
             <div class="rd-progress" aria-hidden="true"><i id="rdProg"></i></div>
+            <div class="upnext" id="upNext" role="region" aria-label="Berikutnya" aria-live="polite" hidden>
+              <button class="un-go" id="unGo" type="button" aria-label="Putar sekarang">
+                <svg class="un-ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="base" cx="32" cy="32" r="29"/><circle class="arc" id="unArc" cx="32" cy="32" r="29" pathLength="1"/></svg>
+                <span class="mdisc" id="unDisc" aria-hidden="true"><i></i></span>
+                <svg class="un-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>
+              </button>
+              <div class="un-t"><small id="unWhy"></small><b id="unTitle"></b><span id="unMeta"></span></div>
+              <div class="un-act">
+                <button type="button" id="unCancel">Batal</button>
+                <button type="button" class="un-auto" id="unAuto" role="switch" aria-checked="true"><i aria-hidden="true"></i>Putar terus</button>
+              </div>
+            </div>
           </div>
 
           <!-- reader settings -->
