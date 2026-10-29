@@ -333,3 +333,21 @@ a { color: inherit; }
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   body::before, body::after { animation: none; }
 }
+
+/* ---------------------------------------------------------------- Sisi A / Sisi B */
+.side-seg { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 13px; background: var(--chip); }
+.side-thumb { position: absolute; left: 3px; top: 3px; width: calc(50% - 3px); height: calc(100% - 6px); border-radius: 10px; background: var(--ink); translate: calc(var(--i, 0) * 100%) 0; transition: translate .5s var(--spring); }
+.ed-toolbar .side-seg button { position: relative; z-index: 1; height: 28px; padding: 0 12px; border-radius: 10px; color: var(--soft); background: transparent; font-weight: 500; white-space: nowrap; }
+.ed-toolbar .side-seg button:hover { background: transparent; }
+.ed-toolbar .side-seg button[aria-checked="true"] { color: var(--paper); }
+.side-dot { position: absolute; right: 4px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.ed-pov { display: flex; align-items: baseline; gap: 8px; max-width: 680px; margin: 8px auto 0; font: italic 17px var(--f-read); color: var(--muted); }
+.ed-pov input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: italic 17px var(--f-read); color: var(--ink); padding: 2px 0; border-bottom: 1px dashed transparent; transition: border-color .2s; }
+.ed-pov input:focus, .ed-pov input:hover { border-bottom-color: var(--line); }
+.ed-pov input::placeholder { color: var(--muted); opacity: .6; }
+.ed-side-note { max-width: 680px; margin: 14px auto 0; padding: 12px 14px; border-radius: 14px; background: var(--chip-2); font-size: 13px; line-height: 1.5; color: var(--soft); }
+.paper-card[data-side="b"] { box-shadow: inset 0 0 0 2px var(--ink), var(--shadow); }
+.paper-card.flip { animation: cardFlip .55s var(--spring); }
+@keyframes cardFlip { 0% { transform: perspective(1600px) rotateY(0); } 40% { transform: perspective(1600px) rotateY(14deg) scale(.985); opacity: .6; } 100% { transform: none; } }
+.pill-ab { display: inline-block; padding: 0 6px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 10.5px; font-weight: 600; margin-right: 4px; }
+@media (prefers-reduced-motion: reduce) { .paper-card.flip { animation: none; } }

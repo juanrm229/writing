@@ -50,8 +50,8 @@
       try { const p = JSON.parse(localStorage.getItem('jm:preview')); if (p) return p; } catch (e) { /* jatuh ke berkas */ }
     }
     const get = f => fetch('content/' + f, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
-    const [site, works, layout] = await Promise.all([get('site.json'), get('works.json'), get('layout.json')]);
-    return { site, works, layout };
+    const [site, works] = await Promise.all([get('site.json'), get('works.json')]);
+    return { site, works };
   }
   const content = await loadContent();
 
@@ -65,10 +65,10 @@
   const site = content.site || {};
   const SITE = {
     title: 'Juan Menulis', author: 'Juan', handle: 'juan/menulis', email: '', avatar: '', readerName: 'pembaca',
-    accent: '', sticky: '', theme: 'auto', backdrop: 'auto', defaultView: 'kanvas', readerFont: 'newsreader', readerPaper: 'putih',
-    folders: {}, years: {}, categories: DEFAULT_CATS,
+    accent: '', theme: 'auto', backdrop: 'auto', defaultView: 'putar', readerFont: 'newsreader', readerPaper: 'putih',
+    categories: DEFAULT_CATS,
     ...site,
-    features: { dock: true, visitorStickies: true, rotatingQuotes: true, connections: true, replay: true, ambience: true, ...(site.features || {}) }
+    features: { dock: true, rotatingQuotes: true, connections: true, replay: true, ambience: true, ...(site.features || {}) }
   };
   const CATS = {};
   (SITE.categories && SITE.categories.length ? SITE.categories : DEFAULT_CATS).forEach(c => { CATS[c.id] = c; });
@@ -76,7 +76,7 @@
 
   const WORKS = (Array.isArray(content.works) ? content.works : [])
     .filter(w => w && w.slug && w.title && Array.isArray(w.body) && (PREVIEW || !w.draft))
-    .map(w => ({ form: 'prosa', time: '', excerpt: '', line: '', ...w }))
+    .map(w => ({ form: 'prosa', time: '', excerpt: '', line: '', pov: '', ...w }))
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
 
@@ -89,18 +89,16 @@
   document.title = SITE.title;
   if (SITE.description) $('meta[name="description"]')?.setAttribute('content', SITE.description);
   if (SITE.accent) root.style.setProperty('--tk-blue', SITE.accent);
-  if (SITE.sticky) root.style.setProperty('--lime', SITE.sticky);
   if (!store.get('theme', null) && SITE.theme !== 'auto') root.setAttribute('data-theme', SITE.theme === 'gelap' ? 'dark' : 'light');
   $('.tk-title').textContent = SITE.handle;
   { const [h1, ...rest] = SITE.handle.split('/'); $('#tbBrand').innerHTML = esc(h1) + (rest.length ? `<em>/${esc(rest.join('/'))}</em>` : ''); }
   const win = $('#win');
-  if (!SITE.features.dock) win.classList.add('no-dock');
-  if (!SITE.features.visitorStickies) $('#addNote').hidden = true;
+  if (!SITE.features.dock) $('.pill [data-go="sapa"]').hidden = true;
   if (SITE.email) { $('#chipMail').hidden = false; $('#mailName').textContent = 'ke ' + SITE.author; }
 
   if (!WORKS.length) {
     $('.views').innerHTML = `<div class="empty"><p class="empty-t">Belum ada tulisan yang terbit.</p><p>${location.protocol === 'file:' ? 'Buka situs ini lewat server (misalnya <code>python3 -m http.server</code>), bukan langsung dari berkas.' : 'Tulis yang pertama di <a href="admin/">panel admin</a>.'}</p></div>`;
-    win.classList.add('dock-off', 'ready'); win.dataset.view = 'daftar';
+    win.classList.add('ready'); win.dataset.view = 'kosong';
     return;
   }
 
@@ -123,12 +121,21 @@
     if (!w.line) w.line = (units(t, w.form === 'puisi')[0] || w.title).slice(0, 90);
     return w;
   }
-  WORKS.forEach(prep);
+  WORKS.forEach(w => { prep(w); w.side = 'a'; w.key = w.slug; w.A = w; });
 
+  /* ---------- sisi B: cerita yang sama dari sisi yang lain ---------- */
+  WORKS.forEach(w => {
+    const b = w.sideB;
+    const body = b && Array.isArray(b.body) ? b.body.filter(p => String(p).trim()) : [];
+    w.B = body.length ? prep({ ...w, side: 'b', key: w.slug + ':b', A: w, B: null, title: (b.title || '').trim() || w.title, pov: (b.pov || '').trim(), body, excerpt: '', line: '' }) : null;
+  });
+  const DOCS = WORKS.flatMap(w => (w.B ? [w, w.B] : [w]));
   const all = () => WORKS;
   const bySlug = slug => all().find(w => w.slug === slug);
+  const docOf = (slug, side) => { const w = bySlug(slug); return w && side === 'b' ? w.B : w; };
+  const hrefOf = d => '#baca-' + d.slug + (d.side === 'b' ? ':b' : '');
+  const sideLine = d => (d.side === 'b' ? `Sisi B${d.pov ? ' · dari sisi ' + d.pov : ''}` : `Sisi A${d.pov ? ' · dari sisi ' + d.pov : ''}`);
   const readSet = new Set(store.get('read', []));
-  const notes = store.get('notes', {});
 
   /* ======================================================================
      SENI BENANG
@@ -223,36 +230,30 @@
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const VIEWS = ['putar', 'kanvas', 'daftar', 'sapa'];
-  let view = 'kanvas', prevView = 'kanvas';
+  const VIEWS = ['putar', 'pilih', 'sapa'];
+  let view = 'putar', prevView = 'putar';
 
   function setView(v) {
-    if (v === 'sapa' && !isMobile()) v = 'kanvas';
     if (view !== 'baca') prevView = view;
     view = v;
     win.dataset.view = v;
     syncPill();
-    if (v === 'kanvas') canvasFit(false);
     if (v !== 'baca') { stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
     const btns = $$('.pill [data-go]');
     let idx = -1;
     btns.forEach((b, i) => {
-      const isView = b.dataset.go === view || (view === 'pilih' && b.dataset.go === 'putar');
-      const on = b.dataset.go === 'sapa' && !isMobile() ? !win.classList.contains('dock-off') && !win.classList.contains('no-dock') : isView;
-      b.setAttribute('aria-current', on ? 'true' : 'false');
-      if (isView) idx = i;
+      const on = b.dataset.go === view;
+      b.setAttribute('aria-current', String(on));
+      if (on) idx = i;
     });
     const th = $('.pill-thumb');
     th.style.opacity = idx < 0 ? '0' : '1';
     if (idx >= 0) th.style.setProperty('--x', btns[idx].offsetLeft + 'px');
   }
   function go(v) {
-    if (v === 'sapa' && !isMobile()) {
-      if (['putar', 'pilih', 'baca'].includes(view)) { toggleDock(true); go('kanvas'); return; }
-      toggleDock(); return;
-    }
+    if (v === 'pilih') { openPicker(PK.slug || crateOrder[0]?.slug || WORKS[0].slug, PK.side); return; }
     if (location.hash === '#' + v) vt(() => setView(v)); else location.hash = v;
   }
   document.addEventListener('click', e => {
@@ -260,34 +261,29 @@
     if (b) go(b.dataset.go);
   });
 
-  function toggleDock(force) {
-    if (win.classList.contains('no-dock')) return;
-    const off = force != null ? !force : !win.classList.contains('dock-off');
-    win.classList.toggle('dock-off', off);
-    $('#dockToggle').setAttribute('aria-pressed', String(!off));
-    store.set('dockOff', off);
-    syncPill();
-    setTimeout(canvasClamp, 520);
-  }
-  $('#dockToggle').addEventListener('click', () => toggleDock());
-  if (store.get('dockOff', false)) toggleDock(false);
-  if (win.classList.contains('no-dock')) $('#dockToggle').hidden = true;
-
   const darkMQ = matchMedia('(prefers-color-scheme: dark)');
   const isDark = () => { const t = root.getAttribute('data-theme'); return t ? t === 'dark' : darkMQ.matches; };
   function setTheme(dark) {
     const apply = () => {
       root.setAttribute('data-theme', dark ? 'dark' : 'light');
       store.set('theme', dark ? 'dark' : 'light');
-      $('#chipDark').setAttribute('aria-checked', String(dark));
+      syncThemeUI();
       if (typeof applyBackdrop === 'function') applyBackdrop();
       document.dispatchEvent(new Event('jm:theme'));
     };
     if (document.startViewTransition && !reduced) document.startViewTransition(apply); else apply();
   }
-  $('#chipDark').setAttribute('aria-checked', String(isDark()));
+  function syncThemeUI() {
+    const d = isDark();
+    $('#chipDark').setAttribute('aria-checked', String(d));
+    $('#themeToggle').setAttribute('aria-pressed', String(d));
+    $('#themeToggle').setAttribute('aria-label', d ? 'Mode terang' : 'Mode gelap');
+    $('#themeToggle').title = d ? 'Mode terang' : 'Mode gelap';
+  }
+  syncThemeUI();
   $('#chipDark').addEventListener('click', () => setTheme(!isDark()));
-  darkMQ.addEventListener?.('change', () => { $('#chipDark').setAttribute('aria-checked', String(isDark())); applyBackdrop(); document.dispatchEvent(new Event('jm:theme')); });
+  $('#themeToggle').addEventListener('click', () => setTheme(!isDark()));
+  darkMQ.addEventListener?.('change', () => { syncThemeUI(); applyBackdrop(); document.dispatchEvent(new Event('jm:theme')); });
 
   const BACKDROPS = ['auto', 'fajar', 'siang', 'senja', 'kabut', 'malam'];
   const BD_NAMES = { auto: 'ikut jam', fajar: 'Fajar', siang: 'Siang', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
@@ -306,485 +302,6 @@
   applyBackdrop();
 
   /* ======================================================================
-     KANVAS
-     ====================================================================== */
-  const viewport = $('#viewport'), world = $('#world');
-  const WORLD = { w: 2600, h: 1100 };
-  const cam = { x: 0, y: 0, s: 1 };
-  const TATA = qs.has('tata');
-  let stickies = store.get('stickies', []);
-  let zTop = 10;
-
-  const DEFAULT_LAYOUT = [
-    { id: 's:peta', type: 'sticky', slug: 'peta-tersesat', x: 60, y: 560 },
-    { id: 'p:draf-ketujuh', type: 'paper', slug: 'draf-ketujuh', x: 250, y: 420, peek: 'bahasa-ibu' },
-    { id: 'f:puisi', type: 'folder', cat: 'puisi', x: 520, y: 400 },
-    { id: 'p:jendela', type: 'paper', slug: 'jendela', x: 772, y: 396 },
-    { id: 'img', type: 'img', slug: 'penjual-senin', x: 1012, y: 432 },
-    { id: 'note', type: 'note', slug: 'penjual-senin', x: 1222, y: 398 },
-    { id: 'p:peta-tersesat', type: 'paper', slug: 'peta-tersesat', x: 1420, y: 386 },
-    { id: 's:kopi', type: 'sticky', slug: 'kopi-kedua', x: 1636, y: 548 },
-    { id: 'p:kopi-kedua', type: 'paper', slug: 'kopi-kedua', x: 1700, y: 404 },
-    { id: 'p:penjual-senin', type: 'paper', slug: 'penjual-senin', x: 1960, y: 392 },
-    { id: 'f:esai', type: 'folder', cat: 'esai', x: 2220, y: 404 }
-  ];
-  const onCanvas = w => w && w.canvas !== false;
-  function buildLayout() {
-    const src = content.layout && Array.isArray(content.layout.objects) ? content.layout.objects : DEFAULT_LAYOUT;
-    const objs = src.filter(o => {
-      if (o.slug && !onCanvas(WORKS.find(w => w.slug === o.slug))) return false;
-      if (o.type === 'folder') return WORKS.filter(w => w.cat === o.cat && onCanvas(w)).length > 1;
-      return true;
-    }).map(o => ({ ...o, peek: o.peek && onCanvas(WORKS.find(w => w.slug === o.peek)) ? o.peek : undefined }));
-    // tulisan baru yang belum punya tempat: taruh berderet di kanan
-    const folderCats = new Set(objs.filter(o => o.type === 'folder').map(o => o.cat));
-    const shown = new Set(objs.flatMap(o => [o.slug, o.peek]).filter(Boolean));
-    const missing = WORKS.filter(w => onCanvas(w) && !shown.has(w.slug) && !folderCats.has(w.cat));
-    const maxX = Math.max(400, ...objs.map(o => o.x + 200));
-    missing.forEach((w, i) => objs.push({ id: 'p:' + w.slug, type: 'paper', slug: w.slug, x: maxX + 60 + i * 240, y: 392 + (i % 2 ? 24 : -10) }));
-    WORLD.w = Math.max(2600, ...objs.map(o => o.x + 520));
-    return objs;
-  }
-  const LAYOUT = buildLayout();
-  const layoutSig = JSON.stringify(LAYOUT.map(o => [o.id, o.x, o.y]));
-  let pos = store.get('posSig', '') === layoutSig ? store.get('pos', {}) : {};
-  if (TATA) pos = {};
-
-  function tinyOf(w) {
-    if (w.form === 'puisi') return `<div class="tiny"><p class="poem">${esc(plain(w.body.slice(0, 3).join('\n\n')))}</p></div>`;
-    const sents = units(plain(w.body.slice(1).join(' ')), false).slice(0, 3);
-    return `<div class="tiny"><p>${esc(plain(w.body[0]))}</p><b>${esc(plain(w.line))}</b>${sents.map(s => `<p class="li">${esc(s)}</p>`).join('')}</div>`;
-  }
-  const hoverPill = w => `<span class="read-pill" aria-hidden="true">Baca · ${w.minutes} mnt</span>`;
-  function objHTML(o) {
-    const w = o.slug && bySlug(o.slug);
-    if (o.type === 'paper') return `
-      <article class="obj paper" tabindex="0" data-open="${w.slug}" aria-label="${esc(w.title)}, ${esc(catOf(w.cat).label)}">
-        ${o.peek ? (() => { const pw = bySlug(o.peek); return `<div class="peek" data-open="${pw.slug}">${esc(plain(pw.body[0]).replace(/\n/g, ' '))}…</div>`; })() : ''}
-        <div class="sheet"><p class="k">${esc(catOf(w.cat).label)}</p><h3>${esc(w.title)}</h3>${tinyOf(w)}</div>${hoverPill(w)}
-      </article>`;
-    if (o.type === 'folder') {
-      const items = WORKS.filter(x => x.cat === o.cat && onCanvas(x));
-      return `
-      <article class="obj folder" tabindex="0" data-shelf="${o.cat}" aria-label="Kumpulan ${esc(catOf(o.cat).label)}, ${items.length} tulisan">
-        <div class="in-paper"><p class="t">${esc(plain(items[0].body[0]))}</p></div><div class="in-paper"></div><div class="in-lime"></div>
-        <svg class="shape" viewBox="0 0 176 250" preserveAspectRatio="none" aria-hidden="true"><path d="M10 0H166Q176 0 176 10V58C176 80 144 76 144 102V150C144 176 176 172 176 194V240Q176 250 166 250H10Q0 250 0 240V10Q0 0 10 0Z"/></svg>
-        <div class="f-label"><p>Kumpulan · ${items.length}</p><h3>${esc((SITE.folders || {})[o.cat] || catOf(o.cat).label)}</h3></div>
-      </article>`;
-    }
-    if (o.type === 'img') return `
-      <article class="obj imgcard" tabindex="0" data-open="${w.slug}" aria-label="Peta benang dari ${esc(w.title)}">
-        <canvas data-thread="${w.slug}"></canvas><span class="cap">benang dari “${esc(w.title)}”</span>
-      </article>`;
-    if (o.type === 'note') return `
-      <button class="obj note" type="button" data-open="${w.slug}">${esc(o.text || 'Gambar ini dirajut dari huruf-huruf cerpennya. Ketuk untuk membaca.')}</button>`;
-    if (o.type === 'sticky') return `
-      <article class="obj sticky" tabindex="0" data-open="${w.slug}" aria-label="Baris dari ${esc(w.title)}">${esc(plain(w.line))}<span class="from">— ${esc(w.title)}</span></article>`;
-    if (o.type === 'user') return `
-      <article class="obj sticky" data-sticky="${o.id}">
-        <button class="x" type="button" aria-label="Hapus catatan">×</button>
-        <div class="edit" contenteditable="true" spellcheck="false" aria-label="Catatan tempel">${esc(o.text || '')}</div>
-      </article>`;
-    return '';
-  }
-  function canvasObjects() {
-    const list = LAYOUT.slice();
-    if (!TATA) {
-      if (SITE.features.visitorStickies) stickies.forEach(s => list.push({ ...s, type: 'user' }));
-    }
-    return list;
-  }
-  function renderCanvas(enter) {
-    const objs = canvasObjects();
-    world.innerHTML = objs.map(objHTML).join('');
-    world.style.width = WORLD.w + 'px';
-    [...world.children].forEach((el, i) => {
-      const o = objs[i], p = pos[o.id] || o;
-      el.dataset.id = o.id;
-      el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
-      el.style.zIndex = p.z || (i + 1);
-      zTop = Math.max(zTop, p.z || 0, i + 1);
-      if (enter && !reduced) {
-        el.classList.add('enter');
-        el.style.setProperty('--k', i);
-        el.style.setProperty('--r0', ((seeded(o.id)() - .5) * 16).toFixed(1) + 'deg');
-        el.addEventListener('animationend', () => el.classList.remove('enter'), { once: true });
-      }
-    });
-    $$('canvas[data-thread]', world).forEach(c => drawThread(c, fullText(bySlug(c.dataset.thread)), { color: '#2A2620', seed: c.dataset.thread, weight: 1.3, pad: 12, animate: enter, frames: 110 }));
-    if (threadsOn) buildThreads(enter);
-  }
-  function applyCam() { world.style.transform = `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.s})`; }
-  function canvasClamp() {
-    const vw = viewport.clientWidth, vh = viewport.clientHeight;
-    cam.x = clamp(cam.x, vw - WORLD.w * cam.s - 120, 120);
-    cam.y = clamp(cam.y, vh - WORLD.h * cam.s - 120, 120);
-    applyCam();
-  }
-  let fitted = false;
-  function canvasFit(force) {
-    if (fitted && !force) return;
-    const vw = viewport.clientWidth, vh = viewport.clientHeight;
-    if (!vw) return;
-    fitted = true;
-    const saved = TATA ? null : store.get('cam', null);
-    if (saved && !force) { Object.assign(cam, saved); canvasClamp(); return; }
-    cam.s = clamp(Math.min(vh / 620, vw / 900), 0.6, 1);
-    cam.x = vw / 2 - 1150 * cam.s;
-    cam.y = vh / 2 - 520 * cam.s;
-    canvasClamp();
-  }
-  const saveCam = () => { if (!TATA) store.set('cam', { x: Math.round(cam.x), y: Math.round(cam.y), s: +cam.s.toFixed(3) }); };
-  function animateCam(to, ms = 520) {
-    const from = { ...cam }, t0 = performance.now();
-    cancelAnimationFrame(animateCam.raf);
-    const ease = t => 1 - Math.pow(1 - t, 4);
-    const step = now => {
-      const t = Math.min(1, (now - t0) / ms), e = ease(t);
-      cam.x = from.x + (to.x - from.x) * e; cam.y = from.y + (to.y - from.y) * e; cam.s = from.s + (to.s - from.s) * e;
-      canvasClamp();
-      if (t < 1) animateCam.raf = requestAnimationFrame(step); else saveCam();
-    };
-    animateCam.raf = requestAnimationFrame(step);
-  }
-
-  // geser latar (berinersia), pindahkan objek (miring mengikuti kecepatan), cubit untuk zoom
-  const pointers = new Map();
-  let act = null, pinch = null, inertia = 0;
-  const hideHint = () => $('#canvasHint').classList.add('gone');
-  viewport.addEventListener('pointerdown', e => {
-    if (e.target.closest('.edit, .x')) return;
-    cancelAnimationFrame(inertia); cancelAnimationFrame(animateCam.raf);
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    viewport.setPointerCapture(e.pointerId);
-    if (pointers.size === 2) {
-      const [a, b] = [...pointers.values()];
-      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: cam.s, x: cam.x, y: cam.y, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
-      if (act?.obj) { act.obj.classList.remove('dragging'); act.obj.style.rotate = ''; }
-      act = null; return;
-    }
-    const obj = e.target.closest('.obj');
-    const t = performance.now();
-    if (obj) act = { obj, sx: e.clientX, sy: e.clientY, ox: parseFloat(obj.style.left), oy: parseFloat(obj.style.top), moved: false, target: e.target, lx: e.clientX, lt: t, vx: 0 };
-    else { act = { pan: true, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, samples: [[e.clientX, e.clientY, t]] }; viewport.classList.add('panning'); }
-  });
-  viewport.addEventListener('pointermove', e => {
-    if (!pointers.has(e.pointerId)) return;
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pinch && pointers.size === 2) {
-      const [a, b] = [...pointers.values()];
-      zoomAt(pinch.mx, pinch.my, clamp(pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, 0.45, 1.6), pinch);
-      return;
-    }
-    if (!act) return;
-    const dx = e.clientX - act.sx, dy = e.clientY - act.sy, t = performance.now();
-    if (act.pan) {
-      cam.x = act.cx + dx; cam.y = act.cy + dy; canvasClamp(); hideHint();
-      act.samples.push([e.clientX, e.clientY, t]); if (act.samples.length > 5) act.samples.shift();
-      return;
-    }
-    if (!act.moved && Math.hypot(dx, dy) > 5) {
-      act.moved = true; act.obj.classList.add('dragging');
-      act.obj.style.zIndex = ++zTop; hideHint();
-    }
-    if (act.moved) {
-      act.obj.style.left = Math.round(act.ox + dx / cam.s) + 'px';
-      act.obj.style.top = Math.round(act.oy + dy / cam.s) + 'px';
-      const v = (e.clientX - act.lx) / Math.max(8, t - act.lt);
-      act.vx = act.vx * .7 + v * .3; act.lx = e.clientX; act.lt = t;
-      act.obj.style.rotate = clamp(act.vx * 9, -9, 9).toFixed(2) + 'deg';
-      if (threadsOn) updateThreads();
-    }
-  });
-  const endPointer = e => {
-    pointers.delete(e.pointerId);
-    if (pointers.size < 2) pinch = null;
-    viewport.classList.remove('panning');
-    if (!act) { saveCam(); return; }
-    const a = act; act = null;
-    if (a.pan) {
-      const s = a.samples, f = s[0], l = s[s.length - 1], dt = Math.max(1, l[2] - f[2]);
-      let vx = (l[0] - f[0]) / dt * 16, vy = (l[1] - f[1]) / dt * 16;
-      if (reduced || performance.now() - l[2] > 80) { saveCam(); return; }
-      const glide = () => {
-        vx *= .93; vy *= .93; cam.x += vx; cam.y += vy; canvasClamp();
-        if (Math.hypot(vx, vy) > .3) inertia = requestAnimationFrame(glide); else saveCam();
-      };
-      inertia = requestAnimationFrame(glide);
-      return;
-    }
-    a.obj.classList.remove('dragging');
-    a.obj.style.rotate = '';
-    if (threadsOn) requestAnimationFrame(updateThreads);
-    if (a.moved) {
-      a.obj.classList.add('settle');
-      setTimeout(() => a.obj.classList.remove('settle'), 600);
-      pos[a.obj.dataset.id] = { x: parseFloat(a.obj.style.left), y: parseFloat(a.obj.style.top), z: +a.obj.style.zIndex };
-      if (TATA) { tataDirty(true); return; }
-      store.set('pos', pos); store.set('posSig', layoutSig);
-      const st = stickies.find(s => s.id === a.obj.dataset.id);
-      if (st) { st.x = pos[st.id].x; st.y = pos[st.id].y; store.set('stickies', stickies); }
-    } else if (e.type === 'pointerup' && !TATA) activate(a.obj, a.target);
-  };
-  viewport.addEventListener('pointerup', endPointer);
-  viewport.addEventListener('pointercancel', endPointer);
-  function zoomAt(px, py, s, base = cam) {
-    const r = viewport.getBoundingClientRect();
-    const wx = (px - r.left - base.x) / base.s, wy = (py - r.top - base.y) / base.s;
-    cam.s = s; cam.x = px - r.left - wx * s; cam.y = py - r.top - wy * s;
-    canvasClamp();
-  }
-  viewport.addEventListener('wheel', e => {
-    e.preventDefault();
-    cancelAnimationFrame(inertia);
-    if (e.ctrlKey || e.metaKey) zoomAt(e.clientX, e.clientY, clamp(cam.s * Math.exp(-e.deltaY * 0.01), 0.45, 1.6));
-    else { cam.x -= e.shiftKey ? e.deltaY : e.deltaX; cam.y -= e.shiftKey ? 0 : e.deltaY; canvasClamp(); }
-    hideHint();
-    clearTimeout(viewport._t); viewport._t = setTimeout(saveCam, 300);
-  }, { passive: false });
-  viewport.addEventListener('dblclick', e => {
-    if (e.target.closest('.obj')) return;
-    const r = viewport.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
-    const s = cam.s < 1.15 ? clamp(cam.s * 1.35, .45, 1.6) : clamp(Math.min(viewport.clientHeight / 620, viewport.clientWidth / 900), .6, 1);
-    const wx = (px - cam.x) / cam.s, wy = (py - cam.y) / cam.s;
-    animateCam({ s, x: px - wx * s, y: py - wy * s });
-  });
-  viewport.addEventListener('keydown', e => {
-    if (e.target.closest('.edit')) return;
-    const step = { ArrowLeft: [140, 0], ArrowRight: [-140, 0], ArrowUp: [0, 120], ArrowDown: [0, -120] }[e.key];
-    if (step && e.target === viewport) { e.preventDefault(); animateCam({ s: cam.s, x: cam.x + step[0], y: cam.y + step[1] }, 320); }
-    if (e.key === 'Enter' && e.target.classList.contains('obj') && !TATA) activate(e.target, e.target);
-  });
-  function activate(obj, target) {
-    const open = (target && target.closest('[data-open]')) || obj;
-    if (obj.dataset.shelf) { shelf = obj.dataset.shelf; renderList(true); go('daftar'); return; }
-    if (open.dataset.open) openWork(open.dataset.open, open.classList.contains('peek') ? open : ($('.sheet', obj) || obj));
-  }
-
-  // catatan tempel pengunjung
-  function addSticky() {
-    if (TATA) return;
-    if (view !== 'kanvas') go('kanvas');
-    const vw = viewport.clientWidth, vh = viewport.clientHeight;
-    const s = { id: 'u:' + Date.now().toString(36), text: '', x: Math.round((vw / 2 - cam.x) / cam.s - 59), y: Math.round((vh / 2 - cam.y) / cam.s - 59) };
-    stickies.push(s); store.set('stickies', stickies);
-    renderCanvas(false);
-    const el = $(`[data-sticky="${s.id}"]`);
-    el.classList.add('enter'); el.style.setProperty('--k', 0); el.style.setProperty('--r0', '-8deg');
-    $('.edit', el).focus();
-  }
-  $('#addNote').addEventListener('click', addSticky);
-  world.addEventListener('input', e => {
-    const el = e.target.closest('[data-sticky]');
-    if (!el) return;
-    const s = stickies.find(s => s.id === el.dataset.sticky);
-    if (s) { s.text = e.target.textContent; store.set('stickies', stickies); }
-  });
-  world.addEventListener('focusout', e => {
-    const el = e.target.closest('[data-sticky]');
-    if (el && e.target.classList.contains('edit') && !e.target.textContent.trim()) removeSticky(el.dataset.sticky);
-  });
-  world.addEventListener('click', e => {
-    const x = e.target.closest('.x');
-    if (x) removeSticky(x.closest('[data-sticky]').dataset.sticky);
-  });
-  async function removeSticky(id) {
-    const el = $(`[data-sticky="${id}"]`);
-    if (el && !reduced) { el.classList.add('leave'); await wait(260); }
-    stickies = stickies.filter(s => s.id !== id); store.set('stickies', stickies);
-    delete pos[id]; store.set('pos', pos);
-    renderCanvas(false);
-  }
-
-  /* ---------- mode tata letak (penulis) ---------- */
-  let tataChanged = false;
-  function tataDirty(v) { tataChanged = v; $('#tataSave').disabled = !v; $('#tataMsg').textContent = v ? 'Ada perubahan yang belum disimpan.' : 'Mode tata letak. Seret kertas, map, dan catatan, lalu simpan.'; }
-  if (TATA) {
-    win.classList.add('tata');
-    $('#tataBar').hidden = false;
-    tataDirty(false);
-    if (!window.GH || !GH.cfg()) {
-      $('#tataMsg').textContent = 'Masuk dulu di panel admin supaya tata letak bisa disimpan.';
-      $('#tataSave').hidden = true;
-      $('#tataExit').href = 'admin/';
-      $('#tataExit').textContent = 'Ke panel admin';
-    }
-    $('#tataReset').addEventListener('click', () => {
-      let x = 120;
-      LAYOUT.forEach(o => {
-        if (o.type === 'note') { o.x = x - 330 + 210; o.y = 370; return; }
-        o.x = x; o.y = o.type === 'sticky' ? 560 : 400;
-        x += o.type === 'img' ? 330 : 240;
-      });
-      pos = {}; renderCanvas(true); tataDirty(true);
-    });
-    $('#tataSave').addEventListener('click', async () => {
-      const objects = LAYOUT.map(o => {
-        const p = pos[o.id] || o;
-        const { id, type, slug, cat, peek, text } = o;
-        return Object.fromEntries(Object.entries({ id, type, slug, cat, peek, text, x: Math.round(p.x), y: Math.round(p.y) }).filter(([, v]) => v !== undefined));
-      });
-      $('#tataSave').disabled = true; $('#tataMsg').textContent = 'Menyimpan ke GitHub…';
-      try {
-        await GH.get('content/layout.json');
-        await GH.putJSON('content/layout.json', { objects }, 'Atur tata letak kanvas');
-        tataChanged = false;
-        $('#tataMsg').textContent = 'Tersimpan. Situs diperbarui dalam ±1 menit.';
-        toast('Tata letak tersimpan.');
-      } catch (err) { $('#tataSave').disabled = false; $('#tataMsg').textContent = err.message; }
-    });
-    addEventListener('beforeunload', e => { if (tataChanged) { e.preventDefault(); e.returnValue = ''; } });
-  }
-
-  /* ======================================================================
-     DAFTAR
-     ====================================================================== */
-  let shelf = 'semua';
-  const firstOlderYear = WORKS.find(w => w.date.slice(0, 4) !== WORKS[0].date.slice(0, 4))?.date.slice(0, 4);
-  const openYears = new Set(store.get('openYears', firstOlderYear ? [firstOlderYear] : []));
-  const selected = new Set();
-  let queue = [];
-
-  const shelfItems = k => (k === 'semua' ? all() : all().filter(w => w.cat === k));
-  function renderShelves() {
-    const keys = ['semua', ...Object.keys(CATS).filter(k => all().some(w => w.cat === k))];
-    const host = $('#shelves');
-    host.innerHTML = keys.map((k, i) => {
-      const items = shelfItems(k);
-      return `<button class="shelf" type="button" data-shelf="${k}" aria-pressed="${k === shelf}" style="--k:${i}">
-        <span class="n">${items.length}</span><span class="dots3" aria-hidden="true"></span>
-        <h3>${k === 'semua' ? 'Semua tulisan' : esc(catOf(k).label)}</h3>
-        <span class="d">${fmtLong(items[0].date)}</span>
-        <span class="avas"></span></button>`;
-    }).join('');
-    $$('.shelf', host).forEach(b => {
-      const items = shelfItems(b.dataset.shelf), av = $('.avas', b);
-      items.slice(0, items.length > 4 ? 3 : 4).forEach(w => av.append(mini(w, 36)));
-      if (items.length > 4) { const s = document.createElement('span'); s.textContent = '+' + (items.length - 3); av.append(s); }
-    });
-  }
-  $('#shelves').addEventListener('click', e => {
-    const b = e.target.closest('[data-shelf]');
-    if (!b) return;
-    shelf = b.dataset.shelf;
-    $$('#shelves .shelf').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    renderRows(true);
-  });
-
-  const shortName = f => (f.length > 24 ? f.slice(0, 12) + '…' + f.slice(-10) : f);
-  const kb = b => (b / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' KB';
-  const docIcon = w => `<div class="doc" aria-hidden="true"><div class="pg"></div><span class="tag${catOf(w.cat).red ? ' red' : ''}">${esc(catOf(w.cat).tag)}</span></div>`;
-  function rowHTML(w, child, k, extra = '') {
-    return `<div class="row${child ? ' child' : ''}${selected.has(w.slug) ? ' sel' : ''}${extra}" data-slug="${w.slug}" style="--k:${k}">
-      ${docIcon(w)}
-      <div class="r-text">
-        <p class="r-title">${esc(w.title)}${readSet.has(w.slug) ? '' : '<span class="r-unread" title="belum dibaca"></span>'}</p>
-        <p class="r-sub">${esc(shortName(w.file))} ${kb(w.bytes)}</p>
-        <p class="r-note" contenteditable="true" spellcheck="false" data-note="${w.slug}" aria-label="Catatan untuk ${esc(w.title)}">${esc(notes[w.slug] || '')}</p>
-      </div>
-      <p class="r-date">${fmtShort(w.date)} ${w.time || ''}</p>
-    </div>`;
-  }
-  const cbHTML = (state, label, data, k, extra = '') => `<button class="cb${extra}" type="button" role="checkbox" aria-checked="${state}" aria-label="${esc(label)}" ${data} style="--k:${k}"></button>`;
-  const cbState = items => { const n = items.filter(w => selected.has(w.slug)).length; return n === 0 ? 'false' : n === items.length ? 'true' : 'mixed'; };
-
-  function renderRows(animate, justOpened) {
-    const items = shelfItems(shelf);
-    const topYear = WORKS[0].date.slice(0, 4);
-    const top = items.filter(w => w.date.startsWith(topYear));
-    const years = [...new Set(items.filter(w => !top.includes(w)).map(w => w.date.slice(0, 4)))].sort().reverse();
-    let html = '', k = 0;
-    if (top.length) {
-      const ks = top.map(() => k++);
-      html += `<div class="grp flat"><div class="grp-cbs">${top.map((w, i) => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`, ks[i])).join('')}</div>
-        <div class="grp-panel">${top.map((w, i) => rowHTML(w, false, ks[i])).join('')}</div></div>`;
-    }
-    years.forEach(y => {
-      const ws = items.filter(w => !top.includes(w) && w.date.startsWith(y));
-      const open = openYears.has(y);
-      const k0 = k++;
-      const ks = open ? ws.map(() => k++) : [];
-      const fresh = justOpened === y ? ' row-in' : '';
-      html += `<div class="grp${open ? ' open' : ''}${fresh ? ' opening' : ''}">
-        <div class="grp-cbs">${cbHTML(cbState(ws), 'Pilih semua dari ' + y, `data-year-sel="${y}"`, k0)}${open ? ws.map((w, i) => cbHTML(selected.has(w.slug), 'Pilih ' + w.title, `data-sel="${w.slug}"`, i, fresh)).join('') : ''}</div>
-        <div class="grp-panel">
-          <div class="row folder-row" data-year="${y}" role="button" tabindex="0" aria-expanded="${open}" style="--k:${k0}">
-            <div class="fold-ic" aria-hidden="true"><svg viewBox="0 0 62 52"><path class="bg" d="M14 4h12l4 4h22a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H14a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z"/><path class="bg front" d="M7 12h12l4 4h29a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5z"/></svg></div>
-            <div class="r-text"><p class="r-title">${y}</p><p class="r-sub">${ws.length} tulisan</p><p class="r-note" style="cursor:inherit">${esc((SITE.years || {})[y] || '')}</p></div>
-            <p class="r-date">${fmtShort(ws[0].date)} ${ws[0].time || ''}</p>
-          </div>
-          ${open ? ws.map((w, i) => rowHTML(w, true, fresh ? i : ks[i], fresh)).join('') : ''}
-        </div></div>`;
-    });
-    const host = $('#libRows');
-    host.innerHTML = html || '<p class="lib-empty">Belum ada tulisan di rak ini.</p>';
-    host.classList.remove('reveal'); void host.offsetWidth;
-    if (animate && !reduced) host.classList.add('reveal');
-    $('#cbAll').setAttribute('aria-checked', cbState(items));
-    syncSelbar();
-  }
-  function renderList(animate) { renderShelves(); renderRows(animate); updateBadge(); }
-
-  $('#libRows').addEventListener('click', e => {
-    if (e.target.closest('.r-note[data-note]')) return;
-    const cb = e.target.closest('.cb');
-    if (cb) {
-      if (cb.dataset.sel) { selected.has(cb.dataset.sel) ? selected.delete(cb.dataset.sel) : selected.add(cb.dataset.sel); }
-      if (cb.dataset.yearSel) {
-        const ws = shelfItems(shelf).filter(w => w.date.startsWith(cb.dataset.yearSel));
-        const allOn = ws.every(w => selected.has(w.slug));
-        ws.forEach(w => (allOn ? selected.delete(w.slug) : selected.add(w.slug)));
-        openYears.add(cb.dataset.yearSel);
-      }
-      renderRows(false); return;
-    }
-    const fr = e.target.closest('.folder-row');
-    if (fr) { toggleYear(fr.dataset.year); return; }
-    const row = e.target.closest('.row[data-slug]');
-    if (row) openWork(row.dataset.slug, $('.doc', row));
-  });
-  $('#libRows').addEventListener('keydown', e => {
-    const fr = e.target.closest('.folder-row');
-    if (fr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleYear(fr.dataset.year); }
-    if (e.target.matches('.r-note') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
-  });
-  function toggleYear(y) {
-    const opening = !openYears.has(y);
-    opening ? openYears.add(y) : openYears.delete(y);
-    store.set('openYears', [...openYears]);
-    renderRows(false, opening ? y : null);
-    $(`.folder-row[data-year="${y}"]`)?.focus({ preventScroll: true });
-  }
-  $('#libRows').addEventListener('input', e => {
-    const n = e.target.closest('[data-note]');
-    if (!n) return;
-    const t = n.textContent.trim();
-    if (t) notes[n.dataset.note] = t; else delete notes[n.dataset.note];
-    store.set('notes', notes);
-  });
-  $('#cbAll').addEventListener('click', () => {
-    const items = shelfItems(shelf);
-    const allOn = items.every(w => selected.has(w.slug));
-    items.forEach(w => (allOn ? selected.delete(w.slug) : selected.add(w.slug)));
-    renderRows(false);
-  });
-  function syncSelbar() {
-    $('#selbar').hidden = selected.size === 0;
-    $('#selCount').textContent = selected.size + ' dipilih';
-  }
-  $('#selClear').addEventListener('click', () => { selected.clear(); renderRows(false); });
-  $('#selRead').addEventListener('click', () => {
-    queue = all().filter(w => selected.has(w.slug)).map(w => w.slug);
-    if (queue.length) { toast(`Membaca ${queue.length} tulisan berurutan.`); openWork(queue[0]); }
-  });
-  function updateBadge() {
-    const n = WORKS.filter(w => !readSet.has(w.slug)).length;
-    const b = $('#unreadBadge');
-    b.textContent = n; b.classList.toggle('zero', n === 0);
-    renderGreet(false);
-  }
-
-  /* ======================================================================
      PANEL SAPA
      ====================================================================== */
   const dock = $('#dock');
@@ -796,6 +313,7 @@
     const sameMonth = WORKS.filter(w => w.date.slice(0, 7) === latest.date.slice(0, 7)).length;
     const total = WORKS.reduce((a, w) => a + w.words, 0);
     const kinds = [...new Set(WORKS.map(w => catOf(w.cat).label.toLowerCase()))];
+    const twoSided = WORKS.filter(w => w.B).length;
     const g = $('#tkGreet');
     if (statsMode) {
       const long = WORKS.reduce((a, w) => (w.words > a.words ? w : a)), short = WORKS.reduce((a, w) => (w.words < a.words ? w : a));
@@ -805,7 +323,7 @@
     } else {
       g.innerHTML = `<span class="dim">Selamat ${dayPart},</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
         <span class="dim">Meja ini</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><button type="button" data-act="list">${WORKS.length} tulisan</button></span>
-        <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">${esc(kinds[0] || '')}</span></span> <span class="dim">${kinds.length > 1 ? 'sampai ' + esc(kinds[kinds.length - 1]) + '.' : '.'} Kamu punya</span>
+        <span class="dim">— dari</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><span class="dim">${esc(kinds[0] || '')}</span></span> <span class="dim">${kinds.length > 1 ? 'sampai ' + esc(kinds[kinds.length - 1]) + '.' : '.'}</span>${twoSided ? ` <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="ab">${twoSided} punya Sisi B</button>.</span>` : ''} <span class="dim">Kamu punya</span>
         <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="unread">${unread.length ? unread.length + ' belum' : 'semua sudah'}</button></span> <button type="button" data-act="unread">dibaca</button>
         <span class="dim">dan</span> <span class="nw"><span class="ico-cal" aria-hidden="true"><b>${new Date(latest.date + 'T00:00:00').getDate()}</b></span><button type="button" data-act="open" data-slug="${latest.slug}">${sameMonth} terbit</button></span> <button type="button" data-act="open" data-slug="${latest.slug}">${esc(month)}.</button>`;
       avatarInto($('#tkAva'), 24);
@@ -824,13 +342,14 @@
   $('#tkGreet').addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
-    if (b.dataset.act === 'list') { shelf = 'semua'; renderList(true); go('daftar'); }
-    if (b.dataset.act === 'unread') { const u = WORKS.find(w => !readSet.has(w.slug)); if (u) openWork(u.slug); else go('daftar'); }
+    if (b.dataset.act === 'list') { feedMode = 'list'; renderFeed(false); }
+    if (b.dataset.act === 'unread') { const u = WORKS.find(w => !readSet.has(w.slug)); if (u) openPicker(u.slug); else { feedMode = 'list'; renderFeed(false); } }
     if (b.dataset.act === 'open') openWork(b.dataset.slug);
+    if (b.dataset.act === 'ab') { const w = WORKS.find(x => x.B && !readSet.has(x.B.key)) || WORKS.find(x => x.B); if (w) openPicker(w.slug, 'b'); }
   });
   $('#tkStats').addEventListener('click', e => { statsMode = !statsMode; e.currentTarget.setAttribute('aria-pressed', String(statsMode)); renderGreet(true); });
   $('#tkGear').addEventListener('click', () => { $('#chipDark').scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' }); $('#chipDark').focus({ preventScroll: true }); });
-  $('#tkBack').addEventListener('click', () => go(isMobile() ? 'kanvas' : (view === 'kanvas' ? 'daftar' : 'kanvas')));
+  $('#tkBack').addEventListener('click', () => go('putar'));
 
   const grip = $('#tkGrip');
   function setCollapsed(c) { dock.classList.toggle('collapsed', c); grip.setAttribute('aria-expanded', String(!c)); grip.setAttribute('aria-label', c ? 'Bentangkan kartu sapaan' : 'Ciutkan kartu sapaan'); }
@@ -845,14 +364,14 @@
 
   const feed = $('#tkFeed');
   let feedMode = 'feed', feedIdx = Math.floor(Math.random() * WORKS.length), feedT;
-  const noteOf = w => `Dari ${esc(catOf(w.cat).label.toLowerCase())} <button type="button" data-open="${w.slug}">“${esc(w.title)}”</button> <span class="spark"><canvas data-spark="${w.slug}"></canvas></span> ditulis ${fmtLong(w.date)}, ${w.words} kata, kira-kira ${w.minutes} menit membaca.`;
+  const noteOf = w => `Dari ${esc(catOf(w.cat).label.toLowerCase())} <button type="button" data-open="${w.slug}">“${esc(w.title)}”</button> <span class="spark"><canvas data-spark="${w.slug}"></canvas></span> ditulis ${fmtLong(w.date)}, ${w.words} kata, kira-kira ${w.minutes} menit membaca.${w.B ? ` Balik piringannya untuk <button type="button" data-open="${w.slug}" data-side="b">Sisi B</button>, dari sisi ${esc(w.B.pov || 'yang lain')}.` : ''}`;
   async function renderFeed(rotate) {
     clearTimeout(feedT);
     feed.classList.toggle('plain', feedMode !== 'feed');
     $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === feedMode)));
     $('.tk-seg').style.setProperty('--x', feedMode === 'list' ? '0' : '1');
     if (feedMode === 'list') {
-      feed.innerHTML = `<ul class="tk-list">${all().map((w, i) => `<li style="--k:${i}"><a href="#baca-${w.slug}"><b>${esc(w.title)}</b><span class="${readSet.has(w.slug) ? 'ok' : ''}">${readSet.has(w.slug) ? '✓ dibaca' : w.minutes + ' mnt'}</span><span>${esc(catOf(w.cat).label)} · ${fmtShort(w.date)}</span></a></li>`).join('')}</ul>`;
+      feed.innerHTML = `<ul class="tk-list">${all().map((w, i) => `<li style="--k:${i}"><a href="#pilih-${w.slug}"><b>${esc(w.title)}${w.B ? '<i class="ab" title="Punya Sisi B">A/B</i>' : ''}</b><span class="${readSet.has(w.slug) ? 'ok' : ''}">${readSet.has(w.slug) ? '✓ dibaca' : w.minutes + ' mnt'}</span><span>${esc(catOf(w.cat).label)} · ${fmtShort(w.date)}</span></a></li>`).join('')}</ul>`;
       return;
     }
     if (feedMode !== 'feed') return;
@@ -874,7 +393,7 @@
   });
   feed.addEventListener('click', e => {
     const b = e.target.closest('[data-open]');
-    if (b) openWork(b.dataset.open);
+    if (b) openWork(b.dataset.open, null, b.dataset.side);
     if (e.target.closest('[data-clear]')) { $('#tkInput').value = ''; feedMode = 'feed'; renderFeed(false); }
   });
   $('#chipRandom').addEventListener('click', () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug));
@@ -891,7 +410,7 @@
     feed.classList.add('plain');
     $$('.tk-seg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
     feed.innerHTML = `<p class="tk-res-h"><span>${res.length} hasil untuk “${esc(q)}”</span><button type="button" data-clear>hapus</button></p>
-      <ul class="tk-list">${res.map((r, i) => `<li style="--k:${i}"><a href="#baca-${r.w.slug}"><b>${esc(r.w.title)}</b><span>${esc(catOf(r.w.cat).label)}</span><span style="grid-column:1/-1">${r.snip}</span></a></li>`).join('') || '<li style="color:var(--dock-muted);padding:10px 12px">Tidak ada kalimat yang cocok.</li>'}</ul>`;
+      <ul class="tk-list">${res.map((r, i) => `<li style="--k:${i}"><a href="${hrefOf(r.w)}"><b>${esc(r.w.title)}</b><span>${r.w.side === 'b' ? 'Sisi B' : esc(catOf(r.w.cat).label)}</span><span style="grid-column:1/-1">${r.snip}</span></a></li>`).join('') || '<li style="color:var(--dock-muted);padding:10px 12px">Tidak ada kalimat yang cocok.</li>'}</ul>`;
   });
 
   /* ======================================================================
@@ -1040,26 +559,41 @@
       return `<rect style="--k:${i}" x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} kata</title></rect>`;
     }).join('')}</svg>`;
   }
-  const navList = () => (queue.includes(current?.slug) ? queue.map(bySlug).filter(Boolean) : all());
   function neighbors() {
-    const list = navList(), i = list.findIndex(w => w.slug === current.slug);
+    const list = all(), i = list.findIndex(w => w.slug === current.slug);
     return { prev: list[(i - 1 + list.length) % list.length], next: list[(i + 1) % list.length] };
   }
+  function renderFlip(d) {
+    const w = d.A, other = d.side === 'b' ? w : w.B;
+    const fb = $('#rdFlip'), fc = $('#rdFlipCard');
+    fb.hidden = fc.hidden = !w.B;
+    card.dataset.side = d.side;
+    if (!w.B) return;
+    $('span', fb).textContent = d.side === 'b' ? 'Sisi A' : 'Sisi B';
+    fb.setAttribute('aria-label', `Balik ke ${d.side === 'b' ? 'Sisi A' : 'Sisi B'}: ${other.title}`);
+    fc.href = hrefOf(other);
+    fc.style.setProperty('--lc', catOf(w.cat).ink);
+    fc.innerHTML = `<span class="fc-disc" aria-hidden="true"><i></i></span>
+      <span class="fc-t"><small>${d.side === 'b' ? 'Kembali ke Sisi A' : 'Balik piringannya · Sisi B'}</small><b>${esc(other.title)}</b>
+      <span>${d.side === 'b' ? (w.pov ? 'Cerita aslinya, dari sisi ' + esc(w.pov) : 'Cerita aslinya') : 'Cerita yang sama, dari sisi ' + esc(other.pov || 'yang lain')} · ${other.minutes} menit</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
+  }
 
-  function showReader(slug) {
-    const w = bySlug(slug);
+  function showReader(slug, side = 'a') {
+    const w = docOf(slug, side) || bySlug(slug);
     if (!w) return;
     stopSpeech(); closeFind(); stopReplay(false); hideQuotePop();
     current = w;
     setView('baca');
-    $('#rdBackLabel').textContent = { daftar: 'Daftar', sapa: 'Sapa', kanvas: 'Kanvas', putar: 'Piringan', pilih: 'Piringan' }[prevView] || 'Kembali';
-    $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.title}`;
-    $('#rdMeta').innerHTML = `<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
+    $('#rdBackLabel').textContent = { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan' }[prevView] || 'Piringan';
+    $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
+    $('#rdMeta').innerHTML = `${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
+    renderFlip(w);
     const { prev, next } = neighbors();
-    renderRelated(w);
+    renderRelated(w.A);
     $('#rdNextLink').href = '#baca-' + next.slug;
     $('b', $('#rdNextLink')).textContent = next.title;
     $('#rdPrev').dataset.slug = prev.slug; $('#rdNext').dataset.slug = next.slug;
@@ -1067,7 +601,7 @@
     applyRd();
     scroller.scrollTop = 0;
     const marks = store.get('marks', {});
-    $('#rsMark').setAttribute('aria-pressed', String(marks[slug] != null));
+    $('#rsMark').setAttribute('aria-pressed', String(marks[w.key] != null));
     const startAt = pendingStart, listen = pendingListen;
     pendingStart = null; pendingListen = false;
     requestAnimationFrame(() => {
@@ -1075,25 +609,34 @@
       if (startAt) scroller.scrollTop = startAt * maxS;
       if (listen) startSpeech(Math.floor((startAt || 0) * w.body.length));
       if (startAt != null || listen) { onScroll(); return; }
-      if (marks[slug] != null) {
-        scroller.scrollTop = marks[slug] * (scroller.scrollHeight - scroller.clientHeight);
+      if (marks[w.key] != null) {
+        scroller.scrollTop = marks[w.key] * (scroller.scrollHeight - scroller.clientHeight);
         toast('Melanjutkan dari posisi yang kamu tandai.');
       }
       onScroll();
     });
-    if (!readSet.has(slug)) { readSet.add(slug); store.set('read', [...readSet]); }
-    updateBadge(); renderRows(false); if (feedMode === 'list') renderFeed(false);
+    if (!readSet.has(w.key)) { readSet.add(w.key); store.set('read', [...readSet]); }
+    renderGreet(false); if (feedMode === 'list') renderFeed(false);
     renderSheet(); rerank();
     document.title = `${w.title} · ${SITE.title}`;
     if (!PREVIEW) scroller.focus({ preventScroll: true });
   }
-  scroller.tabIndex = -1;
-  function openWork(slug, fromEl) {
-    if (TATA) return;
-    if (fromEl) morphFrom = fromEl;
-    if (location.hash === '#baca-' + slug) vt(() => showReader(slug)); else location.hash = 'baca-' + slug;
+  // membalik piringan di tengah membaca: kartunya ikut berputar seperti piringan
+  async function flipReader(slug, side) {
+    if (reduced || !card.animate) { showReader(slug, side); return; }
+    const dir = side === 'b' ? 1 : -1;
+    await card.animate([{ transform: 'perspective(1800px) rotateY(0)' }, { transform: `perspective(1800px) rotateY(${dir * 90}deg)`, opacity: .4 }], { duration: 240, easing: 'cubic-bezier(.5, 0, .9, .4)' }).finished.catch(() => {});
+    showReader(slug, side);
+    card.animate([{ transform: `perspective(1800px) rotateY(${dir * -90}deg)`, opacity: .4 }, { transform: 'perspective(1800px) rotateY(0)', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.2, 1.3, .4, 1)' });
   }
-  $('#rdBack').addEventListener('click', () => { if (prevView === 'pilih' && PK.slug) location.hash = 'pilih-' + PK.slug; else go(prevView === 'baca' ? 'putar' : prevView); });
+  scroller.tabIndex = -1;
+  function openWork(slug, fromEl, side = 'a') {
+    if (fromEl) morphFrom = fromEl;
+    const h = '#baca-' + slug + (side === 'b' ? ':b' : '');
+    if (location.hash === h) vt(() => showReader(slug, side)); else location.hash = h.slice(1);
+  }
+  $('#rdBack').addEventListener('click', () => { if (prevView === 'pilih' && PK.slug) openPicker(PK.slug, PK.side); else go(prevView === 'sapa' ? 'sapa' : 'putar'); });
+  $('#rdFlip').addEventListener('click', () => { if (current?.A.B) location.hash = hrefOf(current.side === 'b' ? current.A : current.A.B).slice(1); });
   $('#rdPrev').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
   $('#rdNext').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
 
@@ -1101,7 +644,7 @@
     const max = scroller.scrollHeight - scroller.clientHeight;
     const frac = max > 0 ? scroller.scrollTop / max : 1;
     clearTimeout(onScroll.t);
-    onScroll.t = setTimeout(() => { if (current) { const pr = store.get('prog', {}); pr[current.slug] = +frac.toFixed(3); store.set('prog', pr); prog[current.slug] = pr[current.slug]; } }, 500);
+    onScroll.t = setTimeout(() => { if (current) { const pr = store.get('prog', {}); pr[current.key] = +frac.toFixed(3); store.set('prog', pr); prog[current.key] = pr[current.key]; } }, 500);
     $('#rdProg').style.transform = `scaleX(${frac})`;
     weave(frac);
     if (!focusMode) return;
@@ -1114,14 +657,14 @@
 
   $('#rsMark').addEventListener('click', () => {
     const marks = store.get('marks', {});
-    if (marks[current.slug] != null) { delete marks[current.slug]; toast('Tanda dihapus.'); }
+    if (marks[current.key] != null) { delete marks[current.key]; toast('Tanda dihapus.'); }
     else {
       const max = scroller.scrollHeight - scroller.clientHeight;
-      marks[current.slug] = max > 0 ? +(scroller.scrollTop / max).toFixed(3) : 0;
+      marks[current.key] = max > 0 ? +(scroller.scrollTop / max).toFixed(3) : 0;
       toast('Posisi baca ditandai. Lain kali kamu mulai dari sini.');
     }
     store.set('marks', marks);
-    $('#rsMark').setAttribute('aria-pressed', String(marks[current.slug] != null));
+    $('#rsMark').setAttribute('aria-pressed', String(marks[current.key] != null));
   });
 
   let lock = null;
@@ -1196,7 +739,7 @@
     const nq = fold(q.trim());
     if (!nq) return all().map(w => ({ w, snip: esc(w.excerpt) }));
     const out = [];
-    all().forEach(w => {
+    DOCS.forEach(w => {
       let score = 0, snip = '';
       if (fold(w.title).includes(nq)) score += 5;
       if (fold(catOf(w.cat).label).includes(nq)) score += 2;
@@ -1206,22 +749,22 @@
         const a = Math.max(0, idx - 32), b = Math.min(text.length, idx + nq.length + 56);
         snip = (a ? '…' : '') + esc(text.slice(a, idx)) + '<mark>' + esc(text.slice(idx, idx + nq.length)) + '</mark>' + esc(text.slice(idx + nq.length, b)) + (b < text.length ? '…' : '');
       }
-      if (score) out.push({ w, score, snip: snip || esc(w.excerpt) });
+      if (score) out.push({ w, score: score - (w.side === 'b' ? .5 : 0), snip: snip || esc(w.excerpt) });
     });
     return out.sort((a, b) => b.score - a.score);
   }
   const palette = $('#palette'), pInput = $('#pInput'), pResults = $('#pResults');
   let pSel = 0, pItems = [];
   const commands = () => [
-    { label: threadsOn ? 'Sembunyikan benang merah' : 'Tampilkan benang merah', hint: 'hubungan antar-tulisan', run: () => { if (view !== 'kanvas') go('kanvas'); setThreads(!threadsOn); }, show: !!SITE.features.connections },
+    { label: current?.side === 'b' ? 'Balik ke Sisi A' : 'Balik ke Sisi B', hint: current?.A.B ? (current.side === 'b' ? current.A.title : current.A.B.title) : '', run: () => $('#rdFlip').click(), show: view === 'baca' && !!current?.A.B },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
-    { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
+    { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
-    { label: 'Ke kanvas', hint: 'tampilan', run: () => go('kanvas') },
-    { label: 'Ke daftar', hint: 'tampilan', run: () => go('daftar') },
+    { label: 'Pilih piringan', hint: 'sisi A atau B', run: () => go('pilih') },
+    { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
-    { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#installBtn').hidden }
+    { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#chipInstall').hidden }
   ].filter(c => c.show !== false);
   function renderPalette() {
     const raw = pInput.value.trim();
@@ -1233,7 +776,7 @@
     pResults.innerHTML = pItems.length
       ? pItems.map((r, i) => r.cmd
         ? `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-cmd="${i}" class="p-cmd" style="--k:${Math.min(i, 8)}"><span class="p-kbd" aria-hidden="true">›</span><span class="p-title">${esc(r.cmd.label)}</span><span class="p-snip">${esc(r.cmd.hint || 'perintah')}</span></li>`
-        : `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-slug="${r.w.slug}" style="--k:${Math.min(i, 8)}">${docIcon(r.w)}<span class="p-title">${esc(r.w.title)}</span><span class="p-snip">${r.snip}</span></li>`).join('')
+        : `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-i="${i}" style="--k:${Math.min(i, 8)}"><span class="p-disc${r.w.side === 'b' ? ' b' : ''}" style="--lc:${catOf(r.w.cat).ink}" aria-hidden="true"><i></i></span><span class="p-title">${esc(r.w.title)}${r.w.side === 'b' ? ' <small>Sisi B</small>' : ''}</span><span class="p-snip">${r.snip}</span></li>`).join('')
       : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, atau ketik > untuk melihat perintah.</li>';
     pInput.setAttribute('aria-activedescendant', pItems.length ? 'po-' + pSel : '');
   }
@@ -1249,12 +792,12 @@
       pInput.setAttribute('aria-activedescendant', 'po-' + pSel);
       $('#po-' + pSel)?.scrollIntoView({ block: 'nearest' });
     }
-    if (e.key === 'Enter' && pItems[pSel]) { const it = pItems[pSel]; closePalette(); it.cmd ? it.cmd.run() : openWork(it.w.slug); }
+    if (e.key === 'Enter' && pItems[pSel]) { const it = pItems[pSel]; closePalette(); it.cmd ? it.cmd.run() : openWork(it.w.slug, null, it.w.side); }
   });
   pResults.addEventListener('click', e => {
-    const li = e.target.closest('[data-slug], [data-cmd]'); if (!li) return;
+    const li = e.target.closest('[data-i], [data-cmd]'); if (!li) return;
     closePalette();
-    if (li.dataset.cmd) pItems[+li.dataset.cmd].cmd.run(); else openWork(li.dataset.slug);
+    if (li.dataset.cmd) pItems[+li.dataset.cmd].cmd.run(); else { const d = pItems[+li.dataset.i].w; openWork(d.slug, null, d.side); }
   });
   palette.addEventListener('click', e => { if (e.target === palette) closePalette(); });
 
@@ -1273,6 +816,7 @@
       if (rs.classList.contains('open')) return setSheet(false);
       if (!$('#rsAdv').hidden && view === 'baca') return rsPage(false);
       if (view === 'baca') return $('#rdBack').click();
+      if (view === 'pilih') return go('putar');
     }
     if (typing) return;
     if (e.key === '/' && palette.hidden) { e.preventDefault(); openPalette(); return; }
@@ -1280,25 +824,31 @@
       if (e.key === 'ArrowRight') openWork($('#rdNext').dataset.slug);
       if (e.key === 'ArrowLeft') openWork($('#rdPrev').dataset.slug);
       if (e.key.toLowerCase() === 'f') $('#rsFocus').click();
+      if (e.key.toLowerCase() === 'b' && current?.A.B) $('#rdFlip').click();
+    }
+    if (view === 'pilih' && palette.hidden) {
+      if (e.key.toLowerCase() === 'b') setSide(PK.side === 'a' ? 'b' : 'a');
+      if (e.key === 'Enter' && !e.target.closest('button, [role="slider"]')) $('#pkGo').click();
     }
   });
 
-  const startView = () => (VIEWS.includes(SITE.defaultView) && !(SITE.defaultView === 'sapa' && !isMobile()) ? SITE.defaultView : 'putar');
+  const startView = () => (VIEWS.includes(SITE.defaultView) && SITE.defaultView !== 'pilih' && !(SITE.defaultView === 'sapa' && !SITE.features.dock) ? SITE.defaultView : 'putar');
   function route() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    const m = h.match(/^baca-([\w-]+?)(:b)?$/);
+    if (m && bySlug(m[1]) && view === 'baca' && current?.slug === m[1] && current.side !== (m[2] ? 'b' : 'a') && docOf(m[1], m[2] ? 'b' : 'a')) { flipReader(m[1], m[2] ? 'b' : 'a'); return; }
     vt(() => {
-      const h = decodeURIComponent(location.hash.slice(1));
-      const m = h.match(/^baca-([\w-]+)$/);
-      if (m && bySlug(m[1]) && !TATA) { showReader(m[1]); return; }
-      const pk = h.match(/^pilih-([\w-]+)$/);
-      if (pk && bySlug(pk[1]) && !TATA) { showPicker(pk[1]); return; }
-      if (VIEWS.includes(h)) { setView(TATA ? 'kanvas' : h); return; }
-      setView(TATA ? 'kanvas' : startView());
+      if (m && bySlug(m[1])) { showReader(m[1], m[2] && bySlug(m[1]).B ? 'b' : 'a'); return; }
+      const pk = h.match(/^pilih(?:-([\w-]+?)(:b)?)?$/);
+      if (pk && (!pk[1] || bySlug(pk[1]))) { showPicker(pk[1] || PK.slug || crateOrder[0]?.slug || WORKS[0].slug, pk[2] ? 'b' : (pk[1] ? 'a' : PK.side)); return; }
+      if (VIEWS.includes(h) && h !== 'pilih' && !(h === 'sapa' && !SITE.features.dock)) { setView(h); return; }
+      setView(startView());
     });
   }
   addEventListener('hashchange', route);
-  mobileMQ.addEventListener?.('change', () => { if (view === 'sapa' && !isMobile()) setView('kanvas'); syncPill(); });
+  mobileMQ.addEventListener?.('change', syncPill);
   let rt;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { canvasClamp(); syncPill(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { syncPill(); if (current && view === 'baca') rhythm($('#rdRhythm'), current.lens); }, 150); });
 
   /* ======================================================================
      BENANG MERAH: tulisan yang berbagi kata khas dihubungkan benang
@@ -1333,78 +883,6 @@
   })();
   const linksOf = slug => LINKS.filter(l => l.a === slug || l.b === slug).sort((x, y) => y.sim - x.sim);
 
-  let threadsOn = !!SITE.features.connections && store.get('threads', false);
-  let threadEdges = [];
-  function anchorOf(slug) {
-    const w = bySlug(slug);
-    return $(`.obj.paper[data-open="${slug}"]`, world) || $(`.obj.imgcard[data-open="${slug}"]`, world) ||
-      $(`.obj.sticky[data-open="${slug}"]`, world) || $(`.obj.folder[data-shelf="${w?.cat}"]`, world) ||
-      $(`.peek[data-open="${slug}"]`, world)?.closest('.obj');
-  }
-  const pinOf = el => [parseFloat(el.style.left) + el.offsetWidth / 2, parseFloat(el.style.top) + 14];
-  function curve(p, q) {
-    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, sag = Math.min(170, Math.hypot(q[0] - p[0], q[1] - p[1]) * .2);
-    const c = [mx, my + sag];
-    return { d: `M${p[0].toFixed(1)} ${p[1].toFixed(1)} Q${c[0].toFixed(1)} ${c[1].toFixed(1)} ${q[0].toFixed(1)} ${q[1].toFixed(1)}`, mid: [.25 * p[0] + .5 * c[0] + .25 * q[0], .25 * p[1] + .5 * c[1] + .25 * q[1]] };
-  }
-  function buildThreads(animate) {
-    $$('.threads, .thread-tag, .thread-pin', world).forEach(n => n.remove());
-    threadEdges = [];
-    if (!threadsOn) return;
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('class', 'threads');
-    svg.setAttribute('width', WORLD.w); svg.setAttribute('height', WORLD.h);
-    svg.setAttribute('aria-hidden', 'true');
-    const pinned = new Set();
-    LINKS.forEach((l, i) => {
-      const A = anchorOf(l.a), B = anchorOf(l.b);
-      if (!A || !B || A === B) return;
-      const path = document.createElementNS(NS, 'path');
-      path.setAttribute('pathLength', '1');
-      path.style.setProperty('--k', i);
-      if (animate && !reduced) path.classList.add('draw');
-      svg.append(path);
-      const tag = document.createElement('span');
-      tag.className = 'thread-tag'; tag.textContent = l.words.join(' · ');
-      tag.style.setProperty('--k', i);
-      world.append(tag);
-      threadEdges.push({ l, A, B, path, tag });
-      pinned.add(A); pinned.add(B);
-    });
-    world.append(svg);
-    pinned.forEach(el => { const p = document.createElement('i'); p.className = 'thread-pin'; p._for = el; world.append(p); });
-    updateThreads();
-  }
-  function updateThreads() {
-    threadEdges.forEach(e => {
-      const { d, mid } = curve(pinOf(e.A), pinOf(e.B));
-      e.path.setAttribute('d', d);
-      e.tag.style.left = mid[0] + 'px'; e.tag.style.top = mid[1] + 'px';
-    });
-    $$('.thread-pin', world).forEach(p => { const [x, y] = pinOf(p._for); p.style.left = x + 'px'; p.style.top = y + 'px'; });
-  }
-  function setThreads(on) {
-    threadsOn = on && !!SITE.features.connections;
-    store.set('threads', threadsOn);
-    $('#threadToggle').setAttribute('aria-pressed', String(threadsOn));
-    win.classList.toggle('threads-on', threadsOn);
-    buildThreads(true);
-    if (threadsOn) toast(`${threadEdges.length} benang merah: tulisan yang berbagi kata khas saling terhubung.`);
-  }
-  $('#threadToggle').addEventListener('click', () => { if (view !== 'kanvas') go('kanvas'); setThreads(!threadsOn); });
-  if (!SITE.features.connections) $('#threadToggle').hidden = true;
-  $('#threadToggle').setAttribute('aria-pressed', String(threadsOn));
-  win.classList.toggle('threads-on', threadsOn);
-  // sorot benang milik objek yang disentuh kursor
-  world.addEventListener('pointerover', e => {
-    if (!threadsOn) return;
-    const obj = e.target.closest('.obj');
-    threadEdges.forEach(t => { const hot = obj && (t.A === obj || t.B === obj); t.path.classList.toggle('hot', hot); t.tag.classList.toggle('hot', hot); });
-    world.classList.toggle('thread-focus', !!obj && threadEdges.some(t => t.A === obj || t.B === obj));
-  });
-  world.addEventListener('pointerleave', () => world.classList.remove('thread-focus'));
-
   function renderRelated(w) {
     const host = $('#rdRelated');
     const links = SITE.features.connections ? linksOf(w.slug).slice(0, 3) : [];
@@ -1413,23 +891,6 @@
       const o = bySlug(l.a === w.slug ? l.b : l.a);
       return `<a class="rel" href="#baca-${o.slug}"><svg class="rel-thread" viewBox="0 0 34 18" aria-hidden="true"><path d="M4 13Q15 19 30 4"/><circle cx="4" cy="13" r="3"/><circle cx="30" cy="4" r="3"/></svg><span class="rel-t"><b>${esc(o.title)}</b><small>terhubung lewat ${l.words.map(x => `<i>${esc(x)}</i>`).join(' dan ')}</small></span></a>`;
     }).join('') : '';
-  }
-
-  /* ---------- lampu meja & kertas yang miring 3D ---------- */
-  if (matchMedia('(pointer: fine)').matches && !reduced) {
-    viewport.addEventListener('pointermove', e => {
-      const r = viewport.getBoundingClientRect();
-      viewport.style.setProperty('--lx', (e.clientX - r.left) + 'px');
-      viewport.style.setProperty('--ly', (e.clientY - r.top) + 'px');
-      if (act) return;
-      const obj = e.target.closest('.obj');
-      if (obj !== viewport._tilt) { if (viewport._tilt) viewport._tilt.style.removeProperty('--rx'), viewport._tilt.style.removeProperty('--ry'); viewport._tilt = obj; }
-      if (!obj) return;
-      const b = obj.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5;
-      obj.style.setProperty('--ry', (x * 14).toFixed(2) + 'deg');
-      obj.style.setProperty('--rx', (-y * 10).toFixed(2) + 'deg');
-    });
-    viewport.addEventListener('pointerleave', () => { if (viewport._tilt) { viewport._tilt.style.removeProperty('--rx'); viewport._tilt.style.removeProperty('--ry'); viewport._tilt = null; } });
   }
 
   /* ======================================================================
@@ -1710,7 +1171,7 @@
      PIRINGAN: halaman awal. Setiap tulisan adalah satu piringan hitam.
      ====================================================================== */
   const crate = $('#crate');
-  const PV = Object.assign({ min: 5, form: 'semua', amb: 'hening', spin: true }, store.get('putar', {}));
+  const PV = Object.assign({ min: 5, form: 'semua', amb: 'hening', spin: true, listen: false }, store.get('putar', {}));
   const savePv = () => store.set('putar', PV);
   const discKind = w => (w.form === 'puisi' ? 'splat' : ['cerpen', 'mini'].includes(w.cat) ? 'pic' : 'black');
   function splatSVG(w) {
@@ -1722,24 +1183,26 @@
     }
     return `<svg viewBox="0 0 100 100" aria-hidden="true">${blobs}</svg>`;
   }
-  function makeDisc(w, tag = 'button', side = 'a') {
-    const c = catOf(w.cat), k = discKind(w);
+  // d: tulisan (sisi A) atau sisi B-nya; null untuk sisi B yang belum direkam
+  function makeDisc(d, tag = 'button', w = d) {
+    const c = catOf(w.cat), k = d ? discKind(w) : 'blank';
     const el = document.createElement(tag);
     if (tag === 'button') el.type = 'button';
-    el.className = 'disc disc-' + k;
+    el.className = 'disc disc-' + k + (d && d.side === 'b' ? ' disc-b' : '');
     el.dataset.slug = w.slug;
     el.style.setProperty('--lc', c.ink);
     el.style.setProperty('--vc', c.ink);
-    const small = side === 'b' ? 'Sisi B · dibacakan' : `${esc(c.label)} · No. ${w.no}`;
-    el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}
-      <span class="disc-label"><canvas></canvas><b>${esc(w.title)}</b><small>${small}</small></span><i class="disc-hole"></i></span>`;
+    const small = !d ? 'Sisi B · belum direkam' : d.side === 'b' ? `Sisi B${d.pov ? ' · ' + esc(d.pov) : ''}` : `${esc(c.label)} · No. ${w.no}${w.B ? ' · A/B' : ''}`;
+    el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(d.side === 'b' ? { slug: w.slug + ':b' } : w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}
+      <span class="disc-label"><canvas></canvas><b>${d ? esc(d.title) : ''}</b><small>${small}</small></span><i class="disc-hole"></i></span>`;
     return el;
   }
-  function paintDisc(el, w, size) {
+  function paintDisc(el, d, size) {
+    if (!d) return;
     size = size || el.offsetWidth || 300;
-    drawThread($('.disc-label canvas', el), fullText(w), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: w.slug, pins: false, weight: .9 });
+    drawThread($('.disc-label canvas', el), fullText(d), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: d.key, pins: false, weight: .9 });
     const pic = $('canvas.pic', el);
-    if (pic) drawThread(pic, fullText(w), { w: size * .92, h: size * .92, pad: 10, color: catOf(w.cat).ink, seed: w.slug, weight: 1.6 });
+    if (pic) drawThread(pic, fullText(d), { w: size * .92, h: size * .92, pad: 10, color: catOf(d.cat).ink, seed: d.key, weight: 1.6 });
   }
   const discs = new Map();
   WORKS.forEach(w => {
@@ -1773,7 +1236,7 @@
     $('#tsMatchH').textContent = fits ? `Cocok untuk ${PV.min} menit` : `Paling dekat dengan ${PV.min} menit`;
     const row = $('#tsMatch');
     row.innerHTML = `<span class="mini" aria-hidden="true"><i style="--lc:${catOf(w.cat).ink}"></i></span>
-      <span><b>${esc(w.title)}</b><small>${w.minutes} mnt · ${esc(catOf(w.cat).label)} · ${readSet.has(w.slug) ? 'sudah dibaca' : 'belum dibaca'}</small></span>
+      <span><b>${esc(w.title)}</b><small>${w.minutes} mnt · ${esc(catOf(w.cat).label)}${w.B ? ' · ada sisi B' : ''} · ${readSet.has(w.slug) ? 'sudah dibaca' : 'belum dibaca'}</small></span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
     row.setAttribute('aria-label', `Baca ${w.title}`);
     row.classList.remove('swap'); void row.offsetWidth; row.classList.add('swap');
@@ -1982,7 +1445,7 @@
   /* ======================================================================
      PILIH PIRINGAN: bilah waktu, piringan dua sisi, carousel
      ====================================================================== */
-  const PK = { slug: null, side: 'a', frac: 0 };
+  const PK = { slug: null, side: 'a', frac: 0, fr: {} };
   const prog = store.get('prog', {});
   const secsOf = w => Math.max(30, Math.round(w.words / 170 * 60));
   const fmtMS = sec => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
@@ -1991,40 +1454,65 @@
   ticks.insertAdjacentHTML('afterbegin', Array.from({ length: TICKS }, () => '<i></i>').join(''));
   WORKS.forEach(w => {
     const it = document.createElement('button');
-    it.type = 'button'; it.className = 'pk-item'; it.dataset.slug = w.slug;
-    it.setAttribute('role', 'option'); it.setAttribute('aria-label', w.title);
+    it.type = 'button'; it.className = 'pk-item' + (w.B ? ' has-b' : ''); it.dataset.slug = w.slug;
+    it.setAttribute('role', 'option'); it.setAttribute('aria-label', w.title + (w.B ? ', dua sisi' : ''));
     it.append(makeDisc(w, 'span'));
     pkCar.append(it);
   });
   let pkPainted = false;
-  function openPicker(slug) { location.hash = 'pilih-' + slug; }
-  function showPicker(slug) {
+  const pkDoc = () => docOf(PK.slug, PK.side);
+  const pkHash = () => '#pilih-' + PK.slug + (PK.side === 'b' ? ':b' : '');
+  function openPicker(slug, side = 'a') { location.hash = 'pilih-' + slug + (side === 'b' ? ':b' : ''); }
+  function showPicker(slug, side = 'a') {
     setView('pilih');
     if (!pkPainted) { pkPainted = true; $$('.pk-item', pkCar).forEach(it => paintDisc($('.disc', it), bySlug(it.dataset.slug), 64)); }
-    selectPk(slug, false);
-    requestAnimationFrame(() => $(`.pk-item[data-slug="${slug}"]`, pkCar)?.scrollIntoView({ inline: 'center', block: 'nearest' }));
+    const same = PK.slug === slug;
+    PK.side = side; PK.fr = {};
+    if (!same) selectPk(slug, false); else { renderSide(); }
+    requestAnimationFrame(() => { setSide(side, false); $(`.pk-item[data-slug="${slug}"]`, pkCar)?.scrollIntoView({ inline: 'center', block: 'nearest' }); });
     document.title = `${bySlug(slug).title} · ${SITE.title}`;
   }
   function selectPk(slug, animate, dir = 1) {
     const w = bySlug(slug); if (!w) return;
-    PK.slug = slug;
-    PK.frac = prog[slug] > .02 && prog[slug] < .97 ? prog[slug] : 0;
+    PK.slug = slug; PK.fr = {};
     pkDisc.innerHTML = '<div class="pk-flip"><div class="pk-face a"></div><div class="pk-face b"></div></div>';
-    const a = makeDisc(w, 'span', 'a'), b = makeDisc(w, 'span', 'b');
+    const a = makeDisc(w, 'span'), b = makeDisc(w.B, 'span', w);
     $('.pk-face.a', pkDisc).append(a); $('.pk-face.b', pkDisc).append(b);
-    requestAnimationFrame(() => { paintDisc(a, w, pkDisc.offsetWidth); paintDisc(b, w, pkDisc.offsetWidth); });
+    requestAnimationFrame(() => { paintDisc(a, w, pkDisc.offsetWidth); paintDisc(b, w.B, pkDisc.offsetWidth); });
     pkDisc.classList.toggle('side-b', PK.side === 'b');
     if (animate && !reduced) {
       pkDisc.style.setProperty('--dir', (dir * 60) + 'px'); pkDisc.style.setProperty('--rot', (dir * 18) + 'deg');
       pkDisc.classList.remove('swap'); void pkDisc.offsetWidth; pkDisc.classList.add('swap');
     }
-    $('#pkTitle').innerHTML = `${esc(w.title)}<small>${esc(catOf(w.cat).label)} · ${w.minutes} menit${readSet.has(w.slug) ? ' · sudah dibaca' : ''}</small>`;
     $$('.pk-item', pkCar).forEach(it => it.setAttribute('aria-selected', String(it.dataset.slug === slug)));
+    renderSide();
+  }
+  // judul, petunjuk, bilah waktu, dan tombol mengikuti sisi yang sedang menghadap ke atas
+  function renderSide() {
+    const w = bySlug(PK.slug); if (!w) return;
+    const d = pkDoc();
+    // tiap sisi mengingat titik mulainya sendiri selama piringan ini dipegang
+    if (PK.fr[PK.side] == null) PK.fr[PK.side] = d && prog[d.key] > .02 && prog[d.key] < .97 ? prog[d.key] : 0;
+    PK.frac = PK.fr[PK.side];
+    const t = $('#pkTitle');
+    t.classList.remove('swap'); void t.offsetWidth; if (!reduced) t.classList.add('swap');
+    t.innerHTML = d
+      ? `${esc(d.title)}<small>${esc(catOf(w.cat).label)} · ${d.minutes} menit${readSet.has(d.key) ? ' · sudah dibaca' : ''}</small>`
+      : `<span class="dim">${esc(w.title)}</span><small>Sisi B belum direkam</small>`;
+    $('#pkHint').textContent = PK.side === 'a'
+      ? (w.pov ? `Sisi A · dari sisi ${w.pov}` : 'Sisi A · cerita aslinya') + (w.B ? ' · balik untuk sisi lainnya' : '')
+      : (w.B ? `Sisi B · cerita yang sama, dari sisi ${w.B.pov || 'yang lain'}` : 'Sisi ini masih kosong. Mungkin suatu hari.');
+    $('.pk-sides [data-side="b"]').classList.toggle('is-empty', !w.B);
+    scrub.classList.toggle('off', !d);
+    const go = $('#pkGo');
+    go.disabled = !d;
+    go.textContent = d ? 'Yang ini!' : 'Belum ada';
     renderScrub();
   }
   function renderScrub() {
-    const w = bySlug(PK.slug); if (!w) return;
-    const total = secsOf(w), pos = Math.round(PK.frac * (TICKS - 1));
+    const d = pkDoc() || bySlug(PK.slug); if (!d) return;
+    PK.fr[PK.side] = PK.frac;
+    const total = secsOf(d), pos = Math.round(PK.frac * (TICKS - 1));
     $$('i', ticks).forEach((t, i) => { t.className = i < pos ? 'past' : i === pos ? 'now' : ''; });
     const tick = $$('i', ticks)[pos];
     $('#scTag').style.setProperty('--x', (tick.offsetLeft + tick.offsetWidth / 2) + 'px');
@@ -2035,22 +1523,24 @@
     scrub.setAttribute('aria-valuetext', `Mulai dari ${fmtMS(total * PK.frac)} dari ${fmtMS(total)}`);
   }
   let scrubbing = false;
-  const scrubTo = x => { const r = ticks.getBoundingClientRect(); PK.frac = clamp((x - r.left) / r.width, 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); };
+  const scrubTo = x => { if (!pkDoc()) return; const r = ticks.getBoundingClientRect(); PK.frac = clamp((x - r.left) / r.width, 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); };
   scrub.addEventListener('pointerdown', e => { if (e.target.closest('.sc-box')) return; scrubbing = true; scrub.setPointerCapture(e.pointerId); scrubTo(e.clientX); });
   scrub.addEventListener('pointermove', e => { if (scrubbing) scrubTo(e.clientX); });
   scrub.addEventListener('pointerup', () => { scrubbing = false; });
   scrub.addEventListener('keydown', e => {
+    if (!pkDoc()) return;
     const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
     if (d) { e.preventDefault(); PK.frac = clamp(PK.frac + d / (TICKS - 1), 0, 1); renderScrub(); }
     if (e.key === 'Home') { PK.frac = 0; renderScrub(); }
   });
-  function setSide(side) {
+  function setSide(side, fromUser = true) {
+    const changed = side !== PK.side;
     PK.side = side;
     pkDisc.classList.toggle('side-b', side === 'b');
     $$('.pk-sides [data-side]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.side === side)));
     const btn = $(`.pk-sides [data-side="${side}"]`);
     $('.pk-dot').style.setProperty('--x', (btn.offsetLeft + btn.offsetWidth / 2) + 'px');
-    $('#pkHint').textContent = side === 'a' ? 'Sisi A: kamu yang membaca' : 'Sisi B: tulisan ini dibacakan untukmu';
+    if (fromUser && changed) { renderSide(); if (view === 'pilih') history.replaceState(null, '', pkHash()); }
   }
   $('.pk-sides').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (b) setSide(b.dataset.side); });
   let fx = null;
@@ -2060,6 +1550,7 @@
     const dx = e.clientX - fx; fx = null;
     if (Math.abs(dx) > 40) setSide(PK.side === 'a' ? 'b' : 'a');
   });
+  pkDisc.addEventListener('dblclick', () => setSide(PK.side === 'a' ? 'b' : 'a'));
   let carT;
   pkCar.addEventListener('scroll', () => {
     clearTimeout(carT);
@@ -2070,7 +1561,8 @@
       if (best && best.dataset.slug !== PK.slug) {
         const items = $$('.pk-item', pkCar), dir = items.indexOf(best) > items.findIndex(i => i.dataset.slug === PK.slug) ? 1 : -1;
         selectPk(best.dataset.slug, true, dir);
-        history.replaceState(null, '', '#pilih-' + best.dataset.slug);
+        history.replaceState(null, '', pkHash());
+        document.title = `${bySlug(PK.slug).title} · ${SITE.title}`;
       }
     }, 110);
   }, { passive: true });
@@ -2082,14 +1574,22 @@
     const nx = items[clamp(i + d, 0, items.length - 1)];
     nx.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); nx.focus({ preventScroll: true });
   });
+  function setListen(on) {
+    PV.listen = on; savePv();
+    $('#pkListen').setAttribute('aria-pressed', String(on));
+    $('#pkListen').setAttribute('aria-label', on ? 'Dibacakan untukmu: nyala' : 'Dibacakan untukmu');
+  }
+  $('#pkListen').addEventListener('click', () => { setListen(!PV.listen); toast(PV.listen ? 'Tulisannya akan dibacakan untukmu.' : 'Kamu yang membaca.'); });
   $('#pkGo').addEventListener('click', () => {
-    pendingStart = PK.frac; pendingListen = PK.side === 'b';
+    const d = pkDoc(); if (!d) return;
+    pendingStart = PK.frac; pendingListen = PV.listen;
     if (SITE.features.ambience && PV.amb !== 'hening' && !pendingListen) Amb.set(PV.amb);
-    openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc));
+    openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc), PK.side);
   });
 
   function initPutar() {
-    requestAnimationFrame(() => setSide(PK.side));
+    setListen(PV.listen);
+    requestAnimationFrame(() => setSide(PK.side, false));
     tick(); setInterval(tick, 10000);
     renderSheet(); renderControls(); setSpin(PV.spin);
     setMin(PV.min, false);
@@ -2101,16 +1601,6 @@
   addEventListener('resize', () => { clearTimeout(initPutar._t); initPutar._t = setTimeout(() => { paintDiscs(); setMin(PV.min, false); }, 200); });
 
   /* ======================================================================
-     PROFIL PENULIS
-     ====================================================================== */
-  $('#pfName').textContent = SITE.author;
-  $('#pfBio').textContent = SITE.description || '';
-  $('#pfWorks').textContent = num(WORKS.length);
-  $('#pfWords').textContent = num(WORKS.reduce((a, w) => a + w.words, 0));
-  $('#pfSince').textContent = WORKS[WORKS.length - 1].date.slice(0, 4);
-  $('.profile').setAttribute('aria-label', 'Tentang ' + SITE.author);
-
-  /* ======================================================================
      PWA: pasang di layar utama, baca tanpa sinyal
      ====================================================================== */
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -2118,7 +1608,6 @@
   let installEvt = null;
   root.classList.toggle('standalone', standalone);
   function showInstall(on) {
-    $('#installBtn').hidden = !on;
     $('#chipInstall').hidden = !on;
   }
   async function install() {
@@ -2130,7 +1619,6 @@
       return;
     }
     if (isIOS) {
-      $('#iosHint').hidden = false;
       toast('Di iPhone: ketuk Bagikan, lalu “Tambahkan ke Layar Utama”.', null, 6000);
     }
   }
@@ -2139,10 +1627,9 @@
     if (isIOS) showInstall(true);
   }
   addEventListener('appinstalled', () => { showInstall(false); toast(`${SITE.title} terpasang di perangkatmu.`); });
-  $('#installBtn').addEventListener('click', install);
   $('#chipInstall').addEventListener('click', install);
 
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !PREVIEW && !TATA) {
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !PREVIEW) {
     navigator.serviceWorker.register('sw.js').catch(() => { /* tanpa service worker situs tetap jalan */ });
   }
   addEventListener('offline', () => toast('Kamu sedang offline. Tulisan yang sudah pernah dimuat tetap bisa dibaca.', null, 4500));
@@ -2151,15 +1638,12 @@
   /* ======================================================================
      MULAI
      ====================================================================== */
-  avatarInto($('#meAvatar'), 84);
-  renderCanvas(true);
-  renderList(false);
   renderGreet(true);
   renderFeed(false);
   applyRd();
   document.addEventListener('jm:theme', () => { if (!rd.rtAuto) return; autoPaper(); applyRd(); if (typeof renderControls === 'function') renderControls(); });
   initPutar();
   route();
-  requestAnimationFrame(() => { canvasFit(false); syncPill(); win.classList.add('ready'); booted = true; });
+  requestAnimationFrame(() => { syncPill(); win.classList.add('ready'); booted = true; });
   if (PREVIEW) root.classList.add('is-preview');
 })();

@@ -1,6 +1,6 @@
 # juan/menulis
 
-Meja tulis Juan dalam bentuk satu jendela aplikasi: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan. Dilengkapi **panel admin** di `/admin` untuk menulis, menerbitkan, dan mengatur seluruh tampilan, dengan GitHub sebagai tempat penyimpanan. Tidak perlu server.
+Meja tulis Juan dalam bentuk pemutar piringan hitam: setiap esai, puisi, cerpen, dan fiksi mini adalah satu piringan dua sisi yang bisa dibaca dan didengarkan. Dilengkapi **panel admin** di `/admin` untuk menulis, menerbitkan, dan mengatur seluruh tampilan, dengan GitHub sebagai tempat penyimpanan. Tidak perlu server.
 
 ## Cara kerja
 
@@ -10,7 +10,6 @@ Kamu menulis di /admin  ──Simpan──▶  commit ke content/*.json di repo 
 
 - `content/works.json`: semua tulisan.
 - `content/site.json`: nama, warna, huruf, jenis tulisan, fitur, dan pengaturan lain.
-- `content/layout.json`: posisi kertas, map, dan catatan di kanvas.
 - `content/media/`: foto profil yang diunggah dari admin.
 
 Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dikembalikan.
@@ -24,37 +23,35 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 ## Panel admin
 
-- **Tulisan.** Daftar tulisan di kiri (cari, saring, draf), kertas untuk menulis di tengah, detail di kanan: terbit/draf, tampil di kanvas, jenis, prosa/puisi, tanggal, jam, alamat, ringkasan, baris favorit, dan hapus. Ada **tebal/miring** (`⌘B`/`⌘I`, ditulis sebagai `**tebal**` dan `*miring*`), tombol **Baris favorit** dari teks terpilih, **Fokus** untuk menulis tanpa gangguan, dan **Pratinjau** langsung di samping. Setiap perubahan dicadangkan di peramban sampai disimpan. `⌘S` untuk menyimpan.
-- **Tampilan.** Judul situs, nama, sapaan untuk pembaca, email, foto profil, warna kartu sapa dan catatan tempel, latar dan tema bawaan, halaman pembuka, huruf dan kertas bawaan, jenis tulisan (nama, label ikon, warna benang), judul map di kanvas, catatan map tahun, serta fitur yang bisa dinyalakan atau dimatikan. Semua langsung terlihat di pratinjau desktop atau ponsel.
-- **Tata letak kanvas.** Dari tab Tampilan, buka *Atur tata letak kanvas*. Situs terbuka dalam mode tata letak: seret objek lalu tekan **Simpan ke situs**.
+- **Tulisan.** Daftar tulisan di kiri (cari, saring, draf), kertas untuk menulis di tengah, detail di kanan: terbit/draf, jenis, prosa/puisi, tanggal, jam, alamat, ringkasan, baris favorit, dan hapus. Ada **tebal/miring** (`⌘B`/`⌘I`, ditulis sebagai `**tebal**` dan `*miring*`), tombol **Baris favorit** dari teks terpilih, **Fokus** untuk menulis tanpa gangguan, dan **Pratinjau** langsung di samping. Setiap perubahan dicadangkan di peramban sampai disimpan. `⌘S` untuk menyimpan.
+- **Sisi A dan Sisi B.** Di atas kertas ada sakelar **Sisi A / Sisi B**. Sisi A adalah tulisan utamanya. Sisi B adalah cerita yang sama dari sisi yang lain: tulis isinya, beri judul sendiri kalau mau (kosong = judul Sisi A), dan isi **dari sisi** siapa cerita itu dituturkan. Kolom *dari sisi* juga ada untuk Sisi A. Kosongkan semua isi Sisi B untuk menghapusnya. Tulisan yang punya dua sisi ditandai **A/B** di daftar.
+- **Tampilan.** Judul situs, nama, sapaan untuk pembaca, email, foto profil, warna kartu sapa, latar dan tema bawaan, halaman pembuka (Piringan atau Sapa), huruf dan kertas bawaan, jenis tulisan (nama, label ikon, warna benang), serta fitur yang bisa dinyalakan atau dimatikan. Semua langsung terlihat di pratinjau desktop atau ponsel.
 - **Riwayat.** 30 perubahan terakhir, masing-masing bisa dibuka di GitHub.
 
 ## Situs
 
 - **Piringan (halaman awal).** Setiap tulisan adalah satu piringan hitam: esai berlabel warna, puisi berupa vinyl berwarna bercipratan, cerita berupa *picture disc* bergambar benang. Di atas ada jam dot-matrix dan nama situs dalam huruf titik-titik, lalu tumpukan piringan yang bisa digeser ke atas atau bawah, diacak, dan diketuk untuk dibaca. Di sebelahnya (di ponsel: di bawahnya) ada roda **Menit luang**: pilih punya berapa menit, dan tumpukan langsung tersusun ulang dengan tulisan yang paling pas di atas. Empat kontrol mengatur Bentuk (puisi/semua/prosa), Suasana, Ukuran huruf, dan Kertas, lalu **Putar** membuka tulisan dengan pengaturan itu. Halaman pembuka bisa diganti di admin.
-- **Pilih piringan.** Ketuk piringan teratas untuk membuka layar pemilih: bilah waktu di atas untuk menentukan mulai membaca dari menit ke berapa (tulisan yang pernah dibaca langsung menawarkan lanjut dari posisi terakhir), piringan besar dua sisi (*Sisi A*: kamu yang membaca, *Sisi B*: tulisan dibacakan untukmu; usap piringan untuk membaliknya), dan carousel piringan lain di lembar bawah. **Yang ini!** membuka tulisan tepat di titik itu.
-- **Satu tema.** Terang dan gelap memakai token warna yang sama di seluruh halaman, termasuk piringan dan pemilih. Kertas baca ikut gelap di mode gelap sampai pembaca memilih kertasnya sendiri. Di ponsel, bilah atas hanya satu baris tipis.
-- **Benang merah.** Tombol merah di bilah atas menarik benang sungguhan antar-kertas di kanvas, ala papan detektif. Benangnya menghubungkan tulisan-tulisan yang berbagi kata khas (dihitung dengan TF-IDF langsung di peramban), dengan kata penghubungnya tertulis di benang. Sorot satu kertas untuk menyorot benangnya. Di akhir setiap tulisan ada daftar tulisan yang terhubung.
+- **Pilih piringan.** Ketuk piringan teratas (atau tombol kedua di pil navigasi) untuk membuka layar pemilih: bilah waktu di atas untuk menentukan mulai membaca dari menit ke berapa (tulisan yang pernah dibaca langsung menawarkan lanjut dari posisi terakhir, dan tiap sisi mengingat posisinya sendiri), piringan besar dua sisi, dan carousel piringan lain di lembar bawah. Piringan yang punya Sisi B diberi tanda **B**. Tombol headphone membuat tulisan **dibacakan** untukmu. **Yang ini!** membuka tulisan tepat di titik itu.
+- **Sisi B.** Setiap tulisan bisa punya Sisi B: cerita yang sama, dari sisi yang lain. Usap piringan, ketuk *Sisi B*, atau tekan `B` untuk membaliknya. Saat membaca, tombol **Sisi A/Sisi B** di atas dan kartu **Balik piringannya** di akhir tulisan membalik kartu baca seperti piringan. Sisi yang belum ditulis tampil sebagai piringan polos tanpa alur. Tautan langsung ke Sisi B: `#baca-<alamat>:b` atau `#pilih-<alamat>:b`.
+- **Satu tema.** Terang dan gelap memakai token warna yang sama di seluruh halaman: piringan, pemilih, pembaca, dan sapa. Tombol bulan/matahari di pojok kanan atas mengganti tema. Kertas baca ikut gelap di mode gelap sampai pembaca memilih kertasnya sendiri. Di ponsel, bilah atas hanya satu baris tipis.
+- **Benang merah.** Di akhir setiap tulisan ada daftar tulisan yang berbagi kata khas (dihitung dengan TF-IDF langsung di peramban), lengkap dengan kata penghubungnya.
 - **Membaca = merajut.** Di pojok kartu baca, seni benang tulisan itu terajut sedikit demi sedikit sesuai seberapa jauh kamu membaca.
 - **Saksikan ditulis.** Tulisan diketik ulang di depan pembaca dengan ritme alami (jeda di tanda baca, sesekali salah ketik yang dihapus lalu diperbaiki). Bisa dijeda, dipercepat 2× atau 4×, atau dilewati.
 - **Kartu kutipan.** Pilih kalimat mana pun untuk membuat gambar kutipan (empat warna) lalu bagikan langsung ke aplikasi lain di ponsel, unduh, atau salin. Tombol bagikan di atas pembaca mengirim tautan tulisan.
 - **Suasana.** Pengaturan Lanjutan → Suasana: hujan, ombak, atau perapian, disintesis dengan Web Audio tanpa berkas suara.
-- **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam. Di kanvas ada lampu meja yang mengikuti kursor, dan kertas miring 3D saat disorot.
-- **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: benang merah, mode gelap, tulisan acak, ganti latar, pasang aplikasi.
-
-- **Kanvas.** Kertas bertumpuk, map berlekuk, catatan tempel, dan kartu benang yang bisa digeser (dengan inersia), dicubit-zoom, dan diklik ganda untuk memperbesar.
-- **Daftar.** Rak per jenis, centang, map per tahun, catatan pribadi per tulisan, dan *Baca berurutan*.
+- **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam.
+- **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: balik sisi, mode gelap, tulisan acak, pilih piringan, ganti latar, pasang aplikasi. Pencarian juga menemukan kalimat dari Sisi B.
 - **Pembaca.** Tema kertas, Suara, Cari, Fokus, ukuran, kecerahan, Tandai, Layar menyala, serta Pengaturan Lanjutan (huruf, ketebalan, ligatur, perataan).
-- **Sapa.** Kartu biru yang bisa diciutkan, kutipan bergilir, daftar baca, ganti latar, mode gelap, dan *Cari kalimat…*.
+- **Sapa.** Kartu biru yang bisa diciutkan (termasuk berapa tulisan yang punya Sisi B), kutipan bergilir, daftar piringan, ganti latar, mode gelap, pasang aplikasi, dan *Cari kalimat…*.
 
-Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `F` fokus, `Esc` kembali.
+Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `B` balik sisi, `F` fokus, `Esc` kembali.
 
 ## Aplikasi (PWA)
 
 Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sinyal.
 
-- **Android dan Chrome/Edge di komputer:** tombol **Pasang di layar utama** muncul di kartu profil (tampilan Daftar) dan chip **Pasang aplikasi** di panel sapa.
-- **iPhone dan iPad:** buka di Safari, ketuk **Bagikan**, lalu **Tambahkan ke Layar Utama**. Situs menampilkan petunjuk ini sendiri.
+- **Android dan Chrome/Edge di komputer:** chip **Pasang aplikasi** muncul di panel sapa, juga sebagai perintah di palet.
+- **iPhone dan iPad:** buka di Safari, ketuk **Bagikan**, lalu **Tambahkan ke Layar Utama**. Chip *Pasang aplikasi* menampilkan petunjuk ini.
 - **Offline:** `sw.js` menyimpan salinan halaman, kode, dan konten. Saat ada sinyal, tulisan terbaru selalu diambil dari jaringan. Saat tidak ada, salinan terakhir yang dipakai.
 - **Nama aplikasi** mengikuti *Judul situs* dan *Nama penulis* di admin. `manifest.webmanifest` diperbarui otomatis saat kamu menyimpan.
 - **Ikon** ada di `assets/icons/`. Ganti berkas PNG-nya dengan ukuran yang sama kalau ingin ikon lain.

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Juan Menulis</title>
-<meta name="description" content="Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan.">
+<meta name="description" content="Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini dalam bentuk piringan hitam dua sisi.">
 <meta name="theme-color" content="#C6D1EE" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B0E1B" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -27,27 +27,21 @@
 </head>
 <body>
 
-<div class="win" id="win" data-view="kanvas">
+<div class="win" id="win" data-view="putar">
 
   <!-- ============ title bar ============ -->
   <header class="titlebar">
     <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
     <p class="tb-brand" id="tbBrand">juan<em>/menulis</em></p>
     <div class="tb-center">
-      <button class="tb-btn" id="addNote" type="button" aria-label="Tambah catatan tempel di kanvas" title="Catatan tempel baru">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
       <button class="tb-btn" id="openPalette" type="button" aria-label="Cari tulisan" title="Cari (⌘K)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.4 4.4"/></svg>
       </button>
     </div>
     <div class="tb-right">
-      <button class="tb-btn tb-thread" id="threadToggle" type="button" aria-pressed="false" aria-label="Benang merah: hubungan antar-tulisan" title="Benang merah">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><path d="M5 9.2c1.5 9 12.5 9 14 0"/></svg>
-        <span>Benang merah</span>
-      </button>
-      <button class="tb-btn" id="dockToggle" type="button" aria-label="Tampilkan panel sapa" aria-pressed="true" title="Panel sapa">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M14.5 5v14"/></svg>
+      <button class="tb-btn" id="themeToggle" type="button" aria-pressed="false" aria-label="Mode gelap" title="Mode gelap">
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.6 7.6 0 0 1 9.8 4.5a7.6 7.6 0 1 0 9.7 9.7z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.8"/><path d="M12 3v1.8M12 19.2V21M3 12h1.8M19.2 12H21M5.6 5.6l1.3 1.3M17.1 17.1l1.3 1.3M5.6 18.4l1.3-1.3M17.1 6.9l1.3-1.3"/></svg>
       </button>
     </div>
   </header>
@@ -61,17 +55,13 @@
         <button type="button" data-go="putar" aria-label="Piringan" title="Piringan">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5" class="thin"/></svg>
         </button>
-        <button type="button" data-go="daftar" aria-label="Daftar" title="Daftar">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r=".9" class="f"/><circle cx="4.5" cy="12" r=".9" class="f"/><circle cx="4.5" cy="17" r=".9" class="f"/></svg>
-        </button>
-        <button type="button" data-go="kanvas" aria-label="Kanvas" title="Kanvas">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4 7.5 20M16.5 4l-2 16M4.5 9h16M3.5 15h16"/></svg>
+        <button type="button" data-go="pilih" aria-label="Pilih piringan" title="Pilih piringan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4.2" ry="8.5"/><path d="M12 3.5c4.7 0 8.5 3.8 8.5 8.5s-3.8 8.5-8.5 8.5" class="thin"/><circle cx="12" cy="12" r="1.3" class="f"/></svg>
         </button>
         <button type="button" data-go="sapa" aria-label="Sapa" title="Sapa">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c4.7 0 8 2.9 8 6.6s-3.3 6.6-8 6.6c-.9 0-1.8-.1-2.6-.3L5.5 19.5l.9-3.4C4.9 14.9 4 13.1 4 11.1c0-3.7 3.3-6.6 8-6.6z"/></svg>
         </button>
       </div>
-      <span class="grip-dots" aria-hidden="true"></span>
     </nav>
 
     <main class="views">
@@ -166,62 +156,16 @@
             <button type="button" role="tab" data-side="b" aria-selected="false">Sisi B</button>
             <i class="pk-dot" aria-hidden="true"></i>
           </div>
-          <p class="pk-hint" id="pkHint">Sisi A: kamu yang membaca</p>
+          <p class="pk-hint" id="pkHint"></p>
         </div>
         <div class="pk-sheet">
           <i class="pk-grab" aria-hidden="true"></i>
           <div class="pk-car" id="pkCar" role="listbox" aria-label="Pilih tulisan"></div>
-          <button class="pk-go" id="pkGo" type="button">Yang ini!</button>
-        </div>
-      </section>
-
-      <!-- ============ KANVAS ============ -->
-      <section class="view view-kanvas" id="vKanvas" aria-label="Kanvas tulisan">
-        <div class="viewport" id="viewport" tabindex="0" aria-label="Kanvas. Seret latar untuk menggeser, tombol panah juga bisa.">
-          <div class="world" id="world"></div>
-        </div>
-        <p class="canvas-hint" id="canvasHint">seret latar untuk menggeser · seret kertas untuk memindahkan · ketuk untuk membaca</p>
-      </section>
-
-      <!-- ============ DAFTAR ============ -->
-      <section class="view view-daftar" id="vDaftar" aria-label="Daftar tulisan">
-        <aside class="lib-side">
-          <div class="lib-me">
-            <div class="me-avatar" id="meAvatar" role="img" aria-label="Penulis"></div>
-            <button class="sq-btn" type="button" data-go="kanvas" aria-label="Buka kanvas">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><g class="f"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></g></svg>
+          <div class="pk-actions">
+            <button class="pk-listen" id="pkListen" type="button" aria-pressed="false" aria-label="Dibacakan untukmu" title="Dibacakan untukmu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3.5" y="13" width="4" height="6.5" rx="2"/><rect x="16.5" y="13" width="4" height="6.5" rx="2"/></svg>
             </button>
-            <span class="badge" id="unreadBadge" title="Tulisan yang belum kamu buka">0</span>
-          </div>
-          <section class="profile" aria-label="Tentang penulis">
-            <p class="pf-name" id="pfName">Juan</p>
-            <p class="pf-bio" id="pfBio"></p>
-            <dl class="pf-stats">
-              <div><dt>tulisan</dt><dd id="pfWorks">0</dd></div>
-              <div><dt>kata</dt><dd id="pfWords">0</dd></div>
-              <div><dt>sejak</dt><dd id="pfSince">—</dd></div>
-            </dl>
-            <button class="pf-install" id="installBtn" type="button" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 7.5v7M9 11.5l3 3 3-3"/></svg>
-              <span><b>Pasang di layar utama</b><small>Baca kapan saja, juga tanpa sinyal.</small></span>
-            </button>
-            <p class="pf-ios" id="iosHint" hidden>Di iPhone atau iPad: ketuk <b>Bagikan</b> <span aria-hidden="true">⎋</span> lalu <b>Tambahkan ke Layar Utama</b>.</p>
-          </section>
-        </aside>
-        <div class="lib-main" id="libMain">
-          <div class="shelves" id="shelves" role="group" aria-label="Rak"></div>
-          <div class="lib-table">
-            <div class="lib-head">
-              <button class="cb" id="cbAll" type="button" role="checkbox" aria-checked="false" aria-label="Pilih semua"></button>
-              <span>Nama</span>
-              <span class="lh-date">Tanggal</span>
-            </div>
-            <div class="lib-rows" id="libRows"></div>
-          </div>
-          <div class="selbar" id="selbar" hidden>
-            <span id="selCount">0 dipilih</span>
-            <button type="button" id="selRead">Baca berurutan</button>
-            <button type="button" id="selClear">Batal</button>
+            <button class="pk-go" id="pkGo" type="button">Yang ini!</button>
           </div>
         </div>
       </section>
@@ -230,12 +174,15 @@
       <section class="view view-baca" id="vBaca" aria-label="Pembaca">
         <div class="rd-top">
           <button class="pill-btn" id="rdBack" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span id="rdBackLabel">Kanvas</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span id="rdBackLabel">Piringan</span>
           </button>
           <p class="rd-crumb" id="rdCrumb"></p>
           <div class="rd-nav">
             <button class="pill-btn pill-replay" id="rdReplay" type="button" title="Saksikan tulisan ini diketik ulang">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5l1-4.5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18z"/><path d="M13.5 7l3 3"/></svg><span>Saksikan ditulis</span>
+            </button>
+            <button class="pill-btn pill-flip" id="rdFlip" type="button" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4.2" ry="8.5"/><path d="M12 3.5c4.7 0 8.5 3.8 8.5 8.5s-3.8 8.5-8.5 8.5" class="thin"/></svg><span>Sisi B</span>
             </button>
             <button class="round-sm" id="rdShare" type="button" aria-label="Bagikan tulisan ini" title="Bagikan">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg>
@@ -262,6 +209,7 @@
                 <h1 class="rd-title" id="rdTitle"></h1>
                 <div class="rd-body" id="rdBody"></div>
                 <footer class="rd-end">
+                  <a class="rd-flipcard" id="rdFlipCard" href="#" hidden></a>
                   <p class="rd-end-label">ritme kalimat · setiap batang satu kalimat</p>
                   <div class="rhythm" id="rdRhythm"></div>
                   <div class="rd-related" id="rdRelated"></div>
@@ -417,7 +365,7 @@
     <aside class="dock" id="dock" aria-label="Sapa">
       <div class="tk-card" id="tkCard">
         <div class="tk-head">
-          <button class="tk-ic" id="tkBack" type="button" aria-label="Ke kanvas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
+          <button class="tk-ic" id="tkBack" type="button" aria-label="Ke piringan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
           <p class="tk-title">juan/menulis</p>
           <div class="tk-head-r">
             <button class="tk-ic" id="tkStats" type="button" aria-pressed="false" aria-label="Tampilkan angka"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17v-5M12 17V7M17 17v-8"/></svg></button>
@@ -500,19 +448,9 @@
   </div>
 </div>
 
-<!-- ============ mode tata letak (hanya untuk penulis yang sudah masuk di /admin) ============ -->
-<div class="tata-bar" id="tataBar" hidden>
-  <span class="tata-dot" aria-hidden="true"></span>
-  <span id="tataMsg">Mode tata letak. Seret kertas, map, dan catatan, lalu simpan.</span>
-  <button type="button" id="tataReset">Rapikan ulang</button>
-  <button type="button" id="tataSave" class="primary">Simpan ke situs</button>
-  <a href="./" id="tataExit">Keluar</a>
-</div>
-
 <input type="color" id="colorIn" value="#F3E9DC" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/gh.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

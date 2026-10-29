@@ -34,7 +34,19 @@
       "Pelayan lama tahu ceritanya, tapi tidak pernah menceritakannya kepada pelayan baru. Ada hal-hal yang lebih sopan dibiarkan menjadi kebiasaan daripada dijelaskan.",
       "Suatu pagi di bulan Juni, seorang perempuan muda duduk di kursi seberang tanpa bertanya. Ia mengambil gelas kopi susu itu, meminumnya sampai habis, lalu berkata, “Maaf, Yah. Aku terlambat sebelas tahun.”",
       "Lelaki itu melipat korannya untuk pertama kali. “Esnya sudah cair,” katanya. “Besok Ayah pesankan yang baru.”"
-    ]
+    ],
+    "pov": "ayahnya",
+    "sideB": {
+      "pov": "anaknya",
+      "title": "Es yang Mencair",
+      "body": [
+        "Sebelas tahun lalu aku pergi dari rumah dengan satu tas ransel dan kalimat yang terlalu tajam untuk diucapkan kepada seorang ayah. Aku ingat ia sedang menuang kopi ketika aku membanting pintu. Aku tidak ingat apakah ia menoleh.",
+        "Kabar tentangnya datang sepotong-sepotong, seperti surat yang dirobek lalu dikirim bertahap. Dari bibi: Ayah pensiun. Dari teman SMA: Ayah masih sering terlihat di kedai dekat stasiun. Dari tetangga lama: setiap pagi Ayah memesan dua gelas, padahal ia selalu duduk sendiri.",
+        "Aku tahu untuk siapa gelas kedua itu. Kopi susu dengan es yang banyak adalah minuman yang dulu ia belikan setiap kali aku menang lomba, kalah lomba, atau tidak ikut lomba sama sekali. Baginya, semua hal pantas dirayakan dengan es yang banyak.",
+        "Tiga kali aku sampai di depan kedai itu, dan tiga kali aku berbalik. Aku takut gelas itu sudah tidak ada. Aku lebih takut lagi kalau gelas itu masih ada.",
+        "Pagi di bulan Juni itu aku tidak berhenti di pintu. Aku duduk, mengangkat gelasnya, dan meminumnya sampai habis. Rasanya hambar, encer, dingin yang sudah terlalu lama menunggu. Itu kopi susu paling enak yang pernah kuminum."
+      ]
+    }
   },
   {
     "slug": "peta-tersesat",
@@ -108,7 +120,19 @@
       "“Mau diapakan semua itu?” tanyaku dari balik pohon.",
       "Ia tidak terkejut. “Dicuci,” katanya. “Senin itu sebenarnya tidak jahat. Ia cuma terlalu sering dipakai untuk memulai hal-hal yang tidak ingin kita mulai.” Ia mencelupkan satu Senin ke air sungai, dan kulihat warnanya berubah dari abu-abu menjadi biru muda, seperti langit pukul enam pagi.",
       "Minggu berikutnya ia pergi tanpa pamit. Gerobaknya hilang, terpalnya hilang. Senin datang seperti biasa, dengan rapat dan cucian dan lagu-lagu sedih. Tapi entah kenapa, warnanya sedikit lebih biru dari yang kuingat."
-    ]
+    ],
+    "pov": "tetangga yang tidak membeli",
+    "sideB": {
+      "pov": "si penjual",
+      "title": "Gerobak Bertutup Terpal Biru",
+      "body": [
+        "Aku tidak pernah memilih kota. Gerobak inilah yang memilih: rodanya berhenti sendiri di tempat yang Seninnya paling kusam. Kota kalian berhenti pada suatu Minggu sore, dan dari jauh pun aku sudah bisa mencium bau alarm yang dipukul berkali-kali.",
+        "Orang mengira aku pedagang. Sebenarnya aku tukang cuci. Senin yang kujual bukan Senin baru. Itu Senin milik kota lain, yang sudah kucuci di sungai mereka dan kujemur di bawah matahari mereka. Aku hanya memindahkan hari-hari dari tempat yang sudah sembuh ke tempat yang belum.",
+        "Setiap kota punya satu orang yang tidak membeli. Di kota kalian, orang itu bersembunyi di balik pohon dekat sungai dan mengira langkahnya tidak terdengar. Aku menjawab pertanyaannya karena memang untuk dialah aku datang. Pembeli hanya butuh Senin yang lebih ringan. Yang tidak membeli butuh tahu bahwa Senin bisa dicuci.",
+        "Aku pergi tanpa pamit karena pamit membuat orang menunggu aku kembali. Aku tidak ingin ditunggu. Aku ingin mereka mencuci Seninnya sendiri.",
+        "Di sungai kota berikutnya, aku membuka terpal dan menemukan satu Senin yang tidak kukenal, terlipat rapi, sudah biru muda. Ada yang menyelipkannya diam-diam. Kurasa aku tahu siapa."
+      ]
+    }
   },
   {
     "slug": "draf-ketujuh",

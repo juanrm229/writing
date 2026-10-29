@@ -94,6 +94,12 @@
     <main class="editor-wrap" id="editorWrap">
       <div class="paper-card" id="paperCard">
         <div class="ed-toolbar" role="toolbar" aria-label="Format">
+          <div class="side-seg" id="edSide" role="radiogroup" aria-label="Sisi piringan">
+            <i class="side-thumb" aria-hidden="true"></i>
+            <button type="button" role="radio" data-side="a" aria-checked="true">Sisi A</button>
+            <button type="button" role="radio" data-side="b" aria-checked="false">Sisi B<i class="side-dot" id="edSideDot" hidden></i></button>
+          </div>
+          <span class="sep" aria-hidden="true"></span>
           <button type="button" data-fmt="b" title="Tebal (⌘B)"><b>B</b></button>
           <button type="button" data-fmt="i" title="Miring (⌘I)"><i>I</i></button>
           <span class="sep" aria-hidden="true"></span>
@@ -105,6 +111,8 @@
         <div class="ed-scroll" id="edScroll">
           <label class="sr-only" for="edTitle">Judul</label>
           <textarea class="ed-title" id="edTitle" rows="1" placeholder="Judul"></textarea>
+          <label class="ed-pov" for="edPov"><span>dari sisi</span><input id="edPov" autocomplete="off" spellcheck="false" placeholder="siapa yang bercerita? (boleh kosong)"></label>
+          <p class="ed-side-note" id="edSideNote" hidden>Sisi B adalah cerita yang sama, diceritakan dari sisi yang lain. Pembaca bisa membalik piringannya kapan saja. Kosongkan semuanya untuk menghapus Sisi B.</p>
           <p class="ed-meta" id="edMeta"></p>
           <label class="sr-only" for="edBody">Isi tulisan</label>
           <textarea class="ed-body" id="edBody" placeholder="Mulai menulis… Pisahkan paragraf (atau bait) dengan satu baris kosong."></textarea>
@@ -126,10 +134,6 @@
           <span class="ln-name">Terbitkan<small id="pubHint">Draf tidak tampil di situs.</small></span>
           <button class="switch" id="dPub" type="button" role="switch" aria-checked="false" aria-label="Terbitkan"><i></i></button>
         </div>
-        <div class="line">
-          <span class="ln-name">Tampil di kanvas<small>Kertasnya muncul di meja.</small></span>
-          <button class="switch" id="dCanvas" type="button" role="switch" aria-checked="true" aria-label="Tampil di kanvas"><i></i></button>
-        </div>
       </div>
       <p class="g-h">Jenis</p>
       <div class="chips" id="dCat" role="radiogroup" aria-label="Jenis tulisan"></div>
@@ -147,7 +151,7 @@
       <label for="dExcerpt">Ringkasan <button type="button" class="mini-link" id="autoExcerpt">isi otomatis</button>
         <textarea id="dExcerpt" rows="3" placeholder="Muncul di kartu dan hasil cari."></textarea></label>
       <label for="dLine">Baris favorit
-        <textarea id="dLine" rows="2" placeholder="Muncul di catatan tempel dan pita kutipan."></textarea></label>
+        <textarea id="dLine" rows="2" placeholder="Muncul di panel sapa dan kartu kutipan."></textarea></label>
       <div class="danger">
         <button type="button" id="delBtn">Hapus tulisan ini</button>
         <div class="confirm" id="delConfirm" hidden>
@@ -184,10 +188,9 @@
       <h2 class="set-h">Warna &amp; suasana</h2>
       <div class="group">
         <div class="row-f"><span>Kartu sapaan</span><div class="swatches" data-k="accent" data-presets="#1662FF,#111214,#E5483D,#0E8A5C,#6A4DF0,#FF7A1A"></div></div>
-        <div class="row-f"><span>Catatan tempel</span><div class="swatches" data-k="sticky" data-presets="#E3F46B,#FFE16B,#FFB8D2,#A9E8FF,#C9F2C7,#F3E9DC"></div></div>
         <div class="row-f"><span>Latar bawaan</span><div class="seg" data-k="backdrop" data-opts="auto:Ikut jam,fajar:Fajar,siang:Siang,senja:Senja,kabut:Kabut,malam:Malam"></div></div>
         <div class="row-f"><span>Tema bawaan</span><div class="seg" data-k="theme" data-opts="auto:Otomatis,terang:Terang,gelap:Gelap"></div></div>
-        <div class="row-f"><span>Halaman pembuka</span><div class="seg" data-k="defaultView" data-opts="putar:Piringan,kanvas:Kanvas,daftar:Daftar"></div></div>
+        <div class="row-f"><span>Halaman pembuka</span><div class="seg" data-k="defaultView" data-opts="putar:Piringan,sapa:Sapa"></div></div>
       </div>
 
       <h2 class="set-h">Bacaan</h2>
@@ -200,22 +203,13 @@
       <div class="group" id="catEditor"></div>
       <button type="button" class="btn-ghost sm add" id="addCat">+ Jenis baru</button>
 
-      <h2 class="set-h">Kanvas</h2>
-      <div class="group" id="folderEditor"></div>
-      <a class="btn-ghost sm add" id="tataLink" href="../?tata=1#kanvas" target="_blank" rel="noopener">Atur tata letak kanvas dengan menyeret ↗</a>
-      <p class="hint">Simpan perubahan tulisan dulu, lalu atur posisinya di situs. Tata letak tersimpan sebagai commit terpisah.</p>
-
-      <h2 class="set-h">Catatan map tahun</h2>
-      <div class="group" id="yearEditor"></div>
-
       <h2 class="set-h">Fitur</h2>
       <div class="group">
-        <div class="line"><span class="ln-name">Panel sapa<small>Panel hitam berkartu biru di kanan.</small></span><button class="switch" type="button" role="switch" data-f="dock" aria-label="Panel sapa"><i></i></button></div>
-        <div class="line"><span class="ln-name">Benang merah<small>Benang antar-tulisan yang berbagi kata khas, di kanvas dan akhir tulisan.</small></span><button class="switch" type="button" role="switch" data-f="connections" aria-label="Benang merah"><i></i></button></div>
+        <div class="line"><span class="ln-name">Panel sapa<small>Panel hitam berkartu biru: sapaan, kutipan, dan cari kalimat.</small></span><button class="switch" type="button" role="switch" data-f="dock" aria-label="Panel sapa"><i></i></button></div>
+        <div class="line"><span class="ln-name">Benang merah<small>Tulisan yang berbagi kata khas, di akhir setiap tulisan.</small></span><button class="switch" type="button" role="switch" data-f="connections" aria-label="Benang merah"><i></i></button></div>
         <div class="line"><span class="ln-name">Saksikan ditulis<small>Pembaca bisa menonton tulisan diketik ulang.</small></span><button class="switch" type="button" role="switch" data-f="replay" aria-label="Saksikan ditulis"><i></i></button></div>
         <div class="line"><span class="ln-name">Suasana bacaan<small>Bunyi hujan, ombak, atau perapian saat membaca.</small></span><button class="switch" type="button" role="switch" data-f="ambience" aria-label="Suasana bacaan"><i></i></button></div>
         <div class="line"><span class="ln-name">Kutipan bergilir<small>Isi panel sapa berganti tiap 9 detik.</small></span><button class="switch" type="button" role="switch" data-f="rotatingQuotes" aria-label="Kutipan bergilir"><i></i></button></div>
-        <div class="line"><span class="ln-name">Pengunjung boleh menempel catatan<small>Tombol + di kanvas.</small></span><button class="switch" type="button" role="switch" data-f="visitorStickies" aria-label="Catatan pengunjung"><i></i></button></div>
       </div>
     </div>
 

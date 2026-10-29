@@ -1,13 +1,12 @@
 {
   "title": "Juan Menulis",
-  "description": "Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini yang bisa digeser, dibaca, dan didengarkan.",
+  "description": "Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini dalam bentuk piringan hitam dua sisi.",
   "author": "Juan",
   "handle": "juan/menulis",
   "email": "juan@example.com",
   "avatar": "",
   "readerName": "pembaca",
   "accent": "#1662FF",
-  "sticky": "#E3F46B",
   "theme": "auto",
   "backdrop": "auto",
   "defaultView": "putar",
@@ -15,7 +14,6 @@
   "readerPaper": "putih",
   "features": {
     "dock": true,
-    "visitorStickies": true,
     "rotatingQuotes": true
   },
   "categories": [
@@ -54,14 +52,5 @@
       "ink": "#6A4DF0",
       "red": false
     }
-  ],
-  "folders": {
-    "esai": "Esai tentang hal-hal kecil",
-    "puisi": "Puisi yang dicoret berkali-kali"
-  },
-  "years": {
-    "2023": "Puisi pertama yang dibacakan keras-keras.",
-    "2024": "Draf, laci, dan hari Senin yang dicuci.",
-    "2025": "Tahun belajar tersesat dengan sengaja."
-  }
+  ]
 }
