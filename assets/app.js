@@ -239,7 +239,7 @@
     const btns = $$('.pill [data-go]');
     let idx = -1;
     btns.forEach((b, i) => {
-      const isView = b.dataset.go === view;
+      const isView = b.dataset.go === view || (view === 'pilih' && b.dataset.go === 'putar');
       const on = b.dataset.go === 'sapa' && !isMobile() ? !win.classList.contains('dock-off') && !win.classList.contains('no-dock') : isView;
       b.setAttribute('aria-current', on ? 'true' : 'false');
       if (isView) idx = i;
@@ -249,7 +249,10 @@
     if (idx >= 0) th.style.setProperty('--x', btns[idx].offsetLeft + 'px');
   }
   function go(v) {
-    if (v === 'sapa' && !isMobile()) { toggleDock(); return; }
+    if (v === 'sapa' && !isMobile()) {
+      if (['putar', 'pilih', 'baca'].includes(view)) { toggleDock(true); go('kanvas'); return; }
+      toggleDock(); return;
+    }
     if (location.hash === '#' + v) vt(() => setView(v)); else location.hash = v;
   }
   document.addEventListener('click', e => {
@@ -278,12 +281,13 @@
       store.set('theme', dark ? 'dark' : 'light');
       $('#chipDark').setAttribute('aria-checked', String(dark));
       if (typeof applyBackdrop === 'function') applyBackdrop();
+      document.dispatchEvent(new Event('jm:theme'));
     };
     if (document.startViewTransition && !reduced) document.startViewTransition(apply); else apply();
   }
   $('#chipDark').setAttribute('aria-checked', String(isDark()));
   $('#chipDark').addEventListener('click', () => setTheme(!isDark()));
-  darkMQ.addEventListener?.('change', () => { $('#chipDark').setAttribute('aria-checked', String(isDark())); applyBackdrop(); });
+  darkMQ.addEventListener?.('change', () => { $('#chipDark').setAttribute('aria-checked', String(isDark())); applyBackdrop(); document.dispatchEvent(new Event('jm:theme')); });
 
   const BACKDROPS = ['auto', 'fajar', 'siang', 'senja', 'kabut', 'malam'];
   const BD_NAMES = { auto: 'ikut jam', fajar: 'Fajar', siang: 'Siang', senja: 'Senja', kabut: 'Kabut', malam: 'Malam' };
@@ -903,8 +907,13 @@
   ];
   const WEIGHTS = [300, 400, 500, 600];
   const RT = ['putih', 'sepia', 'gelap', 'custom'];
-  const rd = Object.assign({ rt: SITE.readerPaper, custom: '#F3E9DC', font: SITE.readerFont, size: 19, weight: 400, liga: true, align: 'start', bright: 100 }, store.get('rd', {}));
-  let focusMode = false, current = null;
+  const rdSaved = store.get('rd', {});
+  const rd = Object.assign({ rt: SITE.readerPaper, custom: '#F3E9DC', font: SITE.readerFont, size: 19, weight: 400, liga: true, align: 'start', bright: 100 }, rdSaved);
+  // kertas ikut tema sampai pembaca memilih sendiri
+  rd.rtAuto = rdSaved.rtAuto ?? (rdSaved.rt == null || rdSaved.rt === SITE.readerPaper);
+  const autoPaper = () => { if (rd.rtAuto) rd.rt = isDark() ? 'gelap' : (SITE.readerPaper === 'gelap' ? 'putih' : SITE.readerPaper); };
+  autoPaper();
+  let focusMode = false, current = null, pendingStart = null, pendingListen = false;
   const card = $('#rdCard'), body = $('#rdBody'), scroller = $('#rdScroll');
   const saveRd = () => store.set('rd', rd);
 
@@ -970,9 +979,9 @@
     const b = e.target.closest('[data-rt]');
     if (!b) return;
     if (b.dataset.rt === 'custom') { $('#colorIn').value = rd.custom; $('#colorIn').click(); }
-    rd.rt = b.dataset.rt; applyRd(); saveRd();
+    rd.rt = b.dataset.rt; rd.rtAuto = false; applyRd(); saveRd();
   });
-  $('#colorIn').addEventListener('input', e => { rd.custom = e.target.value; rd.rt = 'custom'; applyRd(); saveRd(); });
+  $('#colorIn').addEventListener('input', e => { rd.custom = e.target.value; rd.rt = 'custom'; rd.rtAuto = false; applyRd(); saveRd(); });
   $('#advColors').addEventListener('click', () => { $('#colorIn').value = rd.custom; $('#colorIn').click(); });
   $('#fonts').addEventListener('click', e => { const b = e.target.closest('[data-font]'); if (b) { rd.font = b.dataset.font; applyRd(); saveRd(); } });
   $('#fonts').addEventListener('scroll', () => {
@@ -1043,7 +1052,7 @@
     stopSpeech(); closeFind(); stopReplay(false); hideQuotePop();
     current = w;
     setView('baca');
-    $('#rdBackLabel').textContent = prevView === 'daftar' ? 'Daftar' : prevView === 'sapa' ? 'Sapa' : 'Kanvas';
+    $('#rdBackLabel').textContent = { daftar: 'Daftar', sapa: 'Sapa', kanvas: 'Kanvas', putar: 'Piringan', pilih: 'Piringan' }[prevView] || 'Kembali';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.title}`;
     $('#rdMeta').innerHTML = `<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
@@ -1059,7 +1068,13 @@
     scroller.scrollTop = 0;
     const marks = store.get('marks', {});
     $('#rsMark').setAttribute('aria-pressed', String(marks[slug] != null));
+    const startAt = pendingStart, listen = pendingListen;
+    pendingStart = null; pendingListen = false;
     requestAnimationFrame(() => {
+      const maxS = scroller.scrollHeight - scroller.clientHeight;
+      if (startAt) scroller.scrollTop = startAt * maxS;
+      if (listen) startSpeech(Math.floor((startAt || 0) * w.body.length));
+      if (startAt != null || listen) { onScroll(); return; }
       if (marks[slug] != null) {
         scroller.scrollTop = marks[slug] * (scroller.scrollHeight - scroller.clientHeight);
         toast('Melanjutkan dari posisi yang kamu tandai.');
@@ -1078,13 +1093,15 @@
     if (fromEl) morphFrom = fromEl;
     if (location.hash === '#baca-' + slug) vt(() => showReader(slug)); else location.hash = 'baca-' + slug;
   }
-  $('#rdBack').addEventListener('click', () => go(prevView === 'baca' ? 'kanvas' : prevView));
+  $('#rdBack').addEventListener('click', () => { if (prevView === 'pilih' && PK.slug) location.hash = 'pilih-' + PK.slug; else go(prevView === 'baca' ? 'putar' : prevView); });
   $('#rdPrev').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
   $('#rdNext').addEventListener('click', e => openWork(e.currentTarget.dataset.slug));
 
   function onScroll() {
     const max = scroller.scrollHeight - scroller.clientHeight;
     const frac = max > 0 ? scroller.scrollTop / max : 1;
+    clearTimeout(onScroll.t);
+    onScroll.t = setTimeout(() => { if (current) { const pr = store.get('prog', {}); pr[current.slug] = +frac.toFixed(3); store.set('prog', pr); prog[current.slug] = pr[current.slug]; } }, 500);
     $('#rdProg').style.transform = `scaleX(${frac})`;
     weave(frac);
     if (!focusMode) return;
@@ -1126,9 +1143,9 @@
     $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
     $('#rsVoice').setAttribute('aria-pressed', 'false');
   }
-  $('#rsVoice').addEventListener('click', () => {
+  function startSpeech(from = 0) {
     if (!('speechSynthesis' in window)) { toast('Peramban ini belum bisa membacakan teks.'); return; }
-    if (speaking) { stopSpeech(); return; }
+    speechSynthesis.cancel();
     speaking = true;
     $('#rsVoice').setAttribute('aria-pressed', 'true');
     const paras = [...body.children];
@@ -1144,8 +1161,9 @@
       speechSynthesis.speak(u);
     };
     if (isMobile()) setSheet(false);
-    next(0);
-  });
+    next(clamp(from, 0, paras.length - 1));
+  }
+  $('#rsVoice').addEventListener('click', () => { if (speaking) stopSpeech(); else startSpeech(0); });
 
   let hits = [], hit = 0;
   function openFind() { $('#rdFind').hidden = false; $('#findIn').focus(); if (isMobile()) setSheet(false); }
@@ -1199,6 +1217,7 @@
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openWork(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
+    { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
     { label: 'Ke kanvas', hint: 'tampilan', run: () => go('kanvas') },
     { label: 'Ke daftar', hint: 'tampilan', run: () => go('daftar') },
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
@@ -1270,6 +1289,8 @@
       const h = decodeURIComponent(location.hash.slice(1));
       const m = h.match(/^baca-([\w-]+)$/);
       if (m && bySlug(m[1]) && !TATA) { showReader(m[1]); return; }
+      const pk = h.match(/^pilih-([\w-]+)$/);
+      if (pk && bySlug(pk[1]) && !TATA) { showPicker(pk[1]); return; }
       if (VIEWS.includes(h)) { setView(TATA ? 'kanvas' : h); return; }
       setView(TATA ? 'kanvas' : startView());
     });
@@ -1701,30 +1722,33 @@
     }
     return `<svg viewBox="0 0 100 100" aria-hidden="true">${blobs}</svg>`;
   }
-  const discs = new Map();
-  WORKS.forEach(w => {
+  function makeDisc(w, tag = 'button', side = 'a') {
     const c = catOf(w.cat), k = discKind(w);
-    const el = document.createElement('button');
-    el.type = 'button';
+    const el = document.createElement(tag);
+    if (tag === 'button') el.type = 'button';
     el.className = 'disc disc-' + k;
     el.dataset.slug = w.slug;
     el.style.setProperty('--lc', c.ink);
     el.style.setProperty('--vc', c.ink);
-    el.setAttribute('aria-label', `Putar “${w.title}”, ${c.label}, ${w.minutes} menit`);
+    const small = side === 'b' ? 'Sisi B · dibacakan' : `${esc(c.label)} · No. ${w.no}`;
     el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}
-      <span class="disc-label"><canvas></canvas><b>${esc(w.title)}</b><small>${esc(c.label)} · No. ${w.no}</small></span><i class="disc-hole"></i></span>`;
+      <span class="disc-label"><canvas></canvas><b>${esc(w.title)}</b><small>${small}</small></span><i class="disc-hole"></i></span>`;
+    return el;
+  }
+  function paintDisc(el, w, size) {
+    size = size || el.offsetWidth || 300;
+    drawThread($('.disc-label canvas', el), fullText(w), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: w.slug, pins: false, weight: .9 });
+    const pic = $('canvas.pic', el);
+    if (pic) drawThread(pic, fullText(w), { w: size * .92, h: size * .92, pad: 10, color: catOf(w.cat).ink, seed: w.slug, weight: 1.6 });
+  }
+  const discs = new Map();
+  WORKS.forEach(w => {
+    const el = makeDisc(w);
+    el.setAttribute('aria-label', `Buka “${w.title}”, ${catOf(w.cat).label}, ${w.minutes} menit`);
     crate.append(el);
     discs.set(w.slug, el);
   });
-  function paintDiscs() {
-    discs.forEach((el, slug) => {
-      const w = bySlug(slug), size = el.offsetWidth || 300;
-      const lab = $('.disc-label canvas', el);
-      drawThread(lab, fullText(w), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: slug, pins: false, weight: .9 });
-      const pic = $('canvas.pic', el);
-      if (pic) drawThread(pic, fullText(w), { w: size * .92, h: size * .92, pad: 10, color: catOf(w.cat).ink, seed: slug, weight: 1.6 });
-    });
-  }
+  function paintDiscs() { discs.forEach((el, slug) => paintDisc(el, bySlug(slug))); }
   let crateOrder = [];
   function rankWorks() {
     const pool = WORKS.filter(w => PV.form === 'semua' || w.form === PV.form);
@@ -1781,7 +1805,7 @@
   crate.addEventListener('click', e => {
     const d = e.target.closest('.disc');
     if (!d || crate._swiped) return;
-    if (d.classList.contains('top')) { playTop(); return; }
+    if (d.classList.contains('top')) { openPicker(d.dataset.slug); return; }
     const w = bySlug(d.dataset.slug);
     crateOrder = [w, ...crateOrder.filter(x => x !== w)];
     layoutCrate();
@@ -1904,8 +1928,8 @@
   $('#tcForm').addEventListener('click', () => { PV.form = FORMS[(FORMS.indexOf(PV.form) + 1) % FORMS.length]; savePv(); renderControls(); rerank(); });
   $('#tcAmb').addEventListener('click', () => { PV.amb = AMBS[(AMBS.indexOf(PV.amb) + 1) % AMBS.length]; savePv(); renderControls(); });
   $('#tcSize').addEventListener('click', () => { rd.size = SIZES[(SIZES.indexOf(rd.size) + 1) % SIZES.length] || 19; saveRd(); applyRd(); renderControls(); });
-  $('#tcPaper').addEventListener('click', () => { const order = ['putih', 'sepia', 'gelap']; rd.rt = order[(order.indexOf(rd.rt) + 1) % order.length]; saveRd(); applyRd(); renderControls(); });
-  $('#tsMatch').addEventListener('click', playTop);
+  $('#tcPaper').addEventListener('click', () => { const order = ['putih', 'sepia', 'gelap']; rd.rt = order[(order.indexOf(rd.rt) + 1) % order.length]; rd.rtAuto = false; saveRd(); applyRd(); renderControls(); });
+  $('#tsMatch').addEventListener('click', () => openPicker(crateOrder[0].slug));
   $('#tsPlay').addEventListener('click', playTop);
   if (!SITE.features.ambience) $('#tcAmbCell').hidden = true;
 
@@ -1955,7 +1979,117 @@
   sheet.addEventListener('touchstart', e => { pullY = sheet.classList.contains('open') && sheet.scrollTop <= 0 && !e.target.closest('.wheel') ? e.touches[0].clientY : null; }, { passive: true });
   sheet.addEventListener('touchmove', e => { if (pullY != null && e.touches[0].clientY - pullY > 90) { pullY = null; setSheetOpen(false); } }, { passive: true });
 
+  /* ======================================================================
+     PILIH PIRINGAN: bilah waktu, piringan dua sisi, carousel
+     ====================================================================== */
+  const PK = { slug: null, side: 'a', frac: 0 };
+  const prog = store.get('prog', {});
+  const secsOf = w => Math.max(30, Math.round(w.words / 170 * 60));
+  const fmtMS = sec => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+  const TICKS = 28;
+  const pkCar = $('#pkCar'), pkDisc = $('#pkDisc'), scrub = $('#scrub'), ticks = $('#scTicks');
+  ticks.insertAdjacentHTML('afterbegin', Array.from({ length: TICKS }, () => '<i></i>').join(''));
+  WORKS.forEach(w => {
+    const it = document.createElement('button');
+    it.type = 'button'; it.className = 'pk-item'; it.dataset.slug = w.slug;
+    it.setAttribute('role', 'option'); it.setAttribute('aria-label', w.title);
+    it.append(makeDisc(w, 'span'));
+    pkCar.append(it);
+  });
+  let pkPainted = false;
+  function openPicker(slug) { location.hash = 'pilih-' + slug; }
+  function showPicker(slug) {
+    setView('pilih');
+    if (!pkPainted) { pkPainted = true; $$('.pk-item', pkCar).forEach(it => paintDisc($('.disc', it), bySlug(it.dataset.slug), 64)); }
+    selectPk(slug, false);
+    requestAnimationFrame(() => $(`.pk-item[data-slug="${slug}"]`, pkCar)?.scrollIntoView({ inline: 'center', block: 'nearest' }));
+    document.title = `${bySlug(slug).title} · ${SITE.title}`;
+  }
+  function selectPk(slug, animate, dir = 1) {
+    const w = bySlug(slug); if (!w) return;
+    PK.slug = slug;
+    PK.frac = prog[slug] > .02 && prog[slug] < .97 ? prog[slug] : 0;
+    pkDisc.innerHTML = '<div class="pk-flip"><div class="pk-face a"></div><div class="pk-face b"></div></div>';
+    const a = makeDisc(w, 'span', 'a'), b = makeDisc(w, 'span', 'b');
+    $('.pk-face.a', pkDisc).append(a); $('.pk-face.b', pkDisc).append(b);
+    requestAnimationFrame(() => { paintDisc(a, w, pkDisc.offsetWidth); paintDisc(b, w, pkDisc.offsetWidth); });
+    pkDisc.classList.toggle('side-b', PK.side === 'b');
+    if (animate && !reduced) {
+      pkDisc.style.setProperty('--dir', (dir * 60) + 'px'); pkDisc.style.setProperty('--rot', (dir * 18) + 'deg');
+      pkDisc.classList.remove('swap'); void pkDisc.offsetWidth; pkDisc.classList.add('swap');
+    }
+    $('#pkTitle').innerHTML = `${esc(w.title)}<small>${esc(catOf(w.cat).label)} · ${w.minutes} menit${readSet.has(w.slug) ? ' · sudah dibaca' : ''}</small>`;
+    $$('.pk-item', pkCar).forEach(it => it.setAttribute('aria-selected', String(it.dataset.slug === slug)));
+    renderScrub();
+  }
+  function renderScrub() {
+    const w = bySlug(PK.slug); if (!w) return;
+    const total = secsOf(w), pos = Math.round(PK.frac * (TICKS - 1));
+    $$('i', ticks).forEach((t, i) => { t.className = i < pos ? 'past' : i === pos ? 'now' : ''; });
+    const tick = $$('i', ticks)[pos];
+    $('#scTag').style.setProperty('--x', (tick.offsetLeft + tick.offsetWidth / 2) + 'px');
+    $('#scTag').textContent = PK.frac > 0 ? `mulai ${Math.round(PK.frac * 100)}%` : 'dari awal';
+    $('#scFrom').innerHTML = `${fmtMS(total * PK.frac)}<small>M</small>`;
+    $('#scTo').innerHTML = `${fmtMS(total)}<small>M</small>`;
+    scrub.setAttribute('aria-valuenow', Math.round(PK.frac * 100));
+    scrub.setAttribute('aria-valuetext', `Mulai dari ${fmtMS(total * PK.frac)} dari ${fmtMS(total)}`);
+  }
+  let scrubbing = false;
+  const scrubTo = x => { const r = ticks.getBoundingClientRect(); PK.frac = clamp((x - r.left) / r.width, 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); };
+  scrub.addEventListener('pointerdown', e => { if (e.target.closest('.sc-box')) return; scrubbing = true; scrub.setPointerCapture(e.pointerId); scrubTo(e.clientX); });
+  scrub.addEventListener('pointermove', e => { if (scrubbing) scrubTo(e.clientX); });
+  scrub.addEventListener('pointerup', () => { scrubbing = false; });
+  scrub.addEventListener('keydown', e => {
+    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (d) { e.preventDefault(); PK.frac = clamp(PK.frac + d / (TICKS - 1), 0, 1); renderScrub(); }
+    if (e.key === 'Home') { PK.frac = 0; renderScrub(); }
+  });
+  function setSide(side) {
+    PK.side = side;
+    pkDisc.classList.toggle('side-b', side === 'b');
+    $$('.pk-sides [data-side]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.side === side)));
+    const btn = $(`.pk-sides [data-side="${side}"]`);
+    $('.pk-dot').style.setProperty('--x', (btn.offsetLeft + btn.offsetWidth / 2) + 'px');
+    $('#pkHint').textContent = side === 'a' ? 'Sisi A: kamu yang membaca' : 'Sisi B: tulisan ini dibacakan untukmu';
+  }
+  $('.pk-sides').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (b) setSide(b.dataset.side); });
+  let fx = null;
+  pkDisc.addEventListener('pointerdown', e => { fx = e.clientX; });
+  pkDisc.addEventListener('pointerup', e => {
+    if (fx == null) return;
+    const dx = e.clientX - fx; fx = null;
+    if (Math.abs(dx) > 40) setSide(PK.side === 'a' ? 'b' : 'a');
+  });
+  let carT;
+  pkCar.addEventListener('scroll', () => {
+    clearTimeout(carT);
+    carT = setTimeout(() => {
+      const mid = pkCar.getBoundingClientRect().left + pkCar.clientWidth / 2;
+      let best = null, bd = Infinity;
+      $$('.pk-item', pkCar).forEach(it => { const r = it.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = it; } });
+      if (best && best.dataset.slug !== PK.slug) {
+        const items = $$('.pk-item', pkCar), dir = items.indexOf(best) > items.findIndex(i => i.dataset.slug === PK.slug) ? 1 : -1;
+        selectPk(best.dataset.slug, true, dir);
+        history.replaceState(null, '', '#pilih-' + best.dataset.slug);
+      }
+    }, 110);
+  }, { passive: true });
+  pkCar.addEventListener('click', e => { const it = e.target.closest('.pk-item'); if (it) it.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduced ? 'auto' : 'smooth' }); });
+  pkCar.addEventListener('keydown', e => {
+    const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return;
+    e.preventDefault();
+    const items = $$('.pk-item', pkCar), i = items.findIndex(it => it.dataset.slug === PK.slug);
+    const nx = items[clamp(i + d, 0, items.length - 1)];
+    nx.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); nx.focus({ preventScroll: true });
+  });
+  $('#pkGo').addEventListener('click', () => {
+    pendingStart = PK.frac; pendingListen = PK.side === 'b';
+    if (SITE.features.ambience && PV.amb !== 'hening' && !pendingListen) Amb.set(PV.amb);
+    openWork(PK.slug, $('.pk-face.' + PK.side + ' .disc-spin', pkDisc));
+  });
+
   function initPutar() {
+    requestAnimationFrame(() => setSide(PK.side));
     tick(); setInterval(tick, 10000);
     renderSheet(); renderControls(); setSpin(PV.spin);
     setMin(PV.min, false);
@@ -2023,6 +2157,7 @@
   renderGreet(true);
   renderFeed(false);
   applyRd();
+  document.addEventListener('jm:theme', () => { if (!rd.rtAuto) return; autoPaper(); applyRd(); if (typeof renderControls === 'function') renderControls(); });
   initPutar();
   route();
   requestAnimationFrame(() => { canvasFit(false); syncPill(); win.classList.add('ready'); booted = true; });

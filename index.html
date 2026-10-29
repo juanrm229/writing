@@ -149,6 +149,32 @@
         </div>
       </section>
 
+      <!-- ============ PILIH PIRINGAN ============ -->
+      <section class="view view-pilih" id="vPilih" aria-label="Pilih piringan">
+        <div class="pk-top">
+          <div class="scrub" id="scrub" role="slider" tabindex="0" aria-label="Mulai membaca dari" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span class="sc-box" id="scFrom">0:00<small>M</small></span>
+            <div class="sc-ticks" id="scTicks"><span class="sc-tag" id="scTag">awal</span></div>
+            <span class="sc-box" id="scTo">0:00<small>M</small></span>
+          </div>
+        </div>
+        <div class="pk-stage">
+          <div class="pk-disc" id="pkDisc" aria-live="polite"></div>
+          <p class="pk-title" id="pkTitle"></p>
+          <div class="pk-sides" role="tablist" aria-label="Sisi piringan">
+            <button type="button" role="tab" data-side="a" aria-selected="true">Sisi A</button>
+            <button type="button" role="tab" data-side="b" aria-selected="false">Sisi B</button>
+            <i class="pk-dot" aria-hidden="true"></i>
+          </div>
+          <p class="pk-hint" id="pkHint">Sisi A: kamu yang membaca</p>
+        </div>
+        <div class="pk-sheet">
+          <i class="pk-grab" aria-hidden="true"></i>
+          <div class="pk-car" id="pkCar" role="listbox" aria-label="Pilih tulisan"></div>
+          <button class="pk-go" id="pkGo" type="button">Yang ini!</button>
+        </div>
+      </section>
+
       <!-- ============ KANVAS ============ -->
       <section class="view view-kanvas" id="vKanvas" aria-label="Kanvas tulisan">
         <div class="viewport" id="viewport" tabindex="0" aria-label="Kanvas. Seret latar untuk menggeser, tombol panah juga bisa.">
