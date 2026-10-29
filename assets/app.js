@@ -311,6 +311,30 @@
   const saveST = () => store.set('stats', ST);
   const docByKey = k => DOCS.find(d => d.key === k);
   const lastDoc = () => { const l = store.get('last', null); return l && docByKey(l.key); };
+
+  /* ---------- ANTREAN: urutan baca milik pembaca, diputar lebih dulu dari album ---------- */
+  const QICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h11M4 11.5h11M4 16.5h7"/><path d="M17.5 14v6M14.5 17h6"/></svg>';
+  let QUEUE = store.get('queue', []).filter(k => docByKey(k));
+  let pendingQueue = false;
+  function saveQ() {
+    store.set('queue', QUEUE);
+    const b = $('.pill [data-go="sapa"]');
+    if (b) { b.dataset.count = QUEUE.length ? String(QUEUE.length) : ''; b.classList.remove('bump'); void b.offsetWidth; if (QUEUE.length) b.classList.add('bump'); }
+    if (view === 'sapa' && feedMode === 'now') renderFeed(false);
+    if (typeof syncQueueBtn === 'function') syncQueueBtn();
+  }
+  function enqueue(ds) {
+    const fresh = ds.filter(d => d && !QUEUE.includes(d.key));
+    if (!fresh.length) { toast(ds.length > 1 ? 'Semua sisinya sudah ada di antrean.' : 'Sudah ada di antrean.'); return; }
+    QUEUE = [...QUEUE, ...fresh.map(d => d.key)]; saveQ();
+    toast(`${fresh.length > 1 ? fresh.length + ' sisi' : '“' + fresh[0].title + '”'} masuk antrean · ${QUEUE.length} menunggu`, { label: 'Lihat', run: () => { feedMode = 'now'; go('sapa'); } });
+  }
+  // putar satu sisi dari antrean: sisi-sisi sebelum yang dipilih tetap menunggu
+  function playFromQueue(i) {
+    const d = docByKey(QUEUE[i]); if (!d) return;
+    pendingQueue = true; pendingStart = 0;
+    openWork(d.slug, null, d.side);
+  }
   const progOf = d => (ST.done.includes(d.key) ? 1 : clamp(store.get('prog', {})[d.key] || 0, 0, 1));
   const minsPlayed = () => (ST.secs ? Math.max(1, Math.round(ST.secs / 60)) : 0);
   function streak() {
@@ -441,6 +465,12 @@
     } else {
       html += `<p class="np-h"><span>Belum ada yang diputar</span></p><p class="np-empty">Pilih satu piringan. Meja ini mencatat sampai mana kamu membaca, sisi mana yang sudah kamu balik, dan tulisan apa yang terhubung dengannya.</p>`;
     }
+    const qd = QUEUE.map(docByKey).filter(Boolean);
+    html += `<p class="np-h"><span>Antreanmu${qd.length ? ' · ' + qd.length : ''}</span>${qd.length ? '<button type="button" class="np-link" data-qclear>Kosongkan</button>' : ''}</p>`;
+    html += qd.length
+      ? `<ul class="tk-list q">${qd.map((d, i) => `<li style="--k:${i}"><button type="button" data-qplay="${i}">${mdisc(d)}<span class="sg-t"><b>${esc(d.title)}${d.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${i === 0 ? 'Berikutnya · ' : ''}${esc(catOf(d.cat).label)} · ${d.minutes} mnt</span></span></button><span class="q-btns"><button type="button" data-qup="${i}" aria-label="Naikkan" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" data-qrm="${i}" aria-label="Keluarkan dari antrean">×</button></span></li>`).join('')}</ul>
+        <div class="np-actions"><button type="button" class="np-go" data-qplay="0">Putar antrean</button></div>`
+      : `<p class="np-empty">Tekan <b>Tambah ke antrean</b> di pemilih piringan atau di halaman album untuk menyusun urutan bacamu sendiri. Antrean diputar lebih dulu, lalu album dilanjutkan.</p>`;
     const sug = suggestions(last);
     if (sug.length) html += `<p class="np-h"><span>Berikutnya untukmu</span></p><ul class="tk-list sug">${sug.map((s, i) => `<li style="--k:${i}"><button type="button" data-pick="${s.d.key}">${mdisc(s.d)}<span class="sg-t"><b>${esc(s.d.title)}${s.d.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${s.why}</span></span><span class="sg-m">${s.d.minutes} mnt</span></button></li>`).join('')}</ul>`;
     const done = DOCS.filter(d => ST.done.includes(d.key)).length, flipped = WORKS.filter(w => w.B && readSet.has(w.key) && readSet.has(w.B.key)).length;
@@ -500,6 +530,13 @@
     if (b) setFeedMode(b.dataset.mode);
   });
   feed.addEventListener('click', e => {
+    const qp = e.target.closest('[data-qplay]');
+    if (qp) { playFromQueue(+qp.dataset.qplay); return; }
+    const qu = e.target.closest('[data-qup]');
+    if (qu && !qu.disabled) { const i = +qu.dataset.qup; [QUEUE[i - 1], QUEUE[i]] = [QUEUE[i], QUEUE[i - 1]]; saveQ(); return; }
+    const qr = e.target.closest('[data-qrm]');
+    if (qr) { QUEUE.splice(+qr.dataset.qrm, 1); saveQ(); return; }
+    if (e.target.closest('[data-qclear]')) { const old = QUEUE; QUEUE = []; saveQ(); toast('Antrean dikosongkan.', { label: 'Urungkan', run: () => { QUEUE = old; saveQ(); } }); return; }
     const kf = e.target.closest('[data-kf]');
     if (kf) { kFilter = kf.dataset.kf; renderFeed(false); return; }
     const pk = e.target.closest('[data-pick]');
@@ -702,20 +739,25 @@
     if (!w) return;
     stopSpeech(); closeFind(); stopReplay(false); hideQuotePop();
     current = w;
-    syncPlay(w);
+    const viaQ = pendingQueue; pendingQueue = false;
+    const qi = QUEUE.indexOf(w.key);
+    if (qi >= 0) { QUEUE.splice(qi, 1); saveQ(); }
+    // sisi dari antrean tidak memutus album: album lanjut dari posisinya setelah antrean habis
+    if (!viaQ) syncPlay(w);
     setView('baca');
     $('#rdBackLabel').textContent = playing() ? 'Album' : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
-    const al = playing();
-    $('#rdMeta').innerHTML = `${al ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
+    const al = playing(), inAlbum = al && al.tracks[PLAY.i]?.key === w.key;
+    $('#rdMeta').innerHTML = `${viaQ ? `<span class="q-tag">${QICON}dari antrean</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
-    const nb = neighbors(), { prev, next } = nb;
+    const nb = neighbors(), { prev } = nb, qNext = QUEUE.length ? docByKey(QUEUE[0]) : null, next = qNext || nb.next;
     renderRelated(w.A);
     $('#rdNextLink').href = next ? hrefOf(next) : '#album-' + nb.album.id;
-    $('span', $('#rdNextLink')).textContent = nb.album ? (next ? `berikutnya di album “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `album “${nb.album.title}” selesai`) : 'berikutnya';
+    $('#rdNextLink').dataset.queue = qNext ? '1' : '';
+    $('span', $('#rdNextLink')).textContent = qNext ? `berikutnya di antreanmu · ${QUEUE.length} menunggu` : nb.album ? (next ? `berikutnya di album “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `album “${nb.album.title}” selesai`) : 'berikutnya';
     $('b', $('#rdNextLink')).textContent = next ? next.title : 'Kembali ke album';
     $('#rdPrev').dataset.key = prev.key; $('#rdNext').dataset.key = (next || prev).key;
     $('#rdNext').disabled = !next;
@@ -785,7 +827,8 @@
     else go(['sapa', 'album'].includes(prevView) ? prevView : 'putar');
   });
   $('#rdFlip').addEventListener('click', () => { if (current?.A.B) location.hash = hrefOf(current.side === 'b' ? current.A : current.A.B).slice(1); });
-  const openKey = k => { const d = docByKey(k); if (d) { if (playing()) pendingStart = 0; openWork(d.slug, null, d.side); } };
+  const openKey = k => { const d = docByKey(k); if (d) { if (QUEUE[0] === k) pendingQueue = true; if (playing() || pendingQueue) pendingStart = 0; openWork(d.slug, null, d.side); } };
+  $('#rdNextLink').addEventListener('click', e => { if (e.currentTarget.dataset.queue) { pendingQueue = true; pendingStart = 0; } });
   $('#rdPrev').addEventListener('click', e => openKey(e.currentTarget.dataset.key));
   $('#rdNext').addEventListener('click', e => openKey(e.currentTarget.dataset.key));
 
@@ -816,6 +859,8 @@
   const UN = { next: null, left: 0, total: 0, listen: false, raf: 0, last: 0, shownFor: null };
   const unEl = $('#upNext');
   function upNextOf(d) {
+    const qd = QUEUE.map(docByKey).find(x => x && x.key !== d.key);
+    if (qd) return { d: qd, why: `Dari antreanmu${QUEUE.length > 1 ? ' · ' + QUEUE.length + ' menunggu' : ''}`, queue: true };
     const al = playing();
     if (al) { const nb = neighbors(); return nb.next ? { d: nb.next, why: `Album “${al.title}” · ${nb.pos + 1} dari ${nb.len}` } : { end: al }; }
     const other = d.A.B ? (d.side === 'b' ? d.A : d.A.B) : null;
@@ -827,7 +872,7 @@
     if (!d || view !== 'baca' || UN.shownFor === d.key) return;
     const n = upNextOf(d);
     if (!n) return;
-    UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen;
+    UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen; UN.queue = !!n.queue;
     unEl.classList.toggle('end', !!n.end);
     if (n.end) {
       $('#unWhy').textContent = 'Album selesai';
@@ -863,10 +908,10 @@
   }
   function hideUpNext() { cancelAnimationFrame(UN.raf); unEl.hidden = true; UN.next = null; win.classList.remove('upnext-on'); }
   function playUpNext() {
-    const d = UN.next, listen = UN.listen;
+    const d = UN.next, listen = UN.listen, viaQ = UN.queue;
     hideUpNext();
     if (!d) return;
-    pendingStart = 0; pendingListen = listen;
+    pendingStart = 0; pendingListen = listen; pendingQueue = viaQ;
     if (current && current.slug === d.slug) {
       // sisi lain piringan yang sama: kartu baca ikut berbalik
       location.hash = hrefOf(d).slice(1);
@@ -1000,6 +1045,8 @@
   const commands = () => [
     { label: current?.side === 'b' ? 'Balik ke Sisi A' : 'Balik ke Sisi B', hint: current?.A.B ? (current.side === 'b' ? current.A.title : current.A.B.title) : '', run: () => $('#rdFlip').click(), show: view === 'baca' && !!current?.A.B },
     { label: PV.autoplay === false ? 'Nyalakan putar terus' : 'Matikan putar terus', hint: 'sisi berikutnya menyusul otomatis', run: () => { PV.autoplay = PV.autoplay === false; savePv(); toast(PV.autoplay ? 'Putar terus menyala.' : 'Putar terus dimatikan.'); } },
+    { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
+    { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
@@ -1751,6 +1798,7 @@
       : (w.B ? `Sisi B · cerita yang sama, dari sisi ${w.B.pov || 'yang lain'}` : 'Sisi ini masih kosong. Mungkin suatu hari.');
     $('.pk-sides [data-side="b"]').classList.toggle('is-empty', !w.B);
     scrub.classList.toggle('off', !d);
+    syncQueueBtn();
     const go = $('#pkGo');
     go.disabled = !d;
     go.textContent = d ? 'Yang ini!' : 'Belum ada';
@@ -1842,6 +1890,17 @@
     $('#pkListen').setAttribute('aria-label', on ? 'Dibacakan untukmu: nyala' : 'Dibacakan untukmu');
   }
   $('#pkListen').addEventListener('click', () => { setListen(!PV.listen); toast(PV.listen ? 'Tulisannya akan dibacakan untukmu.' : 'Kamu yang membaca.'); });
+  function syncQueueBtn() {
+    const d = pkDoc(), on = !!d && QUEUE.includes(d.key), b = $('#pkQueue');
+    b.classList.toggle('in', on);
+    b.setAttribute('aria-label', on ? 'Keluarkan dari antrean' : 'Tambah ke antrean'); b.title = b.getAttribute('aria-label');
+  }
+  $('#pkQueue').addEventListener('click', () => {
+    const d = pkDoc(); if (!d) { toast('Sisi ini belum direkam.'); return; }
+    if (QUEUE.includes(d.key)) { QUEUE = QUEUE.filter(k => k !== d.key); saveQ(); toast('Dikeluarkan dari antrean.'); return; }
+    enqueue([d]);
+    const b = $('#pkQueue'); b.classList.remove('added'); void b.offsetWidth; b.classList.add('added');
+  });
   $('#pkGo').addEventListener('click', () => {
     const d = pkDoc(); if (!d) return;
     pendingStart = PK.frac; pendingListen = PV.listen;
@@ -1914,6 +1973,7 @@
             <div class="al-actions">
               <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? 'Lanjutkan' : 'Putar'}</button>
               <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
+              <button type="button" class="al-btn" data-qalbum="${esc(a.id)}" aria-label="Tambahkan album ke antrean" title="Tambahkan ke antrean">${QICON}</button>
               <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="Bagikan album"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
             </div>
             <ol class="al-tracks">${a.tracks.map((t, i) => {
@@ -1945,6 +2005,8 @@
     if (tr) { playAlbum(tr.dataset.album, +tr.dataset.track); return; }
     const pl = e.target.closest('[data-play]');
     if (pl) { const on = playing(); if (on && on.id === pl.dataset.play) playAlbum(on.id, PLAY.i); else playAlbum(pl.dataset.play, 0); return; }
+    const qa = e.target.closest('[data-qalbum]');
+    if (qa) { enqueue(albumOf(qa.dataset.qalbum).tracks); return; }
     const sh = e.target.closest('[data-shuffle]');
     if (sh) { playAlbum(sh.dataset.shuffle, 0, true); return; }
     const share = e.target.closest('[data-share]');
@@ -2011,6 +2073,7 @@
      ====================================================================== */
   renderGreet(true);
   renderFeed(false);
+  $('.pill [data-go="sapa"]').dataset.count = QUEUE.length ? String(QUEUE.length) : '';
   applyRd();
   document.addEventListener('jm:theme', () => { if (!rd.rtAuto) return; autoPaper(); applyRd(); if (typeof renderControls === 'function') renderControls(); });
   initPutar();

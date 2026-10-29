@@ -401,9 +401,10 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 #pResults mark { background: #FFE58A; color: #1D1D1F; border-radius: 3px; }
 #pResults .p-empty { color: var(--muted); cursor: default; display: block; }
 .palette-foot { padding: 10px 22px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
-.toast { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom, 0px) + 20px)); z-index: 60; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; padding: 11px 18px; border-radius: 22px; background: #0E0F11; color: #fff; font-size: 14px; transition: opacity .25s, transform .25s; max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom, 0px) + 20px)); z-index: 60; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; padding: 11px 18px; border-radius: 22px; background: #0E0F11; color: #fff; font-size: 14px; transition: opacity .25s, transform .25s; width: max-content; max-width: calc(100vw - 32px); }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
-.toast.has-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; }
+.toast.has-action.on { pointer-events: auto; }
+.toast.has-action { display: flex; align-items: center; gap: 12px; padding-right: 8px; }
 .toast button { height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: #fff; color: #0E0F11; font-weight: 500; cursor: pointer; flex: none; }
 /* terpasang sebagai aplikasi: jendela memenuhi layar ponsel */
 
@@ -1181,3 +1182,25 @@ output.bump { animation: bump .35s var(--spring); }
 @media (prefers-reduced-motion: reduce) { .un-go .mdisc { animation: none; } }
 .aa-fab { transition: opacity .25s, transform .35s var(--spring); }
 .win.upnext-on .aa-fab { opacity: 0; transform: scale(.6); pointer-events: none; }
+
+/* ================================================================
+   ANTREAN
+   ================================================================ */
+.pill [data-go="sapa"]::after { content: attr(data-count); position: absolute; right: 2px; top: 1px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--go); color: #0D1A05; font: 700 10px/16px var(--f-ui); text-align: center; box-shadow: 0 0 0 2px #0E0F11; transition: transform .4s var(--spring); }
+.pill [data-go="sapa"][data-count=""]::after, .pill [data-go="sapa"]:not([data-count])::after { transform: scale(0); }
+.pill [data-go="sapa"].bump::after { animation: qBump .5s var(--spring); }
+@keyframes qBump { 40% { transform: scale(1.45); } }
+.pk-queue.added { animation: qAdded .6s var(--spring); }
+.pk-queue.in { background: var(--go); color: #0D1A05; box-shadow: none; }
+@keyframes qAdded { 30% { transform: scale(1.18) rotate(-8deg); } }
+.np-link { margin-left: auto; border: 0; background: none; color: var(--dock-muted); font: 500 12px var(--f-ui); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-transform: none; letter-spacing: 0; }
+.tk-list.q li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.tk-list.q li > button { grid-template-columns: 36px minmax(0, 1fr); }
+.q-btns { display: flex; gap: 2px; padding-right: 4px; }
+.q-btns button { width: 30px; height: 30px; border: 0; border-radius: 10px; background: none; color: var(--dock-muted); cursor: pointer; font-size: 15px; }
+.q-btns button:hover:not(:disabled) { background: var(--dock-2); color: var(--dock-ink); }
+.q-btns button:disabled { opacity: .3; cursor: default; }
+.q-tag { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px 0 6px; border-radius: 8px; background: color-mix(in srgb, var(--go) 30%, transparent); color: var(--rfg); font-weight: 500; }
+.q-tag svg { width: 14px; height: 14px; }
+/* di pemilih, kabar muncul di atas supaya tidak menutupi tombol putar */
+@media (max-width: 860px) { body:has(.win[data-view="pilih"]) .toast { bottom: auto; top: max(64px, calc(env(safe-area-inset-top, 0px) + 58px)); transform: translate(-50%, -16px); } body:has(.win[data-view="pilih"]) .toast.on { transform: translate(-50%, 0); } }
