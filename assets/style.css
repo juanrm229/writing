@@ -125,6 +125,9 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 .tb-btn svg { width: 20px; height: 20px; stroke-width: 2; }
 .tb-btn:hover { background: var(--t-btn); }
 .tb-btn:active { transform: scale(.9); }
+.tb-lang { width: auto; padding: 0 9px; gap: 2px; display: inline-flex; align-items: center; font: 600 12px var(--f-ui); letter-spacing: .04em; }
+.tb-lang .lg-sep, .tb-lang .lg-other { color: var(--t-muted); }
+.tb-lang .lg-sep { font-weight: 400; }
 #themeToggle svg { grid-area: 1 / 1; transition: transform .6s var(--spring), opacity .3s; }
 #themeToggle[aria-pressed="false"] .i-sun, #themeToggle[aria-pressed="true"] .i-moon { opacity: 0; transform: rotate(-90deg) scale(.4); }
 

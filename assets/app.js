@@ -71,6 +71,42 @@
   const t = (id, en) => (LANG === 'en' && en != null ? en : id);
   const LOCALE = LANG === 'en' ? 'en-GB' : 'id-ID';
   document.documentElement.lang = LANG;
+  // antarmuka berbahasa Inggris: teks yang persis sama dengan kunci kamus (assets/i18n.js) diganti,
+  // termasuk yang ditambahkan belakangan. Isi tulisan dan lirik tidak pernah disentuh.
+  const EN = LANG === 'en' ? window.JM_EN || {} : null;
+  if (EN) {
+    const SKIP = '.rd-body, .ly-list, script, style, textarea';
+    // kunci yang terjemahannya sama persis (Radio, Album) dilewati: menulis ulang nilai yang sama memicu pengamat lagi
+    const own = k => Object.prototype.hasOwnProperty.call(EN, k) && EN[k] !== k;
+    const trText = n => {
+      const v = n.nodeValue, k = v.trim();
+      if (!k || !own(k) || n.parentElement?.closest(SKIP)) return;
+      n.nodeValue = v.replace(k, EN[k]);
+    };
+    const trAttr = (el, a) => { const v = el.getAttribute(a); if (v && own(v.trim())) el.setAttribute(a, EN[v.trim()]); };
+    const trTree = node => {
+      if (node.nodeType === 3) { trText(node); return; }
+      if (node.nodeType !== 1 || node.closest(SKIP)) return;
+      [node, ...node.querySelectorAll('[aria-label], [title], [placeholder]')].forEach(el => ['aria-label', 'title', 'placeholder'].forEach(a => el.hasAttribute?.(a) && trAttr(el, a)));
+      const tw = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      for (let n = tw.nextNode(); n; n = tw.nextNode()) trText(n);
+    };
+    trTree(document.body);
+    new MutationObserver(ms => ms.forEach(m => {
+      if (m.type === 'childList') m.addedNodes.forEach(trTree);
+      else if (m.type === 'characterData') trText(m.target);
+      else if (m.target.nodeType === 1) trAttr(m.target, m.attributeName);
+    })).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['aria-label', 'title', 'placeholder'] });
+  }
+  {
+    const b = $('#langToggle'), other = LANG === 'en' ? 'id' : 'en';
+    if (b) {
+      $('.lg-now', b).textContent = LANG.toUpperCase(); $('.lg-other', b).textContent = other.toUpperCase();
+      b.setAttribute('aria-label', t('Baca dalam bahasa Inggris', 'Baca dalam bahasa Indonesia (read in Indonesian)'));
+      b.title = other === 'en' ? 'English' : 'Bahasa Indonesia';
+      b.addEventListener('click', () => { store.set('lang', other); location.reload(); });
+    }
+  }
   // ambil isian terjemahan yang benar-benar terisi saja, supaya yang kosong jatuh ke bahasa dasar
   const filled = o => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => (Array.isArray(v) ? v.length : v && typeof v === 'object' ? true : String(v ?? '').trim())));
   const trOf = o => (OTHER && o && o[LANG]) || {};
@@ -121,10 +157,10 @@
   { const [h1, ...rest] = SITE.handle.split('/'); $('#tbBrand').innerHTML = esc(h1) + (rest.length ? `<em>/${esc(rest.join('/'))}</em>` : ''); }
   const win = $('#win');
   if (!SITE.features.dock) $('.pill [data-go="sapa"]').hidden = true;
-  if (SITE.email) { $('#chipMail').hidden = false; $('#mailName').textContent = 'ke ' + SITE.author; }
+  if (SITE.email) { $('#chipMail').hidden = false; $('#mailName').textContent = t('ke ', 'to ') + SITE.author; }
 
   if (!WORKS.length) {
-    $('.views').innerHTML = `<div class="empty"><p class="empty-t">Belum ada tulisan yang terbit.</p><p>${location.protocol === 'file:' ? 'Buka situs ini lewat server (misalnya <code>python3 -m http.server</code>), bukan langsung dari berkas.' : 'Tulis yang pertama di <a href="admin/">panel admin</a>.'}</p></div>`;
+    $('.views').innerHTML = `<div class="empty"><p class="empty-t">${t('Belum ada tulisan yang terbit.', 'Nothing published yet.')}</p><p>${location.protocol === 'file:' ? t('Buka situs ini lewat server (misalnya <code>python3 -m http.server</code>), bukan langsung dari berkas.', 'Open this site through a server (for example <code>python3 -m http.server</code>), not straight from the file.') : t('Tulis yang pertama di <a href="admin/">panel admin</a>.', 'Write the first one in the <a href="admin/">admin panel</a>.')}</p></div>`;
     win.classList.add('ready'); win.dataset.view = 'kosong';
     return;
   }
@@ -351,7 +387,7 @@
     backdrop = BACKDROPS[(BACKDROPS.indexOf(backdrop) + 1) % BACKDROPS.length];
     store.set('backdrop', backdrop);
     applyBackdrop();
-    toast('Latar: ' + BD_NAMES[backdrop]);
+    toast(t('Latar: ', 'Background: ') + (EN?.[BD_NAMES[backdrop]] || BD_NAMES[backdrop]));
   });
   applyBackdrop();
 
@@ -391,14 +427,14 @@
     const score = w => .6 * kin(RADIO.seed, w.slug).sim + .4 * (d ? kin(d.slug, w.slug).sim : 0) + rnd() * .03;
     const best = pool.map(w => [w, score(w)]).sort((x, y) => y[1] - x[1])[0][0];
     const k = kin(d ? d.slug : RADIO.seed, best.slug);
-    return { d: best, why: k.words.length ? `Radio · lewat <i>${k.words.map(esc).join('</i> dan <i>')}</i>` : `Radio · dari “${esc(bySlug(RADIO.seed).title)}”`, radio: true };
+    return { d: best, why: k.words.length ? `Radio · ${t('lewat', 'via')} <i>${k.words.map(esc).join(`</i> ${t('dan', 'and')} <i>`)}</i>` : `Radio · ${t('dari', 'from')} “${esc(bySlug(RADIO.seed).title)}”`, radio: true };
   }
   function startRadio(slug) {
     const w = bySlug(slug); if (!w) return;
     RADIO = { seed: slug, heard: [] }; saveRadio();
     if (typeof PLAY !== 'undefined' && PLAY) { PLAY = null; savePlay(); }
     pendingRadio = true; pendingListen = true; pendingStart = 0;
-    toast(`Radio “${w.title}”: tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.`, null, 4200);
+    toast(t(`Radio “${w.title}”: tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.`, `“${w.title}” radio: the pieces closest in words and mood, read aloud without stopping.`), null, 4200);
     openWork(slug, null, 'a');
   }
   function stopRadio() { if (!RADIO) return; RADIO = null; saveRadio(); toast('Radio dihentikan.'); if (view === 'baca' && current) $$('.radio-tag', $('#rdMeta')).forEach(t => t.remove()); }
@@ -413,7 +449,7 @@
     const fresh = ds.filter(d => d && !QUEUE.includes(d.key));
     if (!fresh.length) { toast(ds.length > 1 ? 'Semua sisinya sudah ada di antrean.' : 'Sudah ada di antrean.'); return; }
     QUEUE = [...QUEUE, ...fresh.map(d => d.key)]; saveQ();
-    toast(`${fresh.length > 1 ? fresh.length + ' sisi' : '“' + fresh[0].title + '”'} masuk antrean · ${QUEUE.length} menunggu`, { label: 'Lihat', run: () => { feedMode = 'now'; go('sapa'); } });
+    toast(t(`${fresh.length > 1 ? fresh.length + ' sisi' : '“' + fresh[0].title + '”'} masuk antrean · ${QUEUE.length} menunggu`, `${fresh.length > 1 ? fresh.length + ' sides' : '“' + fresh[0].title + '”'} queued · ${QUEUE.length} waiting`), { label: t('Lihat', 'View'), run: () => { feedMode = 'now'; go('sapa'); } });
   }
   // putar satu sisi dari antrean: sisi-sisi sebelum yang dipilih tetap menunggu
   function playFromQueue(i) {
@@ -429,15 +465,15 @@
     while (days.has(d.toISOString().slice(0, 10))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
-  function ago(t) {
-    const m = Math.round((Date.now() - t) / 60000);
-    return m < 2 ? 'baru saja' : m < 60 ? m + ' menit lalu' : m < 1440 ? Math.round(m / 60) + ' jam lalu' : m < 2880 ? 'kemarin' : Math.round(m / 1440) + ' hari lalu';
+  function ago(at) {
+    const m = Math.round((Date.now() - at) / 60000);
+    return m < 2 ? t('baru saja', 'just now') : m < 60 ? m + t(' menit lalu', ' min ago') : m < 1440 ? Math.round(m / 60) + t(' jam lalu', ' h ago') : m < 2880 ? t('kemarin', 'yesterday') : Math.round(m / 1440) + t(' hari lalu', ' days ago');
   }
   const mdisc = (d, cls = '') => `<span class="mdisc${d && d.side && d.side !== 'a' ? ' b' : ''} ${cls}" style="--lc:${catOf((d || WORKS[0]).cat).ink}" aria-hidden="true"><i></i></span>`;
   // cincin progres untuk sisi A dan B: penuh = selesai, sebagian = sedang dibaca, garis putus = belum ada
   const sideRing = (d, label) => d
-    ? `<i class="ring${ST.done.includes(d.key) ? ' done' : ''}" style="--p:${Math.round(progOf(d) * 100)}" title="${label}: ${ST.done.includes(d.key) ? 'selesai' : readSet.has(d.key) ? Math.round(progOf(d) * 100) + '%' : 'belum'}">${label}</i>`
-    : `<i class="ring none" title="${label}: belum direkam">${label}</i>`;
+    ? `<i class="ring${ST.done.includes(d.key) ? ' done' : ''}" style="--p:${Math.round(progOf(d) * 100)}" title="${label}: ${ST.done.includes(d.key) ? t('selesai', 'finished') : readSet.has(d.key) ? Math.round(progOf(d) * 100) + '%' : t('belum', 'not yet')}">${label}</i>`
+    : `<i class="ring none" title="${label}: ${t('belum direkam', 'not recorded')}">${label}</i>`;
 
   const ringLabel = d => (d?.A?.CH ? String(d.ch) : SL(d));
   // baris kecil di bawah judul trek: karya induk (kalau judulnya beda), sisi atau bab, sudut pandang, jenis
@@ -455,15 +491,26 @@
       const played = Object.entries(ST.plays).sort((a, b) => b[1] - a[1])[0];
       const fav = played && docByKey(played[0]);
       const done = DOCS.filter(d => ST.done.includes(d.key)).length;
-      g.innerHTML = ST.secs < 30 && !fav
+      g.innerHTML = LANG === 'en' ? (ST.secs < 30 && !fav
+        ? `<span class="dim">You haven’t played anything at this desk yet. Start with</span> <button type="button" data-act="pick" data-key="${crateOrder[0]?.key}">“${esc(crateOrder[0]?.title || '')}”</button><span class="dim">, right for your ${PV.min} spare minutes.</span>`
+        : `<span class="dim">You’ve played</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><span>${minsPlayed()} minutes</span></span> <span class="dim">at this desk.</span>
+          <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="koleksi" data-f="selesai">${done} of ${DOCS.length} sides</button></span> <span class="dim">heard to the end.</span>
+          ${fav ? `<span class="dim">Most played:</span> <button type="button" data-act="pick" data-key="${fav.key}">“${esc(fav.title)}”</button><span class="dim"> (${played[1]}×).</span>` : ''}
+          ${streak() > 1 ? `<span class="nw"><span class="ico-cal" aria-hidden="true"><b>${streak()}</b></span><span>${streak()} days</span></span> <span class="dim">in a row.</span>` : ''}`)
+      : ST.secs < 30 && !fav
         ? `<span class="dim">Belum ada yang kamu putar di meja ini. Mulai dengan</span> <button type="button" data-act="pick" data-key="${crateOrder[0]?.key}">“${esc(crateOrder[0]?.title || '')}”</button><span class="dim">, pas untuk ${PV.min} menit luangmu.</span>`
         : `<span class="dim">Kamu sudah memutar</span> <span class="nw"><i class="dot-o" aria-hidden="true"></i><span>${minsPlayed()} menit</span></span> <span class="dim">di meja ini.</span>
           <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="koleksi" data-f="selesai">${done} dari ${DOCS.length} sisi</button></span> <span class="dim">selesai kamu dengar.</span>
           ${fav ? `<span class="dim">Paling sering diputar:</span> <button type="button" data-act="pick" data-key="${fav.key}">“${esc(fav.title)}”</button><span class="dim"> (${played[1]}×).</span>` : ''}
           ${streak() > 1 ? `<span class="nw"><span class="ico-cal" aria-hidden="true"><b>${streak()}</b></span><span>${streak()} hari</span></span> <span class="dim">beruntun.</span>` : ''}`;
     } else {
-      g.innerHTML = `<span class="dim">Selamat ${dayPart},</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
-        <span class="dim">Meja ini</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><button type="button" data-act="koleksi" data-f="semua">${WORKS.length} piringan</button></span>${twoSided ? `<span class="dim">,</span> <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="koleksi" data-f="dua">${twoSided} di antaranya dua sisi</button></span>` : ''}<span class="dim">.</span>
+      g.innerHTML = LANG === 'en' ? `<span class="dim">Good ${{ pagi: 'morning', siang: 'afternoon', sore: 'afternoon' }[dayPart] || 'evening'},</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
+        <span class="dim">This desk holds</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><button type="button" data-act="koleksi" data-f="semua">${WORKS.length} ${WORKS.length === 1 ? 'record' : 'records'}</button></span>${twoSided ? `<span class="dim">,</span> <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="koleksi" data-f="dua">${twoSided} with more than one side</button></span>` : ''}<span class="dim">.</span>
+        <span class="dim">You have</span> <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="koleksi" data-f="belum">${unread.length ? unread.length + (unread.length === 1 ? ' side' : ' sides') + ' not yet' : 'no sides left'}</button></span> <button type="button" data-act="koleksi" data-f="belum">${unread.length ? 'played' : 'to play'}</button>${last && lp > .02 && lp < .97
+          ? ` <span class="dim">and you’re partway through</span> <button type="button" data-act="pick" data-key="${last.key}">“${esc(last.title)}”</button><span class="dim">.</span>`
+          : ` <span class="dim">and</span> <span class="nw"><span class="ico-cal" aria-hidden="true"><b>${new Date(latest.date + 'T00:00:00').getDate()}</b></span><button type="button" data-act="pick" data-key="${latest.key}">the latest</button></span> <span class="dim">came out ${esc(fmt(latest.date, { month: 'long', year: 'numeric' }))}.</span>`}`
+      : `<span class="dim">Selamat ${dayPart},</span> <span class="nw"><span class="ava-in" id="tkAva"></span> <span>${esc(SITE.readerName)}.</span></span>
+        <span class="dim">Meja ini</span> <span class="nw"><span class="ava-stack" id="tkStack"></span><button type="button" data-act="koleksi" data-f="semua">${WORKS.length} piringan</button></span>${twoSided ? `<span class="dim">,</span> <span class="nw"><span class="ico-ab" aria-hidden="true">B</span><button type="button" data-act="koleksi" data-f="dua">${twoSided} di antaranya bersisi banyak</button></span>` : ''}<span class="dim">.</span>
         <span class="dim">Kamu punya</span> <span class="nw"><span class="ico-bubble" aria-hidden="true"></span><button type="button" data-act="koleksi" data-f="belum">${unread.length ? unread.length + ' sisi belum' : 'semua sisi sudah'}</button></span> <button type="button" data-act="koleksi" data-f="belum">diputar</button>${last && lp > .02 && lp < .97
           ? ` <span class="dim">dan masih di tengah</span> <button type="button" data-act="pick" data-key="${last.key}">“${esc(last.title)}”</button><span class="dim">.</span>`
           : ` <span class="dim">dan</span> <span class="nw"><span class="ico-cal" aria-hidden="true"><b>${new Date(latest.date + 'T00:00:00').getDate()}</b></span><button type="button" data-act="pick" data-key="${latest.key}">yang terbaru</button></span> <span class="dim">terbit ${esc(fmt(latest.date, { month: 'long', year: 'numeric' }))}.</span>`}`;
@@ -475,10 +522,10 @@
     g.classList.remove('reveal'); void g.offsetWidth;
     if (animate && !reduced) g.classList.add('reveal');
     $('#tkMeta').innerHTML = `
-      <span title="piringan"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>${WORKS.length} piringan</span><i class="sep"></i>
-      <span title="sisi"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4" ry="8"/></svg>${DOCS.length} sisi</span><i class="sep"></i>
-      <span title="kata"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>${num(total)} kata</span><i class="sep"></i>
-      <span title="waktu yang sudah kamu putar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>${minsPlayed()} mnt</span>`;
+      <span title="${t('piringan', 'records')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>${WORKS.length} ${t('piringan', WORKS.length === 1 ? 'record' : 'records')}</span><i class="sep"></i>
+      <span title="${t('sisi', 'sides')}"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4" ry="8"/></svg>${DOCS.length} ${t('sisi', 'sides')}</span><i class="sep"></i>
+      <span title="${t('kata', 'words')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>${num(total)} ${t('kata', 'words')}</span><i class="sep"></i>
+      <span title="${t('waktu yang sudah kamu putar', 'time you have played')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>${minsPlayed()} ${t('mnt', 'min')}</span>`;
   }
   $('#tkGreet').addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
@@ -527,10 +574,10 @@
     // sisi yang belum didengar dari piringan yang baru diputar
     if (last && multi(last.A)) last.A.S.filter(o => o !== last && !ST.done.includes(o.key)).slice(0, 1).forEach(o => add(o, o.side === 'a' ? t('Kembali ke Sisi A, cerita aslinya', 'Back to Side A, the original story') : t(`${sideWord(o)} dari yang baru kamu dengar: dari sisi ${esc(o.pov || 'yang lain')}`, `${sideWord(o)} of what you just heard: ${esc(o.pov || 'another')}’s side`)));
     WORKS.filter(w => multi(w) && readSet.has(w.key)).forEach(w => { const o = w.S.find(x => !readSet.has(x.key)); if (o) add(o, t(`Sisi A “${esc(w.title)}” sudah kamu baca. Balik piringannya.`, `You’ve read Side A of “${esc(w.title)}”. Flip the record.`)); });
-    if (last) linksOf(last.slug).forEach(l => { const o = bySlug(l.a === last.slug ? l.b : l.a); if (!readSet.has(o.key)) add(o, `Benang merah dari “${esc(last.A.title)}”: <i>${l.words.map(esc).join('</i> dan <i>')}</i>`); });
-    add(crateOrder.find(w => !readSet.has(w.key)), `Pas untuk ${PV.min} menit luangmu`);
+    if (last) linksOf(last.slug).forEach(l => { const o = bySlug(l.a === last.slug ? l.b : l.a); if (!readSet.has(o.key)) add(o, `${t('Benang merah dari', 'A thread from')} “${esc(last.A.title)}”: <i>${l.words.map(esc).join(`</i> ${t('dan', 'and')} <i>`)}</i>`); });
+    add(crateOrder.find(w => !readSet.has(w.key)), t(`Pas untuk ${PV.min} menit luangmu`, `Right for your ${PV.min} spare minutes`));
     DOCS.filter(d => !readSet.has(d.key) && !(d.ch > 1)).forEach(d => add(d, d.side !== 'a' ? t(`${sideWord(d)}, dari sisi ${esc(d.pov || 'yang lain')}`, `${sideWord(d)}, ${esc(d.pov || 'another')}’s side`) : t('Belum pernah kamu putar', 'Not played yet')));
-    if (!out.length) Object.entries(ST.plays).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => add(docByKey(k), `Favoritmu, sudah ${n}× diputar`));
+    if (!out.length) Object.entries(ST.plays).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => add(docByKey(k), t(`Favoritmu, sudah ${n}× diputar`, `Your favourite, played ${n}×`)));
     return out;
   }
   // lencana kecil di daftar: huruf sisi (B, C, …) atau nomor bab
@@ -663,8 +710,8 @@
   });
   $('#chipRandom').addEventListener('click', () => $('#tkGear').click());
   $('#chipMail').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(SITE.email); toast(`Alamat ${SITE.email} disalin.`); }
-    catch (e) { toast('Alamat surat: ' + SITE.email); }
+    try { await navigator.clipboard.writeText(SITE.email); toast(t(`Alamat ${SITE.email} disalin.`, `Copied ${SITE.email}.`)); }
+    catch (e) { toast(t('Alamat surat: ', 'Email: ') + SITE.email); }
   });
   // cari kalimat: setiap hasil membuka tulisan tepat di paragraf itu, dengan kalimatnya disorot
   $('#tkAsk').addEventListener('submit', e => {
@@ -674,8 +721,8 @@
     const res = search(q);
     feedMode = 'search'; clearTimeout(feedT);
     renderFeed(false);
-    feed.innerHTML = `<p class="tk-res-h"><span>${res.length} hasil untuk “${esc(q)}”</span><button type="button" data-clear>hapus</button></p>
-      <ul class="tk-list">${res.map((r, i) => `<li style="--k:${i}"><button type="button" data-at="${r.w.key}" data-para="${r.para}" data-q="${esc(q)}">${mdisc(r.w)}<span class="sg-t"><b>${esc(r.w.title)}${badge(r.w)}</b><span>${r.snip}</span></span></button></li>`).join('') || '<li class="tk-none">Tidak ada kalimat yang cocok.</li>'}</ul>`;
+    feed.innerHTML = `<p class="tk-res-h"><span>${t(`${res.length} hasil untuk “${esc(q)}”`, `${res.length} results for “${esc(q)}”`)}</span><button type="button" data-clear>${t('hapus', 'clear')}</button></p>
+      <ul class="tk-list">${res.map((r, i) => `<li style="--k:${i}"><button type="button" data-at="${r.w.key}" data-para="${r.para}" data-q="${esc(q)}">${mdisc(r.w)}<span class="sg-t"><b>${esc(r.w.title)}${badge(r.w)}</b><span>${r.snip}</span></span></button></li>`).join('') || `<li class="tk-none">${t('Tidak ada kalimat yang cocok.', 'No sentence matches.')}</li>`}</ul>`;
   });
 
   /* ======================================================================
@@ -819,9 +866,9 @@
     const n = lens.length, W = 600, H = 64;
     if (!n) { host.innerHTML = ''; return; }
     const max = Math.max(...lens), bw = W / n, bar = Math.max(2, Math.min(bw * .6, 18));
-    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${n} kalimat, terpanjang ${max} kata">${lens.map((l, i) => {
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${t(`${n} kalimat, terpanjang ${max} kata`, `${n} sentences, longest ${max} words`)}">${lens.map((l, i) => {
       const h = Math.max(3, l / max * (H - 4));
-      return `<rect style="--k:${i}" x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} kata</title></rect>`;
+      return `<rect style="--k:${i}" x="${(i * bw + (bw - bar) / 2).toFixed(1)}" y="${((H - h) / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(bar / 2, 4)}" fill="currentColor" opacity="${(.35 + .65 * l / max).toFixed(2)}"><title>${l} ${t('kata', 'words')}</title></rect>`;
     }).join('')}</svg>`;
   }
   function neighbors() {
@@ -897,14 +944,14 @@
     const rOn = RADIO && RADIO.seed;
     $('#rrKick').textContent = rOn ? 'Radio menyala' : 'Radio';
     $('#rrTitle').textContent = rOn ? `Radio “${bySlug(RADIO.seed).title}”` : 'Mulai radio dari tulisan ini';
-    $('#rrSub').textContent = rOn ? `${RADIO.heard.length} sisi diputar. Ketuk untuk menghentikan.` : 'Tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.';
+    $('#rrSub').textContent = rOn ? t(`${RADIO.heard.length} sisi diputar. Ketuk untuk menghentikan.`, `${RADIO.heard.length} sides played. Tap to stop.`) : 'Tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.';
     $('#rdRadio').classList.toggle('on', !!rOn);
     const nb = neighbors(), { prev } = nb, qNext = QUEUE.length ? docByKey(QUEUE[0]) : null, next = qNext || nb.next;
     renderRelated(w.A);
     $('#rdNextLink').href = next ? hrefOf(next) : '#album-' + nb.album.id;
     $('#rdNextLink').dataset.queue = qNext ? '1' : '';
-    $('span', $('#rdNextLink')).textContent = qNext ? `berikutnya di antreanmu · ${QUEUE.length} menunggu` : nb.album ? (next ? `berikutnya di ${kindOf(nb.album)} “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `${kindOf(nb.album)} “${nb.album.title}” selesai`) : 'berikutnya';
-    $('b', $('#rdNextLink')).textContent = next ? next.title : 'Kembali ke ' + kindOf(nb.album);
+    $('span', $('#rdNextLink')).textContent = qNext ? t(`berikutnya di antreanmu · ${QUEUE.length} menunggu`, `next in your queue · ${QUEUE.length} waiting`) : nb.album ? (next ? t(`berikutnya di ${kindOf(nb.album)} “${nb.album.title}” · ${nb.pos + 1}/${nb.len}`, `next in the ${kindOf(nb.album).toLowerCase()} “${nb.album.title}” · ${nb.pos + 1}/${nb.len}`) : t(`${kindOf(nb.album)} “${nb.album.title}” selesai`, `${kindOf(nb.album)} “${nb.album.title}” finished`)) : 'berikutnya';
+    $('b', $('#rdNextLink')).textContent = next ? next.title : t('Kembali ke ', 'Back to ') + kindOf(nb.album);
     $('#rdPrev').dataset.key = prev.key; $('#rdNext').dataset.key = (next || prev).key;
     $('#rdNext').disabled = !next;
     $('#advPreview').textContent = plain(w.body[0]).replace(/\n/g, ' ');
@@ -1035,7 +1082,7 @@
     UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen; UN.queue = !!n.queue; UN.radio = !!n.radio;
     unEl.classList.toggle('end', !!n.end);
     if (n.end) {
-      $('#unWhy').textContent = (n.end.shared || n.end.daily ? 'Racikan' : 'Album') + ' selesai';
+      $('#unWhy').textContent = t((n.end.shared || n.end.daily ? 'Racikan' : 'Album') + ' selesai', (n.end.shared || n.end.daily ? 'Mix' : 'Album') + ' finished');
       $('#unTitle').textContent = n.end.title;
       $('#unMeta').innerHTML = `<button type="button" data-again="${esc(n.end.id)}">${t('Putar lagi', 'Play again')}</button> <a href="#album-${esc(n.end.id)}">${t('Ke ' + kindOf(n.end), 'Go to ' + kindOf(n.end))}</a>`;
       $('#unDisc').style.setProperty('--lc', catOf(n.end.tracks[0].cat).ink);
@@ -1151,9 +1198,9 @@
       x.fillStyle = '#0B0B0C'; x.beginPath(); x.arc(r, r, r * .96, 0, Math.PI * 2); x.fill();
       x.strokeStyle = 'rgba(255,255,255,.05)'; x.lineWidth = 1;
       for (let g = r * .42; g < r * .94; g += 5) { x.beginPath(); x.arc(r, r, g, 0, Math.PI * 2); x.stroke(); }
-      const t = document.createElement('canvas');
-      drawThread(t, fullText(d), { w: S, h: S, pad: S * .06, color: ink, seed: d.key, weight: 1.4, pins: false });
-      x.globalAlpha = .55; x.drawImage(t, 0, 0, S, S); x.globalAlpha = 1;
+      const tc = document.createElement('canvas');
+      drawThread(tc, fullText(d), { w: S, h: S, pad: S * .06, color: ink, seed: d.key, weight: 1.4, pins: false });
+      x.globalAlpha = .55; x.drawImage(tc, 0, 0, S, S); x.globalAlpha = 1;
       x.fillStyle = d.side !== 'a' ? '#F4F4F5' : ink; x.beginPath(); x.arc(r, r, r * .46, 0, Math.PI * 2); x.fill();
       x.fillStyle = d.side !== 'a' ? '#0D0D0E' : 'rgba(0,0,0,.75)'; x.textAlign = 'center';
       x.font = `600 ${Math.round(S * .038)}px Geist, system-ui, sans-serif`;
@@ -1236,7 +1283,10 @@
     $('#rsVoice').setAttribute('aria-pressed', 'true');
     const paras = [...body.children], d = current;
     Now.play(d);
-    const voice = speechSynthesis.getVoices().find(v => /^id|indones/i.test(v.lang + v.name));
+    // suara mengikuti bahasa teksnya: bagian yang belum diterjemahkan tetap dibacakan dalam bahasa dasarnya
+    const tongue = (current?.lost ? BASE : LANG) === 'en' ? 'en-GB' : 'id-ID';
+    const vs = speechSynthesis.getVoices();
+    const voice = tongue === 'en-GB' ? vs.find(v => /^en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) : vs.find(v => /^id|indones/i.test(v.lang + v.name));
     const next = s => {
       if (tok !== speakTok) return;
       if (s >= plan.length) {
@@ -1264,7 +1314,7 @@
       renderLs(); Now.position(s, plan.length, d); Lyr.sync();
       const u = new SpeechSynthesisUtterance(it.text);
       const fade = sleepFade();
-      u.lang = LOCALE; if (voice) u.voice = voice; u.rate = .95 * (.85 + .15 * fade); u.volume = fade;
+      u.lang = tongue; if (voice) u.voice = voice; u.rate = .95 * (.85 + .15 * fade); u.volume = fade;
       // bila peramban mengirim posisi kata, baris lirik terisi seperti karaoke
       u.onboundary = e => { if (tok === speakTok && e.charIndex != null) Lyr.fill(s, (e.charIndex + (e.charLength || 0)) / Math.max(1, it.text.length)); };
       u.onend = () => { Lyr.fill(s, 1); next(s + 1); }; u.onerror = () => { if (tok === speakTok) stopSpeech(); };
@@ -1284,7 +1334,7 @@
     bar.classList.toggle('paused', speakPaused);
     $('#lsPlay').setAttribute('aria-label', speakPaused ? 'Lanjutkan' : 'Jeda');
     $('#lsLabel').textContent = speakPaused ? 'Dijeda' : RADIO ? 'Radio' : 'Dibacakan';
-    $('#lsPos').textContent = `paragraf ${speakIdx + 1} dari ${body.children.length}`;
+    $('#lsPos').textContent = t(`paragraf ${speakIdx + 1} dari ${body.children.length}`, `paragraph ${speakIdx + 1} of ${body.children.length}`);
   }
   const resumeSpeech = () => { if (current && !speaking) startSpeech(speakPaused ? { sent: speakSent } : speakIdx || 0); };
   function skipSide() {
@@ -1407,7 +1457,7 @@
     if (typeof mode === 'number') Sleep.t = setInterval(tickSleep, 1000);
     if (Amb.kind !== 'hening') Amb.volume(1);
     renderSleep();
-    toast(!Sleep.mode ? 'Pengatur waktu tidur dimatikan.' : typeof mode === 'number' ? `Pembacaan berhenti dalam ${mode} menit.` : mode === 'side' ? 'Pembacaan berhenti di akhir sisi ini.' : 'Pembacaan berhenti di akhir album atau racikan.');
+    toast(!Sleep.mode ? 'Pengatur waktu tidur dimatikan.' : typeof mode === 'number' ? t(`Pembacaan berhenti dalam ${mode} menit.`, `Reading stops in ${mode} minutes.`) : mode === 'side' ? 'Pembacaan berhenti di akhir sisi ini.' : 'Pembacaan berhenti di akhir album atau racikan.');
   }
   function tickSleep() {
     const left = Sleep.until - Date.now();
@@ -1428,7 +1478,7 @@
     Sleep.mode = null; Sleep.pending = false; renderSleep();
     $('#sleepMenu').hidden = true;
     const v = $('#sleepVeil');
-    $('#svWhere').textContent = d ? `Dijeda di “${d.title}”${speakPaused ? `, kalimat ${at + 1} dari ${speechPlan().length}` : ''}.` : '';
+    $('#svWhere').textContent = d ? t(`Dijeda di “${d.title}”${speakPaused ? `, kalimat ${at + 1} dari ${speechPlan().length}` : ''}.`, `Paused in “${d.title}”${speakPaused ? `, sentence ${at + 1} of ${speechPlan().length}` : ''}.`) : '';
     $('#svResume').hidden = !(d && speakPaused);
     v.hidden = false; v.classList.remove('in'); void v.offsetWidth; v.classList.add('in');
   }
@@ -1505,8 +1555,8 @@
     { label: t('Bab berikutnya', 'Next chapter'), hint: (current && nextChapter(current))?.title || '', run: () => openDoc(nextChapter(current)), show: view === 'baca' && !!current && !!nextChapter(current) },
     { label: PV.autoplay === false ? 'Nyalakan putar terus' : 'Matikan putar terus', hint: 'sisi berikutnya menyusul otomatis', run: () => { PV.autoplay = PV.autoplay === false; savePv(); toast(PV.autoplay ? 'Putar terus menyala.' : 'Putar terus dimatikan.'); } },
     { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
-    { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + ' sisi', run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
-    { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
+    { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + t(' sisi', ' sides'), run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
+    { label: 'Lihat antrean', hint: QUEUE.length + t(' menunggu', ' waiting'), run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
     { label: Sleep.mode ? 'Matikan pengatur waktu tidur' : 'Pengatur waktu tidur: 30 menit', hint: Sleep.mode ? sleepLabel() : 'pembacaan berhenti sendiri', run: () => setSleep(Sleep.mode ? 'off' : 30), show: view === 'baca' },
     { label: 'Berhenti di akhir sisi ini', hint: 'pengatur waktu tidur', run: () => setSleep('side'), show: view === 'baca' && Sleep.mode !== 'side' },
     { label: 'Mulai radio dari tulisan ini', hint: current?.A.title, run: () => startRadio(current.A.slug), show: view === 'baca' && !!current },
@@ -1518,10 +1568,10 @@
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
     { label: 'Profil ' + SITE.author, hint: 'tentang penulis', run: () => go('tentang') },
-    { label: 'Pilih piringan', hint: 'sisi A atau B', run: () => go('pilih') },
+    { label: 'Pilih piringan', hint: t('sisi A, B, atau bab', 'side A, B, or a chapter'), run: () => go('pilih') },
     { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
     ...(todayMix() ? [{ label: 'Putar racikan hari ini', hint: todayMix().sub, run: () => playAlbum(todayMix().id, 0) }] : []),
-    ...ALBUMS.map(a => ({ label: 'Putar album “' + a.title + '”', hint: a.tracks.length + ' sisi', run: () => playAlbum(a.id, 0) })),
+    ...ALBUMS.map(a => ({ label: t('Putar album “', 'Play the album “') + a.title + '”', hint: a.tracks.length + t(' sisi', ' sides'), run: () => playAlbum(a.id, 0) })),
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
     { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#chipInstall').hidden }
   ].filter(c => c.show !== false);
@@ -1536,7 +1586,7 @@
       ? pItems.map((r, i) => r.cmd
         ? `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-cmd="${i}" class="p-cmd" style="--k:${Math.min(i, 8)}"><span class="p-kbd" aria-hidden="true">›</span><span class="p-title">${esc(r.cmd.label)}</span><span class="p-snip">${esc(r.cmd.hint || 'perintah')}</span></li>`
         : `<li role="option" id="po-${i}" aria-selected="${i === pSel}" data-i="${i}" style="--k:${Math.min(i, 8)}"><span class="p-disc${r.w.side !== 'a' ? ' b' : ''}" style="--lc:${catOf(r.w.cat).ink}" aria-hidden="true"><i></i></span><span class="p-title">${esc(r.w.title)}${r.w.ch ? ` <small>${t('Bab', 'Ch.')} ${r.w.ch}</small>` : multi(r.w.A) ? ` <small>${sideWord(r.w)}</small>` : ''}</span><span class="p-snip">${r.snip}</span></li>`).join('')
-      : '<li class="p-empty">Tidak ada yang cocok. Coba kata lain, atau ketik > untuk melihat perintah.</li>';
+      : `<li class="p-empty">${t('Tidak ada yang cocok. Coba kata lain, atau ketik > untuk melihat perintah.', 'Nothing matches. Try another word, or type > to see commands.')}</li>`;
     pInput.setAttribute('aria-activedescendant', pItems.length ? 'po-' + pSel : '');
   }
   function openPalette() { palette.hidden = false; pInput.value = ''; pSel = 0; renderPalette(); pInput.focus(); }
@@ -1679,7 +1729,7 @@
     host.hidden = !links.length;
     host.innerHTML = links.length ? `<p class="rd-end-label">benang merah</p>` + links.map(l => {
       const o = bySlug(l.a === w.slug ? l.b : l.a);
-      return `<a class="rel" href="#baca-${o.slug}"><svg class="rel-thread" viewBox="0 0 34 18" aria-hidden="true"><path d="M4 13Q15 19 30 4"/><circle cx="4" cy="13" r="3"/><circle cx="30" cy="4" r="3"/></svg><span class="rel-t"><b>${esc(o.title)}</b><small>terhubung lewat ${l.words.map(x => `<i>${esc(x)}</i>`).join(' dan ')}</small></span></a>`;
+      return `<a class="rel" href="#baca-${o.slug}"><svg class="rel-thread" viewBox="0 0 34 18" aria-hidden="true"><path d="M4 13Q15 19 30 4"/><circle cx="4" cy="13" r="3"/><circle cx="30" cy="4" r="3"/></svg><span class="rel-t"><b>${esc(o.title)}</b><small>${t('terhubung lewat', 'linked by')} ${l.words.map(x => `<i>${esc(x)}</i>`).join(t(' dan ', ' and '))}</small></span></a>`;
     }).join('') : '';
   }
 
@@ -1874,7 +1924,7 @@
     try {
       if (navigator.share) await navigator.share({ title: current.title, text: `${current.title} — ${SITE.author}`, url });
       else { await navigator.clipboard.writeText(url); toast('Tautan tulisan disalin.'); }
-    } catch (e) { if (e.name !== 'AbortError') toast('Tautan: ' + url); }
+    } catch (e) { if (e.name !== 'AbortError') toast(t('Tautan: ', 'Link: ') + url); }
   });
 
   /* ======================================================================
@@ -2129,7 +2179,7 @@
     track.style.transform = `translateY(${-(PV.min - 1) * itemH()}px)`;
     [...track.children].forEach((s, i) => s.classList.toggle('on', i === PV.min - 1));
     wheelEl.setAttribute('aria-valuenow', PV.min);
-    wheelEl.setAttribute('aria-valuetext', PV.min + ' menit');
+    wheelEl.setAttribute('aria-valuetext', PV.min + t(' menit', ' minutes'));
     savePv(); rerank();
   }
   let wy = null, wBase = 0;
@@ -2170,22 +2220,22 @@
     const f = $('#tcForm');
     f.dataset.v = PV.form;
     f.style.setProperty('--p', { puisi: '0%', semua: '50%', prosa: '100%' }[PV.form]);
-    f.setAttribute('aria-label', `Bentuk: ${PV.form}. Ketuk untuk mengganti.`);
+    f.setAttribute('aria-label', t(`Bentuk: ${PV.form}. Ketuk untuk mengganti.`, `Form: ${{ puisi: 'poetry', prosa: 'prose', semua: 'all' }[PV.form] || PV.form}. Tap to change.`));
     const a = $('#tcAmb'), ai = AMBS.indexOf(PV.amb);
     a.style.setProperty('--a', (-60 + ai * 40) + 'deg');
     $('#tcAmbV').textContent = { hening: 'Hening', hujan: 'Hujan', ombak: 'Ombak', perapian: 'Api' }[PV.amb];
-    a.setAttribute('aria-label', `Suasana saat membaca: ${PV.amb}. Ketuk untuk mengganti.`);
+    a.setAttribute('aria-label', t(`Suasana saat membaca: ${PV.amb}. Ketuk untuk mengganti.`, `Ambience while reading: ${PV.amb}. Tap to change.`));
     $('#tcSizeV').textContent = rd.size;
     const spread = (rd.size - 13) * 3.2;
     $('#tcField').innerHTML = Array.from({ length: 9 }, (_, i) => {
       const k = (i - 4) / 4, x = 80 + k * spread * 2.4;
       return `<path d="M80 76 Q${(80 + k * spread * 4).toFixed(1)} ${(14 + Math.abs(k) * 22).toFixed(1)} ${x.toFixed(1)} 4"/>`;
     }).join('');
-    $('#tcSize').setAttribute('aria-label', `Ukuran huruf ${rd.size}. Ketuk untuk mengganti.`);
+    $('#tcSize').setAttribute('aria-label', t(`Ukuran huruf ${rd.size}. Ketuk untuk mengganti.`, `Text size ${rd.size}. Tap to change.`));
     const p = $('#tcPaper'), pp = PAPERS[rd.rt] || PAPERS.putih;
     p.dataset.v = rd.rt; p.style.setProperty('--pp', rd.rt === 'custom' ? rd.custom : pp[0]);
     $('#tcPaperV').textContent = pp[1];
-    p.setAttribute('aria-label', `Kertas ${pp[1]}. Ketuk untuk mengganti.`);
+    p.setAttribute('aria-label', t(`Kertas ${pp[1]}. Ketuk untuk mengganti.`, `Paper: ${pp[1]}. Tap to change.`));
   }
   $('#tcForm').addEventListener('click', () => { PV.form = FORMS[(FORMS.indexOf(PV.form) + 1) % FORMS.length]; savePv(); renderControls(); rerank(); });
   $('#tcAmb').addEventListener('click', () => { PV.amb = AMBS[(AMBS.indexOf(PV.amb) + 1) % AMBS.length]; savePv(); renderControls(); });
@@ -2356,11 +2406,11 @@
     $$('i', ticks).forEach((t, i) => { t.className = i < pos ? 'past' : i === pos ? 'now' : ''; });
     const tick = $$('i', ticks)[pos];
     $('#scTag').style.setProperty('--x', (tick.offsetLeft + tick.offsetWidth / 2) + 'px');
-    $('#scTag').textContent = PK.frac > 0 ? `mulai ${Math.round(PK.frac * 100)}%` : 'dari awal';
+    $('#scTag').textContent = PK.frac > 0 ? t(`mulai ${Math.round(PK.frac * 100)}%`, `from ${Math.round(PK.frac * 100)}%`) : 'dari awal';
     $('#scFrom').innerHTML = `${fmtMS(total * PK.frac)}<small>M</small>`;
     $('#scTo').innerHTML = `${fmtMS(total)}<small>M</small>`;
     scrub.setAttribute('aria-valuenow', Math.round(PK.frac * 100));
-    scrub.setAttribute('aria-valuetext', `Mulai dari ${fmtMS(total * PK.frac)} dari ${fmtMS(total)}`);
+    scrub.setAttribute('aria-valuetext', t(`Mulai dari ${fmtMS(total * PK.frac)} dari ${fmtMS(total)}`, `Start at ${fmtMS(total * PK.frac)} of ${fmtMS(total)}`));
   }
   let scrubbing = false;
   const scrubTo = x => { if (!pkDoc()) return; const r = ticks.getBoundingClientRect(); PK.frac = clamp((x - r.left) / r.width, 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); };
@@ -2481,13 +2531,13 @@
   const saveMixes = () => store.set('mixes', MIXES.slice(0, 12));
   const hashId = str => { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const mixAlbum = m => ({ id: m.id, title: m.title, from: m.from || '', mine: !!m.mine, at: m.at, shared: true, keys: m.keys,
-    note: m.mine ? `Racikanmu${m.from ? ', dari ' + m.from : ''}. Siapa pun yang membuka tautannya mendapat urutan yang sama.` : `Racikan${m.from ? ' dari ' + m.from : ''}, dibagikan lewat tautan.`,
+    note: m.mine ? t(`Racikanmu${m.from ? ', dari ' + m.from : ''}. Siapa pun yang membuka tautannya mendapat urutan yang sama.`, `Your mix${m.from ? ', from ' + m.from : ''}. Anyone who opens the link gets the same order.`) : t(`Racikan${m.from ? ' dari ' + m.from : ''}, dibagikan lewat tautan.`, `A mix${m.from ? ' from ' + m.from : ''}, shared by link.`),
     tracks: m.keys.map(docByKey).filter(Boolean) });
   const mixUrl = a => location.href.split('#')[0] + '#racikan?s=' + a.keys.join(',') + '&t=' + encodeURIComponent(a.title) + (a.from ? '&n=' + encodeURIComponent(a.from) : '');
   function keepMix(keys, title, from, mine) {
     keys = keys.filter(k => docByKey(k)).slice(0, 40);
     if (!keys.length) return null;
-    title = (title || '').trim().slice(0, 60) || 'Racikan tanpa nama';
+    title = (title || '').trim().slice(0, 60) || t('Racikan tanpa nama', 'Untitled mix');
     from = (from || '').trim().slice(0, 40);
     const id = 'racikan-' + hashId(keys.join(',') + '|' + title + '|' + from);
     const old = MIXES.find(m => m.id === id);
@@ -2500,7 +2550,7 @@
     const keys = (q.get('s') || '').split(',').map(k => k.trim()).filter(Boolean);
     const r = keepMix(keys, q.get('t'), q.get('n'), false);
     if (!r) { toast('Racikan ini kosong, atau tulisannya sudah tidak ada.'); return null; }
-    if (r.fresh) { const a = albumOf(r.id); toast(`Racikan “${a.title}”${a.from ? ' dari ' + a.from : ''} · ${a.tracks.length} sisi. Tersimpan di rak Album.`, null, 4500); }
+    if (r.fresh) { const a = albumOf(r.id); toast(t(`Racikan “${a.title}”${a.from ? ' dari ' + a.from : ''} · ${a.tracks.length} sisi. Tersimpan di rak Album.`, `The mix “${a.title}”${a.from ? ' from ' + a.from : ''} · ${a.tracks.length} sides. Saved to the Album shelf.`), null, 4500); }
     return r.id;
   }
   // kartu "bagikan racikan": nama, pengirim, sampul mosaik, lalu tautan
@@ -2508,11 +2558,11 @@
   function openMix(keys) {
     mixKeys = keys.filter(k => docByKey(k));
     if (!mixKeys.length) { toast('Antreanmu masih kosong.'); return; }
-    $('#mixTitle').value = 'Racikan ' + new Date().toLocaleDateString(LOCALE, { day: 'numeric', month: 'long' });
+    $('#mixTitle').value = t('Racikan ', 'Mix for ') + new Date().toLocaleDateString(LOCALE, { day: 'numeric', month: 'long' });
     $('#mixFrom').value = store.get('mixFrom', '');
     const ds = mixKeys.map(docByKey);
     $('#mixList').innerHTML = ds.map(d => `<li>${mdisc(d)}<span>${esc(d.title)}${badge(d) ? ' ' + badge(d) : ''}</span><small>${d.minutes} ${t('mnt', 'min')}</small></li>`).join('');
-    $('#mixCount').textContent = `${ds.length} sisi · ${ds.reduce((n, d) => n + d.minutes, 0)} menit`;
+    $('#mixCount').textContent = `${ds.length} ${t('sisi', 'sides')} · ${ds.reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}`;
     $('#mixModal').hidden = false;
     requestAnimationFrame(() => paintCover($('#mixCover'), { tracks: ds }, Math.min(300, $('.mix-art').clientWidth || 260)));
     $('#mixTitle').select();
@@ -2528,15 +2578,15 @@
     const a = makeMix(); if (!a) return;
     const url = mixUrl(a);
     try {
-      if (navigator.share) { await navigator.share({ title: a.title, text: `“${a.title}”: ${a.tracks.length} sisi dari ${SITE.title}`, url }); closeMix(); }
+      if (navigator.share) { await navigator.share({ title: a.title, text: t(`“${a.title}”: ${a.tracks.length} sisi dari ${SITE.title}`, `“${a.title}”: ${a.tracks.length} sides from ${SITE.title}`), url }); closeMix(); }
       else { await navigator.clipboard.writeText(url); toast('Tautan racikan disalin. Racikannya juga tersimpan di rak Album.'); closeMix(); }
-    } catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url, null, 8000); }
+    } catch (err) { if (err.name !== 'AbortError') toast(t('Tautan: ', 'Link: ') + url, null, 8000); }
   });
   $('#mixCopy').addEventListener('click', async () => {
     const a = makeMix(); if (!a) return;
     const url = mixUrl(a);
     try { await navigator.clipboard.writeText(url); toast('Tautan racikan disalin.', { label: 'Lihat di rak', run: () => { location.hash = 'album-' + a.id; } }); closeMix(); }
-    catch (err) { toast('Tautan: ' + url, null, 8000); }
+    catch (err) { toast(t('Tautan: ', 'Link: ') + url, null, 8000); }
   });
   $('#mixClose').addEventListener('click', closeMix);
   $('#mixModal').addEventListener('click', e => { if (e.target.id === 'mixModal') closeMix(); });
@@ -2589,7 +2639,7 @@
   // semua sisi, dari yang terbaru; dipakai tombol "Putar semua" di halaman profil
   let allCache = null;
   function allAlbum() {
-    return allCache || (allCache = { id: 'semua', title: 'Semua tulisan ' + SITE.author, note: `Setiap sisi di meja ini, dari yang terbaru. Sisi B menyusul sisi A-nya.`, tracks: DOCS.slice() });
+    return allCache || (allCache = { id: 'semua', title: t('Semua tulisan ', 'Everything by ') + SITE.author, note: t('Setiap sisi di meja ini, dari yang terbaru. Sisi-sisi lain menyusul sisi A-nya.', 'Every side at this desk, newest first. Other sides follow their side A.'), tracks: DOCS.slice() });
   }
   if (!ALBUMS.length && !MIXES.length && !todayMix()) $('.pill [data-go="album"]').hidden = true;
   // PLAY: album yang sedang diputar, posisi, dan urutannya (urutan acak juga diingat)
@@ -2604,7 +2654,7 @@
     if (any < 0) { PLAY = null; savePlay(); return; }
     PLAY.i = any; savePlay();
   }
-  const kindOf = a => (a && (a.shared || a.daily) ? 'racikan' : 'album');
+  const kindOf = a => (a && (a.shared || a.daily) ? t('racikan', 'mix') : 'album');
   const albumMins = a => a.tracks.reduce((n, t) => n + t.minutes, 0);
   // sampul mosaik ala playlist: empat petak seni benang dari sisi-sisi di album
   function paintCover(c, a, size) {
@@ -2629,14 +2679,14 @@
     if (!id) {
       const tm = todayMix(), tOn = tm && now && now.id === tm.id;
       host.innerHTML = `${tm ? `<button type="button" class="al-daily" data-album="${esc(tm.id)}">${sleeve(tm, 220, tOn)}
-          <span class="ad-t"><span class="al-kicker">Racikan harian · berganti dalam ${inHours(untilMidnight())}</span><b>${esc(tm.title)}</b><span class="ad-sub">${esc(tm.sub)}</span>
-          <span class="ad-meta">${tm.tracks.length} sisi · ${albumMins(tm)} menit${tOn ? ' · sedang diputar' : ''}</span></span></button>` : ''}
-        <header class="al-head"><p class="al-kicker">Koleksi</p><h2>Album</h2><p class="al-sub">Sisi-sisi pilihan, disusun untuk didengar berurutan.</p></header>
+          <span class="ad-t"><span class="al-kicker">${t("Racikan harian · berganti dalam", "Daily mix · changes in")} ${inHours(untilMidnight())}</span><b>${esc(tm.title)}</b><span class="ad-sub">${esc(tm.sub)}</span>
+          <span class="ad-meta">${tm.tracks.length} ${t('sisi', 'sides')} · ${albumMins(tm)} ${t('menit', 'min')}${tOn ? t(' · sedang diputar', ' · playing') : ''}</span></span></button>` : ''}
+        <header class="al-head"><p class="al-kicker">${t('Koleksi', 'Collection')}</p><h2>${t('Album', 'Albums')}</h2><p class="al-sub">${t('Sisi-sisi pilihan, disusun untuk didengar berurutan.', 'Hand-picked sides, ordered to be heard one after another.')}</p></header>
         <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
-          <b>${esc(a.title)}</b><small>${a.tracks.length} sisi · ${albumMins(a)} menit${now && now.id === a.id ? ' · sedang diputar' : ''}</small></button>`).join('') || '<p class="al-empty">Belum ada album. Buat yang pertama di panel admin.</p>'}</div>
-        ${MIXES.length ? `<header class="al-head al-head-sm"><p class="al-kicker">Racikan</p><p class="al-sub">Urutan baca yang kamu buat atau yang dibagikan padamu lewat tautan.</p></header>
+          <b>${esc(a.title)}</b><small>${a.tracks.length} ${t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}${now && now.id === a.id ? t(' · sedang diputar', ' · playing') : ''}</small></button>`).join('') || `<p class="al-empty">${t('Belum ada album. Buat yang pertama di panel admin.', 'No albums yet. Make the first one in the admin panel.')}</p>`}</div>
+        ${MIXES.length ? `<header class="al-head al-head-sm"><p class="al-kicker">${t('Racikan', 'Mixes')}</p><p class="al-sub">${t('Urutan baca yang kamu buat atau yang dibagikan padamu lewat tautan.', 'Reading orders you made, or that were shared with you by link.')}</p></header>
         <div class="al-grid">${MIXES.map(mixAlbum).filter(a => a.tracks.length).map((a, i) => `<button type="button" class="al-card mix" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
-          <b>${esc(a.title)}</b><small>${a.mine ? 'Racikanmu' : a.from ? 'dari ' + esc(a.from) : 'dibagikan padamu'} · ${a.tracks.length} sisi</small></button>`).join('')}</div>` : ''}`;
+          <b>${esc(a.title)}</b><small>${a.mine ? t('Racikanmu', 'Your mix') : a.from ? t('dari ', 'from ') + esc(a.from) : t('dibagikan padamu', 'shared with you')} · ${a.tracks.length} ${t('sisi', 'sides')}</small></button>`).join('')}</div>` : ''}`;
       document.title = 'Album · ' + SITE.title;
     } else {
       const a = albumOf(id), on = now && now.id === a.id;
@@ -2644,15 +2694,15 @@
         <div class="al-detail">
           <div class="al-art">${sleeve(a, 300, on)}</div>
           <div class="al-info">
-            <p class="al-kicker">${a.daily ? 'Racikan harian · ' + esc(a.sub) : a.shared ? 'Racikan' : 'Album'} · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
+            <p class="al-kicker">${a.daily ? t('Racikan harian · ', 'Daily mix · ') + esc(a.sub) : a.shared ? t('Racikan', 'Mix') : 'Album'} · ${a.tracks.length} ${t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}</p>
             <h2>${esc(a.title)}</h2>
-            ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">Diterima ${ago(a.at)}.</span>` : ''}${a.daily && a.date === wibDate() ? ` <span class="al-ago">Berganti dalam ${inHours(untilMidnight())}.</span>` : a.daily ? ' <span class="al-ago">Ini racikan hari yang sudah lewat.</span>' : ''}</p>` : ''}
+            ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">${t('Diterima', 'Received')} ${ago(a.at)}.</span>` : ''}${a.daily && a.date === wibDate() ? ` <span class="al-ago">${t('Berganti dalam', 'Changes in')} ${inHours(untilMidnight())}.</span>` : a.daily ? ` <span class="al-ago">${t('Ini racikan hari yang sudah lewat.', 'This is a mix from a day gone by.')}</span>` : ''}</p>` : ''}
             <div class="al-actions">
-              <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? 'Lanjutkan' : 'Putar'}</button>
+              <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? t('Lanjutkan', 'Resume') : t('Putar', 'Play')}</button>
               <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
               <button type="button" class="al-btn" data-qalbum="${esc(a.id)}" aria-label="Tambahkan album ke antrean" title="Tambahkan ke antrean">${QICON}</button>
-              ${a.shared ? `<button type="button" class="al-btn" data-unmix="${esc(a.id)}" aria-label="Hapus racikan dari rak" title="Hapus dari rak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>` : ''}
-              <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="Bagikan ${a.shared ? 'racikan' : 'album'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
+              ${a.shared ? `<button type="button" class="al-btn" data-unmix="${esc(a.id)}" aria-label="${t('Hapus racikan dari rak', 'Remove the mix from the shelf')}" title="${t('Hapus dari rak', 'Remove from shelf')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>` : ''}
+              <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="${t('Bagikan ' + (a.shared ? 'racikan' : 'album'), 'Share the ' + (a.shared ? 'mix' : 'album'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
             </div>
             <ol class="al-tracks">${a.tracks.map((x, i) => {
               const cur = on && PLAY.i === i, why = a.daily && a.why[i];
@@ -2691,8 +2741,8 @@
     const share = e.target.closest('[data-share]');
     if (share) {
       const a = albumOf(share.dataset.share), url = a.shared ? mixUrl(a) : location.href.split('#')[0] + '#album-' + a.id;
-      try { if (navigator.share) await navigator.share({ title: a.title, text: `Album “${a.title}” — ${SITE.author}`, url }); else { await navigator.clipboard.writeText(url); toast('Tautan album disalin.'); } }
-      catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url); }
+      try { if (navigator.share) await navigator.share({ title: a.title, text: t(`Album “${a.title}” — ${SITE.author}`, `The album “${a.title}” — ${SITE.author}`), url }); else { await navigator.clipboard.writeText(url); toast('Tautan album disalin.'); } }
+      catch (err) { if (err.name !== 'AbortError') toast(t('Tautan: ', 'Link: ') + url); }
       return;
     }
     const um = e.target.closest('[data-unmix]');
@@ -2731,7 +2781,7 @@
     const hlKeys = (P.highlights || []).map(docByKey).filter(Boolean);
     const highlights = (hlKeys.length ? hlKeys : WORKS.slice(0, 5)).slice(0, 8);
     const nowItems = (P.now || []).filter(x => x && String(x.text || '').trim());
-    const nowList = nowItems.length ? nowItems : [{ label: 'Terakhir terbit', text: WORKS[0].title, key: WORKS[0].key }];
+    const nowList = nowItems.length ? nowItems : [{ label: t('Terakhir terbit', 'Latest release'), text: WORKS[0].title, key: WORKS[0].key }];
     const bio = String(P.bio || '').trim() ? String(P.bio).split(/\n\s*\n/).map(x => x.trim()).filter(Boolean) : [SITE.description || ''].filter(Boolean);
     const quote = String(P.quote?.text || '').trim() ? { text: P.quote.text, source: P.quote.source || name } : highlights[0]?.line ? { text: highlights[0].line, source: `${name}, “${highlights[0].title}”` } : null;
     const links = (P.links || []).filter(l => l && String(l.url || '').trim()).map(l => ({ label: l.label || l.url, url: safeUrl(String(l.url).trim()) }));
@@ -2742,21 +2792,21 @@
     (P.journey || []).filter(j => j && String(j.year || '').trim() && String(j.text || '').trim()).forEach(j => { const y = String(j.year).trim(); (years[y] = years[y] || { notes: [], works: [] }).notes.push(j.text); });
     const yearList = Object.keys(years).sort().reverse();
     const done = DOCS.filter(d => ST.done.includes(d.key)).length, mine = minsPlayed();
-    const you = mine || done ? `Kamu sudah memutar <b>${mine} menit</b> tulisan ${esc(name)} dan menyelesaikan <b>${done} dari ${DOCS.length}</b> sisi.` : `Kamu belum memutar tulisan ${esc(name)}. Mulai dari <button type="button" data-pick="${WORKS[0].key}">yang terbaru</button>.`;
+    const you = mine || done ? t(`Kamu sudah memutar <b>${mine} menit</b> tulisan ${esc(name)} dan menyelesaikan <b>${done} dari ${DOCS.length}</b> sisi.`, `You’ve played <b>${mine} minutes</b> of ${esc(name)}’s writing and finished <b>${done} of ${DOCS.length}</b> sides.`) : t(`Kamu belum memutar tulisan ${esc(name)}. Mulai dari <button type="button" data-pick="${WORKS[0].key}">yang terbaru</button>.`, `You haven’t played anything by ${esc(name)} yet. Start with <button type="button" data-pick="${WORKS[0].key}">the latest</button>.`);
     const albums = [todayMix(), ...ALBUMS].filter(Boolean);
     host.innerHTML = `
       <header class="pf-hero">
         <div class="pf-disc" aria-hidden="true"><div class="pf-rec"><span class="pf-label" id="pfLabel"></span><i class="pf-hole"></i></div><span class="pf-shine"></span></div>
         <div class="pf-id">
-          <p class="pf-kick">Penulis${P.city ? ' · ' + esc(P.city) : ''}</p>
+          <p class="pf-kick">${t('Penulis', 'Writer')}${P.city ? ' · ' + esc(P.city) : ''}</p>
           <h1 class="pf-name">${esc(name)}</h1>
           ${(P.tagline || SITE.title) ? `<p class="pf-tag">${rich(P.tagline || SITE.title)}</p>` : ''}
           <dl class="pf-stats">
-            <div><dt>piringan</dt><dd>${WORKS.length}</dd></div><div><dt>sisi</dt><dd>${DOCS.length}</dd></div>
-            <div><dt>kata</dt><dd>${num(total)}</dd></div><div><dt>sejak</dt><dd>${since}</dd></div>
+            <div><dt>${t('piringan', 'records')}</dt><dd>${WORKS.length}</dd></div><div><dt>${t('sisi', 'sides')}</dt><dd>${DOCS.length}</dd></div>
+            <div><dt>${t('kata', 'words')}</dt><dd>${num(total)}</dd></div><div><dt>${t('sejak', 'since')}</dt><dd>${since}</dd></div>
           </dl>
           <div class="pf-actions">
-            <button type="button" class="al-play" data-pf="all"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>Putar semua</button>
+            <button type="button" class="al-play" data-pf="all"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${t('Putar semua', 'Play all')}</button>
             <button type="button" class="pf-radio" data-pf="radio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a10 10 0 0 1 14 0M7.5 11.5a6.5 6.5 0 0 1 9 0"/><circle cx="12" cy="15" r="1.6" class="f"/><path d="M12 16.6V21"/></svg>Radio ${esc(name)}</button>
             <button type="button" class="al-btn" data-pf="share" aria-label="Bagikan profil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
           </div>
@@ -2774,21 +2824,21 @@
 
       ${bio.length ? `<section class="pf-sec pf-about"><h2 class="pf-h">Tentang</h2>
         <div class="pf-bio">${bio.map(b => `<p>${rich(b).replace(/\n/g, '<br>')}</p>`).join('')}</div>
-        <figure class="pf-portrait"><canvas id="pfPortrait"></canvas><figcaption>Potret benang, dirajut dari huruf-huruf tentang ${esc(name)}</figcaption></figure></section>` : ''}
+        <figure class="pf-portrait"><canvas id="pfPortrait"></canvas><figcaption>${t(`Potret benang, dirajut dari huruf-huruf tentang ${esc(name)}`, `A thread portrait, woven from the letters about ${esc(name)}`)}</figcaption></figure></section>` : ''}
 
       <section class="pf-sec"><h2 class="pf-h">Perjalanan</h2>
         <ol class="pf-time">${yearList.map((y, i) => { const it = years[y]; return `<li style="--k:${i}"><span class="pt-y">${y}</span><div class="pt-body">
           ${it.notes.map(n => `<p class="pt-note">${rich(n)}</p>`).join('')}
-          ${it.works.length ? `<p class="pt-works"><span>${it.works.length} tulisan terbit</span>${it.works.map(w => `<button type="button" data-pick="${w.key}">${mdisc(w)}${esc(w.title)}</button>`).join('')}</p>` : ''}</div></li>`; }).join('')}</ol></section>
+          ${it.works.length ? `<p class="pt-works"><span>${it.works.length} ${t('tulisan terbit', it.works.length === 1 ? 'piece published' : 'pieces published')}</span>${it.works.map(w => `<button type="button" data-pick="${w.key}">${mdisc(w)}${esc(w.title)}</button>`).join('')}</p>` : ''}</div></li>`; }).join('')}</ol></section>
 
       ${albums.length ? `<section class="pf-sec"><h2 class="pf-h">Diskografi</h2>
-        <div class="pf-disco">${albums.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 170, false)}<b>${esc(a.title)}</b><small>${a.daily ? 'Racikan harian' : 'Album'} · ${a.tracks.length} sisi</small></button>`).join('')}</div></section>` : ''}
+        <div class="pf-disco">${albums.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 170, false)}<b>${esc(a.title)}</b><small>${a.daily ? t('Racikan harian', 'Daily mix') : 'Album'} · ${a.tracks.length} ${t('sisi', 'sides')}</small></button>`).join('')}</div></section>` : ''}
 
       ${quote ? `<blockquote class="pf-quote"><p>${rich(quote.text)}</p><cite>${esc(quote.source)}</cite></blockquote>` : ''}
 
       ${links.length ? `<section class="pf-sec"><h2 class="pf-h">Tautan</h2><div class="pf-links">${links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${linkIcon(l.url)}<span>${esc(l.label)}</span></a>`).join('')}</div></section>` : ''}
 
-      <footer class="pf-sign"><canvas id="pfSign"></canvas><p>Tanda tangan, dirajut dari huruf-huruf “${esc(name)} · ${esc(SITE.title)}”</p></footer>`;
+      <footer class="pf-sign"><canvas id="pfSign"></canvas><p>${t(`Tanda tangan, dirajut dari huruf-huruf “${esc(name)} · ${esc(SITE.title)}”`, `A signature, woven from the letters “${esc(name)} · ${esc(SITE.title)}”`)}</p></footer>`;
     avatarInto($('#pfLabel'), 200);
     $$('canvas[data-cover]', host).forEach(c => requestAnimationFrame(() => paintCover(c, albumOf(c.dataset.cover), Math.min(170, c.parentElement.clientWidth || 170))));
     // potret dan tanda tangan dirajut saat terlihat
@@ -2816,7 +2866,7 @@
     if (a.dataset.pf === 'share') {
       const url = location.href.split('#')[0] + '#tentang';
       try { if (navigator.share) await navigator.share({ title: SITE.author, text: `${SITE.author} · ${SITE.title}`, url }); else { await navigator.clipboard.writeText(url); toast('Tautan profil disalin.'); } }
-      catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url); }
+      catch (err) { if (err.name !== 'AbortError') toast(t('Tautan: ', 'Link: ') + url); }
     }
   });
   avatarInto($('#pillAva'), 22);
@@ -2832,13 +2882,13 @@
     const N = WORKS.length;
     return Object.entries(tf).map(([t, c]) => [t, (1 + Math.log(c)) * Math.log((N + 1) / ((DF[t] || 0) + .5)) + (DF[t] ? 0 : .5)]).sort((a, b) => b[1] - a[1]).slice(0, n).map(x => x[0]);
   }
-  const partOfDay = t => { const h = +String(t || '').slice(0, 2); return isNaN(h) || !t ? '' : h < 4 ? 'dini hari' : h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18.5 ? 'sore' : 'malam'; };
+  const partOfDay = hm => { const h = +String(hm || '').slice(0, 2); return isNaN(h) || !hm ? '' : h < 4 ? t('dini hari', 'small hours') : h < 11 ? t('pagi', 'morning') : h < 15 ? t('siang', 'midday') : h < 18.5 ? t('sore', 'afternoon') : t('malam', 'evening'); };
   function linerOf(d) {
     const w = d.A, L = w.liner || {};
     const day = new Date(w.date + 'T00:00:00').toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const lk = linksOf(w.slug)[0], other = lk && bySlug(lk.a === w.slug ? lk.b : lk.a);
     return {
-      when: `${day}${w.time ? ` · pukul ${w.time.replace(':', '.')}, ${partOfDay(w.time)}` : ''}`,
+      when: `${day}${w.time ? t(` · pukul ${w.time.replace(':', '.')}, ${partOfDay(w.time)}`, ` · at ${w.time}, ${partOfDay(w.time)}`) : ''}`,
       place: String(L.place || '').trim(), song: String(L.song || '').trim(), songUrl: String(L.songUrl || '').trim(), story: String(L.story || '').trim(),
       khas: khas(d), longest: Math.max(0, ...(d.lens || [0])), sentences: (d.lens || []).length,
       thread: other ? { w: other, words: lk.words } : null
@@ -2846,7 +2896,7 @@
   }
   function renderLinerCard(d) {
     const L = linerOf(d);
-    $('#rlTeaser').textContent = L.story ? (L.story.split(/(?<=[.!?…])\s/)[0].slice(0, 110) + (L.story.length > 110 ? '…' : '')) : `Ditulis ${partOfDay(d.A.time) || 'suatu hari'}${L.place ? ' di ' + L.place : ''}. Kata paling khas: ${L.khas.join(', ')}.`;
+    $('#rlTeaser').textContent = L.story ? (L.story.split(/(?<=[.!?…])\s/)[0].slice(0, 110) + (L.story.length > 110 ? '…' : '')) : t(`Ditulis ${partOfDay(d.A.time) || 'suatu hari'}${L.place ? ' di ' + L.place : ''}. Kata paling khas: ${L.khas.join(', ')}.`, `Written ${partOfDay(d.A.time) ? 'in the ' + partOfDay(d.A.time) : 'one day'}${L.place ? ' in ' + L.place : ''}. Most telling words: ${L.khas.join(', ')}.`);
     requestAnimationFrame(() => drawThread($('#rlArt'), fullText(d), { w: 52, h: 52, pad: 3, color: catOf(d.cat).ink, seed: d.key, pins: false, weight: 1.3 }));
   }
   function openLiner(d) {
@@ -2868,8 +2918,8 @@
         ${L.place ? `<div><dt>Tempat</dt><dd>${esc(L.place)}</dd></div>` : ''}
         ${L.song ? `<div><dt>Diputar saat menulis</dt><dd>${songHref ? `<a href="${esc(songHref)}" target="_blank" rel="noopener">${esc(L.song)} ↗</a>` : esc(L.song)}</dd></div>` : ''}
         <div><dt>Kata paling khas</dt><dd class="ln-words">${L.khas.map(k => `<i>${esc(k)}</i>`).join('')}</dd></div>
-        <div><dt>Ritme</dt><dd>${L.sentences} ${w.form === 'puisi' ? 'baris' : 'kalimat'}, terpanjang ${L.longest} kata</dd></div>
-        ${L.thread ? `<div><dt>Benang merah</dt><dd><button type="button" data-ln-open="${L.thread.w.key}">“${esc(L.thread.w.title)}”</button> lewat ${L.thread.words.map(x => `<i>${esc(x)}</i>`).join(' dan ')}</dd></div>` : ''}
+        <div><dt>${t('Ritme', 'Rhythm')}</dt><dd>${t(`${L.sentences} ${w.form === 'puisi' ? 'baris' : 'kalimat'}, terpanjang ${L.longest} kata`, `${L.sentences} ${w.form === 'puisi' ? 'lines' : 'sentences'}, longest ${L.longest} words`)}</dd></div>
+        ${L.thread ? `<div><dt>${t('Benang merah', 'Common thread')}</dt><dd><button type="button" data-ln-open="${L.thread.w.key}">“${esc(L.thread.w.title)}”</button> ${t('lewat', 'via')} ${L.thread.words.map(x => `<i>${esc(x)}</i>`).join(t(' dan ', ' and '))}</dd></div>` : ''}
       </dl>
       ${L.story ? `<div class="ln-story">${L.story.split(/\n\s*\n/).map(p => `<p>${rich(p)}</p>`).join('')}</div>` : ''}
       <p class="ln-cat">${esc(SITE.title)} · No. ${w.no} · ${new Date(w.date + 'T00:00:00').getFullYear()}</p>`;
@@ -2927,7 +2977,7 @@
     addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstall(true); });
     if (isIOS) showInstall(true);
   }
-  addEventListener('appinstalled', () => { showInstall(false); toast(`${SITE.title} terpasang di perangkatmu.`); });
+  addEventListener('appinstalled', () => { showInstall(false); toast(t(`${SITE.title} terpasang di perangkatmu.`, `${SITE.title} is installed on your device.`)); });
   $('#chipInstall').addEventListener('click', install);
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !PREVIEW) {

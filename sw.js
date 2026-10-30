@@ -5,11 +5,11 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v17';
+const VERSION = 'v18';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
-  './', 'index.html', 'assets/style.css', 'assets/app.js', 'manifest.webmanifest',
+  './', 'index.html', 'assets/style.css', 'assets/i18n.js', 'assets/app.js', 'manifest.webmanifest',
   'content/site.json', 'content/works.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
