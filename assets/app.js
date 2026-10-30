@@ -2359,6 +2359,7 @@
     const same = PK.slug === slug;
     PK.side = side; PK.ch = w?.CH ? clamp(ch, 1, w.CH.length) : 1; PK.fr = {};
     if (!same) { PK.slug = slug; selectPk(slug, false); } else { renderTabs(); renderSide(); }
+    sievePicker(); // saringan dihitung ulang untuk piringan yang sekarang dipilih
     requestAnimationFrame(() => { setFace(pkIndex(), false); $(`.pk-item[data-slug="${slug}"]`, pkCar)?.scrollIntoView({ inline: 'center', block: 'nearest' }); });
     document.title = `${bySlug(slug).title} · ${SITE.title}`;
   }
@@ -2498,20 +2499,29 @@
     carT = setTimeout(() => {
       const mid = pkCar.getBoundingClientRect().left + pkCar.clientWidth / 2;
       let best = null, bd = Infinity;
-      $$('.pk-item', pkCar).forEach(it => { const r = it.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = it; } });
+      $$('.pk-item:not([hidden])', pkCar).forEach(it => { const r = it.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = it; } });
       if (best && best.dataset.slug !== PK.slug) {
-        const items = $$('.pk-item', pkCar), dir = items.indexOf(best) > items.findIndex(i => i.dataset.slug === PK.slug) ? 1 : -1;
+        const items = $$('.pk-item:not([hidden])', pkCar), dir = items.indexOf(best) > items.findIndex(i => i.dataset.slug === PK.slug) ? 1 : -1;
         selectPk(best.dataset.slug, true, dir);
         history.replaceState(null, '', pkHash());
         document.title = `${bySlug(PK.slug).title} · ${SITE.title}`;
       }
     }, 110);
   }, { passive: true });
-  pkCar.addEventListener('click', e => { const it = e.target.closest('.pk-item'); if (it) it.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduced ? 'auto' : 'smooth' }); });
+  pkCar.addEventListener('click', e => {
+    const it = e.target.closest('.pk-item'); if (!it) return;
+    // piringan yang sudah di tengah tidak memicu gulir, jadi pilih langsung
+    if (it.dataset.slug !== PK.slug) {
+      const items = $$('.pk-item:not([hidden])', pkCar);
+      selectPk(it.dataset.slug, true, items.indexOf(it) > items.findIndex(i => i.dataset.slug === PK.slug) ? 1 : -1);
+      history.replaceState(null, '', pkHash()); document.title = `${bySlug(PK.slug).title} · ${SITE.title}`;
+    }
+    it.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+  });
   pkCar.addEventListener('keydown', e => {
     const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return;
     e.preventDefault();
-    const items = $$('.pk-item', pkCar), i = items.findIndex(it => it.dataset.slug === PK.slug);
+    const items = $$('.pk-item:not([hidden])', pkCar), i = items.findIndex(it => it.dataset.slug === PK.slug);
     const nx = items[clamp(i + d, 0, items.length - 1)];
     nx.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); nx.focus({ preventScroll: true });
   });
@@ -2768,7 +2778,11 @@
     sievePicker();
     if (view === 'sapa' && feedMode === 'koleksi') renderFeed();
   }
-  function sievePicker() { $$('.pk-item', pkCar).forEach(it => { it.hidden = svOn() && !svMatch(bySlug(it.dataset.slug)) && it.dataset.slug !== PK.slug; }); }
+  function sievePicker() {
+    $$('.pk-item', pkCar).forEach(it => { it.hidden = svOn() && !svMatch(bySlug(it.dataset.slug)) && it.dataset.slug !== PK.slug; });
+    // menyembunyikan piringan menggeser isi carousel; kembalikan yang terpilih ke tengah
+    if (view === 'pilih') requestAnimationFrame(() => $(`.pk-item[data-slug="${PK.slug}"]`, pkCar)?.scrollIntoView({ inline: 'center', block: 'nearest' }));
+  }
   function openSieve() { svWordsCache = null; renderSieve(); $('#sieve').hidden = false; $('.sv-o', $('#svBody'))?.focus({ preventScroll: true }); }
   const closeSieve = () => { $('#sieve').hidden = true; };
   $('#sieve').addEventListener('click', e => {
