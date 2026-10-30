@@ -1094,9 +1094,17 @@
         $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
         // selesai dibacakan sampai kalimat terakhir: audio senyap dibiarkan sebentar supaya sisi berikutnya bisa menyambung
         stopSpeech(false);
-        if (current) { if (!ST.done.includes(current.key)) { ST.done = [...ST.done, current.key]; saveST(); } UN.shownFor = null; showUpNext(current, true); }
+        if (current) {
+          if (!ST.done.includes(current.key)) { ST.done = [...ST.done, current.key]; saveST(); }
+          // pengatur waktu tidur "akhir sisi" / "akhir album": berhenti di sini, tanpa menyambung
+          const nx = upNextOf(current);
+          if (Sleep.mode === 'side' || (Sleep.mode === 'album' && (!nx || nx.end || !playing() || nx.queue))) { sleepNow(); return; }
+          UN.shownFor = null; showUpNext(current, true);
+        }
         return;
       }
+      // waktu tidur habis: kalimat yang sedang dibaca sudah selesai, jadi berhenti di sini
+      if (Sleep.pending) { speakSent = s; sleepNow(); return; }
       const it = plan[s], changed = it.para !== speakIdx || s === start;
       speakSent = s; speakIdx = it.para;
       if (changed) {
@@ -1106,7 +1114,8 @@
       }
       renderLs(); Now.position(s, plan.length, d); Lyr.sync();
       const u = new SpeechSynthesisUtterance(it.text);
-      u.lang = 'id-ID'; if (voice) u.voice = voice; u.rate = .95;
+      const fade = sleepFade();
+      u.lang = 'id-ID'; if (voice) u.voice = voice; u.rate = .95 * (.85 + .15 * fade); u.volume = fade;
       // bila peramban mengirim posisi kata, baris lirik terisi seperti karaoke
       u.onboundary = e => { if (tok === speakTok && e.charIndex != null) Lyr.fill(s, (e.charIndex + (e.charLength || 0)) / Math.max(1, it.text.length)); };
       u.onend = () => { Lyr.fill(s, 1); next(s + 1); }; u.onerror = () => { if (tok === speakTok) stopSpeech(); };
@@ -1223,6 +1232,76 @@
     return { show, hide, sync, fill, ending, get open() { return open; } };
   })();
 
+  /* ---------- PENGATUR WAKTU TIDUR ---------- */
+  const Sleep = { mode: null, until: 0, t: 0, pending: false, safety: 0 };
+  const SLEEP_OPTS = [['off', 'Mati'], [15, '15 menit'], [30, '30 menit'], [45, '45 menit'], [60, '60 menit'], ['side', 'Akhir sisi ini'], ['album', 'Akhir album atau racikan']];
+  // menit terakhir: suara memelan dan sedikit melambat
+  function sleepFade() {
+    if (typeof Sleep.mode !== 'number') return 1;
+    return clamp((Sleep.until - Date.now()) / 60000, .15, 1);
+  }
+  const mmss = ms => { const t = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+  function sleepLabel() {
+    if (!Sleep.mode) return '';
+    if (Sleep.pending) return 'sebentar lagi';
+    return typeof Sleep.mode === 'number' ? mmss(Sleep.until - Date.now()) : Sleep.mode === 'side' ? 'akhir sisi' : 'akhir album';
+  }
+  function renderSleep() {
+    const lbl = sleepLabel();
+    $$('.sleep-btn').forEach(b => { b.classList.toggle('on', !!Sleep.mode); $('span', b).textContent = lbl; b.setAttribute('aria-label', Sleep.mode ? 'Pengatur waktu tidur: ' + lbl : 'Pengatur waktu tidur'); });
+    $$('#sleepMenu [data-sleep]').forEach(b => b.setAttribute('aria-checked', String(String(Sleep.mode || 'off') === b.dataset.sleep)));
+  }
+  function setSleep(mode) {
+    clearInterval(Sleep.t); clearTimeout(Sleep.safety);
+    Sleep.mode = mode === 'off' ? null : mode; Sleep.pending = false;
+    Sleep.until = typeof mode === 'number' ? Date.now() + mode * 60000 : 0;
+    if (typeof mode === 'number') Sleep.t = setInterval(tickSleep, 1000);
+    if (Amb.kind !== 'hening') Amb.volume(1);
+    renderSleep();
+    toast(!Sleep.mode ? 'Pengatur waktu tidur dimatikan.' : typeof mode === 'number' ? `Pembacaan berhenti dalam ${mode} menit.` : mode === 'side' ? 'Pembacaan berhenti di akhir sisi ini.' : 'Pembacaan berhenti di akhir album atau racikan.');
+  }
+  function tickSleep() {
+    const left = Sleep.until - Date.now();
+    if (Amb.kind !== 'hening' && left < 60000) Amb.volume(clamp(left / 60000, 0, 1));
+    if (left <= 0 && !Sleep.pending) {
+      clearInterval(Sleep.t);
+      // biarkan kalimat yang sedang dibaca selesai dulu; kalau tidak sedang dibacakan, langsung tidur
+      if (speaking) { Sleep.pending = true; Sleep.safety = setTimeout(sleepNow, 20000); } else sleepNow();
+    }
+    renderSleep();
+  }
+  function sleepNow() {
+    clearInterval(Sleep.t); clearTimeout(Sleep.safety);
+    const d = current, at = speakSent;
+    if (speaking) pauseSpeech();
+    hideUpNext(); UN.shownFor = d?.key || null;
+    Amb.set('hening'); releaseLock();
+    Sleep.mode = null; Sleep.pending = false; renderSleep();
+    $('#sleepMenu').hidden = true;
+    const v = $('#sleepVeil');
+    $('#svWhere').textContent = d ? `Dijeda di “${d.title}”${speakPaused ? `, kalimat ${at + 1} dari ${speechPlan().length}` : ''}.` : '';
+    $('#svResume').hidden = !(d && speakPaused);
+    v.hidden = false; v.classList.remove('in'); void v.offsetWidth; v.classList.add('in');
+  }
+  function openSleepMenu(anchor) {
+    const m = $('#sleepMenu');
+    $$('[data-sleep="album"]', m).forEach(b => { b.hidden = !playing(); });
+    m.hidden = !m.hidden;
+    if (m.hidden) return;
+    const r = anchor.getBoundingClientRect(), host = $('#vBaca').getBoundingClientRect();
+    m.style.left = clamp(r.left + r.width / 2 - host.left - 120, 8, host.width - 248) + 'px';
+    m.style.bottom = (host.bottom - r.top + 10) + 'px';
+    renderSleep();
+    $('[aria-checked="true"]', m)?.focus({ preventScroll: true });
+  }
+  $('#sleepMenu').innerHTML = `<p class="sm-h">Berhenti membacakan</p>` + SLEEP_OPTS.map(([v, l]) => `<button type="button" role="menuitemradio" data-sleep="${v}" aria-checked="false">${l}</button>`).join('');
+  $('#sleepMenu').addEventListener('click', e => { const b = e.target.closest('[data-sleep]'); if (!b) return; const v = b.dataset.sleep; setSleep(/^\d+$/.test(v) ? +v : v); $('#sleepMenu').hidden = true; });
+  $$('.sleep-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openSleepMenu(b); }));
+  document.addEventListener('click', e => { if (!e.target.closest('#sleepMenu, .sleep-btn')) $('#sleepMenu').hidden = true; });
+  $('#svResume').addEventListener('click', () => { $('#sleepVeil').hidden = true; resumeSpeech(); });
+  $('#svClose').addEventListener('click', () => { $('#sleepVeil').hidden = true; });
+
+
 
   let hits = [], hit = 0;
   function openFind() { $('#rdFind').hidden = false; $('#findIn').focus(); if (isMobile()) setSheet(false); }
@@ -1278,6 +1357,8 @@
     { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
     { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + ' sisi', run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
     { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
+    { label: Sleep.mode ? 'Matikan pengatur waktu tidur' : 'Pengatur waktu tidur: 30 menit', hint: Sleep.mode ? sleepLabel() : 'pembacaan berhenti sendiri', run: () => setSleep(Sleep.mode ? 'off' : 30), show: view === 'baca' },
+    { label: 'Berhenti di akhir sisi ini', hint: 'pengatur waktu tidur', run: () => setSleep('side'), show: view === 'baca' && Sleep.mode !== 'side' },
     { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
@@ -1337,6 +1418,8 @@
       if (!$('#quoteModal').hidden) return closeQuote();
       if (!$('#mixModal').hidden) return closeMix();
       if (RP.token) return stopReplay(true);
+      if (!$('#sleepMenu').hidden) return void ($('#sleepMenu').hidden = true);
+      if (!$('#sleepVeil').hidden) return void ($('#sleepVeil').hidden = true);
       if (Lyr.open) return Lyr.hide();
       if (!$('#upNext').hidden) return $('#unCancel').click();
       if (!$('#rdFind').hidden) return closeFind();
@@ -1695,7 +1778,9 @@
         $('.rd-top').append(chip);
       } catch (e) { kind = 'hening'; toast('Peramban ini belum bisa memutar suasana.'); }
     }
-    return { set };
+    // pengatur waktu tidur meredupkan suasana di menit terakhir
+    function volume(v) { if (master && ac) master.gain.setTargetAtTime(.55 * clamp(v, 0, 1), ac.currentTime, .6); }
+    return { set, volume, get kind() { return kind; } };
   })();
   $('#ambience').addEventListener('click', e => { const b = e.target.closest('[data-amb]'); if (b) Amb.set(b.dataset.amb); });
   if (!SITE.features.ambience) $('#ambWrap').hidden = true;
