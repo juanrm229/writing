@@ -285,7 +285,7 @@
     const q = fold(S.q.trim());
     const list = sortedWorks().filter(w =>
       (S.filter === 'semua' || (S.filter === 'draf' ? w.draft : w.cat === S.filter)) &&
-      (!q || fold(w.title + ' ' + allText(w) + ' ' + (w.en?.title || '')).includes(q)));
+      (!q || fold(w.title + ' ' + allText(w) + ' ' + (w[trKey(w)]?.title || '')).includes(q)));
     const bm = baseMap();
     $('#workList').innerHTML = list.map((w, i) => {
       const c = catOf(w.cat);
@@ -315,7 +315,7 @@
       tag.textContent = c.tag; tag.classList.toggle('red', !!c.red);
     });
   }
-  const wlText = w => `<b>${esc(w.title || 'Tanpa judul')}</b><span>${w.draft ? '<span class="pill-draft">draf</span>' : ''}${isCh(w) ? `<span class="pill-ab">${w.chapters.length} bab</span>` : sidesOf(w).length ? `<span class="pill-ab">${docsOf(w).map(d => d.label).join('/')}</span>` : ''}${w.en ? '<span class="pill-ab en">EN</span>' : ''}${esc(catOf(w.cat).label)} · ${bodyWords(w)} kata</span>`;
+  const wlText = w => `<b>${esc(w.title || 'Tanpa judul')}</b><span>${w.draft ? '<span class="pill-draft">draf</span>' : ''}${isCh(w) ? `<span class="pill-ab">${w.chapters.length} bab</span>` : sidesOf(w).length ? `<span class="pill-ab">${docsOf(w).map(d => d.label).join('/')}</span>` : ''}${orig(w) === 'en' || w[trKey(w)] ? `<span class="pill-ab en">${[orig(w), ...(w[trKey(w)] ? [trKey(w)] : [])].map(x => x.toUpperCase()).join('+')}</span>` : ''}${esc(catOf(w.cat).label)} · ${bodyWords(w)} kata</span>`;
   $('#workList').addEventListener('click', e => { const b = e.target.closest('[data-slug]'); if (b) selectWork(b.dataset.slug); });
 
   function newWork() {
@@ -346,7 +346,13 @@
   /* ---------- sisi, bab, dan bahasa ----------
      Sisi A tinggal di karya itu sendiri (title, sideTitle, pov, body); sisi B, C, … di w.sides.
      Novel dan novella memakai w.chapters = [{ title, body }] sebagai ganti body.
-     Terjemahan Inggris ada di w.en dengan bentuk yang sama; yang kosong tampil dalam bahasa Indonesia. */
+     Bahasa asli karya ada di w.lang ('en' untuk tulisan berbahasa Inggris; kosong = Indonesia).
+     Terjemahannya disimpan di kunci bahasa yang lain (w.en atau w.id) dengan bentuk yang sama;
+     yang kosong tampil dalam bahasa aslinya. */
+  const orig = w => (w?.lang === 'en' ? 'en' : 'id');
+  const trKey = w => (orig(w) === 'en' ? 'id' : 'en');
+  const LN = { id: 'bahasa Indonesia', en: 'bahasa Inggris' };
+  const isTr = w => S.lang !== orig(w);
   const LETTERS = 'abcdefghijklmnop';
   const BOOKS = ['novel', 'novella'];
   const isCh = w => Array.isArray(w.chapters);
@@ -362,14 +368,14 @@
   // migrasi bentuk lama: sideB menjadi sides[0]
   function migrate(w) {
     if (w.sideB) { w.sides = [w.sideB, ...sidesOf(w)]; delete w.sideB; }
-    if (w.en?.sideB) { w.en.sides = [w.en.sideB, ...(w.en.sides || [])]; delete w.en.sideB; }
+    ['en', 'id'].forEach(k => { const e = w[k]; if (e && typeof e === 'object' && e.sideB) { e.sides = [e.sideB, ...(e.sides || [])]; delete e.sideB; } });
     return w;
   }
-  const layer = (w, make) => (S.lang === 'en' ? w.en || (make ? (w.en = {}) : {}) : w);
+  const layer = (w, make) => (isTr(w) ? w[S.lang] || (make ? (w[S.lang] = {}) : {}) : w);
   // tempat isian yang sedang disunting: { title, pov, body } untuk sisi/bab dan bahasa yang dipilih
   function slot(w, make) {
     if (isCh(w)) {
-      if (S.lang === 'id') return w.chapters[S.ch] || null;
+      if (!isTr(w)) return w.chapters[S.ch] || null;
       const L = layer(w, make); if (!L.chapters && !make) return null;
       const arr = L.chapters = L.chapters || [];
       while (arr.length <= S.ch) arr.push({});
@@ -377,7 +383,7 @@
     }
     if (S.side === 'a') return layer(w, make);
     const i = LETTERS.indexOf(S.side) - 1;
-    if (S.lang === 'id') return sidesOf(w)[i] || null;
+    if (!isTr(w)) return sidesOf(w)[i] || null;
     const L = layer(w, make); if (!L.sides && !make) return null;
     const arr = L.sides = L.sides || [];
     while (arr.length <= i) arr.push({});
@@ -386,7 +392,7 @@
   // buang isian terjemahan yang kosong supaya works.json tetap rapi
   const emptyVal = v => (Array.isArray(v) ? !v.some(p => (typeof p === 'string' ? p.trim() : p && Object.keys(p).length)) : typeof v === 'object' && v ? !Object.keys(v).length : !String(v ?? '').trim());
   function tidy(w) {
-    const e = w.en; if (!e) return;
+    const k = trKey(w), e = w[k]; if (!e) return;
     const strip = o => { Object.keys(o).forEach(k => { if (k === 'body' ? !(o.body || []).some(p => String(p).trim()) : typeof o[k] === 'string' && !o[k].trim()) delete o[k]; }); return o; };
     strip(e);
     ['sides', 'chapters'].forEach(k => {
@@ -396,7 +402,7 @@
       if (!e[k].length) delete e[k];
     });
     if (e.liner) { strip(e.liner); if (!Object.keys(e.liner).length) delete e.liner; }
-    if (!Object.keys(e).length) delete w.en;
+    if (!Object.keys(e).length) delete w[k];
   }
   // ganti kunci album dan sorotan profil saat sisi/bab dihapus atau dipindah: map(lamaSuffix) → suffixBaru | null
   function remapKeys(slug, map) {
@@ -415,6 +421,7 @@
   function selectWork(slug, keepSide) {
     S.sel = slug;
     if (!keepSide) { S.side = 'a'; S.ch = 0; }
+    const sw = S.works.find(x => x.slug === slug); if (sw && !keepSide && !sw[trKey(sw)]) S.lang = orig(sw);
     const w = cur();
     renderList();
     if (!w) return;
@@ -428,42 +435,42 @@
     const w = cur(); if (!w) return;
     const ds = docsOf(w), ch = isCh(w), at = ch ? S.ch : LETTERS.indexOf(S.side);
     const filledIn = (i) => {
-      const L = S.lang === 'en' ? w.en || {} : null;
+      const L = isTr(w) ? w[trKey(w)] || {} : null;
       if (!L) return true;
       const o = ch ? (L.chapters || [])[i] : i ? (L.sides || [])[i - 1] : L;
       return !!(o && (o.body || []).some(p => String(p).trim()));
     };
     $('#edSide').setAttribute('aria-label', ch ? 'Bab' : 'Sisi piringan');
-    $('#edSide').innerHTML = ds.map((d, i) => `<button type="button" role="tab" data-i="${i}" aria-checked="${i === at}" title="${esc(d.title)}">${ch ? d.label : 'Sisi ' + d.label}${S.lang === 'en' ? `<i class="side-dot${filledIn(i) ? '' : ' off'}"></i>` : ''}</button>`).join('');
+    $('#edSide').innerHTML = ds.map((d, i) => `<button type="button" role="tab" data-i="${i}" aria-checked="${i === at}" title="${esc(d.title)}">${ch ? d.label : 'Sisi ' + d.label}${isTr(w) ? `<i class="side-dot${filledIn(i) ? '' : ' off'}"></i>` : ''}</button>`).join('');
     $('#edAdd').title = ch ? 'Tambah bab' : `Tambah Sisi ${LETTERS[ds.length].toUpperCase()}`;
     $('#edAdd').setAttribute('aria-label', $('#edAdd').title);
-    $('#edAdd').hidden = S.lang === 'en' || ds.length >= LETTERS.length;
+    $('#edAdd').hidden = isTr(w) || ds.length >= LETTERS.length;
   }
   function fillEditor() {
     const w = cur(); if (!w) return;
-    const ch = isCh(w), side = !ch && S.side !== 'a', en = S.lang === 'en';
+    const ch = isCh(w), side = !ch && S.side !== 'a', en = isTr(w), inLang = ` (dalam ${LN[S.lang]})`;
     if (ch) S.ch = Math.min(S.ch, w.chapters.length - 1);
     if (!ch && side && !sidesOf(w)[LETTERS.indexOf(S.side) - 1]) S.side = 'a';
     const d = slot(w) || {}, base = ch ? w.chapters[S.ch] : side ? sidesOf(w)[LETTERS.indexOf(S.side) - 1] : w;
     const no = ch ? S.ch + 1 : 0, L = LETTERS.indexOf(S.side);
     $('#edTitle').value = d.title || '';
-    $('#edTitle').placeholder = en ? (base.title || (ch ? `Bab ${no}` : 'Judul')) + ' (dalam bahasa Inggris)'
+    $('#edTitle').placeholder = en ? (base.title || (ch ? `Bab ${no}` : 'Judul')) + inLang
       : ch ? `Judul bab ${no} (boleh kosong)` : side ? `Judul Sisi ${S.side.toUpperCase()} (kosong = “${w.title || 'sama dengan Sisi A'}”)` : 'Judul';
     $('#edBody').value = (d.body || []).join('\n\n');
-    $('#edBody').placeholder = en ? 'Terjemahan bahasa Inggris… Kosongkan untuk menampilkan versi Indonesia.'
+    $('#edBody').placeholder = en ? `Terjemahan ${LN[S.lang]}… Kosongkan untuk menampilkan versi ${LN[orig(w)].replace('bahasa ', '')}.`
       : ch ? `Isi bab ${no}… Pisahkan paragraf dengan satu baris kosong. Tulis *** di satu baris untuk pindah adegan.`
       : side ? 'Cerita yang sama, dari sisi yang lain… Pisahkan paragraf dengan satu baris kosong.' : 'Mulai menulis… Pisahkan paragraf (atau bait) dengan satu baris kosong.';
     $('#edBody').dataset.form = w.form;
     $('#edPovRow').hidden = ch;
     $('#edPov').value = d.pov || '';
-    $('#edPov').placeholder = en ? (base.pov || 'siapa yang bercerita?') + ' (dalam bahasa Inggris)' : side ? 'misalnya: anaknya, si penjual, kucing tetangga' : 'siapa yang bercerita? (boleh kosong)';
+    $('#edPov').placeholder = en ? (base.pov || 'siapa yang bercerita?') + inLang : side ? 'misalnya: anaknya, si penjual, kucing tetangga' : 'siapa yang bercerita? (boleh kosong)';
     $('#edNameRow').hidden = ch || side || !sidesOf(w).length;
     $('#edName').value = d.sideTitle || '';
-    $('#edName').placeholder = en ? (w.sideTitle || 'nama sisi A') + ' (dalam bahasa Inggris)' : `misalnya: Bidak (kosong = “${w.title || 'judul karya'}”)`;
+    $('#edName').placeholder = en ? (w.sideTitle || 'nama sisi A') + inLang : `misalnya: Bidak (kosong = “${w.title || 'judul karya'}”)`;
     // catatan di bawah judul: penjelasan dan aksi untuk sisi/bab ini
     const n = ch ? w.chapters.length : sidesOf(w).length + 1;
     let note = '', acts = '';
-    if (en) note = ch ? `Terjemahan bab ${no}. Bagian yang kosong tampil dalam bahasa Indonesia, dengan catatan kecil untuk pembaca.` : `Terjemahan ${side || n > 1 ? 'Sisi ' + S.side.toUpperCase() : 'tulisan ini'}. Bagian yang kosong tampil dalam bahasa Indonesia, dengan catatan kecil untuk pembaca.`;
+    if (en) note = ch ? `Terjemahan bab ${no}. Bagian yang kosong tampil dalam ${LN[orig(w)]}, dengan catatan kecil untuk pembaca.` : `Terjemahan ${side || n > 1 ? 'Sisi ' + S.side.toUpperCase() : 'tulisan ini'}. Bagian yang kosong tampil dalam ${LN[orig(w)]}, dengan catatan kecil untuk pembaca.`;
     else if (ch) {
       note = `Bab ${no} dari ${n}. Pembaca bisa membuka bab mana saja dan bab berikutnya menyusul otomatis.`;
       acts = `<button type="button" data-act="left" ${S.ch ? '' : 'disabled'}>← Geser</button><button type="button" data-act="right" ${S.ch < n - 1 ? '' : 'disabled'}>Geser →</button>${n > 1 ? '<button type="button" data-act="del-ch" class="red">Hapus bab ini</button>' : ''}`;
@@ -505,20 +512,20 @@
       const i = LETTERS.indexOf(S.side) - 1, gone = sidesOf(w)[i];
       if ((gone.body || []).some(p => p.trim()) && !confirm(`Hapus Sisi ${S.side.toUpperCase()}${gone.title ? ' “' + gone.title + '”' : ''}? Isinya hilang setelah disimpan.`)) return;
       w.sides.splice(i, 1); if (!w.sides.length) delete w.sides;
-      if (w.en?.sides) w.en.sides.splice(i, 1);
+      if (w[trKey(w)]?.sides) w[trKey(w)].sides.splice(i, 1);
       remapKeys(w.slug, suf => { const k = sideIndex(suf); return k < 0 || k < i + 1 ? suf : k === i + 1 ? null : ':' + LETTERS[k - 1]; });
       S.side = LETTERS[i] || 'a';
       toast('Sisi dihapus. Tekan Simpan untuk menerapkan.');
     } else if (act === 'del-ch') {
       const i = S.ch, gone = w.chapters[i];
       if ((gone.body || []).some(p => p.trim()) && !confirm(`Hapus bab ${i + 1}${gone.title ? ' “' + gone.title + '”' : ''}? Isinya hilang setelah disimpan.`)) return;
-      w.chapters.splice(i, 1); if (w.en?.chapters) w.en.chapters.splice(i, 1);
+      w.chapters.splice(i, 1); if (w[trKey(w)]?.chapters) w[trKey(w)].chapters.splice(i, 1);
       remapKeys(w.slug, suf => { const k = chIndex(suf); return k < 0 || k < i ? suf : k === i ? null : chSuffix(k - 1); });
       S.ch = Math.max(0, i - 1);
     } else if (act === 'left' || act === 'right') {
       const i = S.ch, j = i + (act === 'left' ? -1 : 1);
       [w.chapters[i], w.chapters[j]] = [w.chapters[j], w.chapters[i]];
-      if (w.en?.chapters) { const c = w.en.chapters; while (c.length <= Math.max(i, j)) c.push({}); [c[i], c[j]] = [c[j], c[i]]; }
+      if (w[trKey(w)]?.chapters) { const c = w[trKey(w)].chapters; while (c.length <= Math.max(i, j)) c.push({}); [c[i], c[j]] = [c[j], c[i]]; }
       remapKeys(w.slug, suf => { const k = chIndex(suf); return k === i ? chSuffix(j) : k === j ? chSuffix(i) : suf; });
       S.ch = j;
     }
@@ -529,8 +536,8 @@
     if (BOOKS.includes(w.cat) && !isCh(w)) {
       const sides = sidesOf(w);
       w.chapters = [{ title: (w.sideTitle || '').trim(), body: w.body?.length ? w.body : [''] }, ...sides.map(x => ({ title: (x.title || '').trim(), body: x.body || [''] }))];
-      if (w.en) {
-        const e = w.en, ch = [{ title: e.sideTitle, body: e.body }, ...(e.sides || []).map(x => ({ title: x.title, body: x.body }))];
+      if (w[trKey(w)]) {
+        const e = w[trKey(w)], ch = [{ title: e.sideTitle, body: e.body }, ...(e.sides || []).map(x => ({ title: x.title, body: x.body }))];
         if (ch.some(c => c && (c.title || (c.body || []).length))) e.chapters = ch.map(c => c || {});
         delete e.body; delete e.sides; delete e.sideTitle; delete e.pov;
       }
@@ -541,7 +548,8 @@
       tidy(w);
     } else if (!BOOKS.includes(w.cat) && isCh(w) && w.chapters.length <= 1) {
       w.body = w.chapters[0]?.body || [''];
-      if (w.en?.chapters) { if (w.en.chapters[0]?.body) w.en.body = w.en.chapters[0].body; delete w.en.chapters; }
+      const e = w[trKey(w)];
+      if (e?.chapters) { if (e.chapters[0]?.body) e.body = e.chapters[0].body; delete e.chapters; }
       delete w.chapters; S.ch = 0;
       tidy(w);
     }
@@ -552,13 +560,13 @@
     const n = words((d.body || []).join(' '));
     const paras = (d.body || []).filter(p => p.trim() && /[\p{L}\p{N}]/u.test(p)).length;
     const where = ch ? `Bab ${S.ch + 1} · ` : sidesOf(w).length ? `Sisi ${S.side.toUpperCase()} · ` : '';
-    $('#edCount').textContent = `${S.lang === 'en' ? 'EN · ' : ''}${where}${n.toLocaleString('id-ID')} kata · ${Math.max(1, Math.round(n / 170))} menit baca · ${paras} ${w.form === 'puisi' ? 'bait' : 'paragraf'}${ch ? ` · ${bodyWords(w).toLocaleString('id-ID')} kata semuanya` : ''}`;
+    $('#edCount').textContent = `${isTr(w) ? S.lang.toUpperCase() + ' · ' : ''}${where}${n.toLocaleString('id-ID')} kata · ${Math.max(1, Math.round(n / 170))} menit baca · ${paras} ${w.form === 'puisi' ? 'bait' : 'paragraf'}${ch ? ` · ${bodyWords(w).toLocaleString('id-ID')} kata semuanya` : ''}`;
     const pov = d.pov || '';
     $('#edMeta').textContent = `${ch ? (w.title || 'Tanpa judul') : where ? where.slice(0, -3) : catOf(w.cat).label}${pov ? ' · dari sisi ' + pov : ''} · ${new Date(w.date + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}${w.draft ? ' · draf' : ''}`;
   }
   // judul sisi A dan judul karya adalah hal yang sama; mengganti judul karya bisa mengganti alamatnya
   function setWorkTitle(w, v) {
-    if (S.lang === 'en') { layer(w, true).title = v; tidy(w); return; }
+    if (isTr(w)) { layer(w, true).title = v; tidy(w); return; }
     w.title = v;
     if (w._autoSlug) {
       let base = slugify(w.title) || 'tulisan-baru', slug = base, i = 2;
@@ -591,7 +599,7 @@
   $('#edBody').addEventListener('input', e => {
     const w = cur(); if (!w) return;
     slot(w, true).body = fromText(e.target.value, w.form);
-    tidy(w); if (S.lang === 'en') renderSideTabs();
+    tidy(w); if (isTr(w)) renderSideTabs();
     grow(e.target); renderCount(); changed();
   });
 
@@ -629,14 +637,15 @@
     $$('#dForm [data-v]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === w.form)));
     $('#dDate').value = w.date; $('#dTime').value = w.time || '';
     $('#dSlug').value = w.slug; $('#slugErr').hidden = true;
-    const L = layer(w), en = S.lang === 'en';
+    const L = layer(w), en = isTr(w), inLang = ` (dalam ${LN[S.lang]})`;
     $('#dWorkTitleRow').hidden = !isCh(w);
-    $('#dWorkTitle').value = L.title || ''; $('#dWorkTitle').placeholder = en ? (w.title || '') + ' (dalam bahasa Inggris)' : 'Judul novel';
+    $('#dWorkTitle').value = L.title || ''; $('#dWorkTitle').placeholder = en ? (w.title || '') + inLang : 'Judul novel';
     $('#dExcerpt').value = L.excerpt || ''; $('#dLine').value = L.line || '';
-    $('#dExcerpt').placeholder = en ? 'Ringkasan dalam bahasa Inggris (kosong = pakai versi Indonesia).' : 'Muncul di kartu dan hasil cari.';
-    $('#dLine').placeholder = en ? 'Baris favorit dalam bahasa Inggris.' : 'Muncul di panel sapa dan kartu kutipan.';
+    $('#dExcerpt').placeholder = en ? `Ringkasan dalam ${LN[S.lang]} (kosong = pakai versi aslinya).` : 'Muncul di kartu dan hasil cari.';
+    $('#dLine').placeholder = en ? `Baris favorit dalam ${LN[S.lang]}.` : 'Muncul di panel sapa dan kartu kutipan.';
     $$('[data-ln]').forEach(el => { const tr = el.dataset.ln === 'story'; el.value = ((tr ? L : w).liner || {})[el.dataset.ln] || ''; el.closest('label').hidden = en && !tr; });
-    $$('.d-en').forEach(el => { el.hidden = !en; });
+    $$('.d-en').forEach(el => { el.hidden = !en; el.textContent = `Kamu sedang menyunting terjemahan ${LN[S.lang]}. Ringkasan, baris favorit, dan cerita di balik tulisan di bawah ini juga versi terjemahannya.`; });
+    $$('#dLang [data-v]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === orig(w))));
     $('#delConfirm').hidden = true; $('#delBtn').hidden = false;
   }
   const flip = (btn, key, invert) => { const w = cur(); const on = btn.getAttribute('aria-checked') !== 'true'; btn.setAttribute('aria-checked', String(on)); w[key] = invert ? !on : on; };
@@ -647,6 +656,37 @@
     const w = cur(); w.form = b.dataset.v;
     const o = slot(w); if (o) o.body = fromText($('#edBody').value, w.form);
     renderDetails(); renderCount(); changed();
+  });
+  // bahasa asli: kalau ada terjemahan, isi asli dan terjemahannya bertukar tempat
+  const TR_FIELDS = ['title', 'excerpt', 'line', 'sideTitle', 'pov', 'body'];
+  function swapLang(w) {
+    const from = orig(w), to = from === 'en' ? 'id' : 'en', tr = w[to] || {}, old = {};
+    const swapObj = (base, t) => {
+      // hanya isian yang ada di kedua bahasa yang bertukar; sisanya tetap di tempatnya
+      const keep = {};
+      TR_FIELDS.forEach(k => {
+        if (t[k] == null || (k === 'body' && !(t.body || []).some(p => String(p).trim()))) return;
+        if (k in base) keep[k] = base[k];
+        base[k] = t[k];
+      });
+      return keep;
+    };
+    Object.assign(old, swapObj(w, tr));
+    if (sidesOf(w).length) old.sides = w.sides.map((x, i) => swapObj(x, (tr.sides || [])[i] || {}));
+    if (isCh(w)) old.chapters = w.chapters.map((c, i) => swapObj(c, (tr.chapters || [])[i] || {}));
+    if (w.liner?.story || tr.liner?.story) { const st = w.liner?.story; if (tr.liner?.story) w.liner = { ...(w.liner || {}), story: tr.liner.story }; if (st) old.liner = { story: st }; }
+    delete w[to];
+    if (to === 'en') w.lang = 'en'; else delete w.lang;
+    // yang lama menjadi terjemahan, tapi hanya kalau tadinya memang ada terjemahan
+    if (Object.keys(tr).length) w[from] = old;
+    tidy(w);
+  }
+  $('#dLang').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'), w = cur(); if (!b || !w || b.dataset.v === orig(w)) return;
+    const had = !!w[trKey(w)];
+    swapLang(w); S.lang = orig(w);
+    fillEditor(); renderDetails(); renderList(); changed(); pushPreview(true);
+    toast(had ? `Bahasa asli kini ${LN[orig(w)]}; isi dan terjemahannya bertukar tempat.` : `Bahasa asli kini ${LN[orig(w)]}.`);
   });
   $('#dDate').addEventListener('change', e => { if (e.target.value) { cur().date = e.target.value; renderCount(); changed(); } });
   $('#dTime').addEventListener('change', e => { cur().time = e.target.value; changed(); });
@@ -662,7 +702,7 @@
   // catatan sampul: isian kosong dibuang supaya works.json tetap rapi
   $$('[data-ln]').forEach(el => el.addEventListener('input', e => {
     const w = cur(); if (!w) return;
-    const host = S.lang === 'en' && e.target.dataset.ln === 'story' ? layer(w, true) : w;
+    const host = isTr(w) && e.target.dataset.ln === 'story' ? layer(w, true) : w;
     const L = { ...(host.liner || {}), [e.target.dataset.ln]: e.target.value };
     Object.keys(L).forEach(k => { if (!String(L[k]).trim()) delete L[k]; });
     if (Object.keys(L).length) host.liner = L; else delete host.liner;
@@ -670,9 +710,9 @@
   }));
   $('#autoExcerpt').addEventListener('click', () => {
     const w = cur(), L = layer(w);
-    const first = isCh(w) ? (S.lang === 'en' ? (L.chapters || [])[0]?.body : w.chapters[0]?.body) : L.body;
+    const first = isCh(w) ? (isTr(w) ? (L.chapters || [])[0]?.body : w.chapters[0]?.body) : L.body;
     const t = plain((first || []).find(p => p.trim() && /[\p{L}]/u.test(p)) || '').replace(/\s+/g, ' ');
-    if (!t) { toast(S.lang === 'en' ? 'Isi terjemahannya dulu.' : 'Tulis isinya dulu.'); return; }
+    if (!t) { toast(isTr(w) ? 'Isi terjemahannya dulu.' : 'Tulis isinya dulu.'); return; }
     const cut = t.length > 150 ? t.slice(0, t.lastIndexOf(' ', 150)) + '…' : t;
     layer(w, true).excerpt = cut; $('#dExcerpt').value = cut; tidy(w); changed();
   });

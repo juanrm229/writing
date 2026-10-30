@@ -132,15 +132,20 @@
 
   // satu karya dalam bahasa yang dipilih; bagian yang belum diterjemahkan tetap berbahasa dasar dan diberi tanda
   const hasText = b => Array.isArray(b) && b.some(p => String(p).trim());
+  // bahasa asli sebuah karya: lang di karya itu, kalau tidak ada bahasa dasar situs.
+  // Terjemahannya disimpan di kunci bahasa yang lain (karya berbahasa Indonesia → en, berbahasa Inggris → id).
+  const origOf = w => (w.lang === 'en' || w.lang === 'id' ? w.lang : BASE);
   function localize(w) {
-    const t = trOf(w), o = { ...w, ...filled({ title: t.title, excerpt: t.excerpt, line: t.line, pov: t.pov, sideTitle: t.sideTitle }) };
-    o.lost = OTHER && hasText(w.body) && !hasText(t.body);
+    const wl = origOf(w), away = LANG !== wl, lostAs = away ? wl : false;
+    const t = (away && w[LANG]) || {}, o = { ...w, ...filled({ title: t.title, excerpt: t.excerpt, line: t.line, pov: t.pov, sideTitle: t.sideTitle }) };
+    o.lang = wl;
+    o.lost = hasText(w.body) && !hasText(t.body) && lostAs;
     if (hasText(t.body)) o.body = t.body;
     const extra = Array.isArray(w.sides) ? w.sides : w.sideB ? [w.sideB] : [];
-    o.sides = extra.map((x, i) => { const y = (t.sides || (t.sideB ? [t.sideB] : []))[i] || {}; return { ...x, ...filled({ title: y.title, pov: y.pov }), body: hasText(y.body) ? y.body : x.body, lost: OTHER && !hasText(y.body) }; });
-    o.chapters = (Array.isArray(w.chapters) ? w.chapters : []).map((c, i) => { const y = (t.chapters || [])[i] || {}; return { ...c, ...filled({ title: y.title }), body: hasText(y.body) ? y.body : c.body, lost: OTHER && hasText(c.body) && !hasText(y.body) }; });
+    o.sides = extra.map((x, i) => { const y = (t.sides || (t.sideB ? [t.sideB] : []))[i] || {}; return { ...x, ...filled({ title: y.title, pov: y.pov }), body: hasText(y.body) ? y.body : x.body, lost: !hasText(y.body) && lostAs }; });
+    o.chapters = (Array.isArray(w.chapters) ? w.chapters : []).map((c, i) => { const y = (t.chapters || [])[i] || {}; return { ...c, ...filled({ title: y.title }), body: hasText(y.body) ? y.body : c.body, lost: hasText(c.body) && !hasText(y.body) && lostAs }; });
     o.liner = { ...(w.liner || {}), ...filled(t.liner) };
-    const en = w.en || {};
+    const en = w[wl === 'en' ? 'id' : 'en'] || {};
     o.bilingual = hasText(en.body) || (en.sides || en.sideB ? [...(en.sides || []), en.sideB] : []).some(x => hasText(x?.body)) || (en.chapters || []).some(c => hasText(c?.body));
     return o;
   }
@@ -864,6 +869,7 @@
     const w = current;
     const mark = t => (q ? markText(t, q) : rich(t));
     body.className = 'rd-body' + (focusMode ? ' focus' : '') + (reveal && !reduced ? ' reveal' : '');
+    body.lang = w.lost || LANG;
     body.innerHTML = w.body.map((p, i) => isBreak(p) ? SCENE : `<p${w.form === 'puisi' ? ' class="stanza"' : ''} style="--k:${Math.min(i, 10)}">${mark(p)}</p>`).join('');
   }
   function markText(t, q) {
@@ -924,7 +930,8 @@
     nav.hidden = !list;
     if (list) nav.innerHTML = list.map(x => `<a href="${hrefOf(x)}" class="${x === d ? 'cur' : ''}${readSet.has(x.key) ? ' seen' : ''}" ${x === d ? 'aria-current="page"' : ''} title="${esc(x.title)}">${w.CH ? x.ch : SL(x)}<span>${esc(x.title)}</span></a>`).join('');
     $('#rdLost').hidden = !d.lost;
-    $('#rdLost').textContent = t('Bagian ini belum tersedia dalam bahasa Indonesia, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in English yet, so it’s shown in the original Indonesian.');
+    $('#rdLost').textContent = d.lost === 'en' ? t('Tulisan ini ditulis dalam bahasa Inggris dan belum diterjemahkan, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in Indonesian yet, so it’s shown in the original English.')
+      : t('Bagian ini belum tersedia dalam bahasa Indonesia, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in English yet, so it’s shown in the original Indonesian.');
   }
 
   function showReader(slug, side = 'a', ch = 1) {
@@ -1294,7 +1301,7 @@
     const paras = [...body.children], d = current;
     Now.play(d);
     // suara mengikuti bahasa teksnya: bagian yang belum diterjemahkan tetap dibacakan dalam bahasa dasarnya
-    const tongue = (current?.lost ? BASE : LANG) === 'en' ? 'en-GB' : 'id-ID';
+    const tongue = (current?.lost || LANG) === 'en' ? 'en-GB' : 'id-ID';
     const vs = speechSynthesis.getVoices();
     const voice = tongue === 'en-GB' ? vs.find(v => /^en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) : vs.find(v => /^id|indones/i.test(v.lang + v.name));
     const next = s => {
@@ -2671,11 +2678,14 @@
     return ds.some(d => readSet.has(d.key) || progOf(d) > .02) ? 'tengah' : 'belum';
   };
   // benang: kata khas yang muncul di lebih dari satu karya didahulukan, lalu kata khas terkuat
+  const EN_FILLER = new Set('about above after again against along already although always among another anyone anything around because become before behind being below between beyond cannot could during either enough every everything first found further getting going having itself might myself never nothing often other others perhaps quite rather really right seems should since something sometimes still their theirs there these thing things think those though thought through toward towards turned under until upon wanted where whether which while within without would yours yourself current least later little looked people seemed began began finally simply almost knows known'.split(' '));
   let svWordsCache = null;
   function svWords() {
     if (svWordsCache) return svWordsCache;
     const score = {};
-    DOCS.forEach(d => khas(d, 4).forEach((k, i) => { score[k] = (score[k] || 0) + (4 - i); }));
+    // kata dari tulisan yang berbahasa sama dengan pembaca, tanpa kata pengisi bahasa Inggris
+    const same = DOCS.filter(d => (d.lost || LANG) === LANG), pool = same.length >= 3 ? same : DOCS;
+    pool.forEach(d => khas(d, 6).filter(k => !EN_FILLER.has(k)).slice(0, 4).forEach((k, i) => { score[k] = (score[k] || 0) + (4 - i); }));
     const reach = k => WORKS.filter(w => wordsIn(w).has(k)).length;
     return (svWordsCache = Object.keys(score).map(k => [k, score[k], reach(k)])
       .sort((a, b) => (b[2] > 1) - (a[2] > 1) || b[1] - a[1]).slice(0, 12).map(x => x[0]));
