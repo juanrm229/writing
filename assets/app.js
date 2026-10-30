@@ -2550,7 +2550,7 @@
      ALBUM: sisi-sisi pilihan penulis, diputar berurutan seperti playlist
      ====================================================================== */
   const ALBUMS = (Array.isArray(content.albums) ? content.albums : [])
-    .map(a => ({ id: String(a.id || ''), title: String(a.title || ''), note: String(a.note || ''), tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
+    .map(a => ({ id: String(a.id || ''), title: String(a.title || ''), note: String(a.note || ''), kind: a.kind === 'antologi' ? 'antologi' : '', tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
     .filter(a => a.id && a.title && a.tracks.length);
   /* ---------- RACIKAN: playlist pembaca yang dibagikan lewat tautan, tanpa server ---------- */
   // isinya ada di tautan itu sendiri: #racikan?s=kopi-kedua,kopi-kedua:b&t=Judul&n=Pengirim
@@ -2810,6 +2810,16 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 2), S = Math.round(size * dpr);
     c.width = c.height = S; c.style.width = c.style.height = size + 'px';
     const ctx = c.getContext('2d');
+    // antologi Titik Biru: sampulnya ikon aplikasi tanpa nama itu, persegi putih dengan satu titik biru
+    if (a.kind === 'antologi') {
+      ctx.fillStyle = '#F7F7F5'; ctx.fillRect(0, 0, S, S);
+      const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S * .3);
+      g.addColorStop(0, 'rgba(26,115,232,.2)'); g.addColorStop(1, 'rgba(26,115,232,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(S / 2, S / 2, S * .3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(S / 2, S / 2, S * .062, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1A73E8'; ctx.beginPath(); ctx.arc(S / 2, S / 2, S * .044, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
     const picks = a.tracks.length >= 4 ? a.tracks.slice(0, 4) : a.tracks.length === 1 ? [a.tracks[0]] : [a.tracks[0], a.tracks[1], a.tracks[1], a.tracks[0]];
     const n = picks.length === 1 ? 1 : 2, T = S / n;
     picks.forEach((d, i) => {
@@ -2842,7 +2852,7 @@
         <div class="al-detail">
           <div class="al-art">${sleeve(a, 300, on)}</div>
           <div class="al-info">
-            <p class="al-kicker">${a.daily ? t('Racikan harian · ', 'Daily mix · ') + esc(a.sub) : a.shared ? t('Racikan', 'Mix') : 'Album'} · ${a.tracks.length} ${t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}</p>
+            <p class="al-kicker">${a.daily ? t('Racikan harian · ', 'Daily mix · ') + esc(a.sub) : a.shared ? t('Racikan', 'Mix') : a.kind === 'antologi' ? t('Antologi', 'Anthology') : 'Album'} · ${a.tracks.length} ${a.kind === 'antologi' ? t('cerita', a.tracks.length === 1 ? 'story' : 'stories') : t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}</p>
             <h2>${esc(a.title)}</h2>
             ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">${t('Diterima', 'Received')} ${ago(a.at)}.</span>` : ''}${a.daily && a.date === wibDate() ? ` <span class="al-ago">${t('Berganti dalam', 'Changes in')} ${inHours(untilMidnight())}.</span>` : a.daily ? ` <span class="al-ago">${t('Ini racikan hari yang sudah lewat.', 'This is a mix from a day gone by.')}</span>` : ''}</p>` : ''}
             <div class="al-actions">

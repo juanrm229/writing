@@ -27,9 +27,11 @@
   /* ======================================================================
      NASKAH: dari works.json (atau pratinjau admin), diurai menjadi blok
      ====================================================================== */
-  let works = null;
-  if (/[?&]preview=1/.test(location.search)) { try { works = JSON.parse(localStorage.getItem('jm:preview') || 'null')?.works; } catch (e) { /* */ } }
-  if (!works) works = await fetch('../../content/works.json', { cache: 'no-cache' }).then(r => r.json()).catch(() => null);
+  let works = null, albums = null;
+  if (/[?&]preview=1/.test(location.search)) { try { ({ works, albums } = JSON.parse(localStorage.getItem('jm:preview') || 'null') || {}); } catch (e) { /* */ } }
+  if (!works) [works, albums] = await Promise.all(['works', 'albums'].map(f => fetch(`../../content/${f}.json`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)));
+  // antologi tempat tulisan ini berada, kalau ada: judulnya tampil di atas judul cerita
+  const ANTH = (Array.isArray(albums) ? albums : []).find(a => a.kind === 'antologi' && (a.tracks || []).includes(SLUG));
   const W = (works || []).find(w => w.slug === SLUG);
   if (!W || !Array.isArray(W.body)) { story.innerHTML = '<p class="loading">Naskahnya belum ada. <a href="../../">Kembali ke meja tulis</a>.</p>'; return; }
 
@@ -83,6 +85,7 @@
   const NOTES = blocks.filter(b => b.k === 'note').length;
   const flow = [];   // setiap elemen yang ikut dihitung posisinya, berurutan
   const add = (html, text, cls) => { flow.push({ html, text, cls }); };
+  if (ANTH) { const n = ANTH.tracks.indexOf(SLUG); add(`<p class="anth"><i aria-hidden="true"></i>${esc(ANTH.title)} · ${n ? 'cerita ke-' + (n + 1) : 'cerita pembuka'}</p>`, ''); }
   add(`<h1 class="title">${esc(W.title || 'Anda di Sini')}</h1>`, W.title || '');
   add(`<p class="byline">Juan · ${new Date((W.date || '2026-10-30') + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`, '');
   add('<p class="cover-hint"><i aria-hidden="true"></i>Gulir pelan-pelan. Petanya mengikuti.</p>', '');

@@ -187,3 +187,7 @@ button { font: inherit; color: inherit; }
 @keyframes wheel { 60% { transform: translateY(9px); opacity: 0; } 61% { transform: none; opacity: 0; } }
 .read.moved .cover-hint { opacity: 0; }
 :root[data-theme="dark"] .hud, :root:not([data-theme="light"]) .hud { color-scheme: light; }
+/* nama antologi di atas judul */
+.anth { display: flex; align-items: center; gap: 9px; margin: 14vh 0 -10vh; font: 600 12px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.anth i { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent); }
+.anth + .title { margin-top: 14vh; }
