@@ -224,7 +224,9 @@
       update();
       if (from && win.dataset.view === 'baca') $('#rdCard').style.viewTransitionName = 'doc';
     });
-    t.finished.finally(() => { $('#rdCard').style.viewTransitionName = ''; });
+    // transisi yang dilewati (misalnya pindah halaman beruntun) menolak janjinya; itu wajar, bukan galat
+    t.ready.catch(() => {});
+    t.finished.catch(() => {}).finally(() => { $('#rdCard').style.viewTransitionName = ''; });
   }
 
   /* ======================================================================
@@ -272,7 +274,7 @@
       if (typeof applyBackdrop === 'function') applyBackdrop();
       document.dispatchEvent(new Event('jm:theme'));
     };
-    if (document.startViewTransition && !reduced) document.startViewTransition(apply); else apply();
+    if (document.startViewTransition && !reduced) document.startViewTransition(apply).ready.catch(() => {}); else apply();
   }
   function syncThemeUI() {
     const d = isDark();
@@ -465,6 +467,10 @@
     } else {
       html += `<p class="np-h"><span>Belum ada yang diputar</span></p><p class="np-empty">Pilih satu piringan. Meja ini mencatat sampai mana kamu membaca, sisi mana yang sudah kamu balik, dan tulisan apa yang terhubung dengannya.</p>`;
     }
+    const tm = todayMix();
+    if (tm) html += `<p class="np-h"><span>Racikan hari ini</span><span>berganti dalam ${inHours(untilMidnight())}</span></p>
+      <div class="np-daily"><button type="button" class="nd-open" data-open-album="${esc(tm.id)}"><canvas data-cover="${esc(tm.id)}" data-size="56"></canvas><span class="sg-t"><b>${esc(tm.title)}</b><span>${esc(tm.sub)} · ${tm.tracks.length} sisi · ${albumMins(tm)} menit</span></span></button>
+      <button type="button" class="nd-play" data-dplay="${esc(tm.id)}" aria-label="Putar ${esc(tm.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button></div>`;
     const qd = QUEUE.map(docByKey).filter(Boolean);
     html += `<p class="np-h"><span>Antreanmu${qd.length ? ' · ' + qd.length : ''}</span>${qd.length ? '<button type="button" class="np-link" data-qclear>Kosongkan</button>' : ''}</p>`;
     html += qd.length
@@ -509,7 +515,7 @@
     const mi = MODES.indexOf(feedMode);
     $('.tk-seg').style.setProperty('--x', Math.max(0, mi));
     $('.tk-seg').classList.toggle('none', mi < 0);
-    if (feedMode === 'now') { feed.innerHTML = `<div class="np">${nowHTML()}</div>`; $$('canvas[data-cover]', feed).forEach(c => paintCover(c, albumOf(c.dataset.cover), 40)); return; }
+    if (feedMode === 'now') { feed.innerHTML = `<div class="np">${nowHTML()}</div>`; $$('canvas[data-cover]', feed).forEach(c => paintCover(c, albumOf(c.dataset.cover), +c.dataset.size || 40)); return; }
     if (feedMode === 'koleksi') { feed.innerHTML = koleksiHTML(); return; }
     if (feedMode !== 'feed') return;
     const old = $('.fd', feed);
@@ -530,6 +536,10 @@
     if (b) setFeedMode(b.dataset.mode);
   });
   feed.addEventListener('click', e => {
+    const oa = e.target.closest('[data-open-album]');
+    if (oa) { location.hash = 'album-' + oa.dataset.openAlbum; return; }
+    const dp = e.target.closest('[data-dplay]');
+    if (dp) { playAlbum(dp.dataset.dplay, 0); return; }
     const qp = e.target.closest('[data-qplay]');
     if (qp) { playFromQueue(+qp.dataset.qplay); return; }
     const qu = e.target.closest('[data-qup]');
@@ -746,7 +756,7 @@
     // sisi dari antrean tidak memutus album: album lanjut dari posisinya setelah antrean habis
     if (!viaQ) syncPlay(w);
     setView('baca');
-    $('#rdBackLabel').textContent = playing() ? (playing().shared ? 'Racikan' : 'Album') : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
+    $('#rdBackLabel').textContent = playing() ? (playing().shared || playing().daily ? 'Racikan' : 'Album') : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
     const al = playing(), inAlbum = al && al.tracks[PLAY.i]?.key === w.key;
     $('#rdMeta').innerHTML = `${viaQ ? `<span class="q-tag">${QICON}dari antrean</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
@@ -758,8 +768,8 @@
     renderRelated(w.A);
     $('#rdNextLink').href = next ? hrefOf(next) : '#album-' + nb.album.id;
     $('#rdNextLink').dataset.queue = qNext ? '1' : '';
-    $('span', $('#rdNextLink')).textContent = qNext ? `berikutnya di antreanmu · ${QUEUE.length} menunggu` : nb.album ? (next ? `berikutnya di album “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `album “${nb.album.title}” selesai`) : 'berikutnya';
-    $('b', $('#rdNextLink')).textContent = next ? next.title : 'Kembali ke album';
+    $('span', $('#rdNextLink')).textContent = qNext ? `berikutnya di antreanmu · ${QUEUE.length} menunggu` : nb.album ? (next ? `berikutnya di ${kindOf(nb.album)} “${nb.album.title}” · ${nb.pos + 1}/${nb.len}` : `${kindOf(nb.album)} “${nb.album.title}” selesai`) : 'berikutnya';
+    $('b', $('#rdNextLink')).textContent = next ? next.title : 'Kembali ke ' + kindOf(nb.album);
     $('#rdPrev').dataset.key = prev.key; $('#rdNext').dataset.key = (next || prev).key;
     $('#rdNext').disabled = !next;
     $('#advPreview').textContent = plain(w.body[0]).replace(/\n/g, ' ');
@@ -863,7 +873,7 @@
     const qd = QUEUE.map(docByKey).find(x => x && x.key !== d.key);
     if (qd) return { d: qd, why: `Dari antreanmu${QUEUE.length > 1 ? ' · ' + QUEUE.length + ' menunggu' : ''}`, queue: true };
     const al = playing();
-    if (al) { const nb = neighbors(); return nb.next ? { d: nb.next, why: `Album “${al.title}” · ${nb.pos + 1} dari ${nb.len}` } : { end: al }; }
+    if (al) { const nb = neighbors(); return nb.next ? { d: nb.next, why: `${kindOf(al)[0].toUpperCase() + kindOf(al).slice(1)} “${esc(al.title)}” · ${nb.pos + 1} dari ${nb.len}` } : { end: al }; }
     const other = d.A.B ? (d.side === 'b' ? d.A : d.A.B) : null;
     if (other && !ST.done.includes(other.key)) return { d: other, why: other.side === 'b' ? `Balik piringannya · dari sisi ${esc(other.pov || 'yang lain')}` : 'Kembali ke Sisi A, cerita aslinya' };
     const s = suggestions(d).find(x => x.d.key !== d.key);
@@ -876,9 +886,9 @@
     UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen; UN.queue = !!n.queue;
     unEl.classList.toggle('end', !!n.end);
     if (n.end) {
-      $('#unWhy').textContent = 'Album selesai';
+      $('#unWhy').textContent = (n.end.shared || n.end.daily ? 'Racikan' : 'Album') + ' selesai';
       $('#unTitle').textContent = n.end.title;
-      $('#unMeta').innerHTML = `<button type="button" data-again="${esc(n.end.id)}">Putar lagi</button> <a href="#album-${esc(n.end.id)}">Ke album</a>`;
+      $('#unMeta').innerHTML = `<button type="button" data-again="${esc(n.end.id)}">Putar lagi</button> <a href="#album-${esc(n.end.id)}">Ke ${kindOf(n.end)}</a>`;
       $('#unDisc').style.setProperty('--lc', catOf(n.end.tracks[0].cat).ink);
       $('#unDisc').classList.remove('b');
     } else {
@@ -1055,6 +1065,7 @@
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
     { label: 'Pilih piringan', hint: 'sisi A atau B', run: () => go('pilih') },
     { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
+    ...(todayMix() ? [{ label: 'Putar racikan hari ini', hint: todayMix().sub, run: () => playAlbum(todayMix().id, 0) }] : []),
     ...ALBUMS.map(a => ({ label: 'Putar album “' + a.title + '”', hint: a.tracks.length + ' sisi', run: () => playAlbum(a.id, 0) })),
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
     { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#chipInstall').hidden }
@@ -1992,8 +2003,50 @@
   $('#mixClose').addEventListener('click', closeMix);
   $('#mixModal').addEventListener('click', e => { if (e.target.id === 'mixModal') closeMix(); });
 
-  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id)));
-  if (!ALBUMS.length && !MIXES.length) $('.pill [data-go="album"]').hidden = true;
+  /* ---------- RACIKAN HARIAN: dirangkai dari benang merah, sama untuk semua pembaca hari itu ---------- */
+  // tanggal mengikuti WIB supaya racikannya sama di mana pun pembaca berada, dan berganti tengah malam WIB
+  const wibDate = (t = Date.now()) => new Date(t + 7 * 3600e3).toISOString().slice(0, 10);
+  const untilMidnight = () => 86400e3 - ((Date.now() + 7 * 3600e3) % 86400e3);
+  const dailyCache = {};
+  function dailyOf(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || WORKS.length < 2) return null;
+    if (dailyCache[date]) return dailyCache[date];
+    const rnd = seeded('harian/' + date + '/' + WORKS.map(w => w.slug).join(','));
+    const want = Math.min(DOCS.length, 4 + Math.floor(rnd() * 3));
+    const used = new Set(), tracks = [], why = [], words = {};
+    let cur = WORKS[Math.floor(rnd() * WORKS.length)], via = '';
+    while (cur && tracks.length < want) {
+      used.add(cur.slug);
+      tracks.push(cur); why.push(via);
+      // sisi B langsung menyusul sisi A-nya: cerita yang sama, dari sisi yang lain
+      if (cur.B && tracks.length < want) { tracks.push(cur.B); why.push(`sisi lain, dari sisi ${esc(cur.B.pov || 'yang lain')}`); }
+      const next = linksOf(cur.slug).map(l => ({ l, o: bySlug(l.a === cur.slug ? l.b : l.a) })).filter(x => x.o && !used.has(x.o.slug));
+      if (next.length) {
+        const pick = next[Math.floor(rnd() * Math.min(2, next.length))];
+        pick.l.words.forEach(w => { words[w] = (words[w] || 0) + 1; });
+        via = `lewat <i>${pick.l.words.map(esc).join('</i> dan <i>')}</i>`;
+        cur = pick.o;
+      } else {
+        const rest = WORKS.filter(w => !used.has(w.slug));
+        cur = rest.length ? rest[Math.floor(rnd() * rest.length)] : null;
+        via = 'lompatan acak';
+      }
+    }
+    const theme = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
+    const day = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' });
+    const nice = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+    return (dailyCache[date] = {
+      id: 'harian-' + date, date, daily: true, theme, tracks, why,
+      title: 'Racikan ' + day,
+      sub: theme.length ? 'tentang ' + theme.join(' dan ') : 'dari ' + [...new Set(tracks.map(t => catOf(t.cat).label.toLowerCase()))].slice(0, 2).join(' dan '),
+      note: `Racikan ${nice}, dirangkai otomatis: dimulai dari “${tracks[0].title}”, lalu mengikuti benang merah${theme.length ? ' lewat ' + theme.join(', ') : ''}. Semua pembaca mendapat racikan yang sama hari ini.`
+    });
+  }
+  const todayMix = () => dailyOf(wibDate());
+  const inHours = ms => { const m = Math.round(ms / 60000); return m < 60 ? m + ' menit' : Math.floor(m / 60) + ' jam' + (m % 60 ? ' ' + (m % 60) + ' menit' : ''); };
+
+  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id))) || (/^harian-/.test(id || '') ? dailyOf(id.slice(7)) : undefined);
+  if (!ALBUMS.length && !MIXES.length && !todayMix()) $('.pill [data-go="album"]').hidden = true;
   // PLAY: album yang sedang diputar, posisi, dan urutannya (urutan acak juga diingat)
   let PLAY = store.get('play', null);
   if (PLAY && !(albumOf(PLAY.album) && Array.isArray(PLAY.order))) PLAY = null;
@@ -2006,6 +2059,7 @@
     if (any < 0) { PLAY = null; savePlay(); return; }
     PLAY.i = any; savePlay();
   }
+  const kindOf = a => (a && (a.shared || a.daily) ? 'racikan' : 'album');
   const albumMins = a => a.tracks.reduce((n, t) => n + t.minutes, 0);
   // sampul mosaik ala playlist: empat petak seni benang dari sisi-sisi di album
   function paintCover(c, a, size) {
@@ -2028,7 +2082,11 @@
     setView('album');
     const host = $('#alScroll'), now = playing();
     if (!id) {
-      host.innerHTML = `<header class="al-head"><p class="al-kicker">Koleksi</p><h2>Album</h2><p class="al-sub">Sisi-sisi pilihan, disusun untuk didengar berurutan.</p></header>
+      const tm = todayMix(), tOn = tm && now && now.id === tm.id;
+      host.innerHTML = `${tm ? `<button type="button" class="al-daily" data-album="${esc(tm.id)}">${sleeve(tm, 220, tOn)}
+          <span class="ad-t"><span class="al-kicker">Racikan harian · berganti dalam ${inHours(untilMidnight())}</span><b>${esc(tm.title)}</b><span class="ad-sub">${esc(tm.sub)}</span>
+          <span class="ad-meta">${tm.tracks.length} sisi · ${albumMins(tm)} menit${tOn ? ' · sedang diputar' : ''}</span></span></button>` : ''}
+        <header class="al-head"><p class="al-kicker">Koleksi</p><h2>Album</h2><p class="al-sub">Sisi-sisi pilihan, disusun untuk didengar berurutan.</p></header>
         <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
           <b>${esc(a.title)}</b><small>${a.tracks.length} sisi · ${albumMins(a)} menit${now && now.id === a.id ? ' · sedang diputar' : ''}</small></button>`).join('') || '<p class="al-empty">Belum ada album. Buat yang pertama di panel admin.</p>'}</div>
         ${MIXES.length ? `<header class="al-head al-head-sm"><p class="al-kicker">Racikan</p><p class="al-sub">Urutan baca yang kamu buat atau yang dibagikan padamu lewat tautan.</p></header>
@@ -2041,9 +2099,9 @@
         <div class="al-detail">
           <div class="al-art">${sleeve(a, 300, on)}</div>
           <div class="al-info">
-            <p class="al-kicker">${a.shared ? 'Racikan' : 'Album'} · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
+            <p class="al-kicker">${a.daily ? 'Racikan harian · ' + esc(a.sub) : a.shared ? 'Racikan' : 'Album'} · ${a.tracks.length} sisi · ${albumMins(a)} menit</p>
             <h2>${esc(a.title)}</h2>
-            ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">Diterima ${ago(a.at)}.</span>` : ''}</p>` : ''}
+            ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">Diterima ${ago(a.at)}.</span>` : ''}${a.daily && a.date === wibDate() ? ` <span class="al-ago">Berganti dalam ${inHours(untilMidnight())}.</span>` : a.daily ? ' <span class="al-ago">Ini racikan hari yang sudah lewat.</span>' : ''}</p>` : ''}
             <div class="al-actions">
               <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? 'Lanjutkan' : 'Putar'}</button>
               <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
@@ -2055,7 +2113,7 @@
               const cur = on && PLAY.i === i;
               return `<li style="--k:${i}"><button type="button" data-track="${i}" data-album="${esc(a.id)}" class="${cur ? 'cur' : ''}" aria-label="Putar ${esc(t.title)}">
                 <span class="al-no">${cur ? '<i class="eq" aria-hidden="true"><i></i><i></i><i></i></i>' : i + 1}</span>${mdisc(t)}
-                <span class="sg-t"><b>${esc(t.title)}${t.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${t.side === 'b' ? 'Sisi B' : 'Sisi A'}${t.pov ? ' · dari sisi ' + esc(t.pov) : ''} · ${esc(catOf(t.cat).label)}</span></span>
+                <span class="sg-t"><b>${esc(t.title)}${t.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${a.daily && a.why[i] ? a.why[i] + ' · ' : ''}${t.side === 'b' ? 'Sisi B' : 'Sisi A'}${t.pov && !(a.daily && t.side === 'b') ? ' · dari sisi ' + esc(t.pov) : ''} · ${esc(catOf(t.cat).label)}</span></span>
                 <span class="al-len">${fmtMS(secsOf(t))}</span>${sideRing(t, t.side === 'b' ? 'B' : 'A')}</button></li>`;
             }).join('')}</ol>
           </div>
