@@ -83,16 +83,40 @@
   const underline = s => s.replace('Penjelasan paling sederhana biasanya benar.', '<span class="u2">Penjelasan paling sederhana biasanya benar.</span>');
 
   const NOTES = blocks.filter(b => b.k === 'note').length;
+  // aplikasi Catatan: setiap catatan punya judul, stempel, kalimat pertama, dan jumlah kata
+  const NOTE_INFO = [];
+  {
+    let cur = null, part = -1;
+    blocks.forEach(b => {
+      if (b.k === 'part') { part++; cur = null; } else if (b.k === 'frame') { cur = null; }
+      else if (b.k === 'note') { cur = { title: b.t, n: +(b.t.match(/\d+/) || [0])[0], part, stamp: '', first: '', words: 0 }; NOTE_INFO.push(cur); }
+      else if (cur) {
+        if (b.k === 'stamp' && !cur.stamp) cur.stamp = b.t;
+        const txt = b.k === 'p' ? plain(b.s) : b.items ? plain(b.items.join(' ')) : b.k === 'hand' ? b.t : '';
+        if (b.k === 'p' && !cur.first) cur.first = txt;
+        cur.words += (txt.match(/[\p{L}\p{N}]+/gu) || []).length;
+      }
+    });
+  }
+  const shortStamp = s => s.replace(/\.\s*(Ditulis|Rangkuman|Masih|Tidak tahu).*$/, '').replace(/\.$/, '');
   const flow = [];   // setiap elemen yang ikut dihitung posisinya, berurutan
   const add = (html, text, cls) => { flow.push({ html, text, cls }); };
   if (ANTH) { const n = ANTH.tracks.indexOf(SLUG); add(`<p class="anth"><i aria-hidden="true"></i>${esc(ANTH.title)} · ${n ? 'cerita ke-' + (n + 1) : 'cerita pembuka'}</p>`, ''); }
   add(`<h1 class="title">${esc(W.title || 'Anda di Sini')}</h1>`, W.title || '');
   add(`<p class="byline">Juan · ${new Date((W.date || '2026-10-30') + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`, '');
   add('<p class="cover-hint"><i aria-hidden="true"></i>Gulir pelan-pelan. Petanya mengikuti.</p>', '');
+  let openNote = null, partNo = -1, noteNo = -1;
+  const closeNote = () => { if (!openNote) return; add(`<footer class="note-f"><span>${openNote.words.toLocaleString('id-ID')} kata</span><span>Tersimpan di Catatan</span></footer>`, ''); openNote = null; };
   blocks.forEach(b => {
+    if (b.k === 'frame' || b.k === 'part' || b.k === 'note' || b.k === 'ask') closeNote();
     if (b.k === 'frame') add(`<h2 class="frame-h">${esc(b.t)}</h2>`, '## ' + b.t);
-    else if (b.k === 'part') add(`<header class="part"><small>${esc(b.a)}</small><b>${esc(b.b)}</b></header>`, `## ${b.a}: ${b.b}`);
-    else if (b.k === 'note') add(`<header class="note-h"><b>${esc(b.t)}</b><span>${(b.t.match(/\d+/) || [''])[0]} / ${NOTES}</span></header>`, `### ${b.t}`);
+    else if (b.k === 'part') {
+      partNo++;
+      add(`<header class="part"><small>${esc(b.a)}</small><b>${esc(b.b)}</b></header>`, `## ${b.a}: ${b.b}`);
+      const ns = NOTE_INFO.filter(n => n.part === partNo);
+      if (ns.length) add(`<nav class="folder" aria-label="Catatan di ${esc(b.a)}"><p class="folder-h"><b>Catatan</b><span>${ns.length} catatan</span></p>${ns.map(n => `<button type="button" data-note="${n.n}"><b>${esc(n.title)}</b><time>${esc(shortStamp(n.stamp))}</time><span>${esc(n.first)}</span></button>`).join('')}</nav>`, '');
+    }
+    else if (b.k === 'note') { openNote = NOTE_INFO[++noteNo]; add(`<header class="note-h" id="catatan-${openNote.n}"><b>${esc(b.t)}</b><span>${openNote.n} / ${NOTES}</span></header>`, `### ${b.t}`); }
     else if (b.k === 'stamp') add(`<p class="stamp">${esc(b.t)}</p>`, b.t);
     else if (b.k === 'brk') add('<div class="brk" role="separator"></div>', '---');
     else if (b.k === 'table') add(tableHTML(b.s), plain(b.s));
@@ -110,10 +134,14 @@
         <button class="ask-go" id="askGo" type="button">Lanjut</button>
       </section>`, '[tanya]');
     else {
+      if (openNote) openNote.lastP = flow.length;
       add(`<p>${underline(inline(b.s))}</p>`, plain(b.s));
       if (withIcon.some(w => b.s.startsWith(w))) add('<div class="icon-fig" aria-hidden="true"><span class="app-icon"></span><span>Tanpa nama</span></div>', '');
     }
   });
+  closeNote();
+  // dua catatan yang ditulis di tempat, di ujung dermaga: kursornya masih berkedip
+  NOTE_INFO.filter(n => /di tempat|di dermaga/i.test(n.stamp)).forEach(n => { if (n.lastP != null) flow[n.lastP].html = flow[n.lastP].html.replace(/^<p>/, '<p class="caret">'); });
   story.innerHTML = flow.map((f, i) => f.html.replace(/^<(\w+)/, `<$1 data-i="${i}"`)).join('');
   const els = $$('[data-i]', story);
   $('#after').hidden = false;
@@ -350,6 +378,14 @@
   const idxOf = s => flow.findIndex(f => f.text.includes(s));
   const LOCK_I = idxOf('Aku mengunci layar.'), STRIKE_I = idxOf('Aku mencoret kalimat di bawah tabel'), STRUCK_I = idxOf('Semua pengguna, di semua versi, sedang mencari sesuatu.'), TABLE_I = flow.findIndex(f => f.html.startsWith('<div class="tbl"'));
   const INSTR = flow.map((f, i) => (f.html.startsWith('<p class="instr') ? i : -1));
+  // bilah aplikasi: judul catatan yang sedang dibuka, dan folder tempat ia disimpan
+  const NOTE_AT = [], FOLDER_AT = [], NOTE_IDX = {};
+  { let note = null, folder = -1; flow.forEach((f, i) => {
+    if (f.text.startsWith('## ')) { note = null; }
+    if (f.html.startsWith('<nav class="folder"')) folder = i;
+    if (f.text.startsWith('### ')) { note = f.text.slice(4); NOTE_IDX[(note.match(/\d+/) || [0])[0]] = i; }
+    NOTE_AT.push(note); FOLDER_AT.push(folder);
+  }); }
 
   function mix(a, b, t) {
     const o = { ...a };
@@ -593,7 +629,7 @@
     const i = lo, next = i + 1 < TOPS.length ? TOPS[i + 1] : TOPS[i] + 400;
     return [i, clamp((y - TOPS[i]) / Math.max(1, next - TOPS[i]), 0, 1)];
   }
-  let lastI = -1, lockT = 0, state = SNAP[0];
+  let lastI = -1, lastNoteI = -1, lockT = 0, state = SNAP[0];
   function frame(force) {
     const [i, t] = position();
     state = i + 1 < SNAP.length ? mix(SNAP[i], SNAP[i + 1], t) : SNAP[i];
@@ -607,6 +643,12 @@
     // bilah status ponsel
     $('#status').classList.toggle('on', state.phone > .5);
     $('#stTime').textContent = CLOCK[i] || '';
+    if (i !== lastNoteI) {
+      lastNoteI = i;
+      const tt = $('#stTitle'); tt.textContent = NOTE_AT[i] || ''; tt.classList.toggle('on', !!NOTE_AT[i]);
+      $$('.folder button', story).forEach(b => b.classList.toggle('new', (NOTE_IDX[b.dataset.note] ?? 0) > i));
+    }
+    notifyAt(i);
     const bat = Math.round(state.bat); $('#stBat').textContent = bat + '%';
     $('#stBatBar').style.setProperty('--b', (bat / 100).toFixed(2)); $('#stBatBar').classList.toggle('low', bat <= 20);
     // di atas peta
@@ -742,6 +784,81 @@
       const g = $('#ghostIcon'); g.hidden = false;
       g.addEventListener('click', () => toast('Anda di sini.', 3600));
     }
+  }
+
+  /* ---------- aplikasi Catatan: folder dan tombol kembali ---------- */
+  const scrollToEl = (el, off = 96) => el && read.scrollTo({ top: el.offsetTop - off, behavior: reduced ? 'auto' : 'smooth' });
+  story.addEventListener('click', e => { const b = e.target.closest('.folder [data-note]'); if (b) scrollToEl($('#catatan-' + b.dataset.note)); });
+  $('#stBack').addEventListener('click', () => { const f = FOLDER_AT[position()[0]]; if (f >= 0) scrollToEl(els[f], 140); });
+
+  /* ---------- NOTIFIKASI: ponselnya hidup di sekitar catatan-catatan itu ----------
+     Setiap notifikasi terikat pada satu kalimat dan muncul sekali saat kalimat itu terbaca sambil
+     menggulir ke bawah. Kalau pembaca kembali jauh ke atas, ia boleh muncul lagi. */
+  const NF_ICON = {
+    tel: '<svg viewBox="0 0 24 24"><path d="M6.6 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.1 6.1l1.3-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg>',
+    wa: '<svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.8A8 8 0 1 1 8.1 19z"/></svg>',
+    set: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M2.8 12h2.6M18.6 12h2.6M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/></svg>',
+    loc: '<svg viewBox="0 0 24 24"><path d="M20 4 4 11l7 2 2 7z"/></svg>',
+    bat: '<svg viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="9" rx="2"/><path d="M21 11.5v2"/><path d="M6 11v3" stroke="#FF453A"/></svg>',
+    jam: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4.5 3 6.5M19 4.5l2 2"/></svg>',
+    peta: '<svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>',
+    cal: '<small>AGU</small>9', ghost: ''
+  };
+  const NOTIFS = [
+    { at: 'Malam ini, waktu mencari berkas di menu pengaturan', items: [{ ic: 'set', app: 'Pengaturan', t: 'Instal aplikasi tak dikenal', b: 'WhatsApp diizinkan memasang aplikasi dari sumber tak dikenal.' }] },
+    { at: 'Aku tidak ingat pernah memberi izin lokasi', items: [{ ic: 'loc', app: 'Lokasi', t: 'Lokasi dipakai di latar belakang', b: 'Sebuah aplikasi tanpa nama mengakses lokasimu. Izin: Selalu.' }] },
+    { at: 'Aku terbangun pukul 09.05.', stay: 9000, items: [{ ic: 'wa', app: 'WhatsApp', when: '08.03', t: 'Wulan', b: 'Rapat mulai jam 8. Kamu di mana?' }, { ic: 'tel', app: 'Telepon', when: '08.12', t: 'Kantor', b: '2 panggilan tak terjawab' }] },
+    { at: 'Tanggal 9 Agustus jatuh hari Jumat depan.', items: [{ ic: 'cal', app: 'Kalender', when: 'Jumat depan', t: '9 Agustus', b: 'Pengingat tahunan' }] },
+    { at: 'Aku membuka aplikasi peta biasa', items: [{ ic: 'peta', app: 'Peta', t: 'Sinyal GPS lemah', b: 'Lokasimu mungkin tidak akurat. Akurasi ±2 km.' }] },
+    { at: 'Jalan semen itu berakhir di sebuah dermaga', items: [{ ic: 'bat', app: 'Baterai', t: 'Baterai lemah', b: 'Tersisa 18%. Nyalakan Penghemat Baterai?' }] },
+    { at: 'Ponselku hangat di tanganku.', items: [{ ic: 'bat', app: 'Baterai', t: 'Baterai 13%', b: 'Penghemat Baterai menyala.' }] },
+    { at: 'Aku tidur sebelas jam.', items: [{ ic: 'jam', app: 'Jam', when: '06.00', t: 'Alarm', b: 'Terlewat' }] },
+    { at: 'Pagi ini aku membuka halaman ketiga di ponselku.', items: [{ ic: 'ghost', app: 'Sistem', t: 'Aplikasi dihapus', b: 'Aplikasi tanpa nama tidak lagi terpasang di perangkat ini.' }] },
+    // yang terakhir bukan untuk si "aku". Untuk pembaca, di layarnya sendiri.
+    { at: 'ANDA DI SINI.', screen: true, delay: 2600, stay: 0, items: [{ ic: 'ghost', app: '', when: 'sekarang', b: 'Dari mana?', go: 'ask' }] }
+  ];
+  { let from = 0; NOTIFS.forEach(n => { const k = flow.findIndex((f, j) => j >= from && f.text.includes(n.at)); n.i = k; if (k >= 0) from = k; else console.warn('Notifikasi tanpa kalimat:', n.at); }); }
+  const nfHost = $('#notifs'), fired = new Set();
+  let nfPrev = -1;
+  function placeNotifs(screen) {
+    nfHost.classList.toggle('screen', !!screen);
+    if (mobile) { nfHost.style.left = '10px'; nfHost.style.width = 'calc(100% - 20px)'; return; }
+    const r = read.getBoundingClientRect(), w = Math.min(380, r.width - 32);
+    nfHost.style.width = w + 'px';
+    nfHost.style.left = (screen ? (W_ - w - 22) : (r.left + (r.width - w) / 2)) + 'px';
+  }
+  function dismiss(el) { if (!el.isConnected || el.classList.contains('out')) return; el.classList.add('out'); setTimeout(() => el.remove(), 400); }
+  function notify(n) {
+    placeNotifs(n.screen);
+    n.items.forEach((it, k) => {
+      const el = document.createElement('div');
+      el.className = 'notif'; el.dataset.src = n.i;
+      el.innerHTML = `<span class="nf-ic ${it.ic}" aria-hidden="true">${NF_ICON[it.ic] || ''}</span><div><p class="nf-top"><b>${esc(it.app)}</b><time>${esc(it.when || 'sekarang')}</time></p>${it.t ? `<p class="nf-t">${esc(it.t)}</p>` : ''}<p class="nf-b">${esc(it.b)}</p></div>`;
+      el.style.animationDelay = (k * 140) + 'ms';
+      el.addEventListener('click', () => {
+        if (it.go === 'ask') { const a = $('.ask'); scrollToEl(a, read.clientHeight * .25); setTimeout(() => $('#askIn')?.focus({ preventScroll: true }), reduced ? 0 : 900); }
+        dismiss(el);
+      });
+      // usap ke atas untuk menyingkirkan
+      let y0 = null;
+      el.addEventListener('pointerdown', e => { y0 = e.clientY; });
+      el.addEventListener('pointerup', e => { if (y0 != null && y0 - e.clientY > 24) dismiss(el); y0 = null; });
+      nfHost.append(el);
+      if (n.stay !== 0) setTimeout(() => dismiss(el), (n.stay || 6500) + k * 400);
+    });
+    [...nfHost.children].slice(0, -3).forEach(dismiss);
+  }
+  function notifyAt(i) {
+    if (nfPrev >= 0 && i > nfPrev) NOTIFS.forEach(n => {
+      if (n.i < 0 || fired.has(n) || !(nfPrev < n.i && i >= n.i) || i - n.i > 6) return;
+      fired.add(n);
+      setTimeout(() => notify(n), n.delay || 250);
+    });
+    // notifikasi yang kalimatnya sudah jauh tertinggal ikut pergi
+    [...nfHost.children].forEach(el => { if (Math.abs(i - +el.dataset.src) > 14) dismiss(el); });
+    // kembali jauh ke atas: notifikasi boleh muncul lagi saat kalimatnya terbaca ulang
+    NOTIFS.forEach(n => { if (fired.has(n) && i < n.i - 4) fired.delete(n); });
+    nfPrev = i;
   }
 
   /* ---------- peta ikut digulir, dan di Catatan 8 bisa dicubit ----------
