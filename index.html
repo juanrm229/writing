@@ -465,6 +465,23 @@
   </div>
 </div>
 
+<!-- ============ bagikan racikan ============ -->
+<div class="qmodal" id="mixModal" hidden>
+  <div class="qcard mixcard" role="dialog" aria-modal="true" aria-labelledby="mixHead">
+    <div class="mix-art"><canvas id="mixCover"></canvas><p class="mix-count" id="mixCount"></p></div>
+    <div class="qside">
+      <p class="q-title" id="mixHead">Bagikan racikan</p>
+      <p class="mix-sub">Siapa pun yang membuka tautannya mendapat urutan yang sama, tanpa perlu akun.</p>
+      <label class="mix-f" for="mixTitle">Nama racikan<input id="mixTitle" maxlength="60" autocomplete="off"></label>
+      <label class="mix-f" for="mixFrom">Dari<input id="mixFrom" maxlength="40" autocomplete="off" placeholder="namamu (boleh kosong)"></label>
+      <ol class="mix-list" id="mixList"></ol>
+      <button class="q-btn primary" id="mixShare" type="button">Bagikan</button>
+      <button class="q-btn" id="mixCopy" type="button">Salin tautan</button>
+      <button class="q-close" id="mixClose" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ palet pencarian ============ -->
 <div class="palette" id="palette" hidden>
   <div class="palette-card" role="dialog" aria-modal="true" aria-label="Cari tulisan">
