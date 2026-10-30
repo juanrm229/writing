@@ -19,6 +19,7 @@
   const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/~~(.+?)~~/g, '<s>$1</s>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
+  const fold = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const plain = s => String(s).replace(/\*\*|~~|\*/g, '');
   const SLUG = 'anda-di-sini';
   const read = $('#read'), story = $('#story');
@@ -105,6 +106,47 @@
   add(`<h1 class="title">${esc(W.title || 'Anda di Sini')}</h1>`, W.title || '');
   add(`<p class="byline">Juan · ${new Date((W.date || '2026-10-30') + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`, '');
   add('<p class="cover-hint"><i aria-hidden="true"></i>Gulir pelan-pelan. Petanya mengikuti.</p>', '');
+  /* ---------- INTERLUDE: satu alat kecil di jeda setiap bagian ----------
+     Tidak ada yang wajib disentuh; terus menggulir sama saja dengan melewatinya. */
+  const IL_HOME = [
+    [['Telepon', '#34C759'], ['Pesan', '#30B0C7'], ['Kamera', '#8E8E93'], ['Foto', '#FF9F0A'], ['Jam', '#1C1C1E'], ['Cuaca', '#0A84FF'], ['Peta', '#5AC8FA'], ['Catatan', '#FFD60A'], ['Kalender', '#FF3B30'], ['WhatsApp', '#25D366'], ['Pengaturan', '#8E8E93'], ['Musik', '#FF375F']],
+    [['Survei Lapangan', '#5E5CE6'], ['GIS Kantor', '#64D2FF'], ['Bank', '#0A3D91'], ['Ojek', '#00AA13'], ['Berita', '#FF453A'], ['Senter', '#3A3A3C'], ['Kalkulator', '#636366'], ['Cermin', '#AEAEB2']],
+    [['Kompas', '#3A3A3C'], ['Unduhan', '#0A84FF'], ['Perekam', '#FF3B30'], ['Bantuan', '#8E8E93']]
+  ];
+  const IL = {
+    hipotesis: () => `<section class="il il-circle" aria-label="Lingkaran akurasi">
+        <p class="il-k">Lingkaran akurasi · 68%</p>
+        <svg viewBox="0 0 320 320" class="ilc-svg" role="img" aria-label="Lingkaran dengan petak-petak yang bisa diperiksa"><defs><clipPath id="ilcClip"><circle cx="160" cy="160" r="140"/></clipPath></defs>
+          <circle cx="160" cy="160" r="140" class="ilc-disc"/><g clip-path="url(#ilcClip)">${(() => { let o = ''; for (let x = 6; x < 314; x += 14) for (let y = 6; y < 314; y += 14) if (Math.hypot(x + 7 - 160, y + 7 - 160) < 140) o += `<rect class="pc" x="${x}" y="${y}" width="14" height="14"/>`; return o; })()}</g>
+          <circle cx="160" cy="160" r="140" class="ilc-edge"/><circle cx="160" cy="160" r="5.5" class="ilc-dot"/><text x="160" y="182" class="ilc-t">02.47</text></svg>
+        <p class="il-c" id="ilcCount">Ketuk atau sapu untuk memeriksa satu petak.</p>
+        <button type="button" class="il-kb" id="ilcKey">Periksa satu petak</button>
+      </section>`,
+    variabel: () => `<section class="il il-sleep" aria-label="Untuk dicatat">
+        <p class="il-k">Untuk dicatat</p>
+        <p class="il-q">Semalam kamu tidur berapa lama?</p>
+        <output class="ils-out" id="ilsOut" for="ilsIn">6 jam</output>
+        <input type="range" id="ilsIn" min="0" max="12" step=".25" value="6" aria-label="Lama tidur semalam, dalam jam">
+        <div class="ils-scale" aria-hidden="true"><span>0</span><span>4</span><span>8</span><span>12</span></div>
+        <button type="button" class="il-go" id="ilsGo">Catat</button>
+        <p class="il-c" id="ilsNote">Jawabanmu akan ikut tercatat di salah satu catatan nanti. Hanya di perangkat ini.</p>
+      </section>`,
+    tiba: () => `<section class="il il-chalk" aria-label="Garis kapur">
+        <p class="il-k">Garis kapur · 1,4 km</p>
+        <svg viewBox="0 0 320 320" class="ilk-svg" id="ilkSvg" role="application" aria-label="Seret titik biru keluar dari lingkaran. Bisa juga dengan tombol panah." tabindex="0">
+          <circle cx="160" cy="160" r="122" class="ilk-in"/><circle cx="160" cy="160" r="122" class="ilk-chalk"/>
+          <line id="ilkBand" x1="160" y1="160" x2="160" y2="160" class="ilk-band"/>
+          <g id="ilkDot" transform="translate(160 160)"><circle r="26" class="ilk-acc"/><circle r="12" class="ilk-ring"/><circle r="8.5" class="ilk-core"/></g></svg>
+        <p class="il-c" id="ilkCap">Seret titik birunya keluar dari lingkaran.</p>
+      </section>`,
+    kabar: () => `<section class="il il-home" aria-label="Layar utama ponselnya">
+        <p class="il-k">Layar utama</p>
+        <div class="ph"><div class="ph-scr"><div class="ph-pages" id="phPages">${IL_HOME.map((pg, k) => `<div class="ph-page">${pg.map(([n, c]) => `<span class="ph-app"><i style="--c:${c}"></i><small>${esc(n)}</small></span>`).join('')}${k === 2 ? '<button type="button" class="ph-app ph-ghost" id="phGhost" aria-label="Aplikasi tanpa nama"><i></i><small>&nbsp;</small></button>' : ''}</div>`).join('')}</div>
+          <div class="ph-open" id="phOpen" hidden><i></i><b>Anda di sini.</b></div></div>
+          <div class="ph-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div></div>
+        <p class="il-c" id="phCap">Geser ke halaman ketiga.</p>
+      </section>`
+  };
   let openNote = null, partNo = -1, noteNo = -1;
   const closeNote = () => { if (!openNote) return; add(`<footer class="note-f"><span>${openNote.words.toLocaleString('id-ID')} kata</span><span>Tersimpan di Catatan</span></footer>`, ''); openNote = null; };
   blocks.forEach(b => {
@@ -113,6 +155,7 @@
     else if (b.k === 'part') {
       partNo++;
       add(`<header class="part"><small>${esc(b.a)}</small><b>${esc(b.b)}</b></header>`, `## ${b.a}: ${b.b}`);
+      const il = IL[fold(b.b)]; if (il) add(il(), '');
       const ns = NOTE_INFO.filter(n => n.part === partNo);
       if (ns.length) add(`<nav class="folder" aria-label="Catatan di ${esc(b.a)}"><p class="folder-h"><b>Catatan</b><span>${ns.length} catatan</span></p>${ns.map(n => `<button type="button" data-note="${n.n}"><b>${esc(n.title)}</b><time>${esc(shortStamp(n.stamp))}</time><span>${esc(n.first)}</span></button>`).join('')}</nav>`, '');
     }
@@ -374,7 +417,7 @@
   // jam di bilah status: stempel catatan terakhir, atau "pukul 02.44" di dalam teks
   const CLOCK = [];
   // (waktu kenangan seperti "sinyal terakhir pukul 02.47" di Catatan 2 tidak dihitung)
-  { let c = ''; flow.forEach(f => { const now = /^(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)/.test(f.text) || /^(Sekitar\s+)?Pukul\s+\d/i.test(f.text) || /^Aku tiba di titik awal pukul/.test(f.text); const m = now && f.text.match(/(\d{2})\.(\d{2})/); if (m) c = `${m[1]}.${m[2]}`; else if (/^(Beberapa|Tiga minggu|Tanpa tanggal)/.test(f.text)) c = ''; CLOCK.push(c); }); }
+  { let c = ''; flow.forEach(f => { const now = /^(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)/.test(f.text) || /^(Sekitar\s+)?Pukul\s+\d/i.test(f.text) || /^Aku tiba di titik awal pukul/.test(f.text); const m = now && f.text.match(/(\d{2})\.(\d{2})/); if (m) c = `${m[1]}.${m[2]}`; else if (/^(Beberapa|Tiga minggu|Tanpa tanggal)/.test(f.text) || f.text.startsWith('## ')) c = ''; CLOCK.push(c); }); }
   const idxOf = s => flow.findIndex(f => f.text.includes(s));
   const LOCK_I = idxOf('Aku mengunci layar.'), STRIKE_I = idxOf('Aku mencoret kalimat di bawah tabel'), STRUCK_I = idxOf('Semua pengguna, di semua versi, sedang mencari sesuatu.'), TABLE_I = flow.findIndex(f => f.html.startsWith('<div class="tbl"'));
   const INSTR = flow.map((f, i) => (f.html.startsWith('<p class="instr') ? i : -1));
@@ -629,7 +672,7 @@
     const i = lo, next = i + 1 < TOPS.length ? TOPS[i + 1] : TOPS[i] + 400;
     return [i, clamp((y - TOPS[i]) / Math.max(1, next - TOPS[i]), 0, 1)];
   }
-  let lastI = -1, lastNoteI = -1, lockT = 0, state = SNAP[0];
+  let lastI = -1, lastNoteI = -1, maxI = 0, lockT = 0, state = SNAP[0];
   function frame(force) {
     const [i, t] = position();
     state = i + 1 < SNAP.length ? mix(SNAP[i], SNAP[i + 1], t) : SNAP[i];
@@ -649,6 +692,10 @@
       $$('.folder button', story).forEach(b => b.classList.toggle('new', (NOTE_IDX[b.dataset.note] ?? 0) > i));
     }
     notifyAt(i);
+    // yang sudah terbaca tetap terjadi: kembali ke jeda sesudahnya, titiknya sudah di luar dan ikonnya sudah hilang
+    maxI = Math.max(maxI, i);
+    if (chalk && CROSS_I >= 0) chalk.setOut(maxI >= CROSS_I);
+    if (phone && GONE_I >= 0) phone.setGone(maxI >= GONE_I);
     const bat = Math.round(state.bat); $('#stBat').textContent = bat + '%';
     $('#stBatBar').style.setProperty('--b', (bat / 100).toFixed(2)); $('#stBatBar').classList.toggle('low', bat <= 20);
     // di atas peta
@@ -785,6 +832,121 @@
       g.addEventListener('click', () => toast('Anda di sini.', 3600));
     }
   }
+
+  /* ---------- INTERLUDE ---------- */
+  const fmtH = h => { const j = Math.floor(h), m = Math.round((h - j) * 60); return `${j} jam${m ? ' ' + m + ' menit' : ''}`; };
+  // Hipotesis: memeriksa petak di lingkaran 68%, satu per satu
+  {
+    const svg = $('.ilc-svg');
+    if (svg) {
+      const cells = $$('.pc', svg), per = 2463 / cells.length;
+      let on = 0, down = false;
+      const cap = () => {
+        const n = on === cells.length ? 2463 : Math.round(on * per);
+        $('#ilcCount').textContent = on === cells.length ? 'Semua petak sudah abu-abu. Tidak ada apa-apa.' : `${n.toLocaleString('id-ID')} dari 2.463 petak diperiksa · tersisa ${(2463 - n).toLocaleString('id-ID')}`;
+      };
+      const mark = el => { if (!el || !el.classList || !el.classList.contains('pc') || el.classList.contains('on')) return; el.classList.add('on'); on++; cap(); };
+      svg.addEventListener('pointerdown', e => { down = true; mark(document.elementFromPoint(e.clientX, e.clientY)); });
+      svg.addEventListener('pointermove', e => { if (down) mark(document.elementFromPoint(e.clientX, e.clientY)); });
+      addEventListener('pointerup', () => { down = false; });
+      $('#ilcKey').addEventListener('click', () => { const left = cells.filter(c => !c.classList.contains('on')); mark(left[Math.floor(Math.random() * left.length)]); });
+    }
+  }
+  // Variabel: lama tidurmu masuk ke tabel tujuh malam di Catatan 6
+  function syncSleepRow() {
+    const tb = $('.tbl tbody'); if (!tb) return;
+    $('.tbl tr.you')?.remove();
+    const h = store.get('tidurku', null); if (h == null) return;
+    const tr = document.createElement('tr'); tr.className = 'you';
+    tr.innerHTML = `<td>Semalam</td><td>kamu</td><td>—</td><td><span class="sleep">${fmtH(+h)}<i style="--h:${(+h).toFixed(2)};--k:7"></i></span></td>`;
+    tb.append(tr);
+  }
+  {
+    const sIn = $('#ilsIn');
+    if (sIn) {
+      const saved = store.get('tidurku', null);
+      if (saved != null) { sIn.value = saved; $('#ilsGo').textContent = 'Perbarui'; }
+      const upd = () => { $('#ilsOut').textContent = fmtH(+sIn.value); sIn.style.setProperty('--v', (+sIn.value / 12 * 100).toFixed(1) + '%'); };
+      upd(); sIn.addEventListener('input', upd);
+      $('#ilsGo').addEventListener('click', () => {
+        store.set('tidurku', +sIn.value); syncSleepRow();
+        $('#ilsGo').textContent = 'Tercatat'; $('#ilsNote').textContent = 'Tercatat. Kamu sekarang salah satu barisnya.';
+      });
+    }
+    syncSleepRow();
+  }
+  // Tiba: titik biru tidak mau ditarik keluar dari garis kapur
+  const chalk = (() => {
+    const svg = $('#ilkSvg'); if (!svg) return null;
+    const dot = $('#ilkDot'), band = $('#ilkBand'), R = 122, LIM = R - 14;
+    let home = [160, 160], pos = [...home], drag = false, peak = 0, tries = 0, raf2 = 0, out = false;
+    const show = () => { dot.setAttribute('transform', `translate(${pos[0].toFixed(1)} ${pos[1].toFixed(1)})`); };
+    const place = ([x, y]) => {
+      const dx = x - 160, dy = y - 160, d = Math.hypot(dx, dy) || 1;
+      peak = Math.max(peak, d);
+      let k = 1;
+      // makin jauh melewati tepi, makin berat: ia melar, tapi tidak lepas
+      if (!out && d > LIM) k = (LIM + 30 * (1 - Math.exp(-(d - LIM) / 55))) / d;
+      pos = out ? [x, y] : [160 + dx * k, 160 + dy * k];
+      const beyond = !out && d > LIM;
+      band.style.opacity = beyond ? Math.min(1, (d - LIM) / 60).toFixed(2) : 0;
+      if (beyond) { band.setAttribute('x1', (160 + dx / d * (R - 2)).toFixed(1)); band.setAttribute('y1', (160 + dy / d * (R - 2)).toFixed(1)); band.setAttribute('x2', (160 + dx / d * (R + 70)).toFixed(1)); band.setAttribute('y2', (160 + dy / d * (R + 70)).toFixed(1)); }
+      show();
+    };
+    const pt = e => { const r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 320, (e.clientY - r.top) / r.height * 320]; };
+    const springBack = () => {
+      cancelAnimationFrame(raf2);
+      if (!out && peak > LIM) { tries++; $('#ilkCap').textContent = tries === 1 ? 'Belum.' : tries === 2 ? 'Tidak dengan ditarik.' : 'Mungkin harus ada yang menuntunnya.'; }
+      peak = 0; band.style.opacity = 0;
+      if (reduced) { pos = [...home]; show(); return; }
+      let v = [0, 0];
+      const step = () => {
+        const f = [(home[0] - pos[0]) * .16, (home[1] - pos[1]) * .16];
+        v = [(v[0] + f[0]) * .72, (v[1] + f[1]) * .72];
+        pos = [pos[0] + v[0], pos[1] + v[1]]; show();
+        if (Math.hypot(home[0] - pos[0], home[1] - pos[1]) + Math.hypot(...v) > .3) raf2 = requestAnimationFrame(step); else { pos = [...home]; show(); }
+      };
+      raf2 = requestAnimationFrame(step);
+    };
+    svg.addEventListener('pointerdown', e => { drag = true; cancelAnimationFrame(raf2); svg.setPointerCapture(e.pointerId); place(pt(e)); });
+    svg.addEventListener('pointermove', e => { if (drag) place(pt(e)); });
+    const end = () => { if (!drag) return; drag = false; springBack(); };
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+    let kt = 0;
+    svg.addEventListener('keydown', e => {
+      const d = { ArrowUp: [0, -16], ArrowDown: [0, 16], ArrowLeft: [-16, 0], ArrowRight: [16, 0] }[e.key]; if (!d) return;
+      e.preventDefault(); cancelAnimationFrame(raf2);
+      const raw = [pos[0] + d[0] * 1.8, pos[1] + d[1] * 1.8]; place(raw);
+      clearTimeout(kt); kt = setTimeout(springBack, 450);
+    });
+    // sesudah Catatan 7 ia sudah di luar: dituntun, bukan ditarik
+    return {
+      setOut(v) {
+        if (v === out || drag) return; out = v;
+        home = v ? [160, 20] : [160, 160]; svg.classList.toggle('out', v);
+        $('#ilkCap').textContent = v ? 'Ia sudah di luar. Dituntun, bukan ditarik.' : tries ? 'Mungkin harus ada yang menuntunnya.' : 'Seret titik birunya keluar dari lingkaran.';
+        pos = [...home]; show();
+      }
+    };
+  })();
+  const CROSS_I = idxOf('Rute itu sudah keluar dari lingkaran.');
+  // Kabar: layar utama ponselnya, dengan ikon tanpa nama di halaman ketiga
+  const phone = (() => {
+    const pages = $('#phPages'); if (!pages) return null;
+    const dots = $$('.ph-dots i');
+    pages.addEventListener('scroll', () => {
+      const k = Math.round(pages.scrollLeft / pages.clientWidth);
+      dots.forEach((d, j) => d.classList.toggle('on', j === k));
+      if (k === 2 && !$('#phGhost').hidden && !pages.dataset.seen) { pages.dataset.seen = 1; $('#phCap').textContent = 'Pojok kanan bawah.'; }
+    }, { passive: true });
+    $('#phGhost').addEventListener('click', () => {
+      const o = $('#phOpen'); o.hidden = false; o.classList.remove('bye'); void o.offsetWidth; o.classList.add('on');
+      $('#phCap').textContent = 'Ia tidak bertanya apa-apa lagi.';
+      clearTimeout(o.t); o.t = setTimeout(() => { o.classList.add('bye'); setTimeout(() => { o.hidden = true; o.classList.remove('on', 'bye'); }, 500); }, 2600);
+    });
+    return { setGone(v) { const g = $('#phGhost'); if (g.hidden === v) return; g.hidden = v; $('#phCap').textContent = v ? 'Ikonnya sudah tidak ada.' : 'Geser ke halaman ketiga.'; } };
+  })();
+  const GONE_I = idxOf('Pagi ini aku membuka halaman ketiga di ponselku.');
 
   /* ---------- aplikasi Catatan: folder dan tombol kembali ---------- */
   const scrollToEl = (el, off = 96) => el && read.scrollTo({ top: el.offsetTop - off, behavior: reduced ? 'auto' : 'smooth' });
