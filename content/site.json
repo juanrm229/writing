@@ -55,5 +55,26 @@
       "ink": "#6A4DF0",
       "red": false
     }
-  ]
+  ],
+  "profile": {
+    "city": "Balikpapan",
+    "now": [
+      {
+        "label": "Figuring Out",
+        "text": "My Life"
+      }
+    ],
+    "quote": {
+      "text": "Nobody ever figures out what life is all about, and it doesn't matter. Explore the world. Nearly everything is really interesting if you go into it deeply enough.",
+      "source": "Richard Feynman"
+    },
+    "links": [
+      {
+        "label": "",
+        "url": "https://www.instagram.com/juanrm29/"
+      }
+    ],
+    "tagline": "Quiet Margins",
+    "bio": "I’m Juan, writing from Balikpapan. I read slowly, take the occasional long bike ride, and tend to think about conversations well after everyone has gone home.\n\nMy stories often begin with something small: a question over coffee, a chair someone left empty, the ease of sitting beside someone without having to say much. Sometimes I follow these things further than I intended.\n\nI’m interested in how we make meaning, how we misunderstand one another, and how knowing someone can change what we thought we knew about ourselves.\n\nThis is where I leave some of those thoughts. A few have become stories. I’m still figuring out the others."
+  }
 }
