@@ -1369,3 +1369,120 @@ output.bump { animation: bump .35s var(--spring); }
 .sv-act button { height: 42px; padding: 0 18px; border: 0; border-radius: 21px; background: #2B2A4A; color: #E8E6FF; font: 500 14px var(--f-ui); cursor: pointer; }
 .sv-act button:first-child { background: #E8E6FF; color: #1C1A33; }
 @media (prefers-reduced-motion: reduce) { .sv-moon svg { animation: none; } }
+
+/* ================================================================
+   RADIO
+   ================================================================ */
+.radio-tag { display: inline-flex; align-items: center; gap: 6px; padding: 0 9px 0 7px; border: 0; border-radius: 8px; background: #E5483D; color: #fff; font: 600 12.5px var(--f-ui); cursor: pointer; }
+.radio-tag i { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: rec 1.6s infinite; }
+.rd-radio { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 14px; margin: 0 0 18px; padding: 14px 16px; border: 0; border-radius: 22px; background: color-mix(in srgb, var(--rfg) 5%, transparent); color: inherit; text-align: left; cursor: pointer; font: inherit; transition: background-color .25s, transform .35s var(--spring); }
+.rd-radio:hover { background: color-mix(in srgb, #E5483D 10%, transparent); }
+.rd-radio:active { transform: scale(.98); }
+.rr-ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #E5483D; color: #fff; }
+.rr-ic svg { width: 26px; height: 26px; stroke-width: 2; }
+.rd-radio.on .rr-ic { animation: radioPulse 2s ease-out infinite; }
+@keyframes radioPulse { 0% { box-shadow: 0 0 0 0 rgb(229 72 61 / .5); } 70% { box-shadow: 0 0 0 14px rgb(229 72 61 / 0); } }
+.rr-t { display: grid; gap: 2px; min-width: 0; font-family: var(--f-ui); }
+.rr-t small { font-size: 12px; color: var(--rmut); }
+.rr-t b { font: 500 19px/1.2 var(--r-font); }
+.rr-t span { font-size: 13px; color: var(--rmut); }
+.np-radio { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px; border-radius: 20px; background: linear-gradient(120deg, rgb(229 72 61 / .25), var(--dock-2) 70%); }
+.nr-wave { display: flex; align-items: center; justify-content: center; gap: 3px; width: 44px; height: 44px; border-radius: 50%; background: #E5483D; }
+.nr-wave i { width: 3px; height: 16px; border-radius: 2px; background: #fff; animation: eq 1s ease-in-out infinite; }
+.nr-wave i:nth-child(2) { animation-delay: -.2s; } .nr-wave i:nth-child(3) { animation-delay: -.5s; } .nr-wave i:nth-child(4) { animation-delay: -.7s; } .nr-wave i:nth-child(5) { animation-delay: -.35s; }
+@media (prefers-reduced-motion: reduce) { .radio-tag i, .rd-radio.on .rr-ic, .nr-wave i { animation: none; } }
+
+/* ================================================================
+   PROFIL: halaman penulis ala halaman artis
+   ================================================================ */
+.win[data-view="tentang"] .view-tentang { display: block; }
+.view-tentang { color: var(--t-ink); }
+.pf-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; padding: 64px 24px 60px; }
+.pf-scroll::-webkit-scrollbar { display: none; }
+.pf-hero { position: relative; max-width: 1060px; margin: 0 auto 26px; display: grid; grid-template-columns: minmax(260px, 380px) minmax(0, 1fr); align-items: center; gap: 56px; padding: 26px; border-radius: 40px; overflow: hidden;
+  background: radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--tk-blue) 26%, transparent), transparent 70%), radial-gradient(60% 80% at 100% 100%, color-mix(in srgb, var(--go) 18%, transparent), transparent 70%), var(--t-card);
+  box-shadow: inset 0 0 0 1px var(--t-line); animation: turnIn .8s var(--ease-out) both; }
+/* fotomu sebagai label piringan */
+.pf-disc { position: relative; aspect-ratio: 1; width: 100%; }
+.pf-rec { position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center; animation: spin 60s linear infinite;
+  background: repeating-radial-gradient(circle, rgb(255 255 255 / .06) 0 .6px, transparent .9px 2.6px), radial-gradient(circle, #1A1A1C 0 30%, #0B0B0C 31%); box-shadow: 0 40px 70px -30px rgb(0 0 0 / .7), inset 0 0 0 1px rgb(255 255 255 / .08); }
+.pf-disc:hover .pf-rec { animation-duration: 8s; }
+.pf-label { width: 44%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; display: grid; background: radial-gradient(circle at 40% 35%, #FFD3E3, #F3A9C6); box-shadow: 0 0 0 4px #0B0B0C, 0 0 0 5px rgb(255 255 255 / .1); }
+.pf-label img, .pf-label canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-hole { position: absolute; width: 3.6%; aspect-ratio: 1; border-radius: 50%; background: var(--t-card); box-shadow: inset 0 1px 2px rgb(0 0 0 / .5); }
+.pf-shine { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: conic-gradient(from 35deg, transparent, rgb(255 255 255 / .12) 22deg, transparent 52deg, transparent 180deg, rgb(255 255 255 / .09) 205deg, transparent 236deg); }
+.pf-id { min-width: 0; display: grid; gap: 10px; }
+.pf-kick { font: 600 12.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--t-muted); }
+.pf-name { font: 900 clamp(56px, 9vw, 120px)/.86 "Doto", ui-monospace, monospace; letter-spacing: -.04em; text-transform: uppercase; word-break: break-word; }
+.pf-tag { font: italic 400 clamp(19px, 2vw, 24px)/1.35 var(--f-read); color: var(--t-ink); max-width: 30ch; }
+.pf-stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 8px 0 4px; }
+.pf-stats div { display: flex; flex-direction: column-reverse; }
+.pf-stats dt { font-size: 12px; color: var(--t-muted); }
+.pf-stats dd { margin: 0; font: 900 28px/1 "Doto", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.pf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
+.pf-radio { display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 20px 0 16px; border: 0; border-radius: 26px; background: #E5483D; color: #fff; font: 600 15px var(--f-ui); cursor: pointer; transition: transform .35s var(--spring); }
+.pf-radio svg { width: 20px; height: 20px; }
+.pf-radio:active { transform: scale(.94); }
+.pf-you { font-size: 13.5px; color: var(--t-muted); }
+.pf-you b { color: var(--t-ink); font-weight: 600; }
+.pf-you button { border: 0; background: none; padding: 0; color: var(--t-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.pf-sec { max-width: 1060px; margin: 44px auto 0; animation: turnIn .8s var(--ease-out) both; }
+.pf-h { margin: 0 0 14px 4px; font: 900 30px/1 "Doto", ui-monospace, monospace; letter-spacing: -.02em; text-transform: uppercase; }
+.pf-hl button { grid-template-columns: 26px 36px minmax(0, 1fr) auto auto !important; }
+.pf-now { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.pf-now-c { display: grid; align-content: start; gap: 4px; min-height: 132px; padding: 18px; border: 0; border-radius: 26px; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: inherit; text-align: left; font: inherit; animation: rowIn .6s var(--ease-out) both; animation-delay: calc(var(--k, 0) * 70ms); }
+button.pf-now-c { cursor: pointer; transition: transform .35s var(--spring); }
+button.pf-now-c:hover { transform: translateY(-3px); }
+.pn-ic { width: 40px; height: 40px; margin-bottom: 10px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--tk-blue) 16%, var(--t-btn)); color: var(--tk-blue); }
+.pn-ic svg { width: 20px; height: 20px; }
+.pf-now-c small { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--t-muted); }
+.pf-now-c b { font: 500 19px/1.3 var(--f-read); }
+.pf-about { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+.pf-about .pf-h { grid-column: 1 / -1; margin-bottom: 0; }
+.pf-bio { font: 400 19px/1.75 var(--f-read); max-width: 40em; }
+.pf-bio p + p { margin-top: .9em; }
+.pf-bio p:first-child::first-letter { float: left; font: 900 3.6em/.8 "Doto", ui-monospace, monospace; margin: .08em .1em 0 0; }
+.pf-portrait { margin: 0; display: grid; gap: 8px; justify-items: center; }
+.pf-portrait canvas { width: 300px; height: 300px; border-radius: 50%; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); }
+.pf-portrait figcaption, .pf-sign p { font-size: 12.5px; color: var(--t-muted); text-align: center; }
+.pf-time { list-style: none; margin: 0; padding: 0; position: relative; }
+.pf-time::before { content: ""; position: absolute; left: 47px; top: 8px; bottom: 8px; width: 2px; background: var(--t-line); }
+.pf-time li { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 18px; padding: 10px 0 22px; animation: rowIn .6s var(--ease-out) both; animation-delay: calc(var(--k, 0) * 80ms); }
+.pf-time li::before { content: ""; position: absolute; left: 41px; top: 34px; width: 14px; height: 14px; border-radius: 50%; background: var(--t-ink); box-shadow: 0 0 0 4px var(--t-bg), inset 0 0 0 4px var(--go); }
+.pt-y { font: 900 22px/1.2 "Doto", ui-monospace, monospace; padding-left: 64px; grid-column: 1 / -1; }
+.pt-body { grid-column: 2; display: grid; gap: 8px; }
+.pt-note { font: 400 18px/1.55 var(--f-read); }
+.pt-works { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pt-works span { font-size: 12.5px; color: var(--t-muted); margin-right: 4px; }
+.pt-works button { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 4px; border: 0; border-radius: 17px; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: inherit; font: 500 13px var(--f-ui); cursor: pointer; }
+.pt-works .mdisc { width: 26px; height: 26px; }
+.pf-disco { display: grid; grid-auto-flow: column; grid-auto-columns: 180px; gap: 22px; overflow-x: auto; scrollbar-width: none; padding-bottom: 8px; }
+.pf-disco::-webkit-scrollbar { display: none; }
+.pf-disco .al-sleeve { width: 78%; }
+.pf-quote { max-width: 860px; margin: 56px auto 0; padding: 0 8px; text-align: center; }
+.pf-quote p { font: italic 400 clamp(26px, 3.6vw, 40px)/1.3 var(--f-read); text-wrap: balance; }
+.pf-quote p::before { content: "“"; display: block; font: 900 60px/.6 "Doto", ui-monospace, monospace; color: var(--tk-blue); margin-bottom: 14px; }
+.pf-quote cite { display: block; margin-top: 14px; font: 500 13px var(--f-ui); font-style: normal; color: var(--t-muted); }
+.pf-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.pf-links a { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px; border-radius: 22px; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: inherit; text-decoration: none; font: 500 14px var(--f-ui); transition: transform .35s var(--spring), background-color .2s; }
+.pf-links a:hover { transform: translateY(-2px); }
+.pf-links svg { width: 20px; height: 20px; }
+.pf-sign { max-width: 1060px; margin: 56px auto 0; display: grid; justify-items: center; gap: 6px; color: var(--t-ink); }
+.pf-sign canvas { width: 220px; height: 220px; }
+/* pil navigasi: foto kecil penulis */
+.pill-ava { display: block; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1.5px currentColor; }
+.pill-ava img, .pill-ava canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
+.th-title { cursor: pointer; }
+@media (max-width: 860px) {
+  .pf-scroll { padding: 12px 14px 48px; }
+  .pf-hero { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 22px 18px; border-radius: 32px; }
+  .pf-disc { width: min(78%, 300px); justify-self: center; }
+  .pf-name { font-size: clamp(48px, 15vw, 72px); }
+  .pf-about { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .pf-time li { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; }
+  .pf-time::before { left: 23px; } .pf-time li::before { left: 17px; } .pt-y { padding-left: 46px; }
+  .pf-hl button { grid-template-columns: 20px 32px minmax(0, 1fr) auto !important; }
+  .pill button { width: 36px; } .pill-thumb { width: 36px; }
+}
+@media (prefers-reduced-motion: reduce) { .pf-rec { animation: none; } }

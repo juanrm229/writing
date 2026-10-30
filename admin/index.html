@@ -55,6 +55,7 @@
       <i class="tabs-thumb" aria-hidden="true"></i>
       <button type="button" data-tab="tulis" aria-current="true">Tulisan</button>
       <button type="button" data-tab="album" aria-current="false">Album</button>
+      <button type="button" data-tab="profil" aria-current="false">Profil</button>
       <button type="button" data-tab="tampilan" aria-current="false">Tampilan</button>
       <button type="button" data-tab="riwayat" aria-current="false">Riwayat</button>
     </nav>
@@ -211,6 +212,59 @@
       <input id="aeQ" type="search" placeholder="Cari tulisan" autocomplete="off">
       <ul class="ae-pool-list" id="aePool"></ul>
     </aside>
+  </section>
+
+  <!-- ---------- PROFIL ---------- -->
+  <section class="tab tab-tampilan tab-profil" id="tab-profil" hidden>
+    <div class="set-col" id="prCol">
+      <h2 class="set-h">Profil</h2>
+      <p class="hint">Halaman <b>#tentang</b> di situs, disusun seperti halaman artis di aplikasi musik. Nama dan foto profil diatur di tab Tampilan. Bagian yang kosong disusun otomatis dari tulisanmu.</p>
+      <div class="group">
+        <label class="row-f" for="prTag"><span>Tagline<small>Satu kalimat di bawah namamu. Boleh *miring*.</small></span><input id="prTag" data-p="tagline" maxlength="120" placeholder="Menulis pelan-pelan…"></label>
+        <label class="row-f" for="prCity"><span>Kota</span><input id="prCity" data-p="city" maxlength="40" placeholder="Bandung"></label>
+      </div>
+
+      <h2 class="set-h">Tentang</h2>
+      <div class="group">
+        <label class="row-f col" for="prBio"><span>Bio<small>Pisahkan paragraf dengan satu baris kosong. Huruf-hurufnya dirajut menjadi potret benang.</small></span><textarea id="prBio" data-p="bio" rows="8" placeholder="Ceritakan tentang dirimu dan tulisanmu."></textarea></label>
+      </div>
+
+      <h2 class="set-h">Sedang</h2>
+      <div class="group pr-rows" id="prNow"></div>
+      <button type="button" class="btn-ghost sm add" data-add="now">+ Tambah</button>
+      <datalist id="prNowLabels"><option value="Menulis"><option value="Membaca"><option value="Mendengarkan"><option value="Menonton"><option value="Belajar"></datalist>
+
+      <h2 class="set-h">Sorotan</h2>
+      <p class="hint">Pilih sampai 8 sisi untuk daftar bernomor di bawah namamu. Urutannya mengikuti urutan kamu memilih. Kosong = tulisan terbaru.</p>
+      <div class="group pr-hl" id="prHl"></div>
+
+      <h2 class="set-h">Perjalanan</h2>
+      <p class="hint">Momen-momen penting per tahun. Tulisan yang terbit tiap tahun ditambahkan otomatis.</p>
+      <div class="group pr-rows" id="prJourney"></div>
+      <button type="button" class="btn-ghost sm add" data-add="journey">+ Tambah momen</button>
+
+      <h2 class="set-h">Kutipan favorit</h2>
+      <div class="group">
+        <label class="row-f col" for="prQuote"><span>Kutipan<small>Kosong = baris favorit dari sorotan pertama.</small></span><textarea id="prQuote" data-q="text" rows="3"></textarea></label>
+        <label class="row-f" for="prQuoteSrc"><span>Sumber</span><input id="prQuoteSrc" data-q="source" placeholder="siapa yang mengatakannya"></label>
+      </div>
+
+      <h2 class="set-h">Tautan</h2>
+      <p class="hint">Instagram, blog, Substack, YouTube, atau situs lain. Ikonnya menyesuaikan alamatnya. Email dari tab Tampilan ditambahkan otomatis.</p>
+      <div class="group pr-rows" id="prLinks"></div>
+      <button type="button" class="btn-ghost sm add" data-add="links">+ Tambah tautan</button>
+    </div>
+
+    <div class="set-preview">
+      <div class="pv-bar">
+        <div class="seg" id="prDevice" role="radiogroup" aria-label="Ukuran pratinjau">
+          <button type="button" role="radio" data-v="desktop" aria-checked="true">Desktop</button>
+          <button type="button" role="radio" data-v="phone" aria-checked="false">Ponsel</button>
+        </div>
+        <span class="pv-note">Pratinjau langsung, belum tersimpan</span>
+      </div>
+      <div class="pv-stage" id="prStage"><div class="pv-frame" id="prFrameBox"><iframe id="prFrame" title="Pratinjau profil"></iframe></div></div>
+    </div>
   </section>
 
   <!-- ---------- TAMPILAN ---------- -->

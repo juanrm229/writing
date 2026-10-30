@@ -232,7 +232,7 @@
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const VIEWS = ['putar', 'pilih', 'album', 'sapa'];
+  const VIEWS = ['putar', 'pilih', 'album', 'tentang', 'sapa'];
   let view = 'putar', prevView = 'putar';
 
   function setView(v) {
@@ -241,6 +241,7 @@
     win.dataset.view = v;
     syncPill();
     if (v === 'sapa' && typeof renderGreet === 'function') { renderGreet(true); if (feedMode !== 'search') renderFeed(false); }
+    if (v === 'tentang' && typeof renderProfile === 'function') renderProfile();
     if (v !== 'baca') { if (typeof Lyr !== 'undefined') Lyr.hide(); if (typeof hideUpNext === 'function') hideUpNext(); stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
@@ -318,6 +319,36 @@
   const QICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h11M4 11.5h11M4 16.5h7"/><path d="M17.5 14v6M14.5 17h6"/></svg>';
   let QUEUE = store.get('queue', []).filter(k => docByKey(k));
   let pendingQueue = false;
+
+  /* ---------- RADIO: tulisan yang paling dekat kata dan suasananya, diputar tanpa henti ---------- */
+  let RADIO = store.get('radio', null);
+  if (RADIO && !(bySlug(RADIO.seed) && Array.isArray(RADIO.heard))) RADIO = null;
+  let pendingRadio = false;
+  const saveRadio = () => store.set('radio', RADIO);
+  function radioNext(d) {
+    if (!RADIO) return null;
+    // sisi lain dari piringan yang sama lebih dulu
+    if (d && d.side === 'a' && d.B && !RADIO.heard.includes(d.B.key)) return { d: d.B, why: `Radio · sisi lain, dari sisi ${esc(d.B.pov || 'yang lain')}`, radio: true };
+    const heard = new Set(RADIO.heard.map(k => k.split(':')[0]));
+    let pool = WORKS.filter(w => !heard.has(w.slug) && w.slug !== d?.slug);
+    // semua sudah diputar: radio memutar ulang, tanpa henti
+    if (!pool.length) { RADIO.heard = d ? [d.key] : []; saveRadio(); pool = WORKS.filter(w => w.slug !== d?.slug); }
+    if (!pool.length) return null;
+    const rnd = seeded('radio/' + RADIO.seed + '/' + RADIO.heard.length);
+    const score = w => .6 * kin(RADIO.seed, w.slug).sim + .4 * (d ? kin(d.slug, w.slug).sim : 0) + rnd() * .03;
+    const best = pool.map(w => [w, score(w)]).sort((x, y) => y[1] - x[1])[0][0];
+    const k = kin(d ? d.slug : RADIO.seed, best.slug);
+    return { d: best, why: k.words.length ? `Radio · lewat <i>${k.words.map(esc).join('</i> dan <i>')}</i>` : `Radio · dari “${esc(bySlug(RADIO.seed).title)}”`, radio: true };
+  }
+  function startRadio(slug) {
+    const w = bySlug(slug); if (!w) return;
+    RADIO = { seed: slug, heard: [] }; saveRadio();
+    if (typeof PLAY !== 'undefined' && PLAY) { PLAY = null; savePlay(); }
+    pendingRadio = true; pendingListen = true; pendingStart = 0;
+    toast(`Radio “${w.title}”: tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.`, null, 4200);
+    openWork(slug, null, 'a');
+  }
+  function stopRadio() { if (!RADIO) return; RADIO = null; saveRadio(); toast('Radio dihentikan.'); if (view === 'baca' && current) $$('.radio-tag', $('#rdMeta')).forEach(t => t.remove()); }
   function saveQ() {
     store.set('queue', QUEUE);
     const b = $('.pill [data-go="sapa"]');
@@ -468,6 +499,8 @@
       html += `<p class="np-h"><span>Belum ada yang diputar</span></p><p class="np-empty">Pilih satu piringan. Meja ini mencatat sampai mana kamu membaca, sisi mana yang sudah kamu balik, dan tulisan apa yang terhubung dengannya.</p>`;
     }
     const tm = todayMix();
+    if (RADIO) html += `<p class="np-h"><span>Radio menyala</span><button type="button" class="np-link" data-radio-stop>Hentikan</button></p>
+      <div class="np-radio"><span class="nr-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="sg-t"><b>Radio “${esc(bySlug(RADIO.seed).title)}”</b><span>${RADIO.heard.length} sisi diputar · tulisan yang paling dekat kata dan suasananya</span></span></div>`;
     if (tm) html += `<p class="np-h"><span>Racikan hari ini</span><span>berganti dalam ${inHours(untilMidnight())}</span></p>
       <div class="np-daily"><button type="button" class="nd-open" data-open-album="${esc(tm.id)}"><canvas data-cover="${esc(tm.id)}" data-size="56"></canvas><span class="sg-t"><b>${esc(tm.title)}</b><span>${esc(tm.sub)} · ${tm.tracks.length} sisi · ${albumMins(tm)} menit</span></span></button>
       <button type="button" class="nd-play" data-dplay="${esc(tm.id)}" aria-label="Putar ${esc(tm.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button></div>`;
@@ -536,6 +569,7 @@
     if (b) setFeedMode(b.dataset.mode);
   });
   feed.addEventListener('click', e => {
+    if (e.target.closest('[data-radio-stop]')) { stopRadio(); renderFeed(false); return; }
     const oa = e.target.closest('[data-open-album]');
     if (oa) { location.hash = 'album-' + oa.dataset.openAlbum; return; }
     const dp = e.target.closest('[data-dplay]');
@@ -750,20 +784,28 @@
     if (!w) return;
     stopSpeech(false); closeFind(); stopReplay(false); hideQuotePop();
     current = w; speakIdx = 0;
-    const viaQ = pendingQueue; pendingQueue = false;
+    const viaQ = pendingQueue, viaR = pendingRadio; pendingQueue = false; pendingRadio = false;
+    // membuka tulisan di luar radio (bukan dari antrean) menghentikan radionya
+    if (RADIO && !viaR && !viaQ) { RADIO = null; saveRadio(); }
+    if (RADIO && !RADIO.heard.includes(w.key)) { RADIO.heard = [...RADIO.heard, w.key]; saveRadio(); }
     const qi = QUEUE.indexOf(w.key);
     if (qi >= 0) { QUEUE.splice(qi, 1); saveQ(); }
     // sisi dari antrean tidak memutus album: album lanjut dari posisinya setelah antrean habis
-    if (!viaQ) syncPlay(w);
+    if (!viaQ && !RADIO) syncPlay(w);
     setView('baca');
     $('#rdBackLabel').textContent = playing() ? (playing().shared || playing().daily ? 'Racikan' : 'Album') : { sapa: 'Sapa', putar: 'Piringan', pilih: 'Piringan', album: 'Album' }[prevView] || 'Piringan';
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.B ? (w.side === 'b' ? 'Sisi B · ' : 'Sisi A · ') : ''}${w.title}`;
     const al = playing(), inAlbum = al && al.tracks[PLAY.i]?.key === w.key;
-    $('#rdMeta').innerHTML = `${viaQ ? `<span class="q-tag">${QICON}dari antrean</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
+    $('#rdMeta').innerHTML = `${RADIO ? `<button type="button" class="radio-tag" data-radio-stop title="Hentikan radio"><i aria-hidden="true"></i>Radio “${esc(bySlug(RADIO.seed).title)}”</button>` : ''}${viaQ ? `<span class="q-tag">${QICON}dari antrean</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${w.A.B ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} kata · ${w.minutes} menit</span>${w.draft ? '<span class="draft-tag">draf</span>' : ''}`;
     $('#rdTitle').textContent = w.title;
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
+    const rOn = RADIO && RADIO.seed;
+    $('#rrKick').textContent = rOn ? 'Radio menyala' : 'Radio';
+    $('#rrTitle').textContent = rOn ? `Radio “${bySlug(RADIO.seed).title}”` : 'Mulai radio dari tulisan ini';
+    $('#rrSub').textContent = rOn ? `${RADIO.heard.length} sisi diputar. Ketuk untuk menghentikan.` : 'Tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.';
+    $('#rdRadio').classList.toggle('on', !!rOn);
     const nb = neighbors(), { prev } = nb, qNext = QUEUE.length ? docByKey(QUEUE[0]) : null, next = qNext || nb.next;
     renderRelated(w.A);
     $('#rdNextLink').href = next ? hrefOf(next) : '#album-' + nb.album.id;
@@ -837,6 +879,8 @@
     else if (prevView === 'pilih' && PK.slug) openPicker(PK.slug, PK.side);
     else go(['sapa', 'album'].includes(prevView) ? prevView : 'putar');
   });
+  $('#rdRadio').addEventListener('click', () => { if (RADIO) { stopRadio(); $('#rdRadio').classList.remove('on'); $('#rrTitle').textContent = 'Mulai radio dari tulisan ini'; $('#rrKick').textContent = 'Radio'; } else if (current) startRadio(current.A.slug); });
+  $('#rdMeta').addEventListener('click', e => { if (e.target.closest('[data-radio-stop]')) { stopRadio(); $('#rdRadio').classList.remove('on'); } });
   $('#rdFlip').addEventListener('click', () => { if (current?.A.B) location.hash = hrefOf(current.side === 'b' ? current.A : current.A.B).slice(1); });
   const openKey = k => { const d = docByKey(k); if (d) { if (QUEUE[0] === k) pendingQueue = true; if (playing() || pendingQueue) pendingStart = 0; openWork(d.slug, null, d.side); } };
   $('#rdNextLink').addEventListener('click', e => { if (e.currentTarget.dataset.queue) { pendingQueue = true; pendingStart = 0; } });
@@ -872,6 +916,7 @@
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
   function upNextOf(d) {
     const qd = QUEUE.map(docByKey).find(x => x && x.key !== d.key);
+    if (!qd && RADIO) { const r = radioNext(d); if (r) return r; }
     if (qd) return { d: qd, why: `Dari antreanmu${QUEUE.length > 1 ? ' · ' + QUEUE.length + ' menunggu' : ''}`, queue: true };
     const al = playing();
     if (al) { const nb = neighbors(); return nb.next ? { d: nb.next, why: `${kindOf(al)[0].toUpperCase() + kindOf(al).slice(1)} “${esc(al.title)}” · ${nb.pos + 1} dari ${nb.len}` } : { end: al }; }
@@ -884,7 +929,7 @@
     if (!d || view !== 'baca' || UN.shownFor === d.key) return;
     const n = upNextOf(d);
     if (!n) return;
-    UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen; UN.queue = !!n.queue;
+    UN.shownFor = d.key; UN.next = n.d || null; UN.listen = listen; UN.queue = !!n.queue; UN.radio = !!n.radio;
     unEl.classList.toggle('end', !!n.end);
     if (n.end) {
       $('#unWhy').textContent = (n.end.shared || n.end.daily ? 'Racikan' : 'Album') + ' selesai';
@@ -922,10 +967,10 @@
   }
   function hideUpNext() { cancelAnimationFrame(UN.raf); unEl.hidden = true; UN.next = null; win.classList.remove('upnext-on'); if (typeof Lyr !== 'undefined') Lyr.ending(null); }
   function playUpNext() {
-    const d = UN.next, listen = UN.listen, viaQ = UN.queue;
+    const d = UN.next, listen = UN.listen, viaQ = UN.queue, viaR = UN.radio;
     hideUpNext();
     if (!d) return;
-    pendingStart = 0; pendingListen = listen; pendingQueue = viaQ;
+    pendingStart = 0; pendingListen = listen; pendingQueue = viaQ; pendingRadio = viaR;
     if (current && current.slug === d.slug) {
       // sisi lain piringan yang sama: kartu baca ikut berbalik
       location.hash = hrefOf(d).slice(1);
@@ -1134,14 +1179,14 @@
     if (!on) return;
     bar.classList.toggle('paused', speakPaused);
     $('#lsPlay').setAttribute('aria-label', speakPaused ? 'Lanjutkan' : 'Jeda');
-    $('#lsLabel').textContent = speakPaused ? 'Dijeda' : 'Dibacakan';
+    $('#lsLabel').textContent = speakPaused ? 'Dijeda' : RADIO ? 'Radio' : 'Dibacakan';
     $('#lsPos').textContent = `paragraf ${speakIdx + 1} dari ${body.children.length}`;
   }
   const resumeSpeech = () => { if (current && !speaking) startSpeech(speakPaused ? { sent: speakSent } : speakIdx || 0); };
   function skipSide() {
     if (UN.next && !unEl.hidden) { playUpNext(); return; }
     const n = current && upNextOf(current);
-    if (n && n.d) { UN.next = n.d; UN.listen = true; UN.queue = !!n.queue; playUpNext(); } else toast('Tidak ada sisi berikutnya.');
+    if (n && n.d) { UN.next = n.d; UN.listen = true; UN.queue = !!n.queue; UN.radio = !!n.radio; playUpNext(); } else toast('Tidak ada sisi berikutnya.');
   }
   $('#lsPlay').addEventListener('click', () => (speaking ? pauseSpeech() : resumeSpeech()));
   $('#lsPrev').addEventListener('click', () => startSpeech(Math.max(0, speakIdx - 1)));
@@ -1359,11 +1404,14 @@
     { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
     { label: Sleep.mode ? 'Matikan pengatur waktu tidur' : 'Pengatur waktu tidur: 30 menit', hint: Sleep.mode ? sleepLabel() : 'pembacaan berhenti sendiri', run: () => setSleep(Sleep.mode ? 'off' : 30), show: view === 'baca' },
     { label: 'Berhenti di akhir sisi ini', hint: 'pengatur waktu tidur', run: () => setSleep('side'), show: view === 'baca' && Sleep.mode !== 'side' },
+    { label: 'Mulai radio dari tulisan ini', hint: current?.A.title, run: () => startRadio(current.A.slug), show: view === 'baca' && !!current },
+    { label: 'Hentikan radio', hint: RADIO ? bySlug(RADIO.seed)?.title : '', run: stopRadio, show: !!RADIO },
     { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
+    { label: 'Profil ' + SITE.author, hint: 'tentang penulis', run: () => go('tentang') },
     { label: 'Pilih piringan', hint: 'sisi A atau B', run: () => go('pilih') },
     { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
     ...(todayMix() ? [{ label: 'Putar racikan hari ini', hint: todayMix().sub, run: () => playAlbum(todayMix().id, 0) }] : []),
@@ -1470,6 +1518,7 @@
      BENANG MERAH: tulisan yang berbagi kata khas dihubungkan benang
      ====================================================================== */
   const LINK_STOP = new Set(('yang dan di ke dari itu ini aku kamu ia dia kita kami mereka dengan untuk pada ada tidak tapi tetapi juga akan sudah saja karena seperti adalah sebagai atau dalam bahwa lalu kalau jika apa satu setiap lebih sangat hanya masih bisa harus pun oleh kepada para si sang begitu sampai belum telah sedang agar supaya maka namun mau ingin lagi sebuah seorang pak bu yah iya ya tak kan hal demi tanpa sejak antara setelah sebelum selalu pernah mungkin kupikir sebenarnya terlalu semua dua tiga entah kenapa sesuatu bukan tetap paling membuat menjadi punya tahu hari kali orang biasa banyak balik jadi benar awal awalnya mana daripada pertama kedua sama tentang masuk datang tahun ketika sering memang akhirnya sedikit besar kecil baru lama dulu sekarang nanti cukup sambil hingga bahkan justru kembali dapat sana sini situ apakah bagaimana berapa siapa juga suatu terasa terus kemudian rasa sendiri saat waktu lain').split(' '));
+  const VEC = {};
   const LINKS = (() => {
     const docs = WORKS.map(w => {
       const tf = {};
@@ -1483,6 +1532,7 @@
       d.v = {}; let n = 0;
       for (const [t, c] of Object.entries(d.tf)) { if (df[t] < 2 || df[t] > N * .6) continue; d.v[t] = (1 + Math.log(c)) * Math.log((N + 1) / (df[t] + .5)); n += d.v[t] ** 2; }
       d.n = Math.sqrt(n) || 1;
+      VEC[d.w.slug] = d;
     });
     const pairs = [];
     for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
@@ -1498,6 +1548,19 @@
     return [...keep];
   })();
   const linksOf = slug => LINKS.filter(l => l.a === slug || l.b === slug).sort((x, y) => y.sim - x.sim);
+  // kemiripan dua tulisan mana pun, beserta dua kata khas yang mereka bagi
+  const kinCache = {};
+  function kin(a, b) {
+    const id = a < b ? a + '|' + b : b + '|' + a;
+    if (kinCache[id]) return kinCache[id];
+    const x = VEC[a], y = VEC[b];
+    if (!x || !y || a === b) return { sim: 0, words: [] };
+    let dot = 0; const sh = [];
+    for (const t in x.v) if (y.v[t]) { dot += x.v[t] * y.v[t]; sh.push([t, x.v[t] * y.v[t]]); }
+    return (kinCache[id] = { sim: dot / (x.n * y.n), words: sh.sort((p, q) => q[1] - p[1]).slice(0, 2).map(p => p[0]) });
+  }
+  // tulisan yang paling "di tengah" koleksi: paling mirip dengan semua yang lain
+  const centralSlug = () => WORKS.map(w => [w.slug, WORKS.reduce((n, o) => n + kin(w.slug, o.slug).sim, 0)]).sort((a, b) => b[1] - a[1])[0]?.[0] || WORKS[0].slug;
 
   function renderRelated(w) {
     const host = $('#rdRelated');
@@ -2353,7 +2416,12 @@
   const todayMix = () => dailyOf(wibDate());
   const inHours = ms => { const m = Math.round(ms / 60000); return m < 60 ? m + ' menit' : Math.floor(m / 60) + ' jam' + (m % 60 ? ' ' + (m % 60) + ' menit' : ''); };
 
-  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id))) || (/^harian-/.test(id || '') ? dailyOf(id.slice(7)) : undefined);
+  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id))) || (/^harian-/.test(id || '') ? dailyOf(id.slice(7)) : undefined) || (id === 'semua' ? allAlbum() : undefined);
+  // semua sisi, dari yang terbaru; dipakai tombol "Putar semua" di halaman profil
+  let allCache = null;
+  function allAlbum() {
+    return allCache || (allCache = { id: 'semua', title: 'Semua tulisan ' + SITE.author, note: `Setiap sisi di meja ini, dari yang terbaru. Sisi B menyusul sisi A-nya.`, tracks: DOCS.slice() });
+  }
   if (!ALBUMS.length && !MIXES.length && !todayMix()) $('.pill [data-go="album"]').hidden = true;
   // PLAY: album yang sedang diputar, posisi, dan urutannya (urutan acak juga diingat)
   let PLAY = store.get('play', null);
@@ -2436,6 +2504,7 @@
     const order = a.tracks.map((_, k) => k);
     if (shuffle) { for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; } i = order[0]; }
     PLAY = { album: id, i, order }; savePlay();
+    if (RADIO) { RADIO = null; saveRadio(); }
     const t = a.tracks[i];
     pendingStart = 0;
     if (SITE.features.ambience && PV.amb !== 'hening') Amb.set(PV.amb);
@@ -2469,6 +2538,120 @@
     const al = e.target.closest('[data-album]');
     if (al) location.hash = al.dataset.album ? 'album-' + al.dataset.album : 'album';
   });
+
+  /* ======================================================================
+     PROFIL: halaman penulis, disusun seperti halaman artis di aplikasi musik
+     ====================================================================== */
+  const LINK_ICONS = [
+    [/instagram/i, '<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17" cy="7" r=".9" class="f"/>'],
+    [/twitter|x\.com/i, '<path d="M5 5l14 14M19 5 5 19"/>'],
+    [/threads/i, '<path d="M16.5 9.5C16 6.6 14 5 11.6 5 8.4 5 6 7.6 6 12s2.4 7 5.8 7c3 0 5.2-1.8 5.2-4.4 0-3.4-4.6-3.6-6.4-2.4-1.4 1-1 3.4 1.4 3.4 2.6 0 3.6-2.4 3.6-5"/>'],
+    [/medium|substack|blog|wordpress/i, '<path d="M6 5h12v14l-6-4-6 4z"/>'],
+    [/youtube/i, '<rect x="3.5" y="6" width="17" height="12" rx="4"/><path class="f" d="M10.5 9.5v5l4-2.5z"/>'],
+    [/spotify|music/i, '<circle cx="12" cy="12" r="8.5"/><path d="M8 10c3-1 6-.6 8.5.8M8.5 13c2.4-.7 4.8-.4 6.8.8M9 15.8c1.8-.5 3.6-.3 5.1.5"/>'],
+    [/mailto:|@/i, '<rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 7.5 7.5 6 7.5-6"/>']
+  ];
+  const linkIcon = url => `<svg viewBox="0 0 24 24" aria-hidden="true">${(LINK_ICONS.find(([re]) => re.test(url)) || [0, '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.6 2.6 14.4 0 17M12 3.5c-2.6 2.6-2.6 14.4 0 17"/>'])[1]}</svg>`;
+  const NOW_ICONS = { menulis: '<path d="M4.5 19.5l1-4.5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18z"/>', membaca: '<path d="M4 5.5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5.5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>', mendengar: '<path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3.5" y="13" width="4" height="6.5" rx="2"/><rect x="16.5" y="13" width="4" height="6.5" rx="2"/>', terbit: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2" class="f"/>' };
+  const nowIcon = label => `<svg viewBox="0 0 24 24" aria-hidden="true">${NOW_ICONS[Object.keys(NOW_ICONS).find(k => fold(label).includes(k))] || '<path d="M12 3.5l2.4 5.6 6.1.5-4.6 4 1.4 5.9L12 16.4 6.7 19.5l1.4-5.9-4.6-4 6.1-.5z"/>'}</svg>`;
+  const safeUrl = u => (/^(https?:|mailto:)/i.test(u) ? u : /@/.test(u) && !/\//.test(u) ? 'mailto:' + u : 'https://' + u.replace(/^\/+/, ''));
+  let pfObs = null;
+  function renderProfile() {
+    const P = SITE.profile || {}, host = $('#pfScroll'), name = SITE.author;
+    const total = WORKS.reduce((a, w) => a + w.words, 0), since = WORKS[WORKS.length - 1].date.slice(0, 4);
+    const hlKeys = (P.highlights || []).map(docByKey).filter(Boolean);
+    const highlights = (hlKeys.length ? hlKeys : WORKS.slice(0, 5)).slice(0, 8);
+    const nowItems = (P.now || []).filter(x => x && String(x.text || '').trim());
+    const nowList = nowItems.length ? nowItems : [{ label: 'Terakhir terbit', text: WORKS[0].title, key: WORKS[0].key }];
+    const bio = String(P.bio || '').trim() ? String(P.bio).split(/\n\s*\n/).map(x => x.trim()).filter(Boolean) : [SITE.description || ''].filter(Boolean);
+    const quote = String(P.quote?.text || '').trim() ? { text: P.quote.text, source: P.quote.source || name } : highlights[0]?.line ? { text: highlights[0].line, source: `${name}, “${highlights[0].title}”` } : null;
+    const links = (P.links || []).filter(l => l && String(l.url || '').trim()).map(l => ({ label: l.label || l.url, url: safeUrl(String(l.url).trim()) }));
+    if (SITE.email && !links.some(l => /mailto:/i.test(l.url))) links.push({ label: SITE.email, url: 'mailto:' + SITE.email });
+    // perjalanan: momen yang ditulis penulis, ditenun dengan tulisan yang terbit tiap tahun
+    const years = {};
+    WORKS.forEach(w => { const y = w.date.slice(0, 4); (years[y] = years[y] || { notes: [], works: [] }).works.push(w); });
+    (P.journey || []).filter(j => j && String(j.year || '').trim() && String(j.text || '').trim()).forEach(j => { const y = String(j.year).trim(); (years[y] = years[y] || { notes: [], works: [] }).notes.push(j.text); });
+    const yearList = Object.keys(years).sort().reverse();
+    const done = DOCS.filter(d => ST.done.includes(d.key)).length, mine = minsPlayed();
+    const you = mine || done ? `Kamu sudah memutar <b>${mine} menit</b> tulisan ${esc(name)} dan menyelesaikan <b>${done} dari ${DOCS.length}</b> sisi.` : `Kamu belum memutar tulisan ${esc(name)}. Mulai dari <button type="button" data-pick="${WORKS[0].key}">yang terbaru</button>.`;
+    const albums = [todayMix(), ...ALBUMS].filter(Boolean);
+    host.innerHTML = `
+      <header class="pf-hero">
+        <div class="pf-disc" aria-hidden="true"><div class="pf-rec"><span class="pf-label" id="pfLabel"></span><i class="pf-hole"></i></div><span class="pf-shine"></span></div>
+        <div class="pf-id">
+          <p class="pf-kick">Penulis${P.city ? ' · ' + esc(P.city) : ''}</p>
+          <h1 class="pf-name">${esc(name)}</h1>
+          ${(P.tagline || SITE.title) ? `<p class="pf-tag">${rich(P.tagline || SITE.title)}</p>` : ''}
+          <dl class="pf-stats">
+            <div><dt>piringan</dt><dd>${WORKS.length}</dd></div><div><dt>sisi</dt><dd>${DOCS.length}</dd></div>
+            <div><dt>kata</dt><dd>${num(total)}</dd></div><div><dt>sejak</dt><dd>${since}</dd></div>
+          </dl>
+          <div class="pf-actions">
+            <button type="button" class="al-play" data-pf="all"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>Putar semua</button>
+            <button type="button" class="pf-radio" data-pf="radio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a10 10 0 0 1 14 0M7.5 11.5a6.5 6.5 0 0 1 9 0"/><circle cx="12" cy="15" r="1.6" class="f"/><path d="M12 16.6V21"/></svg>Radio ${esc(name)}</button>
+            <button type="button" class="al-btn" data-pf="share" aria-label="Bagikan profil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
+          </div>
+          <p class="pf-you">${you}</p>
+        </div>
+      </header>
+
+      <section class="pf-sec"><h2 class="pf-h">Sorotan</h2>
+        <ol class="al-tracks pf-hl">${highlights.map((t, i) => `<li style="--k:${i}"><button type="button" data-pick="${t.key}">
+          <span class="al-no">${i + 1}</span>${mdisc(t)}<span class="sg-t"><b>${esc(t.title)}${t.side === 'b' ? '<i class="ab">B</i>' : ''}</b><span>${esc(catOf(t.cat).label)} · ${fmtLong(t.date)}${t.A.B && t.side === 'a' ? ' · dua sisi' : ''}</span></span>
+          <span class="al-len">${fmtMS(secsOf(t))}</span>${sideRing(t, t.side === 'b' ? 'B' : 'A')}</button></li>`).join('')}</ol></section>
+
+      <section class="pf-sec"><h2 class="pf-h">Sedang</h2>
+        <div class="pf-now">${nowList.map((n, i) => `<${n.key ? `button type="button" data-pick="${n.key}"` : 'div'} class="pf-now-c" style="--k:${i}"><span class="pn-ic">${nowIcon(n.label || '')}</span><small>${esc(n.label || 'Sedang')}</small><b>${rich(n.text)}</b></${n.key ? 'button' : 'div'}>`).join('')}</div></section>
+
+      ${bio.length ? `<section class="pf-sec pf-about"><h2 class="pf-h">Tentang</h2>
+        <div class="pf-bio">${bio.map(b => `<p>${rich(b).replace(/\n/g, '<br>')}</p>`).join('')}</div>
+        <figure class="pf-portrait"><canvas id="pfPortrait"></canvas><figcaption>Potret benang, dirajut dari huruf-huruf tentang ${esc(name)}</figcaption></figure></section>` : ''}
+
+      <section class="pf-sec"><h2 class="pf-h">Perjalanan</h2>
+        <ol class="pf-time">${yearList.map((y, i) => { const it = years[y]; return `<li style="--k:${i}"><span class="pt-y">${y}</span><div class="pt-body">
+          ${it.notes.map(n => `<p class="pt-note">${rich(n)}</p>`).join('')}
+          ${it.works.length ? `<p class="pt-works"><span>${it.works.length} tulisan terbit</span>${it.works.map(w => `<button type="button" data-pick="${w.key}">${mdisc(w)}${esc(w.title)}</button>`).join('')}</p>` : ''}</div></li>`; }).join('')}</ol></section>
+
+      ${albums.length ? `<section class="pf-sec"><h2 class="pf-h">Diskografi</h2>
+        <div class="pf-disco">${albums.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 170, false)}<b>${esc(a.title)}</b><small>${a.daily ? 'Racikan harian' : 'Album'} · ${a.tracks.length} sisi</small></button>`).join('')}</div></section>` : ''}
+
+      ${quote ? `<blockquote class="pf-quote"><p>${rich(quote.text)}</p><cite>${esc(quote.source)}</cite></blockquote>` : ''}
+
+      ${links.length ? `<section class="pf-sec"><h2 class="pf-h">Tautan</h2><div class="pf-links">${links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${linkIcon(l.url)}<span>${esc(l.label)}</span></a>`).join('')}</div></section>` : ''}
+
+      <footer class="pf-sign"><canvas id="pfSign"></canvas><p>Tanda tangan, dirajut dari huruf-huruf “${esc(name)} · ${esc(SITE.title)}”</p></footer>`;
+    avatarInto($('#pfLabel'), 200);
+    $$('canvas[data-cover]', host).forEach(c => requestAnimationFrame(() => paintCover(c, albumOf(c.dataset.cover), Math.min(170, c.parentElement.clientWidth || 170))));
+    // potret dan tanda tangan dirajut saat terlihat
+    pfObs?.disconnect();
+    const knit = el => {
+      if (el.id === 'pfPortrait') drawThread(el, bio.join(' ') || name, { w: 300, h: 300, pad: 12, color: SITE.accent || '#1662FF', seed: 'potret/' + name, weight: 1.2, animate: true, frames: 140 });
+      // nama saja bisa terlalu sedikit hurufnya, jadi nama meja tulisnya ikut dirajut
+      if (el.id === 'pfSign') drawThread(el, (name + ' ' + SITE.title + ' ').repeat(6), { w: 220, h: 220, pad: 8, color: getComputedStyle(el).color, seed: 'tanda/' + name, weight: 1.6, pins: false, animate: true, frames: 160 });
+    };
+    if ('IntersectionObserver' in window) {
+      pfObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { knit(e.target); pfObs.unobserve(e.target); } }), { root: host, threshold: .35 });
+      ['#pfPortrait', '#pfSign'].forEach(q => { const c = $(q, host); if (c) pfObs.observe(c); });
+    } else ['#pfPortrait', '#pfSign'].forEach(q => { const c = $(q, host); if (c) knit(c); });
+    host.scrollTop = 0;
+    document.title = `${name} · ${SITE.title}`;
+  }
+  $('#pfScroll').addEventListener('click', async e => {
+    const pk = e.target.closest('[data-pick]');
+    if (pk) { const d = docByKey(pk.dataset.pick); if (d) openPicker(d.slug, d.side); return; }
+    const al = e.target.closest('[data-album]');
+    if (al) { location.hash = 'album-' + al.dataset.album; return; }
+    const a = e.target.closest('[data-pf]'); if (!a) return;
+    if (a.dataset.pf === 'all') playAlbum('semua', 0);
+    if (a.dataset.pf === 'radio') startRadio(centralSlug());
+    if (a.dataset.pf === 'share') {
+      const url = location.href.split('#')[0] + '#tentang';
+      try { if (navigator.share) await navigator.share({ title: SITE.author, text: `${SITE.author} · ${SITE.title}`, url }); else { await navigator.clipboard.writeText(url); toast('Tautan profil disalin.'); } }
+      catch (err) { if (err.name !== 'AbortError') toast('Tautan: ' + url); }
+    }
+  });
+  avatarInto($('#pillAva'), 22);
+  $('#thTitle').addEventListener('click', () => go('tentang'));
 
   function initPutar() {
     setListen(PV.listen);
