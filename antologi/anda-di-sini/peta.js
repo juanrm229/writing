@@ -80,14 +80,16 @@
   // "Aku menggarisbawahi kalimat itu dua kali."
   const underline = s => s.replace('Penjelasan paling sederhana biasanya benar.', '<span class="u2">Penjelasan paling sederhana biasanya benar.</span>');
 
+  const NOTES = blocks.filter(b => b.k === 'note').length;
   const flow = [];   // setiap elemen yang ikut dihitung posisinya, berurutan
   const add = (html, text, cls) => { flow.push({ html, text, cls }); };
   add(`<h1 class="title">${esc(W.title || 'Anda di Sini')}</h1>`, W.title || '');
   add(`<p class="byline">Juan · ${new Date((W.date || '2026-10-30') + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`, '');
+  add('<p class="cover-hint"><i aria-hidden="true"></i>Gulir pelan-pelan. Petanya mengikuti.</p>', '');
   blocks.forEach(b => {
     if (b.k === 'frame') add(`<h2 class="frame-h">${esc(b.t)}</h2>`, '## ' + b.t);
     else if (b.k === 'part') add(`<header class="part"><small>${esc(b.a)}</small><b>${esc(b.b)}</b></header>`, `## ${b.a}: ${b.b}`);
-    else if (b.k === 'note') add(`<header class="note-h"><b>${esc(b.t)}</b><span>Catatan</span></header>`, `### ${b.t}`);
+    else if (b.k === 'note') add(`<header class="note-h"><b>${esc(b.t)}</b><span>${(b.t.match(/\d+/) || [''])[0]} / ${NOTES}</span></header>`, `### ${b.t}`);
     else if (b.k === 'stamp') add(`<p class="stamp">${esc(b.t)}</p>`, b.t);
     else if (b.k === 'brk') add('<div class="brk" role="separator"></div>', '---');
     else if (b.k === 'table') add(tableHTML(b.s), plain(b.s));
@@ -202,7 +204,7 @@
      span = lebar peta (meter) yang muat di sisi terpendek bidang peta.
      ====================================================================== */
   const S0 = { cx: -300, cy: 300, span: 9000, follow: 0, dx: HOME[0], dy: HOME[1], route: null, rp: 0, dot: 0, acc: 30, accPx: 0, accFix: 0, app: 0,
-    circle: 0, grid: 0, petak: 0, chalk: 0, labels: 0, city: 1, here: 0, ghost: 0, sky: 0, paper: 0, cities: 0, rain: 0, bus: 0, sticker: 0, fog: 1, hud: 0, roti: 0, band: .26, phone: 0, bat: 72 };
+    circle: 0, grid: 0, petak: 0, chalk: 0, labels: 0, city: 1, here: 0, ghost: 0, sky: 0, paper: 0, cities: 0, rain: 0, bus: 0, sticker: 0, fog: 1, hud: 0, roti: 0, band: .26, phone: 0, bat: 72, night: .15 };
   const at = (p, more = {}) => ({ dx: p[0], dy: p[1], route: null, ...more });
   const BEATS = [
     ['Konon, di sebuah kota bernama Saujana', { fog: .85 }],
@@ -211,10 +213,10 @@
     ['Itu akan membuatmu merasa lebih baik.', { fog: .15, span: 5000 }],
     ['[tanya]', { fog: 0, app: 1, city: 0, labels: 0, dot: 1, follow: 1, ...at([200, 400]), span: 1300, here: 1, band: .42 }],
     ['## Bagian Satu', { app: 0, here: 0, dot: 0, follow: 0, cx: -900, cy: 500, span: 3200, city: 1, labels: 1, phone: 1, band: .3 }],
-    ['### Catatan 1', { dot: 1, follow: 1, ...at(HOME), span: 800, acc: 28, bat: 71 }],
+    ['### Catatan 1', { night: .45, dot: 1, follow: 1, ...at(HOME), span: 800, acc: 28, bat: 71 }],
     ['Bu Ratna adalah salah satu anggota kelompok', { span: 1500 }],
     ['Aku sadar. Aku selalu sadar.', { span: 700 }],
-    ['### Catatan 2', { span: 1200, bat: 66 }],
+    ['### Catatan 2', { span: 1200, bat: 66, night: .4 }],
     ['Aku bekerja sebagai analis', { span: 520 }],
     ['Salah satu hal kecil yang selalu kutunjukkan', { span: 5200 }],
     ['Itu bukan karena kamu penting.', { span: 800 }],
@@ -228,13 +230,13 @@
     ['Aku menyimpan tangkapan layar itu', { span: 3800 }],
     ['Ada satu ingatan yang muncul', { circle: 0, grid: 0, petak: 0, cx: -900, cy: 400, span: 2600, labels: .5 }],
     ['Malam ini aku tidur pukul satu.', { labels: 1, dot: 1, follow: 1, ...at(HOME), span: 800 }],
-    ['### Catatan 3', { bat: 64 }],
-    ['Sore tadi ponsel Ibu mati', { bat: 53 }],
-    ['Tidur pukul dua belas lewat.', { fog: .45 }],
-    ['### Catatan 4', { fog: 0, ...at(AULA), span: 650, bat: 62 }],
+    ['### Catatan 3', { bat: 64, night: 0 }],
+    ['Sore tadi ponsel Ibu mati', { bat: 53, night: .3 }],
+    ['Tidur pukul dua belas lewat.', { fog: .45, night: .6 }],
+    ['### Catatan 4', { night: .35, fog: 0, ...at(AULA), span: 650, bat: 62 }],
     ['Dalam perjalanan pulang, di boncengan motor', { ...at(HOME), span: 1300 }],
-    ['### Catatan 5', { span: 900, bat: 41 }],
-    ['Pukul 03.12 aku terbangun.', { dot: 0, follow: 0, cx: P[0], cy: P[1], span: 3800, circle: 1 }],
+    ['### Catatan 5', { span: 900, bat: 41, night: .1 }],
+    ['Pukul 03.12 aku terbangun.', { night: .7, dot: 0, follow: 0, cx: P[0], cy: P[1], span: 3800, circle: 1 }],
     ['Setelah beberapa menit aku menutupnya.', { circle: 0, dot: 1, follow: 1, ...at(HOME), span: 800 }],
     ['Layar putih, lalu peta.', { app: 1, labels: 0, city: 0, acc: 35 }],
     ['Aku memutuskan memperlakukannya sebagai eksperimen', { route: 'garuda', rp: 0, span: 1900 }],
@@ -243,24 +245,24 @@
     ['Rutenya berakhir di belakang bekas Bioskop Garuda', { rp: .96 }],
     ['Di layar: Anda telah tiba.', { rp: 1, span: 520 }],
     ['Tidak ada apa-apa. Seekor kucing belang', { span: 420 }],
-    ['Aku pulang pukul 04.40', { ...at(HOME), span: 800 }],
-    ['### Catatan 6', { bat: 55, span: 1500 }],
+    ['Aku pulang pukul 04.40', { night: .45, ...at(HOME), span: 800 }],
+    ['### Catatan 6', { bat: 55, span: 1500, night: .4 }],
     ['| Malam |', { span: 3000 }],
     ['*Anda di sini.*', { here: 1, span: 700 }],
     ['Pada malam kelima, setelah mengetik nama adikku', { here: 1 }],
     ['Ketiga, semua ujung rute adalah jalan buntu.', { here: 0, span: 2600 }],
-    ['Pada malam keenam, rute ke Kampung Bandeng', { route: 'gang', rp: 0, span: 480, hud: 1 }],
+    ['Pada malam keenam, rute ke Kampung Bandeng', { night: .6, route: 'gang', rp: 0, span: 480, hud: 1 }],
     ['Gang itu sepanjang kira-kira dua ratus meter.', { rp: .2 }],
     ['Gang itu tidak ada di peta mana pun', { rp: .3 }],
     ['Malam itu, sambil berjalan, aku merekam jejak GPS.', { rp: .55 }],
     ['Sore berikutnya aku kembali membawa roda ukur', { rp: .8 }],
     ['Aku mengulang semuanya tiga kali.', { rp: 1 }],
     ['Aku tidak menulis hipotesis apa pun', { hud: 0 }],
-    ['Satu lagi, lebih kecil. Peta di aplikasi itu masih menampilkan Toko Roti Sinar', { ...at([TOKO[0] + 60, TOKO[1] - 40]), span: 600, roti: 1 }],
+    ['Satu lagi, lebih kecil. Peta di aplikasi itu masih menampilkan Toko Roti Sinar', { night: .3, ...at([TOKO[0] + 60, TOKO[1] - 40]), span: 600, roti: 1 }],
     ['Di kantor, Wulan dari bagian survei', { roti: 0, ...at(HOME), span: 900 }],
     ['Aku belum memasukkan koordinat itu.', { dot: 0, follow: 0, cx: P[0], cy: P[1], span: 3900, circle: .6 }],
     ['## Bagian Tiga', { circle: 0, span: 5200 }],
-    ['Pukul 02.20 aku membuka aplikasi itu.', { circle: 1, chalk: .35, span: 4200, bat: 34 }],
+    ['Pukul 02.20 aku membuka aplikasi itu.', { night: .75, circle: 1, chalk: .35, span: 4200, bat: 34 }],
     ['Aku menduga aplikasi itu akan memperlakukan', { route: 'sekar', rp: 0 }],
     ['Aku tiba di titik awal pukul 02.44.', { dot: 1, follow: 1, span: 1500, rp: 0 }],
     ['*Lurus 120 m.*', { rp: .012 }],
@@ -288,7 +290,7 @@
     ['Lalu nama-nama itu hilang.', { span: 8000, labels: 0, roti: 0 }],
     ['Nama kelurahan. Lalu tidak ada.', { span: 13000, city: 1 }],
     ['Saujana. Kata itu bertahan sebentar', { span: 26000, city: 1 }],
-    ['Garis pantai. Pulau.', { span: 160000, city: 0 }],
+    ['Garis pantai. Pulau.', { night: .2, span: 160000, city: 0 }],
     ['Benua.', { span: 5e6 }],
     ['Bumi, bulat', { span: 2.4e7 }],
     ['Di sini peta seharusnya berhenti.', { span: 3e7 }],
@@ -305,10 +307,10 @@
     ['Tidak ada lagi lingkaran.', { accPx: 0, here: 1 }],
     ['Ponselku hangat di tanganku.', { bat: 14 }],
     ['Aku mengunci layar.', { bat: 13 }],
-    ['Layar menghitam, dan di permukaannya', { span: 520, paper: 0, here: 0, accFix: 0, acc: 18, labels: 0, band: .32 }],
-    ['Di timur, langit mulai berwarna', { sky: 1, span: 900 }],
+    ['Layar menghitam, dan di permukaannya', { night: .55, span: 520, paper: 0, here: 0, accFix: 0, acc: 18, labels: 0, band: .32 }],
+    ['Di timur, langit mulai berwarna', { sky: 1, night: .1, span: 900 }],
     ['Lalu aku pulang.', { span: 1500 }],
-    ['## Bagian Empat', { sky: 0, app: 0, labels: 1, city: 1, ...at(HOME), span: 900, bat: 100 }],
+    ['## Bagian Empat', { night: 0, sky: 0, app: 0, labels: 1, city: 1, ...at(HOME), span: 900, bat: 100 }],
     ['Sorenya kami ke Dermaga 7.', { ...at(DERM_END), span: 700 }],
     ['Di kantor, Wulan menatapku', { ...at(HOME), span: 900 }],
     ['### Catatan 10', { bat: 88 }],
@@ -321,11 +323,11 @@
     ['Aku masih bisa menulis penjelasannya.', { cities: 5 }],
     ['### Catatan 11', { cities: 0, paper: 0, accFix: 0, labels: 1, city: 1, ...at(HOME), span: 1600, bat: 76 }],
     ['Itu cukup untuk berangkat.', { route: 'pergi', rp: .7, span: 3800 }],
-    ['## Epilog', { phone: 0, bus: 1, rain: 1, dot: 0, band: .26 }],
+    ['## Epilog', { night: .35, phone: 0, bus: 1, rain: 1, dot: 0, band: .26 }],
     ['Di tengahnya, sebuah stiker merah bundar', { sticker: .6 }],
     ['ANDA DI SINI.', { sticker: 1, rain: .5 }]
   ];
-  const NUM = ['dx', 'dy', 'rp', 'dot', 'acc', 'accPx', 'accFix', 'app', 'circle', 'grid', 'petak', 'chalk', 'labels', 'city', 'here', 'ghost', 'sky', 'paper', 'cities', 'rain', 'bus', 'sticker', 'fog', 'hud', 'roti', 'band', 'phone', 'bat'];
+  const NUM = ['night', 'dx', 'dy', 'rp', 'dot', 'acc', 'accPx', 'accFix', 'app', 'circle', 'grid', 'petak', 'chalk', 'labels', 'city', 'here', 'ghost', 'sky', 'paper', 'cities', 'rain', 'bus', 'sticker', 'fog', 'hud', 'roti', 'band', 'phone', 'bat'];
   const SNAP = [];
   {
     let cur = { ...S0 }, bi = 0;
@@ -534,6 +536,12 @@
     }
     // peta jaringan bus di dinding terminal, warnanya sudah pudar dimakan matahari
     if (s.bus > .01) drawBus(s.bus);
+    // malam: tepi peta menggelap seperti layar ponsel di kamar yang lampunya mati; tengahnya, tempat titik biru, tetap terang
+    if (s.night > .01) {
+      const g = ctx.createRadialGradient(FX, FY, VMIN * .18, FX, FY, Math.max(W_, H_) * .75);
+      g.addColorStop(0, `rgba(8,12,26,${(s.night * .12).toFixed(3)})`); g.addColorStop(1, `rgba(8,12,26,${(s.night * (dark() ? .55 : .62)).toFixed(3)})`);
+      ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W_, H_);
+    }
     if (s.fog > .01) {
       ctx.globalAlpha = s.fog; const g = ctx.createRadialGradient(FX, FY, 0, FX, FY, Math.max(W_, H_) * .7);
       g.addColorStop(0, dark() ? 'rgba(22,23,26,.35)' : 'rgba(244,245,246,.35)'); g.addColorStop(1, dark() ? 'rgba(22,23,26,.95)' : 'rgba(244,245,246,.95)');
@@ -603,6 +611,8 @@
     rcv.style.opacity = state.rain.toFixed(3);
     const hud = $('#hud'); hud.hidden = state.hud < .5;
     if (!hud.hidden) { const f = state.route === 'gang' ? state.rp : 1; $('#hudMap').textContent = Math.round(141 * f) + ' m'; $('#hudWheel').textContent = Math.round(203 * f) + ' m'; }
+    pinchHint.hidden = pinched || !(i >= C8[0] && i < C8[1] - 2) || reduced;
+    if (!pinchHint.hidden) { pinchHint.style.left = FX + 'px'; pinchHint.style.top = (mobile ? state.band * H_ - 56 : H_ - 96) + 'px'; }
     const st = $('#sticker'); st.hidden = state.sticker < .02;
     if (!st.hidden) { st.style.left = FX + 'px'; st.style.top = FY + 'px'; st.style.setProperty('--s', state.sticker.toFixed(3)); }
     if (mobile) document.documentElement.style.setProperty('--band', (state.band * 100).toFixed(2) + 'vh');
@@ -665,6 +675,7 @@
     }, 500);
   }
   read.addEventListener('scroll', onScroll, { passive: true });
+  read.addEventListener('scroll', () => read.classList.toggle('moved', read.scrollTop > 60), { passive: true });
   {
     const f = store.get('prog', {})[SLUG];
     if (f > .03 && f < .97) {
@@ -729,6 +740,33 @@
       g.addEventListener('click', () => toast('Anda di sini.', 3600));
     }
   }
+
+  /* ---------- peta ikut digulir, dan di Catatan 8 bisa dicubit ----------
+     Menggulir atau menyeret di atas peta menggerakkan cerita, sama seperti menggulir teksnya.
+     Selama Catatan 8, mencubit ke dalam (trackpad atau dua jari) memperkecil peta = membaca maju. */
+  const C8 = [idxOf('Aku meletakkan dua jari di layar'), idxOf('Tidak ada lagi lingkaran.')];
+  const inPinch = () => { const i = position()[0]; return i >= C8[0] - 1 && i <= C8[1]; };
+  const pinchHint = $('#pinch');
+  let pinched = false;
+  cv.addEventListener('wheel', e => {
+    if (e.ctrlKey) { if (!inPinch()) return; e.preventDefault(); pinched = true; read.scrollBy(0, e.deltaY * 6); return; }
+    read.scrollBy(0, e.deltaY);
+  }, { passive: false });
+  let tch = null;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  cv.addEventListener('touchstart', e => { tch = e.touches.length === 2 ? { d: dist(e.touches) } : { y: e.touches[0].clientY }; }, { passive: true });
+  cv.addEventListener('touchmove', e => {
+    if (!tch) return;
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const d = dist(e.touches);
+      if (tch.d && inPinch()) { pinched = true; read.scrollBy(0, (tch.d - d) * 4); }
+      tch = { d };
+    } else if (tch.y != null) { const y = e.touches[0].clientY; read.scrollBy(0, tch.y - y); tch = { y }; }
+  }, { passive: false });
+  cv.addEventListener('touchend', () => { tch = null; });
+  // keyboard: spasi, panah, PageDown langsung bekerja tanpa harus mengetuk teks dulu
+  read.focus({ preventScroll: true });
 
   // kembali ke meja: kalau datang dari situs, cukup mundur satu langkah supaya pembaca kembali ke tempat asalnya
   $$('a[href="../../#putar"]').forEach(a => a.addEventListener('click', e => {
