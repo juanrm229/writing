@@ -1,6 +1,6 @@
 {
   "title": "Quiet Margins",
-  "description": "Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini dalam bentuk piringan hitam dua sisi.",
+  "description": "Meja tulis Juan: cerita yang bisa dibaca dari lebih dari satu sisi, dalam bahasa Indonesia dan Inggris.",
   "author": "Juan",
   "handle": "Quiet Margins",
   "email": "juanmaulana29@gmail.com",
@@ -25,47 +25,69 @@
       "label": "Esai",
       "tag": "ESAI",
       "ink": "#2F5BFF",
-      "red": false
+      "red": false,
+      "en": "Essay"
     },
     {
       "id": "puisi",
       "label": "Puisi",
       "tag": "PUISI",
       "ink": "#D2338A",
-      "red": true
+      "red": true,
+      "en": "Poetry"
     },
     {
       "id": "cerpen",
       "label": "Cerpen",
       "tag": "CERPEN",
       "ink": "#0E8A5C",
-      "red": false
+      "red": false,
+      "en": "Short story"
     },
     {
       "id": "mini",
       "label": "Fiksi Mini",
       "tag": "MINI",
       "ink": "#E0571C",
-      "red": false
+      "red": false,
+      "en": "Flash fiction"
     },
     {
       "id": "catatan",
       "label": "Catatan",
       "tag": "CATATAN",
       "ink": "#6A4DF0",
-      "red": false
+      "red": false,
+      "en": "Notes"
+    },
+    {
+      "id": "novella",
+      "label": "Novella",
+      "tag": "NOVELLA",
+      "ink": "#B5482C",
+      "red": false,
+      "en": "Novella"
+    },
+    {
+      "id": "novel",
+      "label": "Novel",
+      "tag": "NOVEL",
+      "ink": "#2C6E8F",
+      "red": false,
+      "en": "Novel"
     }
   ],
   "profile": {
     "city": "Balikpapan",
+    "tagline": "Quiet Margins",
     "now": [
       {
-        "label": "Figuring Out",
-        "text": "My Life"
+        "label": "Mencari tahu",
+        "text": "Hidupku"
       }
     ],
     "quote": {
-      "text": "Nobody ever figures out what life is all about, and it doesn't matter. Explore the world. Nearly everything is really interesting if you go into it deeply enough.",
+      "text": "Tak seorang pun benar-benar tahu hidup ini sebenarnya tentang apa, dan itu tak masalah. Jelajahi dunia. Hampir segala hal menjadi menarik bila kau menyelaminya cukup dalam.",
       "source": "Richard Feynman"
     },
     "links": [
@@ -74,7 +96,26 @@
         "url": "https://www.instagram.com/juanrm29/"
       }
     ],
-    "tagline": "Quiet Margins",
-    "bio": "I’m Juan, writing from Balikpapan. I read slowly, take the occasional long bike ride, and tend to think about conversations well after everyone has gone home.\n\nMy stories often begin with something small: a question over coffee, a chair someone left empty, the ease of sitting beside someone without having to say much. Sometimes I follow these things further than I intended.\n\nI’m interested in how we make meaning, how we misunderstand one another, and how knowing someone can change what we thought we knew about ourselves.\n\nThis is where I leave some of those thoughts. A few have become stories. I’m still figuring out the others."
+    "bio": "Aku Juan, menulis dari Balikpapan. Aku membaca dengan pelan, sesekali bersepeda jauh, dan cenderung memikirkan sebuah percakapan lama setelah semua orang pulang.\n\nCerita-ceritaku sering bermula dari hal kecil: sebuah pertanyaan di sela kopi, kursi yang dibiarkan kosong, rasa nyaman duduk di samping seseorang tanpa harus banyak bicara. Kadang aku mengikuti hal-hal itu lebih jauh dari yang kurencanakan.\n\nAku tertarik pada cara kita memberi makna, cara kita saling salah paham, dan bagaimana mengenal seseorang bisa mengubah apa yang kita kira kita tahu tentang diri sendiri.\n\nDi sinilah aku meninggalkan sebagian pikiran itu. Beberapa sudah menjadi cerita. Sisanya masih kucari tahu."
+  },
+  "lang": "id",
+  "en": {
+    "title": "Quiet Margins",
+    "description": "Juan's writing desk: stories you can read from more than one side, in Indonesian and English.",
+    "readerName": "reader",
+    "profile": {
+      "now": [
+        {
+          "label": "Figuring Out",
+          "text": "My Life"
+        }
+      ],
+      "quote": {
+        "text": "Nobody ever figures out what life is all about, and it doesn't matter. Explore the world. Nearly everything is really interesting if you go into it deeply enough.",
+        "source": "Richard Feynman"
+      },
+      "tagline": "Quiet Margins",
+      "bio": "I’m Juan, writing from Balikpapan. I read slowly, take the occasional long bike ride, and tend to think about conversations well after everyone has gone home.\n\nMy stories often begin with something small: a question over coffee, a chair someone left empty, the ease of sitting beside someone without having to say much. Sometimes I follow these things further than I intended.\n\nI’m interested in how we make meaning, how we misunderstand one another, and how knowing someone can change what we thought we knew about ourselves.\n\nThis is where I leave some of those thoughts. A few have become stories. I’m still figuring out the others."
+    }
   }
 }
