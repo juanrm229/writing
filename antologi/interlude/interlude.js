@@ -38,7 +38,21 @@
     dsinta: ['Dapur rumah baru', 'The new kitchen'], bandara: ['Bandara', 'The airport'], jauh: ['Kota lain', 'Another city'], halte: ['Halte', 'The bus stop'],
     kolam: ['Kolam renang', 'The swimming pool'], mobil: ['Mobil Tegar', 'Tegar’s car']
   };
-  const WHO = { sinta: 'Sinta', arka: 'Arka', nara: 'Nara', tegar: 'Tegar', ibu: t('Ibu Nara', 'Nara’s mother') };
+  // koreksi penutur yang sudah diperiksa per baris: 'me' = tokoh yang bercerita (kanan), 'you:nama' = lawan bicara (kiri)
+  const OV = {
+    '0,21': 'me', '0,22': 'you:sinta', '0,32': 'you:sinta', '0,33': 'me', '0,46': 'me', '0,47': 'you:sinta', '0,63': 'you:orang',
+    '1,25': 'me', '1,26': 'you:sinta', '1,31': 'me', '1,33': 'me', '1,34': 'you:sinta', '1,35': 'me', '1,39': 'me', '1,40': 'you:sinta', '1,41': 'me', '1,51': 'me', '1,52': 'you:pelayan', '1,67': 'you:arka', '1,68': 'me',
+    '2,47': 'you:tegar', '2,49': 'you:tegar',
+    '3,12': 'you:arka', '3,13': 'me', '3,14': 'you:arka', '3,15': 'me', '3,17': 'you:arka', '3,49': 'me', '3,50': 'you:sinta', '3,52': 'me', '3,54': 'me', '3,55': 'you:sinta',
+    '4,5': 'you:nara', '4,6': 'me', '4,7': 'you:nara', '4,9': 'you:nara', '4,10': 'me', '4,11': 'you:nara', '4,14': 'you:nara', '4,39': 'me', '4,40': 'you:sinta', '4,48': 'me',
+    '5,4': 'me', '5,5': 'you:arka', '5,6': 'me', '5,8': 'me', '5,33': 'me', '5,35': 'me', '5,55': 'me', '5,56': 'you:arka',
+    '6,38': 'you:arka', '6,39': 'me', '6,64': 'you:sinta',
+    '7,10': 'you:arka', '7,16': 'you:arka', '7,23': 'me', '7,49': 'me', '7,51': 'you:arka', '7,57': 'me', '7,58': 'you:sinta', '7,59': 'me', '7,60': 'you:sinta', '7,61': 'me', '7,90': 'you:arka',
+    '8,11': 'you:arka', '8,12': 'me', '8,13': 'you:arka', '8,15': 'you:arka', '8,37': 'you:arka', '8,55': 'me',
+    '10,8': 'you', '10,9': 'me', '10,10': 'you', '10,29': 'you:ibu', '10,30': 'me', '10,31': 'you:ibu', '10,34': 'you:ibu',
+    '11,75': 'you:arka', '11,76': 'me', '11,78': 'me'
+  };
+  const WHO = { pelayan: t('Pelayan', 'Waiter'), orang: t('Seorang ibu', 'A mother'), sinta: 'Sinta', arka: 'Arka', nara: 'Nara', tegar: 'Tegar', ibu: t('Ibu Nara', 'Nara’s mother') };
   // status lawan bicara di kepala layar: jauh sejak bandara, online saat bertemu lagi
   const ST = [[9, 11, 'far'], [10, 27, 'back'], [11, 50, 'on'], [11, 99, 'both']];
   // foto yang dikirim di dalam cerita: [bab, paragraf, pengirim, keterangan]
@@ -64,15 +78,15 @@
     [6, 0, { pl: 'fotokopi', who: 'nara' }], [6, 11, { pl: 'jalan' }], [6, 44, { pl: 'karka', who: '' }],
     [6, 54, { pl: 'ibu', who: 'nara' }], [6, 67, { pl: 'karka', who: '' }],
     [7, 0, { pl: 'kedai', who: 'arka' }], [7, 29, { pl: 'teras' }], [7, 56, { pl: 'lama', who: 'sinta' }],
-    [7, 63, { pl: 'rnara', who: '' }],
+    [7, 63, { pl: 'rnara', who: 'arka' }],
     [8, 0, { pl: 'dsinta', who: 'tegar' }], [8, 4, { pl: 'baru', who: '' }], [8, 7, { who: 'arka' }],
     [8, 49, { who: '' }], [8, 50, { pl: 'dsinta', who: 'tegar' }],
     [9, 0, { pl: 'bandara', who: 'nara' }], [9, 11, { who: '' }], [9, 25, { pl: 'jauh', who: 'nara' }],
     [9, 40, { pl: 'darka', who: '' }], [9, 65, { pl: 'baru', who: 'sinta' }], [9, 66, { pl: 'karka', who: '' }],
-    [10, 0, { pl: 'jauh', who: '' }], [10, 27, { pl: 'rnara', who: 'ibu' }], [10, 60, { pl: 'halte', who: '' }],
+    [10, 0, { pl: 'jauh', who: '' }], [10, 27, { pl: 'rnara', who: 'ibu' }], [10, 42, { pl: 'baru', who: 'sinta' }], [10, 60, { pl: 'halte', who: '' }],
     [11, 1, { pl: 'kolam', who: '' }], [11, 12, { pl: 'darka' }], [11, 13, { pl: 'baru', who: 'sinta' }],
     [11, 24, { pl: 'kedai', who: '' }], [11, 28, { who: 'nara' }],
-    [11, 30, { pl: 'baru', who: '' }], [11, 35, { pl: 'mobil', who: 'tegar' }],
+    [11, 30, { pl: 'baru', who: '' }], [11, 31, { who: 'tegar' }], [11, 35, { pl: 'mobil', who: 'tegar' }],
     [11, 46, { pl: 'kedai', who: 'arka' }],
   ];
   const DEL = {
@@ -84,8 +98,8 @@
   const voiceOf = s => (/^(arka|nara|sinta)\b/i.exec(s.trim()) || [])[1]?.toLowerCase() || '';
   const DRAFT = [6, 9]; // bab 7 dan 10: halaman buku tulis Arka
   const NAMES = ['Arka', 'Nara', 'Sinta', 'Tegar'];
-  const FIRST_ME = /\b(kataku|tanyaku|jawabku|ujarku|sahutku|aku (?:berkata|bertanya|menjawab|mengatakan|menyahut))\b|\bI (?:said|asked|answered|replied|told)\b|\bsaid I\b/i;
-  const FIRST_YOU = /\b(katanya|tanyanya|jawabnya|ujarnya|sahutnya|ia (?:berkata|bertanya|menjawab|mengatakan))\b|\b(?:she|he) (?:said|asked|answered|replied)\b/i;
+  const FIRST_ME = /\b(kataku|tanyaku|jawabku|ujarku|sahutku|tambahku|lanjutku|ulangku|aku (?:berkata|bertanya|menjawab|mengatakan|menyahut))\b|\bI (?:said|asked|answered|replied|told)\b|\bsaid I\b/i;
+  const FIRST_YOU = /\b(katanya|tanyanya|jawabnya|ujarnya|sahutnya|tambahnya|lanjutnya|ia (?:berkata|bertanya|menjawab|mengatakan))\b|\b(?:she|he) (?:said|asked|answered|replied)\b/i;
 
   // siapa yang berbicara: dari keterangan di luar tanda petik, kalau tidak jelas bergantian
   const speaker = (narr, pov, first, last, subj) => {
@@ -131,9 +145,10 @@
         const narr = parts.filter(s => !s.startsWith('“')).join(' ');
         let [side, nm0] = /\b(katamu|tanyamu|jawabmu|you said|you asked)\b/i.test(narr) ? ['you', ''] : speaker(narr, pov, first, draft && last ? (last === 'me' ? 'you' : 'me') : last, subj); subj = null;
         if (draft) { side = side === 'me' ? 'you' : 'me'; nm0 = side === 'you' ? 'Arka' : ''; } // kamu = Nara di kanan, Arka di kiri
-        const nm = side === 'you' ? (nm0 || WHO[who] || '') : '';
+        const ov = OV[i + ',' + k]; if (ov) { const [s, n] = ov.split(':'); side = s; nm0 = n ? WHO[n] : ''; }
+        const nm = side === 'you' ? (nm0 || (ov ? '' : WHO[who]) || '') : '';
         const label = side === 'you' && nm && (last !== 'you' || nm !== lastName);
-        html += `<div class="msg ${side}"${side === 'you' && nm ? ` data-who="${esc(nm)}"` : ''} style="${side === 'me' ? `--c:var(--${draft ? 'nara' : pov || 'muted'})` : ''}">${label ? `<span class="nm" style="--nc:var(--${nm.toLowerCase()})">${esc(nm)}</span>` : ''}${parts.map(s => s.startsWith('“') ? `<p class="bub">${inline(s.replace(/^“|”$/g, ''))}</p>` : `<p class="aside">${inline(s)}</p>`).join('')}</div>`;
+        html += `<div class="msg ${side}" data-k="${i},${k}"${side === 'you' && nm ? ` data-who="${esc(nm)}"` : ''} style="${side === 'me' ? `--c:var(--${draft ? 'nara' : pov || 'muted'})` : ''}">${label ? `<span class="nm"${NAMES.includes(nm) ? ` style="--nc:var(--${nm.toLowerCase()})"` : ''}>${esc(nm)}</span>` : ''}${parts.map(s => s.startsWith('“') ? `<p class="bub">${inline(s.replace(/^“|”$/g, ''))}</p>` : `<p class="aside">${inline(s)}</p>`).join('')}</div>`;
         last = side; lastName = nm;
       } else {
         html += draft ? `<div class="msg you note" data-who="Arka">${last !== 'you' ? '<span class="nm" style="--nc:var(--arka)">Arka</span>' : ''}<p class="bub">${inline(p)}</p></div>` : `<p class="nar${pov === 'sinta' ? ' sn' : ''}">${inline(p)}</p>`;
