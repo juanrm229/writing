@@ -101,3 +101,6 @@ Bagian kedua antologi Titik Biru, dibaca seperti percakapan di aplikasi chat yan
 - **Lokasi**: setiap perpindahan tempat muncul sebagai pesan sistem, dan kepala layar menunjukkan siapa yang bercerita serta di mana. Daftar lokasi dan lawan bicara ada di `B` (bab, indeks paragraf) dalam `interlude.js`; struktur paragraf ID dan EN sama.
 - **Buku tulis Arka**: bab 7 dan 10 tampil sebagai halaman catatan.
 - **Sembilan puluh dan sepuluh**: bilah 90/10 di bab 6 bisa dibalik.
+- **Daftar percakapan**: di sampul, setiap bab tampil sebagai utas chat (pencerita, judul, cuplikan, lokasi) dengan titik belum dibaca (`jm:il:seen`). Ketuk kepala layar untuk kembali ke daftar.
+- **Pesan ponsel**: pesan yang memang ada di cerita (paragraf huruf kecil, atau "mengetik/membalas/menjawab: …") tampil sebagai pesan ponsel, lengkap dengan "Terkirim".
+- **Sedang mengetik**: pesan lawan bicara didahului titik-titik mengetik, dan kepala layar menulis "… sedang mengetik…".
