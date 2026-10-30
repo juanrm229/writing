@@ -104,3 +104,8 @@ Bagian kedua antologi Titik Biru, dibaca seperti percakapan di aplikasi chat yan
 - **Daftar percakapan**: di sampul, setiap bab tampil sebagai utas chat (pencerita, judul, cuplikan, lokasi) dengan titik belum dibaca (`jm:il:seen`). Ketuk kepala layar untuk kembali ke daftar.
 - **Pesan ponsel**: pesan yang memang ada di cerita (paragraf huruf kecil, atau "mengetik/membalas/menjawab: …") tampil sebagai pesan ponsel, lengkap dengan "Terkirim".
 - **Sedang mengetik**: pesan lawan bicara didahului titik-titik mengetik, dan kepala layar menulis "… sedang mengetik…".
+- **Yang tidak terkirim**: di bab 4, 8, dan 10 kotak ketik muncul sendiri: tiga baris samar lalu dua dihapus, "tidak apa-apa, besok saja" diketik lalu dihapus, dan percakapan yang dibuka lalu ditutup tanpa mengetik (`DEL` di `interlude.js`).
+- **Status**: lawan bicara "terakhir dilihat di kota lain" sejak bandara, "di kota yang sama" saat Nara pulang, dan **online** saat mereka bertemu lagi (`ST`).
+- **Kamu sebagai Nara**: bab 7 dan 10 (buku tulis Arka) masuk sebagai pesan dari Arka untukmu; ucapan Nara di kanan.
+- **Getar**: pesan ponsel yang masuk menggetarkan HP (bisa dimatikan, `jm:il:buzz`).
+- **Catatan Sinta**: bab Sinta dibuka dengan gembok yang tidak menutup rapat.
