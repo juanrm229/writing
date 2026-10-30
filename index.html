@@ -39,6 +39,7 @@
       </button>
     </div>
     <div class="tb-right">
+      <button class="tb-btn tb-lang" id="langToggle" type="button" aria-label="Baca dalam bahasa Inggris" title="English"><span class="lg-now">ID</span><span class="lg-sep">/</span><span class="lg-other">EN</span></button>
       <button class="tb-btn" id="themeToggle" type="button" aria-pressed="false" aria-label="Mode gelap" title="Mode gelap">
         <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.6 7.6 0 0 1 9.8 4.5a7.6 7.6 0 1 0 9.7 9.7z"/></svg>
         <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.8"/><path d="M12 3v1.8M12 19.2V21M3 12h1.8M19.2 12H21M5.6 5.6l1.3 1.3M17.1 17.1l1.3 1.3M5.6 18.4l1.3-1.3M17.1 6.9l1.3-1.3"/></svg>
@@ -224,7 +225,10 @@
             <div class="rd-scroll" id="rdScroll">
               <article class="rd-article">
                 <p class="rd-meta" id="rdMeta"></p>
+                <p class="rd-work" id="rdWork" hidden></p>
                 <h1 class="rd-title" id="rdTitle"></h1>
+                <nav class="rd-sides" id="rdSides" hidden></nav>
+                <p class="rd-lost" id="rdLost" hidden></p>
                 <div class="rd-body" id="rdBody"></div>
                 <footer class="rd-end">
                   <a class="rd-flipcard" id="rdFlipCard" href="#" hidden></a>
@@ -557,6 +561,7 @@
 <input type="color" id="colorIn" value="#F3E9DC" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>
