@@ -31,7 +31,7 @@
 
   const PL = {
     baru: ['Ruang praktik Sinta · tempat baru', 'Sinta’s office · the new one'], lama: ['Ruang praktik Sinta · di atas apotek', 'Sinta’s office · above the pharmacy'],
-    tunggu: ['Ruang tunggu', 'The waiting room'], kedai: ['Kedai dekat rak', 'The café by the shelf'], rsinta: ['Rumah Sinta dan Tegar', 'Sinta and Tegar’s house'],
+    tunggu: ['Ruang tunggu', 'The waiting room'], kedai: ['Kedai Halaman Belakang', 'Halaman Belakang café'], rsinta: ['Rumah Sinta dan Tegar', 'Sinta and Tegar’s house'],
     studio: ['Studio Nara', 'Nara’s studio'], darka: ['Dapur Arka', 'Arka’s kitchen'], warung: ['Warung dekat perpustakaan', 'The stall near the library'],
     jalan: ['Di jalan', 'On the way'], knara: ['Kamar Nara', 'Nara’s room'], fotokopi: ['Tempat fotokopi', 'The copy shop'], karka: ['Kamar Arka', 'Arka’s room'],
     ibu: ['Makan bersama ibu Nara', 'Dinner with Nara’s mother'], teras: ['Teras rumah Nara', 'Nara’s porch'], rnara: ['Rumah Nara', 'Nara’s house'],
@@ -40,7 +40,18 @@
   };
   const WHO = { sinta: 'Sinta', arka: 'Arka', nara: 'Nara', tegar: 'Tegar', ibu: t('Ibu Nara', 'Nara’s mother') };
   // status lawan bicara di kepala layar: jauh sejak bandara, online saat bertemu lagi
-  const ST = [[9, 11, 'far'], [10, 27, 'back'], [11, 50, 'on']];
+  const ST = [[9, 11, 'far'], [10, 27, 'back'], [11, 50, 'on'], [11, 99, 'both']];
+  // foto yang dikirim di dalam cerita: [bab, paragraf, pengirim, keterangan]
+  const PHOTO = {
+    '3,40': ['Arka', t('nota', 'the receipt')], '4,19': ['Nara', t('meja lain, sudutnya penuh kertas', 'another table, one corner covered in paper')],
+    '6,44': ['Nara', t('tangkapan layar · satu baris ditandai', 'screenshot · one line highlighted')], '7,27': ['Arka', t('halaman buku', 'a page of the book')],
+    '9,12': ['Nara', t('roti, bungkusnya sudah terbuka', 'the bread, wrapping open')], '9,15': ['Nara', t('kamar · jalan · pasar', 'room · street · market')]
+  };
+  // panggilan: masuk, keluar, berakhir
+  const CALL = { '5,53': ['out', 'Arka'], '7,96': ['in', 'Arka'], '7,102': ['end', ''], '9,36': ['in', 'Nara'], '11,31': ['in', 'Tegar'] };
+  // pemisah hari, seperti di aplikasi chat
+  const DAY = { '8,0': t('September', 'September'), '10,0': t('Bulan kesembilan', 'The ninth month'), '11,24': t('Kamis', 'Thursday') };
+  const TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>';
   const B = [
     [0, 0, { pl: 'baru', who: 'sinta' }], [0, 66, { pl: 'jalan', who: '' }],
     [1, 0, { pl: 'tunggu', who: '' }], [1, 5, { pl: 'lama', who: 'sinta' }],
@@ -100,6 +111,7 @@
       while (bi < B.length && B[bi][0] * 1000 + B[bi][1] <= i * 1000 + k) { const d = B[bi][2]; if (d.pl != null) pl = d.pl; if (d.who != null) who = d.who; bi++; }
       ST.forEach(([a, b, s]) => { if (a === i && b === k) html += `<i class="stm" data-st="${s}"></i>`; });
       if (p.startsWith('### ')) { pov = voiceOf(p.slice(4)); last = null; html += `<h3 data-v="${pov}">${esc(p.slice(4))}</h3>`; shown = ''; if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`; return; }
+      if (DAY[i + ',' + k]) html += `<p class="day"><span>${esc(DAY[i + ',' + k])}</span></p>`;
       if (pl && pl !== shown) { shown = pl; last = null; html += `<p class="loc" data-pl="${pl}"><span>${PIN}${esc(PL[pl][EN ? 1 : 0])}</span></p>`; }
       const first = pov === 'arka' || pov === 'sinta';
       const other = pov === 'arka' ? 'Nara' : pov === 'nara' ? 'Arka' : '';
@@ -130,6 +142,9 @@
         const head = p.slice(0, 48), n = NAMES.find(x => new RegExp('^' + x + '\\b').test(head));
         subj = first && /^(Aku|I)\b/.test(p) ? ['me', ''] : n ? [n.toLowerCase() === pov ? 'me' : 'you', n] : null;
       }
+      const ph = PHOTO[i + ',' + k], cl = CALL[i + ',' + k];
+      if (ph) { html += `<div class="msg you photo" data-who="${ph[0]}"><span class="nm" style="--nc:var(--${ph[0].toLowerCase()})">${ph[0]} · ${t('foto', 'photo')}</span><div class="ph" style="--pc:var(--${ph[0].toLowerCase()})"><i></i><span>${esc(ph[1])}</span></div></div>`; last = 'you'; lastName = ph[0]; }
+      if (cl) html += `<p class="loc call ${cl[0]}"><span>${TEL}${cl[0] === 'in' ? t('Panggilan masuk · ', 'Incoming call · ') + cl[1] : cl[0] === 'out' ? t('Memanggil ', 'Calling ') + cl[1] + '…' : t('Panggilan berakhir', 'Call ended')}</span></p>`;
       if (/sembilan puluh, kamu sepuluh|ninety to give/i.test(p)) html += `<div class="split"><button class="split-bar" type="button" aria-label="${t('Balik', 'Flip')}"><span class="split-a" style="flex-grow:90">90</span><span class="split-n" style="flex-grow:10">10</span></button><small>${t('Ketuk untuk membalik', 'Tap to flip')}</small></div>`;
     });
     html += `${draft ? `<p class="draft-f">${t('Dari buku tulis Arka · tidak pernah dikirim', 'From Arka\u2019s notebook · never sent')}</p>` : ''}</section>`;
@@ -161,23 +176,26 @@
   const frame = () => {
     let v = '', loc = '', stt = '', ci = -1;
     for (const m of marks) {
-      if (m.getBoundingClientRect().top > 90) break;
-      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; ci = +m.dataset.i; } else if (m.tagName === 'H3') { v = m.dataset.v; } else if (m.dataset.st) stt = m.dataset.st; else loc = m.dataset.pl;
+      const top = m.getBoundingClientRect().top;
+      if (m.dataset.st) { if (top < innerHeight * .6) stt = m.dataset.st; continue; } // status berubah saat kalimatnya terbaca
+      if (top > 90) continue;
+      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; ci = +m.dataset.i; } else if (m.tagName === 'H3') { v = m.dataset.v; } else loc = m.dataset.pl;
     }
     const cur = marks.filter(m => m.classList.contains('ch') && m.getBoundingClientRect().top < innerHeight * .5).length - 1;
     if (cur > maxCh) { maxCh = cur; store.set('il:seen', cur); const u = document.querySelector(`[data-go="${cur}"] u`); if (u) u.remove(); }
     const other = v === 'arka' ? 'Nara' : v === 'nara' ? 'Arka' : '', draft = DRAFT.includes(ci);
-    const status = draft ? t('menulis untukmu', 'writing to you') : stt && other ? `${other} · ${stt === 'on' ? 'online' : stt === 'back' ? t('di kota yang sama', 'in the same city') : t('terakhir dilihat di kota lain', 'last seen in another city')}` : '';
+    const status = draft ? t('menulis untukmu', 'writing to you') : stt === 'both' ? t('online · membaca menu yang sama', 'online · reading the same menu') : stt && other ? `${other} · ${stt === 'on' ? 'online' : stt === 'back' ? t('di kota yang sama', 'in the same city') : t('terakhir dilihat di kota lain', 'last seen in another city')}` : '';
     const key = v + '|' + loc + '|' + status;
     if (key !== headKey && !typing) {
       headKey = key;
-      hName.textContent = v ? v[0].toUpperCase() + v.slice(1) : 'Interlude';
-      hAv.textContent = v ? v[0].toUpperCase() : 'I'; hAv.style.setProperty('--c', v ? `var(--${v})` : '');
+      const duo = stt === 'both';
+      hName.textContent = duo ? 'Arka & Nara' : v ? v[0].toUpperCase() + v.slice(1) : 'Interlude';
+      hAv.textContent = duo ? 'A' : v ? v[0].toUpperCase() : 'I'; hAv.style.setProperty('--c', duo ? 'var(--arka)' : v ? `var(--${v})` : ''); hAv.classList.toggle('duo', duo);
       hLoc.textContent = draft ? status : [loc ? PL[loc][EN ? 1 : 0] : (v ? '' : t('Arka, Nara, Sinta', 'Arka, Nara, Sinta')), status].filter(Boolean).join(' · ');
-      hLoc.classList.toggle('on', !draft && stt === 'on' && !!other);
+      hLoc.classList.toggle('on', !draft && (stt === 'on' || stt === 'both') && !!other);
     }
     const f = clamp(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight), 0, 1);
-    pct.textContent = Math.round(f * 100) + '%';
+    pct.textContent = Math.round(f * 100) + '%'; $('#chatH').style.setProperty('--p', f);
     clearTimeout(saveT);
     saveT = setTimeout(() => {
       const pr = store.get('prog', {}); pr[SLUG] = +f.toFixed(3); store.set('prog', pr);
@@ -227,6 +245,7 @@
   const show = el => {
     el.classList.add('in');
     if (el.classList.contains('del')) return erase(el.dataset);
+    if (el.classList.contains('photo')) setTimeout(() => el.classList.add('sharp'), 700);
     if (el.classList.contains('lock')) return setTimeout(() => el.classList.add('open'), 900);
     if (buzz && el.classList.contains('sms') && el.classList.contains('you')) try { navigator.vibrate?.([18, 60, 18]); } catch (e) { /* tidak didukung */ }
     if (calm || !el.classList.contains('you') || el.classList.contains('note') || scrollY < 200) return;

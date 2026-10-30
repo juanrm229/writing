@@ -109,3 +109,6 @@ Bagian kedua antologi Titik Biru, dibaca seperti percakapan di aplikasi chat yan
 - **Kamu sebagai Nara**: bab 7 dan 10 (buku tulis Arka) masuk sebagai pesan dari Arka untukmu; ucapan Nara di kanan.
 - **Getar**: pesan ponsel yang masuk menggetarkan HP (bisa dimatikan, `jm:il:buzz`).
 - **Catatan Sinta**: bab Sinta dibuka dengan gembok yang tidak menutup rapat.
+- **Foto**: foto yang dikirim di cerita tampil sebagai pesan foto yang mula-mula kabur lalu jelas, seperti dipulihkan (`PHOTO`).
+- **Panggilan & hari**: panggilan masuk/keluar/berakhir dan pemisah hari ("September", "Bulan kesembilan", "Kamis") (`CALL`, `DAY`).
+- **Berdua**: di kalimat terakhir, kepala layar menjadi "Arka & Nara · online · membaca menu yang sama".
