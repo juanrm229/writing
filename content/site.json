@@ -1,10 +1,10 @@
 {
-  "title": "Juan Menulis",
+  "title": "Quiet Margins",
   "description": "Meja tulis Juan: esai, puisi, cerpen, dan fiksi mini dalam bentuk piringan hitam dua sisi.",
   "author": "Juan",
-  "handle": "juan/menulis",
-  "email": "juan@example.com",
-  "avatar": "",
+  "handle": "Quiet Margins",
+  "email": "juanmaulana29@gmail.com",
+  "avatar": "content/media/avatar.jpg?v=mvu9mudu",
   "readerName": "pembaca",
   "accent": "#1662FF",
   "theme": "auto",
@@ -14,7 +14,10 @@
   "readerPaper": "putih",
   "features": {
     "dock": true,
-    "rotatingQuotes": true
+    "rotatingQuotes": true,
+    "connections": true,
+    "replay": true,
+    "ambience": true
   },
   "categories": [
     {
