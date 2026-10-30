@@ -61,6 +61,7 @@
         <button type="button" data-go="album" aria-label="Album" title="Album">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="13" rx="2"/><path d="M16.5 7.6a6.5 6.5 0 0 1 0 8.8" class="thin"/><path d="M19 6a8.6 8.6 0 0 1 0 12" class="thin"/></svg>
         </button>
+        <button type="button" data-go="tentang" aria-label="Profil penulis" title="Profil"><span class="pill-ava" id="pillAva" aria-hidden="true"></span></button>
         <button type="button" data-go="sapa" aria-label="Sapa" title="Sapa">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5c4.7 0 8 2.9 8 6.6s-3.3 6.6-8 6.6c-.9 0-1.8-.1-2.6-.3L5.5 19.5l.9-3.4C4.9 14.9 4 13.1 4 11.1c0-3.7 3.3-6.6 8-6.6z"/></svg>
         </button>
@@ -181,6 +182,11 @@
         <div class="al-scroll" id="alScroll"></div>
       </section>
 
+      <!-- ============ PROFIL ============ -->
+      <section class="view view-tentang" id="vTentang" aria-label="Profil penulis">
+        <div class="pf-scroll" id="pfScroll"></div>
+      </section>
+
       <!-- ============ BACA ============ -->
       <section class="view view-baca" id="vBaca" aria-label="Pembaca">
         <div class="rd-top">
@@ -221,6 +227,10 @@
                 <div class="rd-body" id="rdBody"></div>
                 <footer class="rd-end">
                   <a class="rd-flipcard" id="rdFlipCard" href="#" hidden></a>
+                  <button type="button" class="rd-radio" id="rdRadio">
+                    <span class="rr-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 9a10 10 0 0 1 14 0M7.5 11.5a6.5 6.5 0 0 1 9 0"/><circle cx="12" cy="15" r="1.6" class="f"/><path d="M12 16.6V21"/></svg></span>
+                    <span class="rr-t"><small id="rrKick">Radio</small><b id="rrTitle">Mulai radio dari tulisan ini</b><span id="rrSub">Tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.</span></span>
+                  </button>
                   <p class="rd-end-label">ritme kalimat · setiap batang satu kalimat</p>
                   <div class="rhythm" id="rdRhythm"></div>
                   <div class="rd-related" id="rdRelated"></div>

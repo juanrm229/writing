@@ -163,6 +163,15 @@
     return null;
   }
   async function save() {
+    // baris profil yang setengah diisi tidak ikut tersimpan
+    const pp = S.site?.profile;
+    if (pp) {
+      if (pp.now) pp.now = pp.now.filter(r => String(r.text || '').trim());
+      if (pp.journey) pp.journey = pp.journey.filter(r => String(r.text || '').trim() && String(r.year || '').trim());
+      if (pp.links) pp.links = pp.links.filter(r => String(r.url || '').trim());
+      pruneProfile();
+      if (S.tab === 'profil') renderProfileForm();
+    }
     if (!isDirty()) return;
     const bad = validate();
     if (bad) { if (bad[0]) { setTab('tulis'); selectWork(bad[0].slug); } else { S.selAlbum = bad[2].id; setTab('album'); } toast(bad[1], true); return; }
@@ -232,6 +241,7 @@
     $$('.tab').forEach(s => { s.hidden = s.id !== 'tab-' + t; });
     moveThumb();
     if (t === 'tampilan') { renderSettings(); pushPreview(true); }
+    if (t === 'profil') { renderProfileForm(); pushPreview(true); requestAnimationFrame(fitPreview); }
     if (t === 'riwayat') renderHistory();
     if (t === 'album') renderAlbums();
   }
@@ -488,6 +498,7 @@
     const w = cur(); if (!w) return;
     S.works = S.works.filter(x => x !== w);
     S.albums.forEach(a => { a.tracks = a.tracks.filter(k => k.split(':')[0] !== w.slug); });
+    if (S.site.profile?.highlights) { S.site.profile.highlights = S.site.profile.highlights.filter(k => k.split(':')[0] !== w.slug); pruneProfile(); }
     toast(`“${w.title || 'Tanpa judul'}” dihapus. Tekan Simpan untuk menerapkan.`);
     S.sel = sortedWorks()[0]?.slug || null;
     renderFilter();
@@ -517,17 +528,30 @@
       const f = $('#pvFrame');
       if (!f.src || force) f.src = '../?preview=1'; else f.contentWindow?.location.reload();
     }
+    if (S.tab === 'profil') {
+      const f = $('#prFrame');
+      if (!f.src || force) f.src = '../?preview=1#tentang'; else f.contentWindow?.location.reload();
+    }
   }, 700);
 
+  let prDevice = 'desktop';
   function fitPreview() {
-    const box = $('#pvFrameBox'), stage = $('#pvStage');
-    if (!box || !stage.clientWidth) return;
-    const [w, h] = pvDevice === 'phone' ? [390, 844] : [1440, 900];
-    const s = Math.min((stage.clientWidth - 40) / w, (stage.clientHeight - 40) / h, 1);
-    box.style.width = w + 'px'; box.style.height = h + 'px';
-    box.style.transform = `translate(-50%, -50%) scale(${s})`;
-    box.classList.toggle('phone', pvDevice === 'phone');
+    [['#pvFrameBox', '#pvStage', pvDevice], ['#prFrameBox', '#prStage', prDevice]].forEach(([b, st, dev]) => {
+      const box = $(b), stage = $(st);
+      if (!box || !stage.clientWidth) return;
+      const [w, h] = dev === 'phone' ? [390, 844] : [1440, 900];
+      const s = Math.min((stage.clientWidth - 40) / w, (stage.clientHeight - 40) / h, 1);
+      box.style.width = w + 'px'; box.style.height = h + 'px';
+      box.style.transform = `translate(-50%, -50%) scale(${s})`;
+      box.classList.toggle('phone', dev === 'phone');
+    });
   }
+  $('#prDevice').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    prDevice = b.dataset.v;
+    $$('#prDevice [data-v]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    fitPreview();
+  });
   $('#pvDevice').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if (!b) return;
     pvDevice = b.dataset.v;
@@ -640,6 +664,8 @@
   const curAlbum = () => S.albums.find(a => a.id === S.selAlbum);
   function renameInAlbums(from, to) {
     if (!from || from === to) return;
+    const hl = S.site.profile?.highlights;
+    if (hl) S.site.profile.highlights = hl.map(k => { const [sl, b] = k.split(':'); return sl === from ? to + (b ? ':' + b : '') : k; });
     S.albums.forEach(a => { a.tracks = a.tracks.map(k => { const [sl, b] = k.split(':'); return sl === from ? to + (b ? ':' + b : '') : k; }); });
   }
   function trackDoc(k) {
@@ -769,6 +795,80 @@
   });
 
   /* ======================================================================
+     PROFIL: halaman #tentang di situs
+     ====================================================================== */
+  const prof = () => (S.site.profile = S.site.profile || {});
+  // bersihkan isian kosong supaya site.json tetap rapi dan "belum disimpan" tidak muncul tanpa sebab
+  function pruneProfile() {
+    const p = S.site.profile; if (!p) return;
+    ['tagline', 'city', 'bio'].forEach(k => { if (!String(p[k] || '').trim()) delete p[k]; });
+    ['now', 'journey', 'links', 'highlights'].forEach(k => { if (Array.isArray(p[k]) && !p[k].length) delete p[k]; });
+    if (p.quote && !String(p.quote.text || '').trim() && !String(p.quote.source || '').trim()) delete p.quote;
+    if (!Object.keys(p).length) delete S.site.profile;
+  }
+  const ROWS = {
+    now: { a: ['label', 'Menulis', 'list="prNowLabels"'], b: ['text', 'apa yang sedang kamu kerjakan'] },
+    journey: { a: ['year', '2024', 'inputmode="numeric" maxlength="4"'], b: ['text', 'momen penting tahun itu'] },
+    links: { a: ['label', 'Instagram'], b: ['url', 'instagram.com/namamu'] }
+  };
+  function renderRows(kind) {
+    const list = (S.site.profile || {})[kind] || [], R = ROWS[kind];
+    $('#pr' + { now: 'Now', journey: 'Journey', links: 'Links' }[kind]).innerHTML = list.map((r, i) => `
+      <div class="pr-row pr-${kind}" data-kind="${kind}" data-i="${i}">
+        <input data-f="${R.a[0]}" value="${esc(r[R.a[0]] || '')}" placeholder="${R.a[1]}" ${R.a[2] || ''} aria-label="${R.a[0]}">
+        <input data-f="${R.b[0]}" value="${esc(r[R.b[0]] || '')}" placeholder="${R.b[1]}" aria-label="${R.b[0]}">
+        <button type="button" class="cat-del" data-del aria-label="Hapus baris">×</button>
+      </div>`).join('') || '<p class="hint" style="padding:12px 0">Belum ada. Bagian ini disusun otomatis.</p>';
+  }
+  function renderHl() {
+    const hl = (S.site.profile || {}).highlights || [];
+    $('#prHl').innerHTML = sortedWorks().filter(w => !w.draft).flatMap(w => [[w.slug, w.title || 'Tanpa judul', 'A'], ...(w.sideB ? [[w.slug + ':b', (w.sideB.title || '').trim() || w.title, 'B']] : [])])
+      .map(([k, t, side]) => { const n = hl.indexOf(k); return `<button type="button" class="pr-chip${n >= 0 ? ' on' : ''}" data-hl="${esc(k)}" aria-pressed="${n >= 0}"><i>${n >= 0 ? n + 1 : side}</i>${esc(t)}${side === 'B' ? ' <small>Sisi B</small>' : ''}</button>`; }).join('');
+  }
+  function renderProfileForm() {
+    const p = S.site.profile || {};
+    $$('[data-p]', $('#prCol')).forEach(el => { el.value = p[el.dataset.p] || ''; });
+    $$('[data-q]', $('#prCol')).forEach(el => { el.value = (p.quote || {})[el.dataset.q] || ''; });
+    ['now', 'journey', 'links'].forEach(renderRows);
+    renderHl();
+  }
+  const prCol = $('#prCol');
+  prCol.addEventListener('input', e => {
+    const el = e.target;
+    if (el.dataset.p) { prof()[el.dataset.p] = el.value; pruneProfile(); changed(); return; }
+    if (el.dataset.q) { const p = prof(); p.quote = { ...(p.quote || {}), [el.dataset.q]: el.value }; pruneProfile(); changed(); return; }
+    const row = el.closest('.pr-row');
+    if (row) { const r = (prof()[row.dataset.kind] || [])[+row.dataset.i]; if (r) { r[el.dataset.f] = el.value; changed(); } }
+  });
+  // baris yang dikosongkan dibuang saat fokus berpindah
+  prCol.addEventListener('focusout', e => {
+    // baris yang sudah digambar ulang (misalnya sesudah simpan) tidak lagi ada di dokumen
+    const row = e.target.closest('.pr-row'); if (!row || !row.isConnected || row.contains(e.relatedTarget)) return;
+    const kind = row.dataset.kind, list = (S.site.profile || {})[kind], r = list?.[+row.dataset.i];
+    if (r && !Object.values(r).some(v => String(v).trim())) { list.splice(+row.dataset.i, 1); pruneProfile(); renderRows(kind); changed(); }
+  });
+  prCol.addEventListener('click', e => {
+    const add = e.target.closest('[data-add]');
+    if (add) {
+      const kind = add.dataset.add, p = prof();
+      p[kind] = [...(p[kind] || []), kind === 'journey' ? { year: String(new Date().getFullYear()), text: '' } : kind === 'now' ? { label: ['Menulis', 'Membaca', 'Mendengarkan'][(p.now || []).length] || '', text: '' } : { label: '', url: '' }];
+      renderRows(kind);
+      $(`#pr${{ now: 'Now', journey: 'Journey', links: 'Links' }[kind]} .pr-row:last-child input[data-f="${ROWS[kind].b[0]}"]`)?.focus();
+      return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) { const row = del.closest('.pr-row'), kind = row.dataset.kind; (prof()[kind] || []).splice(+row.dataset.i, 1); pruneProfile(); renderRows(kind); changed(); return; }
+    const hl = e.target.closest('[data-hl]');
+    if (hl) {
+      const p = prof(), k = hl.dataset.hl, cur = p.highlights || [];
+      if (cur.includes(k)) p.highlights = cur.filter(x => x !== k);
+      else if (cur.length >= 8) { toast('Sorotan paling banyak 8 sisi.'); return; }
+      else p.highlights = [...cur, k];
+      pruneProfile(); renderHl(); changed();
+    }
+  });
+
+  /* ======================================================================
      RIWAYAT
      ====================================================================== */
   async function renderHistory() {
@@ -800,6 +900,7 @@
     if (S.sel) selectWork(S.sel); else renderList();
     if (S.tab === 'tampilan') renderSettings();
     if (S.tab === 'album') renderAlbums();
+    if (S.tab === 'profil') renderProfileForm();
     setTab(S.tab);
   }
 
