@@ -91,3 +91,13 @@ python3 -m http.server 8000
 ```
 
 Lalu buka <http://localhost:8000>. Konten dimuat dengan `fetch`, jadi membuka `index.html` langsung dari berkas tidak akan bekerja.
+
+### Interlude (antologi/interlude/)
+
+Bagian kedua antologi Titik Biru. Teksnya tetap dari `content/works.json` (bab ID, terjemahan di `en`), halamannya hanya cara membacanya:
+
+- **Dinding**: latar halaman adalah dinding ruang praktik Sinta. Biru pucat untuk tempat lama, hijau untuk tempat baru. Bab Arka selalu hijau; di bab 9 dinding dicat ulang sambil dibaca.
+- **Tiga suara**: Arka, Nara, dan Sinta punya warna sendiri. Di layar lebar Arka sedikit ke kiri, Nara ke kanan, makin berjauhan saat mereka berpisah, lalu bertemu di tengah pada Halaman Belakang.
+- **Buku tulis Arka**: bab 7 dan 10 tampil sebagai halaman buku tulis.
+- **Sembilan puluh dan sepuluh**: bilah 90/10 di bab 6 bisa dibalik.
+- **Meja terakhir**: dua buku bergeser berdampingan, menu di tengah.
