@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "titik-biru",
+    "title": "Titik Biru",
+    "kind": "antologi",
+    "note": "Antologi Juan, dibuka dengan Anda di Sini.",
+    "tracks": [
+      "anda-di-sini"
+    ]
+  }
+]

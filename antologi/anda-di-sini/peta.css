@@ -168,3 +168,26 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- penyempurnaan ---------- */
+.map { touch-action: none; }
+/* ajakan mencubit di Catatan 8 */
+.pinch { position: fixed; z-index: 1; display: flex; align-items: center; gap: 4px; padding: 9px 16px 9px 12px; border-radius: 999px; background: rgb(17 18 20 / .82); color: #fff; font: 500 13px var(--f-ui); transform: translateX(-50%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: hintIn .6s var(--spring); }
+.pinch i { width: 9px; height: 9px; border-radius: 50%; background: #fff; margin-right: 2px; animation: pinchIn 1.8s ease-in-out infinite; }
+.pinch i:nth-child(2) { margin-right: 10px; animation-name: pinchIn2; }
+@keyframes pinchIn { 50% { transform: translate(5px, 5px); } }
+@keyframes pinchIn2 { 50% { transform: translate(-5px, -5px); } }
+@keyframes hintIn { from { opacity: 0; transform: translate(-50%, 10px); } }
+/* nomor catatan di kepala catatan */
+.note-h span { font-variant-numeric: tabular-nums; }
+/* sampul: judul, lalu ajakan menggulir yang hilang begitu cerita dimulai */
+.cover-hint { display: flex; align-items: center; gap: 10px; margin: -4vh 0 10vh; font: 13px var(--f-ui); color: var(--muted); transition: opacity .6s; }
+.cover-hint i { position: relative; width: 22px; height: 34px; border-radius: 11px; box-shadow: inset 0 0 0 1.5px currentColor; }
+.cover-hint i::after { content: ""; position: absolute; left: 50%; top: 7px; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: currentColor; animation: wheel 1.8s ease-in-out infinite; }
+@keyframes wheel { 60% { transform: translateY(9px); opacity: 0; } 61% { transform: none; opacity: 0; } }
+.read.moved .cover-hint { opacity: 0; }
+:root[data-theme="dark"] .hud, :root:not([data-theme="light"]) .hud { color-scheme: light; }
+/* nama antologi di atas judul */
+.anth { display: flex; align-items: center; gap: 9px; margin: 14vh 0 -10vh; font: 600 12px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.anth i { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent); }
+.anth + .title { margin-top: 14vh; }
