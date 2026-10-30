@@ -65,7 +65,9 @@
   const site = content.site || {};
   /* ---------- BAHASA: konten berbahasa dasar, terjemahannya di kunci bahasa lain (mis. "en") ---------- */
   const BASE = site.lang === 'en' ? 'en' : 'id';
-  const LANG = (l => (l === 'id' || l === 'en' ? l : site.defaultLang === 'en' || site.defaultLang === 'id' ? site.defaultLang : BASE))(store.get('lang', null));
+  // ?lang=en di alamat (pratinjau admin, tautan yang dibagikan) mengalahkan pilihan yang tersimpan
+  const URL_LANG = new URLSearchParams(location.search).get('lang');
+  const LANG = (l => (l === 'id' || l === 'en' ? l : site.defaultLang === 'en' || site.defaultLang === 'id' ? site.defaultLang : BASE))(URL_LANG || store.get('lang', null));
   const OTHER = LANG !== BASE;
   // teks antarmuka dwibahasa ditulis langsung di tempatnya: t('Indonesia', 'English')
   const t = (id, en) => (LANG === 'en' && en != null ? en : id);
@@ -104,7 +106,10 @@
       $('.lg-now', b).textContent = LANG.toUpperCase(); $('.lg-other', b).textContent = other.toUpperCase();
       b.setAttribute('aria-label', t('Baca dalam bahasa Inggris', 'Baca dalam bahasa Indonesia (read in Indonesian)'));
       b.title = other === 'en' ? 'English' : 'Bahasa Indonesia';
-      b.addEventListener('click', () => { store.set('lang', other); location.reload(); });
+      b.addEventListener('click', () => {
+        store.set('lang', other);
+        if (URL_LANG) { const u = new URL(location.href); u.searchParams.delete('lang'); location.replace(u); } else location.reload();
+      });
     }
   }
   // ambil isian terjemahan yang benar-benar terisi saja, supaya yang kosong jatuh ke bahasa dasar

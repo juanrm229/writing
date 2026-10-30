@@ -96,10 +96,12 @@
     <main class="editor-wrap" id="editorWrap">
       <div class="paper-card" id="paperCard">
         <div class="ed-toolbar" role="toolbar" aria-label="Format">
-          <div class="side-seg" id="edSide" role="radiogroup" aria-label="Sisi piringan">
-            <i class="side-thumb" aria-hidden="true"></i>
-            <button type="button" role="radio" data-side="a" aria-checked="true">Sisi A</button>
-            <button type="button" role="radio" data-side="b" aria-checked="false">Sisi B<i class="side-dot" id="edSideDot" hidden></i></button>
+          <div class="side-seg" id="edSide" role="tablist" aria-label="Sisi piringan"></div>
+          <button type="button" class="side-add" id="edAdd" title="Tambah sisi" aria-label="Tambah sisi">+</button>
+          <span class="sep" aria-hidden="true"></span>
+          <div class="side-seg lang-seg" id="edLang" role="radiogroup" aria-label="Bahasa yang disunting">
+            <button type="button" role="radio" data-l="id" aria-checked="true" title="Bahasa Indonesia (asli)">ID</button>
+            <button type="button" role="radio" data-l="en" aria-checked="false" title="Terjemahan bahasa Inggris">EN</button>
           </div>
           <span class="sep" aria-hidden="true"></span>
           <button type="button" data-fmt="b" title="Tebal (⌘B)"><b>B</b></button>
@@ -113,8 +115,9 @@
         <div class="ed-scroll" id="edScroll">
           <label class="sr-only" for="edTitle">Judul</label>
           <textarea class="ed-title" id="edTitle" rows="1" placeholder="Judul"></textarea>
-          <label class="ed-pov" for="edPov"><span>dari sisi</span><input id="edPov" autocomplete="off" spellcheck="false" placeholder="siapa yang bercerita? (boleh kosong)"></label>
-          <p class="ed-side-note" id="edSideNote" hidden>Sisi B adalah cerita yang sama, diceritakan dari sisi yang lain. Pembaca bisa membalik piringannya kapan saja. Kosongkan semuanya untuk menghapus Sisi B.</p>
+          <label class="ed-pov" for="edName" id="edNameRow" hidden><span>nama sisi A</span><input id="edName" autocomplete="off" spellcheck="false"></label>
+          <label class="ed-pov" for="edPov" id="edPovRow"><span>dari sisi</span><input id="edPov" autocomplete="off" spellcheck="false" placeholder="siapa yang bercerita? (boleh kosong)"></label>
+          <div class="ed-side-note" id="edSideNote" hidden></div>
           <p class="ed-meta" id="edMeta"></p>
           <label class="sr-only" for="edBody">Isi tulisan</label>
           <textarea class="ed-body" id="edBody" placeholder="Mulai menulis… Pisahkan paragraf (atau bait) dengan satu baris kosong."></textarea>
@@ -148,6 +151,8 @@
         <label for="dDate">Tanggal<input id="dDate" type="date"></label>
         <label for="dTime">Jam<input id="dTime" type="time"></label>
       </div>
+      <label for="dWorkTitle" id="dWorkTitleRow" hidden>Judul novel<input id="dWorkTitle" autocomplete="off"></label>
+      <p class="hint d-en" hidden>Kamu sedang menyunting terjemahan bahasa Inggris. Ringkasan, baris favorit, dan cerita di balik tulisan di bawah ini juga versi Inggrisnya.</p>
       <label for="dSlug">Alamat<span class="slug-prefix">#baca-</span><input id="dSlug" spellcheck="false" autocomplete="off"></label>
       <p class="field-err" id="slugErr" hidden></p>
       <label for="dExcerpt">Ringkasan <button type="button" class="mini-link" id="autoExcerpt">isi otomatis</button>
@@ -255,6 +260,15 @@
         <label class="row-f" for="prQuoteSrc"><span>Sumber</span><input id="prQuoteSrc" data-q="source" placeholder="siapa yang mengatakannya"></label>
       </div>
 
+      <h2 class="set-h">Dalam bahasa Inggris</h2>
+      <p class="hint">Tampil saat pembaca memilih EN di situs. Yang kosong memakai versi Indonesia.</p>
+      <div class="group">
+        <label class="row-f" for="prTagEn"><span>Tagline</span><input id="prTagEn" data-en="profile.tagline" maxlength="120"></label>
+        <label class="row-f col" for="prBioEn"><span>Bio</span><textarea id="prBioEn" data-en="profile.bio" rows="5"></textarea></label>
+        <label class="row-f col" for="prQuoteEn"><span>Kutipan</span><textarea id="prQuoteEn" data-en="profile.quote.text" rows="3"></textarea></label>
+        <label class="row-f" for="prQuoteSrcEn"><span>Sumber kutipan</span><input id="prQuoteSrcEn" data-en="profile.quote.source"></label>
+      </div>
+
       <h2 class="set-h">Tautan</h2>
       <p class="hint">Instagram, blog, Substack, YouTube, atau situs lain. Ikonnya menyesuaikan alamatnya. Email dari tab Tampilan ditambahkan otomatis.</p>
       <div class="group pr-rows" id="prLinks"></div>
@@ -284,6 +298,10 @@
         <label class="row-f" for="sReader"><span>Sapaan untuk pembaca</span><input id="sReader" data-k="readerName" placeholder="pembaca"></label>
         <label class="row-f" for="sEmail"><span>Email (opsional)</span><input id="sEmail" data-k="email" type="email" placeholder="kamu@contoh.com"></label>
         <label class="row-f col" for="sDesc"><span>Deskripsi singkat</span><textarea id="sDesc" data-k="description" rows="2"></textarea></label>
+        <label class="row-f" for="sLang"><span>Bahasa awal pembaca<small>Pembaca tetap bisa berganti lewat tombol ID/EN di situs.</small></span><select id="sLang" data-k="defaultLang"><option value="">Bahasa Indonesia</option><option value="en">English</option></select></label>
+        <label class="row-f" for="sTitleEn"><span>Judul situs (EN)<small>Kosong = sama.</small></span><input id="sTitleEn" data-en="title"></label>
+        <label class="row-f" for="sReaderEn"><span>Sapaan pembaca (EN)</span><input id="sReaderEn" data-en="readerName" placeholder="reader"></label>
+        <label class="row-f col" for="sDescEn"><span>Deskripsi singkat (EN)</span><textarea id="sDescEn" data-en="description" rows="2"></textarea></label>
         <div class="row-f">
           <span>Foto profil<small>Kosong = avatar benang dari namamu.</small></span>
           <div class="avatar-edit">

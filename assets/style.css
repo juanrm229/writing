@@ -185,7 +185,7 @@ kbd { font: 11px var(--f-ui); padding: 2px 6px; border-radius: 6px; border: 1px 
 .rd-body { font-family: var(--r-font); font-size: var(--r-size); font-weight: var(--r-weight); line-height: 1.72; text-align: var(--r-align); hyphens: auto; font-variant-ligatures: var(--r-liga); font-optical-sizing: auto; }
 .rd-body > * { margin: 0 0 1.05em; transition: opacity .4s, background-color .3s, box-shadow .3s; border-radius: 8px; }
 .rd-body .stanza { white-space: pre-line; text-align: start; margin-bottom: 1.6em; }
-.rd-body .scene { margin: 1.9em 0; text-align: center; font-size: .95em; letter-spacing: .4em; color: var(--rmut); user-select: none; }
+.rd-body .scene { margin: 1.9em 0; text-align: center; font-size: 1.35em; letter-spacing: .4em; color: var(--rmut); user-select: none; }
 .rd-body .scene span { display: inline-block; transform: translateX(.2em); }
 .rd-body.focus > .scene { opacity: .5; }
 /* karya bersisi banyak dan berbab: judul karya, deretan sisi, catatan terjemahan */
