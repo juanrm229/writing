@@ -668,7 +668,7 @@
 
   /* ---------- Kutipan: kalimat dari kedua sisi, bisa langsung dibaca dari situ ---------- */
   function quoteOf(d, seed) {
-    const ps = d.body.map((p, i) => [plain(p).replace(/\s*\n\s*/g, d.form === 'puisi' ? '\n' : ' '), i]).filter(([p]) => p.length > 40);
+    const ps = d.body.map((p, i) => [plain(p).replace(/\s*\n\s*/g, d.form === 'puisi' ? '\n' : ' '), i]).filter(([p]) => p.length > 40 && !/^(#|\||- |\d+\. )/.test(p));
     const pick = ps.filter(([p]) => p.length < 280);
     return (pick.length ? pick : ps.length ? ps : [[plain(d.body[0]), 0]])[seed % (pick.length || ps.length || 1)];
   }
@@ -935,6 +935,9 @@
   }
 
   function showReader(slug, side = 'a', ch = 1) {
+    // karya dengan pengalaman baca sendiri (mis. Anda di Sini) dibuka di halamannya; entri #baca diganti supaya tombol kembali tidak memantul
+    const ex = bySlug(slug)?.experience;
+    if (ex) { location.replace(new URL(String(ex) + location.search, location.href.split('#')[0]).href); return; }
     const w = docOf(slug, side, ch) || docOf(slug);
     if (!w) return;
     stopSpeech(false); closeFind(); stopReplay(false); hideQuotePop();
