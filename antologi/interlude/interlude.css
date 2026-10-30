@@ -23,7 +23,7 @@ body { font: 15px/1.5 var(--f-ui); }
 .cast { display: flex; justify-content: center; gap: 18px; margin-top: 26px; font-size: 13px; color: var(--muted); }
 .cast span { display: flex; align-items: center; gap: 8px; } .cast i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--f-ui); font-style: normal; background: color-mix(in srgb, var(--c) 22%, var(--panel)); color: var(--c); }
 /* bab: seperti membuka percakapan baru */
-.ch { --c: var(--muted); margin: 0 0 12vh; }
+.ch { --c: var(--muted); margin: 0 0 12vh; scroll-margin-top: 64px; }
 .ch[data-v="arka"] { --c: var(--arka); } .ch[data-v="nara"] { --c: var(--nara); } .ch[data-v="sinta"] { --c: var(--sinta); }
 .ch-h { text-align: center; margin: 0 0 22px; padding-top: 4vh; }
 .ch-n { font: 500 11px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--c); }
@@ -64,3 +64,24 @@ body { font: 15px/1.5 var(--f-ui); }
 .aa { font-family: var(--f-text); font-size: 15px; }
 .loading { text-align: center; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .msg, .nar, .loc, .split-bar span { transition: none !important; } }
+/* daftar percakapan */
+.inbox { list-style: none; margin: 0 0 10vh; padding: 0; border-top: 1px solid var(--line); }
+.inbox a { display: flex; gap: 12px; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+.inbox a:hover { background: var(--panel); }
+.inbox .av { width: 46px; height: 46px; font-style: normal; font-size: 17px; }
+.ib-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.ib-t b { font-weight: 600; font-size: 15px; } .ib-t small { color: var(--ink); font-size: 13px; }
+.ib-t em { font-style: normal; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ib-m { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11px; color: var(--dim); max-width: 34%; text-align: right; }
+.ib-m small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ib-m u { width: 9px; height: 9px; border-radius: 50%; background: var(--c); order: -1; }
+.h-t { cursor: pointer; }
+/* pesan ponsel yang memang ada di cerita */
+.sms .bub { font-family: var(--f-ui); background: #23262C; border: 1px solid color-mix(in srgb, var(--nc, var(--muted)) 30%, transparent); }
+.msg.you.sms { --nc: var(--muted); }
+.me.sms .bub { background: color-mix(in srgb, var(--c) 45%, #15171A); border: 0; }
+.rcpt { font-size: 11px; color: var(--dim); margin: 2px 6px 0; }
+/* sedang mengetik */
+.msg.typing > :not(.nm) { display: none; }
+.msg.typing::after { content: '• • •'; padding: 7px 14px; border-radius: 18px 18px 18px 6px; background: var(--you); color: var(--muted); font-size: 13px; letter-spacing: 1px; animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 50% { color: var(--dim); } }
