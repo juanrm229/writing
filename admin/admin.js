@@ -466,6 +466,7 @@
     $('#dDate').value = w.date; $('#dTime').value = w.time || '';
     $('#dSlug').value = w.slug; $('#slugErr').hidden = true;
     $('#dExcerpt').value = w.excerpt || ''; $('#dLine').value = w.line || '';
+    $$('[data-ln]').forEach(el => { el.value = (w.liner || {})[el.dataset.ln] || ''; });
     $('#delConfirm').hidden = true; $('#delBtn').hidden = false;
   }
   const flip = (btn, key, invert) => { const w = cur(); const on = btn.getAttribute('aria-checked') !== 'true'; btn.setAttribute('aria-checked', String(on)); w[key] = invert ? !on : on; };
@@ -487,6 +488,14 @@
   });
   $('#dExcerpt').addEventListener('input', e => { cur().excerpt = e.target.value; changed(); });
   $('#dLine').addEventListener('input', e => { cur().line = e.target.value; changed(); });
+  // catatan sampul: isian kosong dibuang supaya works.json tetap rapi
+  $$('[data-ln]').forEach(el => el.addEventListener('input', e => {
+    const w = cur(); if (!w) return;
+    const L = { ...(w.liner || {}), [e.target.dataset.ln]: e.target.value };
+    Object.keys(L).forEach(k => { if (!String(L[k]).trim()) delete L[k]; });
+    if (Object.keys(L).length) w.liner = L; else delete w.liner;
+    changed();
+  }));
   $('#autoExcerpt').addEventListener('click', () => {
     const w = cur(), t = plain(w.body.find(p => p.trim()) || '').replace(/\s+/g, ' ');
     const cut = t.length > 150 ? t.slice(0, t.lastIndexOf(' ', 150)) + '…' : t;

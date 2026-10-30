@@ -801,6 +801,7 @@
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
+    renderLinerCard(w);
     const rOn = RADIO && RADIO.seed;
     $('#rrKick').textContent = rOn ? 'Radio menyala' : 'Radio';
     $('#rrTitle').textContent = rOn ? `Radio “${bySlug(RADIO.seed).title}”` : 'Mulai radio dari tulisan ini';
@@ -1406,6 +1407,7 @@
     { label: 'Berhenti di akhir sisi ini', hint: 'pengatur waktu tidur', run: () => setSleep('side'), show: view === 'baca' && Sleep.mode !== 'side' },
     { label: 'Mulai radio dari tulisan ini', hint: current?.A.title, run: () => startRadio(current.A.slug), show: view === 'baca' && !!current },
     { label: 'Hentikan radio', hint: RADIO ? bySlug(RADIO.seed)?.title : '', run: stopRadio, show: !!RADIO },
+    { label: 'Catatan sampul', hint: (view === 'pilih' ? bySlug(PK.slug) : current)?.title, run: () => openLiner(view === 'pilih' ? (pkDoc() || bySlug(PK.slug)) : current), show: (view === 'baca' && !!current) || view === 'pilih' },
     { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
@@ -1465,6 +1467,7 @@
       if ($('#tsSheet').classList.contains('open')) return setSheetOpen(false);
       if (!$('#quoteModal').hidden) return closeQuote();
       if (!$('#mixModal').hidden) return closeMix();
+      if (!$('#liner').hidden) return closeLiner();
       if (RP.token) return stopReplay(true);
       if (!$('#sleepMenu').hidden) return void ($('#sleepMenu').hidden = true);
       if (!$('#sleepVeil').hidden) return void ($('#sleepVeil').hidden = true);
@@ -1519,6 +1522,7 @@
      ====================================================================== */
   const LINK_STOP = new Set(('yang dan di ke dari itu ini aku kamu ia dia kita kami mereka dengan untuk pada ada tidak tapi tetapi juga akan sudah saja karena seperti adalah sebagai atau dalam bahwa lalu kalau jika apa satu setiap lebih sangat hanya masih bisa harus pun oleh kepada para si sang begitu sampai belum telah sedang agar supaya maka namun mau ingin lagi sebuah seorang pak bu yah iya ya tak kan hal demi tanpa sejak antara setelah sebelum selalu pernah mungkin kupikir sebenarnya terlalu semua dua tiga entah kenapa sesuatu bukan tetap paling membuat menjadi punya tahu hari kali orang biasa banyak balik jadi benar awal awalnya mana daripada pertama kedua sama tentang masuk datang tahun ketika sering memang akhirnya sedikit besar kecil baru lama dulu sekarang nanti cukup sambil hingga bahkan justru kembali dapat sana sini situ apakah bagaimana berapa siapa juga suatu terasa terus kemudian rasa sendiri saat waktu lain').split(' '));
   const VEC = {};
+  let DF = {};
   const LINKS = (() => {
     const docs = WORKS.map(w => {
       const tf = {};
@@ -1527,6 +1531,7 @@
     });
     const df = {};
     docs.forEach(d => Object.keys(d.tf).forEach(t => { df[t] = (df[t] || 0) + 1; }));
+    DF = df;
     const N = docs.length;
     docs.forEach(d => {
       d.v = {}; let n = 0;
@@ -2652,6 +2657,72 @@
   });
   avatarInto($('#pillAva'), 22);
   $('#thTitle').addEventListener('click', () => go('tentang'));
+
+  /* ======================================================================
+     CATATAN SAMPUL: sampul belakang piringan, dibuka seperti gatefold
+     ====================================================================== */
+  // kata paling khas: kata yang hanya ada di tulisan ini, dibobot seberapa sering ia muncul
+  function khas(d, n = 3) {
+    const tf = {};
+    (fold(fullText(d)).match(/[a-z]+/g) || []).filter(t => t.length > 4 && !LINK_STOP.has(t)).forEach(t => { tf[t] = (tf[t] || 0) + 1; });
+    const N = WORKS.length;
+    return Object.entries(tf).map(([t, c]) => [t, (1 + Math.log(c)) * Math.log((N + 1) / ((DF[t] || 0) + .5)) + (DF[t] ? 0 : .5)]).sort((a, b) => b[1] - a[1]).slice(0, n).map(x => x[0]);
+  }
+  const partOfDay = t => { const h = +String(t || '').slice(0, 2); return isNaN(h) || !t ? '' : h < 4 ? 'dini hari' : h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18.5 ? 'sore' : 'malam'; };
+  function linerOf(d) {
+    const w = d.A, L = w.liner || {};
+    const day = new Date(w.date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const lk = linksOf(w.slug)[0], other = lk && bySlug(lk.a === w.slug ? lk.b : lk.a);
+    return {
+      when: `${day}${w.time ? ` · pukul ${w.time.replace(':', '.')}, ${partOfDay(w.time)}` : ''}`,
+      place: String(L.place || '').trim(), song: String(L.song || '').trim(), songUrl: String(L.songUrl || '').trim(), story: String(L.story || '').trim(),
+      khas: khas(d), longest: Math.max(0, ...(d.lens || [0])), sentences: (d.lens || []).length,
+      thread: other ? { w: other, words: lk.words } : null
+    };
+  }
+  function renderLinerCard(d) {
+    const L = linerOf(d);
+    $('#rlTeaser').textContent = L.story ? (L.story.split(/(?<=[.!?…])\s/)[0].slice(0, 110) + (L.story.length > 110 ? '…' : '')) : `Ditulis ${partOfDay(d.A.time) || 'suatu hari'}${L.place ? ' di ' + L.place : ''}. Kata paling khas: ${L.khas.join(', ')}.`;
+    requestAnimationFrame(() => drawThread($('#rlArt'), fullText(d), { w: 52, h: 52, pad: 3, color: catOf(d.cat).ink, seed: d.key, pins: false, weight: 1.3 }));
+  }
+  function openLiner(d) {
+    if (!d) return;
+    const w = d.A, L = linerOf(d), ink = catOf(w.cat).ink;
+    const sides = [w, w.B].filter(Boolean);
+    $('#liner').style.setProperty('--ink', ink);
+    $('#lnFTitle').textContent = w.title;
+    $('#lnFBy').textContent = `${SITE.author} · ${catOf(w.cat).label} · No. ${w.no}`;
+    const songHref = L.songUrl ? (/^https?:/i.test(L.songUrl) ? L.songUrl : 'https://' + L.songUrl) : '';
+    $('#lnBack').innerHTML = `
+      <p class="ln-kick" id="lnHead">Catatan sampul</p>
+      <h2 class="ln-title">${esc(w.title)}</h2>
+      <div class="ln-tracks">${sides.map(x => `<div class="ln-side"><h3>${x.side === 'b' ? 'Sisi B' : 'Sisi A'}</h3>
+        <button type="button" data-ln-open="${x.key}"><span>${esc(x.title)}</span><i>${fmtMS(secsOf(x))}</i></button>
+        <small>${x.pov ? 'dari sisi ' + esc(x.pov) : x.side === 'b' ? 'dari sisi yang lain' : 'cerita aslinya'} · ${num(x.words)} kata</small></div>`).join('')}${w.B ? '' : '<div class="ln-side is-empty"><h3>Sisi B</h3><small>Belum direkam.</small></div>'}</div>
+      <dl class="ln-credits">
+        <div><dt>Ditulis</dt><dd>${esc(L.when)}</dd></div>
+        ${L.place ? `<div><dt>Tempat</dt><dd>${esc(L.place)}</dd></div>` : ''}
+        ${L.song ? `<div><dt>Diputar saat menulis</dt><dd>${songHref ? `<a href="${esc(songHref)}" target="_blank" rel="noopener">${esc(L.song)} ↗</a>` : esc(L.song)}</dd></div>` : ''}
+        <div><dt>Kata paling khas</dt><dd class="ln-words">${L.khas.map(k => `<i>${esc(k)}</i>`).join('')}</dd></div>
+        <div><dt>Ritme</dt><dd>${L.sentences} ${w.form === 'puisi' ? 'baris' : 'kalimat'}, terpanjang ${L.longest} kata</dd></div>
+        ${L.thread ? `<div><dt>Benang merah</dt><dd><button type="button" data-ln-open="${L.thread.w.key}">“${esc(L.thread.w.title)}”</button> lewat ${L.thread.words.map(x => `<i>${esc(x)}</i>`).join(' dan ')}</dd></div>` : ''}
+      </dl>
+      ${L.story ? `<div class="ln-story">${L.story.split(/\n\s*\n/).map(p => `<p>${rich(p)}</p>`).join('')}</div>` : ''}
+      <p class="ln-cat">${esc(SITE.title)} · No. ${w.no} · ${new Date(w.date + 'T00:00:00').getFullYear()}</p>`;
+    const el = $('#liner');
+    el.hidden = false; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
+    requestAnimationFrame(() => { const c = $('#lnArt'), sz = Math.min(560, c.parentElement.clientWidth || 360); drawThread(c, fullText(d), { w: sz, h: sz, pad: sz * .08, color: ink, seed: d.key, weight: 1.5, animate: !reduced, frames: 90 }); });
+    $('#lnClose').focus({ preventScroll: true });
+  }
+  const closeLiner = () => { $('#liner').hidden = true; };
+  $('#lnClose').addEventListener('click', closeLiner);
+  $('#liner').addEventListener('click', e => {
+    if (e.target.id === 'liner') { closeLiner(); return; }
+    const o = e.target.closest('[data-ln-open]');
+    if (o) { const d = docByKey(o.dataset.lnOpen); closeLiner(); if (d) openPicker(d.slug, d.side); }
+  });
+  $('#rdLiner').addEventListener('click', () => openLiner(current));
+  $('#pkLiner').addEventListener('click', () => openLiner(pkDoc() || bySlug(PK.slug)));
 
   function initPutar() {
     setListen(PV.listen);
