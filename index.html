@@ -243,6 +243,7 @@
               <button type="button" id="lsPlay" class="ls-play" aria-label="Jeda"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button>
               <button type="button" id="lsNext" aria-label="Paragraf berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 6v12l8.5-6z"/><path d="M17.5 6v12"/></svg></button>
               <span class="ls-t"><b><i class="ls-eq" aria-hidden="true"><i></i><i></i><i></i></i><span id="lsLabel">Dibacakan</span></b><small id="lsPos"></small></span>
+              <button type="button" class="sleep-btn" id="lsSleep" aria-label="Pengatur waktu tidur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.6 7.6 0 0 1 9.8 4.5a7.6 7.6 0 1 0 9.7 9.7z"/></svg><span></span></button>
               <button type="button" id="lsLyr" class="ls-lyr" aria-label="Mode lirik" title="Mode lirik (L)">Lirik</button>
               <button type="button" id="lsSkip" aria-label="Sisi berikutnya" title="Sisi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 6v12l7.5-6zM12 6v12l7.5-6z"/></svg></button>
               <button type="button" id="lsStop" aria-label="Berhenti membacakan">×</button>
@@ -405,9 +406,17 @@
               <button type="button" class="ly-ic" id="lyPrev" aria-label="Kalimat sebelumnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M17 6v12l-8.5-6z"/><path d="M6.5 6v12"/></svg></button>
               <button type="button" class="ly-play" id="lyPlay" aria-label="Jeda"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button>
               <button type="button" class="ly-ic" id="lyNext" aria-label="Kalimat berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 6v12l8.5-6z"/><path d="M17.5 6v12"/></svg></button>
+              <button type="button" class="ly-ic sleep-btn" id="lySleep" aria-label="Pengatur waktu tidur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.6 7.6 0 0 1 9.8 4.5a7.6 7.6 0 1 0 9.7 9.7z"/></svg><span></span></button>
               <button type="button" class="ly-ic" id="lySkip" aria-label="Sisi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 6v12l7.5-6zM12 6v12l7.5-6z"/></svg></button>
             </div>
           </footer>
+        </div>
+        <div class="sleep-menu" id="sleepMenu" role="menu" aria-label="Pengatur waktu tidur" hidden></div>
+        <div class="sleep-veil" id="sleepVeil" role="dialog" aria-label="Selamat tidur" hidden>
+          <div class="sv-moon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A7.6 7.6 0 0 1 9.8 4.5a7.6 7.6 0 1 0 9.7 9.7z"/></svg></div>
+          <p class="sv-h">Selamat tidur.</p>
+          <p class="sv-where" id="svWhere"></p>
+          <div class="sv-act"><button type="button" id="svResume">Lanjutkan dari sini</button><button type="button" id="svClose">Tutup</button></div>
         </div>
         <button class="aa-fab" id="aaFab" type="button" aria-label="Pengaturan baca" aria-expanded="false">Aa</button>
       </section>

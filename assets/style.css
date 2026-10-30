@@ -1341,3 +1341,31 @@ output.bump { animation: bump .35s var(--spring); }
 .win.lyrics-on .aa-fab, .win.lyrics-on .lsbar, .win.lyrics-on .upnext { visibility: hidden; }
 @media (max-width: 860px) { .ly-list { padding-top: 18vh; } .ly-ctl { gap: 12px; } }
 @media (prefers-reduced-motion: reduce) { .ly-art, .ly-head .mdisc { animation: none; } }
+
+/* ================================================================
+   PENGATUR WAKTU TIDUR
+   ================================================================ */
+.sleep-btn { width: auto !important; min-width: 38px; padding: 0 8px !important; border-radius: 19px !important; display: inline-flex !important; gap: 5px; font: 600 12px var(--f-ui); font-variant-numeric: tabular-nums; }
+.sleep-btn span:empty { display: none; }
+.sleep-btn.on { background: #2B2A4A !important; color: #C9C2FF !important; }
+.ly-ic.sleep-btn { width: auto; min-width: 44px; padding: 0 12px !important; border-radius: 22px !important; }
+.ly-ic.sleep-btn.on { background: rgb(255 255 255 / .92) !important; color: #2B2A4A !important; }
+.sleep-menu { position: absolute; z-index: 45; width: 240px; padding: 8px; border-radius: 20px; background: #16161A; color: #F4F4F5; box-shadow: 0 24px 50px -16px rgb(0 0 0 / .6), 0 0 0 1px rgb(255 255 255 / .08); display: grid; gap: 2px; animation: smIn .4s var(--spring); }
+@keyframes smIn { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+.sm-h { padding: 6px 10px 8px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #9A9AA1; }
+.sleep-menu button { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: none; color: inherit; font: 500 14.5px var(--f-ui); cursor: pointer; text-align: left; }
+.sleep-menu button:hover { background: #26262C; }
+.sleep-menu button[aria-checked="true"] { color: #C9C2FF; }
+.sleep-menu button[aria-checked="true"]::after { content: "✓"; }
+.sleep-veil { position: absolute; inset: 0; z-index: 50; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; text-align: center; color: #E8E6FF;
+  background: radial-gradient(70% 60% at 50% 40%, #1C1A33, #07070C 70%); }
+.sleep-veil.in { animation: veilIn 2.4s var(--ease-out); }
+@keyframes veilIn { from { opacity: 0; } }
+.sv-moon svg { width: 54px; height: 54px; stroke-width: 1.4; fill: rgb(201 194 255 / .15); animation: moonGlow 5s ease-in-out infinite; }
+@keyframes moonGlow { 50% { filter: drop-shadow(0 0 18px rgb(201 194 255 / .55)); transform: rotate(-6deg); } }
+.sv-h { font: 400 clamp(34px, 5vw, 52px)/1.1 var(--f-read); font-style: italic; }
+.sv-where { max-width: 34ch; font-size: 14px; line-height: 1.5; color: #9C98C4; }
+.sv-act { display: flex; gap: 8px; margin-top: 14px; }
+.sv-act button { height: 42px; padding: 0 18px; border: 0; border-radius: 21px; background: #2B2A4A; color: #E8E6FF; font: 500 14px var(--f-ui); cursor: pointer; }
+.sv-act button:first-child { background: #E8E6FF; color: #1C1A33; }
+@media (prefers-reduced-motion: reduce) { .sv-moon svg { animation: none; } }
