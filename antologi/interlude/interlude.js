@@ -39,6 +39,8 @@
     kolam: ['Kolam renang', 'The swimming pool'], mobil: ['Mobil Tegar', 'Tegar’s car']
   };
   const WHO = { sinta: 'Sinta', arka: 'Arka', nara: 'Nara', tegar: 'Tegar', ibu: t('Ibu Nara', 'Nara’s mother') };
+  // status lawan bicara di kepala layar: jauh sejak bandara, online saat bertemu lagi
+  const ST = [[9, 11, 'far'], [10, 27, 'back'], [11, 50, 'on']];
   const B = [
     [0, 0, { pl: 'baru', who: 'sinta' }], [0, 66, { pl: 'jalan', who: '' }],
     [1, 0, { pl: 'tunggu', who: '' }], [1, 5, { pl: 'lama', who: 'sinta' }],
@@ -62,6 +64,11 @@
     [11, 30, { pl: 'baru', who: '' }], [11, 35, { pl: 'mobil', who: 'tegar' }],
     [11, 46, { pl: 'kedai', who: 'arka' }],
   ];
+  const DEL = {
+    '3,0': { who: 'Arka', ghost: 3, keep: 1 },
+    '7,95': { who: 'Nara', text: t('tidak apa-apa, besok saja', 'never mind, tomorrow\u2019s fine') },
+    '9,60': { who: 'Arka', text: '' }
+  };
   const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   const voiceOf = s => (/^(arka|nara|sinta)\b/i.exec(s.trim()) || [])[1]?.toLowerCase() || '';
   const DRAFT = [6, 9]; // bab 7 dan 10: halaman buku tulis Arka
@@ -86,9 +93,13 @@
     const [, name, title] = /^(.*?)\s+[—–-]\s+(.*)$/.exec(c.title) || [, '', c.title];
     html += `<section class="ch${DRAFT.includes(i) ? ' draft' : ''}" id="bab-${i + 1}" data-i="${i}" data-v="${pov}"><header class="ch-h"><span class="ch-n">${i + 1}${name ? ' · ' + esc(name) : ''}</span><h2 class="ch-t">${esc(title)}</h2></header>`;
     let shown = '';
+    const draft = DRAFT.includes(i);
+    if (draft) html += `<p class="loc"><span>${t('Kamu membaca sebagai Nara', 'You are reading as Nara')}</span></p>`;
+    if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`;
     c.body.forEach((p, k) => {
       while (bi < B.length && B[bi][0] * 1000 + B[bi][1] <= i * 1000 + k) { const d = B[bi][2]; if (d.pl != null) pl = d.pl; if (d.who != null) who = d.who; bi++; }
-      if (p.startsWith('### ')) { pov = voiceOf(p.slice(4)); last = null; html += `<h3 data-v="${pov}">${esc(p.slice(4))}</h3>`; shown = ''; return; }
+      ST.forEach(([a, b, s]) => { if (a === i && b === k) html += `<i class="stm" data-st="${s}"></i>`; });
+      if (p.startsWith('### ')) { pov = voiceOf(p.slice(4)); last = null; html += `<h3 data-v="${pov}">${esc(p.slice(4))}</h3>`; shown = ''; if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`; return; }
       if (pl && pl !== shown) { shown = pl; last = null; html += `<p class="loc" data-pl="${pl}"><span>${PIN}${esc(PL[pl][EN ? 1 : 0])}</span></p>`; }
       const first = pov === 'arka' || pov === 'sinta';
       const other = pov === 'arka' ? 'Nara' : pov === 'nara' ? 'Arka' : '';
@@ -106,19 +117,22 @@
       } else if (/“/.test(p)) {
         const parts = p.split(/(“[^”]*(?:”|$))/).map(s => s.trim()).filter(Boolean);
         const narr = parts.filter(s => !s.startsWith('“')).join(' ');
-        const [side, nm0] = speaker(narr, pov, first, last, subj); subj = null;
+        let [side, nm0] = /\b(katamu|tanyamu|jawabmu|you said|you asked)\b/i.test(narr) ? ['you', ''] : speaker(narr, pov, first, draft && last ? (last === 'me' ? 'you' : 'me') : last, subj); subj = null;
+        if (draft) { side = side === 'me' ? 'you' : 'me'; nm0 = side === 'you' ? 'Arka' : ''; } // kamu = Nara di kanan, Arka di kiri
         const nm = side === 'you' ? (nm0 || WHO[who] || '') : '';
         const label = side === 'you' && nm && (last !== 'you' || nm !== lastName);
-        html += `<div class="msg ${side}"${side === 'you' && nm ? ` data-who="${esc(nm)}"` : ''} style="${side === 'me' ? `--c:var(--${pov || 'muted'})` : ''}">${label ? `<span class="nm" style="--nc:var(--${nm.toLowerCase()})">${esc(nm)}</span>` : ''}${parts.map(s => s.startsWith('“') ? `<p class="bub">${inline(s.replace(/^“|”$/g, ''))}</p>` : `<p class="aside">${inline(s)}</p>`).join('')}</div>`;
+        html += `<div class="msg ${side}"${side === 'you' && nm ? ` data-who="${esc(nm)}"` : ''} style="${side === 'me' ? `--c:var(--${draft ? 'nara' : pov || 'muted'})` : ''}">${label ? `<span class="nm" style="--nc:var(--${nm.toLowerCase()})">${esc(nm)}</span>` : ''}${parts.map(s => s.startsWith('“') ? `<p class="bub">${inline(s.replace(/^“|”$/g, ''))}</p>` : `<p class="aside">${inline(s)}</p>`).join('')}</div>`;
         last = side; lastName = nm;
       } else {
-        html += `<p class="nar">${inline(p)}</p>`;
+        html += draft ? `<div class="msg you note" data-who="Arka">${last !== 'you' ? '<span class="nm" style="--nc:var(--arka)">Arka</span>' : ''}<p class="bub">${inline(p)}</p></div>` : `<p class="nar${pov === 'sinta' ? ' sn' : ''}">${inline(p)}</p>`;
+        if (draft) { last = 'you'; lastName = 'Arka'; }
+        const del = DEL[i + ',' + k]; if (del) html += `<i class="del" data-who="${del.who}" data-text="${esc(del.text ?? '')}" data-ghost="${del.ghost || 0}" data-keep="${del.keep || 0}"></i>`;
         const head = p.slice(0, 48), n = NAMES.find(x => new RegExp('^' + x + '\\b').test(head));
         subj = first && /^(Aku|I)\b/.test(p) ? ['me', ''] : n ? [n.toLowerCase() === pov ? 'me' : 'you', n] : null;
       }
       if (/sembilan puluh, kamu sepuluh|ninety to give/i.test(p)) html += `<div class="split"><button class="split-bar" type="button" aria-label="${t('Balik', 'Flip')}"><span class="split-a" style="flex-grow:90">90</span><span class="split-n" style="flex-grow:10">10</span></button><small>${t('Ketuk untuk membalik', 'Tap to flip')}</small></div>`;
     });
-    html += `${DRAFT.includes(i) ? `<p class="draft-f">${t('Dari buku tulis Arka', 'From Arka’s notebook')}</p>` : ''}</section>`;
+    html += `${draft ? `<p class="draft-f">${t('Dari buku tulis Arka · tidak pernah dikirim', 'From Arka\u2019s notebook · never sent')}</p>` : ''}</section>`;
   });
   // daftar percakapan: setiap bab satu utas, seperti layar depan aplikasi chat
   const seen = store.get('il:seen', -1), firstPl = i => { const b = B.find(x => x[0] === i && x[2].pl); return b ? PL[b[2].pl][EN ? 1 : 0] : ''; };
@@ -141,23 +155,26 @@
   });
 
   // kepala percakapan: siapa yang bercerita, dan di mana
-  const marks = [...document.querySelectorAll('.ch, .ch h3, .loc')], hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
+  const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')], hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
   let headKey = '', saveT = 0, maxCh = store.get('il:seen', -1);
   $('.h-t').addEventListener('click', () => scrollTo({ top: $('.inbox').offsetTop - 70, behavior: calm ? 'auto' : 'smooth' }));
   const frame = () => {
-    let v = '', loc = '';
+    let v = '', loc = '', stt = '', ci = -1;
     for (const m of marks) {
       if (m.getBoundingClientRect().top > 90) break;
-      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; } else if (m.tagName === 'H3') { v = m.dataset.v; } else loc = m.dataset.pl;
+      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; ci = +m.dataset.i; } else if (m.tagName === 'H3') { v = m.dataset.v; } else if (m.dataset.st) stt = m.dataset.st; else loc = m.dataset.pl;
     }
     const cur = marks.filter(m => m.classList.contains('ch') && m.getBoundingClientRect().top < innerHeight * .5).length - 1;
     if (cur > maxCh) { maxCh = cur; store.set('il:seen', cur); const u = document.querySelector(`[data-go="${cur}"] u`); if (u) u.remove(); }
-    const key = v + '|' + loc;
+    const other = v === 'arka' ? 'Nara' : v === 'nara' ? 'Arka' : '', draft = DRAFT.includes(ci);
+    const status = draft ? t('menulis untukmu', 'writing to you') : stt && other ? `${other} · ${stt === 'on' ? 'online' : stt === 'back' ? t('di kota yang sama', 'in the same city') : t('terakhir dilihat di kota lain', 'last seen in another city')}` : '';
+    const key = v + '|' + loc + '|' + status;
     if (key !== headKey && !typing) {
       headKey = key;
       hName.textContent = v ? v[0].toUpperCase() + v.slice(1) : 'Interlude';
       hAv.textContent = v ? v[0].toUpperCase() : 'I'; hAv.style.setProperty('--c', v ? `var(--${v})` : '');
-      hLoc.textContent = loc ? PL[loc][EN ? 1 : 0] : (v ? '' : t('Arka, Nara, Sinta', 'Arka, Nara, Sinta'));
+      hLoc.textContent = draft ? status : [loc ? PL[loc][EN ? 1 : 0] : (v ? '' : t('Arka, Nara, Sinta', 'Arka, Nara, Sinta')), status].filter(Boolean).join(' · ');
+      hLoc.classList.toggle('on', !draft && stt === 'on' && !!other);
     }
     const f = clamp(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight), 0, 1);
     pct.textContent = Math.round(f * 100) + '%';
@@ -190,13 +207,33 @@
   // pesan muncul saat digulir sampai
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let typing = 0;
+  let buzz = store.get('il:buzz', true);
+  const bz = $('#buzz'); if ('vibrate' in navigator) { bz.hidden = false; bz.setAttribute('aria-pressed', buzz); bz.onclick = () => { buzz = !buzz; store.set('il:buzz', buzz); bz.setAttribute('aria-pressed', buzz); }; }
+  // kotak ketik: kalimat yang diketik lalu dihapus
+  const comp = $('#comp'), compT = $('#compT'), compW = $('#compW'), wait = ms => new Promise(r => setTimeout(r, ms));
+  let compBusy = false;
+  const erase = async d => {
+    if (compBusy || calm) return; compBusy = true;
+    compW.textContent = d.who; comp.hidden = false; compT.innerHTML = ''; await wait(400);
+    if (+d.ghost) { // layar lelaki itu hanya terpantul: tiga baris, dua dihapus
+      for (let n = 0; n < +d.ghost; n++) { compT.insertAdjacentHTML('beforeend', `<i class="gl" style="width:${[78, 92, 64][n]}%"></i>`); await wait(500); }
+      await wait(800); const ls = compT.querySelectorAll('.gl'); for (let n = ls.length - 1; n >= +d.keep; n--) { ls[n].remove(); await wait(450); }
+    } else if (d.text) {
+      for (const ch of d.text) { compT.textContent += ch; await wait(55); } await wait(900);
+      while (compT.textContent) { compT.textContent = compT.textContent.slice(0, -1); await wait(28); }
+    } else await wait(1800); // percakapan dibuka, lalu ditutup tanpa mengetik
+    await wait(500); comp.hidden = true; compBusy = false;
+  };
   const show = el => {
     el.classList.add('in');
-    if (calm || !el.classList.contains('you') || scrollY < 200) return;
+    if (el.classList.contains('del')) return erase(el.dataset);
+    if (el.classList.contains('lock')) return setTimeout(() => el.classList.add('open'), 900);
+    if (buzz && el.classList.contains('sms') && el.classList.contains('you')) try { navigator.vibrate?.([18, 60, 18]); } catch (e) { /* tidak didukung */ }
+    if (calm || !el.classList.contains('you') || el.classList.contains('note') || scrollY < 200) return;
     el.classList.add('typing'); typing++; hLoc.textContent = (el.dataset.who ? el.dataset.who + ' ' : '') + t('sedang mengetik…', 'is typing…');
     setTimeout(() => { el.classList.remove('typing'); if (!--typing) { headKey = ''; frame(); } }, 520 + Math.min(900, el.textContent.length * 9));
   };
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' }) : null;
-  document.querySelectorAll('.msg, .nar').forEach(el => io ? io.observe(el) : el.classList.add('in'));
+  document.querySelectorAll('.msg, .nar, .del, .lock').forEach(el => io ? io.observe(el) : el.classList.add('in'));
   frame();
 })();
