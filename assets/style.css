@@ -681,7 +681,14 @@ output.bump { animation: bump .35s var(--spring); }
 @keyframes turnIn { from { opacity: 0; transform: translateY(24px) scale(.97); } }
 
 /* jam dot-matrix */
-.th-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 26px 22px 20px; }
+.th-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 26px 22px 20px; }
+.th-top > :first-child { justify-self: start; }
+.th-pills { justify-self: end; display: flex; gap: 6px; }
+.th-sieve { display: inline-flex; align-items: center; gap: 4px; padding: 0 13px; }
+.th-sieve svg { width: 17px; height: 17px; stroke-width: 2.2; }
+.th-sieve .sv-n:empty { display: none; }
+.th-sieve.on { background: var(--t-ink); color: var(--t-panel); box-shadow: none; }
+.th-sieve.on svg path { fill: currentColor; }
 .th-round, .th-pill { height: 44px; border: 0; border-radius: 22px; background: var(--t-btn); color: var(--t-ink); cursor: pointer; box-shadow: inset 0 0 0 1px var(--t-line); transition: transform .35s var(--spring), background-color .2s; }
 .th-round { width: 44px; display: grid; place-items: center; }
 .th-round svg { width: 18px; height: 18px; stroke-width: 2.6; }
@@ -1579,3 +1586,48 @@ button.pf-now-c:hover { transform: translateY(-3px); }
   .ln-credits div { grid-template-columns: 112px minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { .liner.in .ln-front, .liner.in .ln-back { animation: none; } }
+
+/* ================================================================
+   SARINGAN: satu saringan untuk tumpukan, pemilih, dan koleksi
+   ================================================================ */
+.svcard { width: min(560px, 100%); max-height: min(760px, 100%); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 14px; padding: 22px 22px 18px; border-radius: 30px; background: var(--card); color: var(--ink); box-shadow: 0 40px 80px -30px rgb(0 0 0 / .5); animation: palIn .5s var(--spring); }
+.sv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.sv-kick { font: 600 11.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sv-count { margin-top: 4px; font: 500 24px/1.1 var(--f-read, Georgia, serif); letter-spacing: -.02em; }
+.sv-mins { margin-top: 3px; font-size: 12.5px; color: var(--muted); min-height: 1em; }
+.sv-discs { display: flex; align-items: center; padding-left: 10px; }
+.sv-discs > span { margin-left: -10px; animation: svIn .45s var(--spring) both; animation-delay: calc(var(--k) * 30ms); }
+.sv-discs .mdisc { width: 34px; height: 34px; box-shadow: 0 0 0 2.5px var(--card); }
+.sv-discs > i { margin-left: 6px; font: 600 12px var(--f-ui); font-style: normal; color: var(--muted); }
+@keyframes svIn { from { opacity: 0; transform: translateX(-8px) scale(.8); } }
+.sv-body { overflow-y: auto; display: grid; gap: 16px; padding-right: 2px; margin-right: -4px; overscroll-behavior: contain; }
+.sv-g h3 { margin: 0 0 8px; font: 600 12px var(--f-ui); letter-spacing: .04em; color: var(--muted); }
+.sv-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sv-o { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 6px 0 13px; border: 0; border-radius: 18px; background: var(--chip-2); color: var(--ink); font: 500 14px var(--f-ui); cursor: pointer; transition: background-color .2s, color .2s, opacity .2s, transform .3s var(--spring); }
+.sv-o:active { transform: scale(.94); }
+.sv-o small { font-size: 11.5px; color: var(--muted); }
+.sv-o em { font: italic 15px var(--f-read, Georgia, serif); }
+.sv-o b { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: grid; place-items: center; background: var(--card); font: 600 11.5px var(--f-ui); font-variant-numeric: tabular-nums; }
+.sv-o.on { background: var(--ink); color: var(--card); }
+.sv-o.on small { color: inherit; opacity: .7; }
+.sv-o.on b { background: rgb(255 255 255 / .18); color: inherit; }
+.sv-o.zero { opacity: .38; }
+.sv-ink { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px var(--card); }
+.sv-hint { padding: 10px 14px; border-radius: 14px; background: var(--chip-2); font-size: 13.5px; line-height: 1.45; }
+.sv-hint button { border: 0; padding: 2px 9px; border-radius: 9px; background: var(--ink); color: var(--card); font: 500 13px var(--f-ui); cursor: pointer; }
+.sv-foot { display: flex; gap: 8px; }
+.sv-foot .q-btn { flex: 1; padding: 0 14px; white-space: nowrap; }
+.sv-foot .q-btn:disabled { opacity: .4; cursor: default; }
+@media (max-width: 560px) {
+  #sieve { align-items: end; padding: 0; }
+  .svcard { border-radius: 30px 30px 0 0; max-height: 88dvh; padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)); animation: svUp .45s var(--spring); }
+  .sv-foot { flex-wrap: wrap; } .sv-foot #svDone { flex-basis: 100%; order: -1; }
+}
+@keyframes svUp { from { transform: translateY(40px); opacity: 0; } }
+/* tombol saring di koleksi */
+.kc-sieve { display: inline-flex; align-items: center; gap: 5px; }
+.kc-sieve svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.kc-sieve span { max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kc-sieve .sv-n:empty { display: none; }
+.kc-filters .kc-sieve { margin-left: auto; }
+.kc-filters .kc-sieve.on { background: #fff; color: #000; }

@@ -132,14 +132,21 @@
 
   // satu karya dalam bahasa yang dipilih; bagian yang belum diterjemahkan tetap berbahasa dasar dan diberi tanda
   const hasText = b => Array.isArray(b) && b.some(p => String(p).trim());
+  // bahasa asli sebuah karya: lang di karya itu, kalau tidak ada bahasa dasar situs.
+  // Terjemahannya disimpan di kunci bahasa yang lain (karya berbahasa Indonesia → en, berbahasa Inggris → id).
+  const origOf = w => (w.lang === 'en' || w.lang === 'id' ? w.lang : BASE);
   function localize(w) {
-    const t = trOf(w), o = { ...w, ...filled({ title: t.title, excerpt: t.excerpt, line: t.line, pov: t.pov, sideTitle: t.sideTitle }) };
-    o.lost = OTHER && hasText(w.body) && !hasText(t.body);
+    const wl = origOf(w), away = LANG !== wl, lostAs = away ? wl : false;
+    const t = (away && w[LANG]) || {}, o = { ...w, ...filled({ title: t.title, excerpt: t.excerpt, line: t.line, pov: t.pov, sideTitle: t.sideTitle }) };
+    o.lang = wl;
+    o.lost = hasText(w.body) && !hasText(t.body) && lostAs;
     if (hasText(t.body)) o.body = t.body;
     const extra = Array.isArray(w.sides) ? w.sides : w.sideB ? [w.sideB] : [];
-    o.sides = extra.map((x, i) => { const y = (t.sides || (t.sideB ? [t.sideB] : []))[i] || {}; return { ...x, ...filled({ title: y.title, pov: y.pov }), body: hasText(y.body) ? y.body : x.body, lost: OTHER && !hasText(y.body) }; });
-    o.chapters = (Array.isArray(w.chapters) ? w.chapters : []).map((c, i) => { const y = (t.chapters || [])[i] || {}; return { ...c, ...filled({ title: y.title }), body: hasText(y.body) ? y.body : c.body, lost: OTHER && hasText(c.body) && !hasText(y.body) }; });
+    o.sides = extra.map((x, i) => { const y = (t.sides || (t.sideB ? [t.sideB] : []))[i] || {}; return { ...x, ...filled({ title: y.title, pov: y.pov }), body: hasText(y.body) ? y.body : x.body, lost: !hasText(y.body) && lostAs }; });
+    o.chapters = (Array.isArray(w.chapters) ? w.chapters : []).map((c, i) => { const y = (t.chapters || [])[i] || {}; return { ...c, ...filled({ title: y.title }), body: hasText(y.body) ? y.body : c.body, lost: hasText(c.body) && !hasText(y.body) && lostAs }; });
     o.liner = { ...(w.liner || {}), ...filled(t.liner) };
+    const en = w[wl === 'en' ? 'id' : 'en'] || {};
+    o.bilingual = hasText(en.body) || (en.sides || en.sideB ? [...(en.sides || []), en.sideB] : []).some(x => hasText(x?.body)) || (en.chapters || []).some(c => hasText(c?.body));
     return o;
   }
   const WORKS = (Array.isArray(content.works) ? content.works : [])
@@ -242,6 +249,8 @@
     if (!w || !h) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    // ukuran tampil dikunci ke ukuran gambar; tanpa ini kanvas tampil sebesar pikselnya (2× di layar retina)
+    if (o.w) { canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; }
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -407,6 +416,7 @@
   const lastDoc = () => { const l = store.get('last', null); return l && docByKey(l.key); };
 
   /* ---------- ANTREAN: urutan baca milik pembaca, diputar lebih dulu dari album ---------- */
+  const SIEVE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16l-6 7.2V19l-4-1.6v-4.2z"/></svg>';
   const QICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h11M4 11.5h11M4 16.5h7"/><path d="M17.5 14v6M14.5 17h6"/></svg>';
   let QUEUE = store.get('queue', []).filter(k => docByKey(k));
   let pendingQueue = false;
@@ -649,8 +659,8 @@
     const pass = w => kFilter === 'semua' || (kFilter === 'dua' && multi(w)) || (kFilter === 'bab' && !!w.CH) ||
       (kFilter === 'belum' && tracksOf(w).some(d => !readSet.has(d.key))) ||
       (kFilter === 'selesai' && tracksOf(w).some(d => ST.done.includes(d.key)));
-    const list = all().filter(pass);
-    return `<div class="kc-filters" role="radiogroup" aria-label="${t('Saring koleksi', 'Filter collection')}">${K_FILTERS.filter(([k]) => k !== 'bab' || WORKS.some(w => w.CH)).map(([k, l]) => `<button type="button" role="radio" data-kf="${k}" aria-checked="${k === kFilter}">${l}</button>`).join('')}</div>
+    const list = all().filter(w => pass(w) && (!svOn() || svMatch(w)));
+    return `<div class="kc-filters" role="radiogroup" aria-label="${t('Saring koleksi', 'Filter collection')}">${K_FILTERS.filter(([k]) => k !== 'bab' || WORKS.some(w => w.CH)).map(([k, l]) => `<button type="button" role="radio" data-kf="${k}" aria-checked="${k === kFilter}">${l}</button>`).join('')}<button type="button" class="kc-sieve${svOn() ? ' on' : ''}" data-sieve>${SIEVE_ICON}<span>${svOn() ? esc(svSummary()) : t('Saring', 'Filter')}</span><b class="sv-n">${svOn() ? svWorks().length : ''}</b></button></div>
       <ul class="tk-list kc">${list.map((w, i) => `<li style="--k:${i}"><button type="button" data-pick="${w.key}">${mdisc(w)}
         <span class="sg-t"><b>${esc(w.title)}</b><span>${esc(catOf(w.cat).label)} · ${w.CH ? `${w.CH.length} ${t('bab', 'chapters')} · ${w.minutes} ${t('mnt', 'min')}` : multi(w) ? `${w.S.length} ${t('sisi', 'sides')} · ${w.S.reduce((n, d) => n + d.minutes, 0)} ${t('mnt', 'min')}` : `${w.minutes} ${t('mnt', 'min')}`}</span></span>
         <span class="kc-ab">${workRings(w)}</span></button></li>`).join('') || `<li class="tk-none">${t('Tidak ada piringan di sini.', 'No records here.')}</li>`}</ul>`;
@@ -859,6 +869,7 @@
     const w = current;
     const mark = t => (q ? markText(t, q) : rich(t));
     body.className = 'rd-body' + (focusMode ? ' focus' : '') + (reveal && !reduced ? ' reveal' : '');
+    body.lang = w.lost || LANG;
     body.innerHTML = w.body.map((p, i) => isBreak(p) ? SCENE : `<p${w.form === 'puisi' ? ' class="stanza"' : ''} style="--k:${Math.min(i, 10)}">${mark(p)}</p>`).join('');
   }
   function markText(t, q) {
@@ -919,7 +930,8 @@
     nav.hidden = !list;
     if (list) nav.innerHTML = list.map(x => `<a href="${hrefOf(x)}" class="${x === d ? 'cur' : ''}${readSet.has(x.key) ? ' seen' : ''}" ${x === d ? 'aria-current="page"' : ''} title="${esc(x.title)}">${w.CH ? x.ch : SL(x)}<span>${esc(x.title)}</span></a>`).join('');
     $('#rdLost').hidden = !d.lost;
-    $('#rdLost').textContent = t('Bagian ini belum tersedia dalam bahasa Indonesia, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in English yet, so it’s shown in the original Indonesian.');
+    $('#rdLost').textContent = d.lost === 'en' ? t('Tulisan ini ditulis dalam bahasa Inggris dan belum diterjemahkan, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in Indonesian yet, so it’s shown in the original English.')
+      : t('Bagian ini belum tersedia dalam bahasa Indonesia, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in English yet, so it’s shown in the original Indonesian.');
   }
 
   function showReader(slug, side = 'a', ch = 1) {
@@ -1289,7 +1301,7 @@
     const paras = [...body.children], d = current;
     Now.play(d);
     // suara mengikuti bahasa teksnya: bagian yang belum diterjemahkan tetap dibacakan dalam bahasa dasarnya
-    const tongue = (current?.lost ? BASE : LANG) === 'en' ? 'en-GB' : 'id-ID';
+    const tongue = (current?.lost || LANG) === 'en' ? 'en-GB' : 'id-ID';
     const vs = speechSynthesis.getVoices();
     const voice = tongue === 'en-GB' ? vs.find(v => /^en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) : vs.find(v => /^id|indones/i.test(v.lang + v.name));
     const next = s => {
@@ -1570,6 +1582,8 @@
     { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
+    { label: svOn() ? t('Ubah saringan', 'Change the filter') : t('Saring koleksi', 'Filter the collection'), hint: svOn() ? svSummary() : t('jenis, panjang, benang', 'kind, length, threads'), run: openSieve },
+    ...(svOn() ? [{ label: t('Hapus saringan', 'Clear the filter'), hint: svSummary(), run: () => { SV = {}; applySieve(); } }] : []),
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
     { label: 'Ke piringan', hint: 'halaman awal', run: () => go('putar') },
     { label: 'Profil ' + SITE.author, hint: 'tentang penulis', run: () => go('tentang') },
@@ -1626,6 +1640,7 @@
       if ($('#tsSheet').classList.contains('open')) return setSheetOpen(false);
       if (!$('#quoteModal').hidden) return closeQuote();
       if (!$('#mixModal').hidden) return closeMix();
+      if (!$('#sieve').hidden) return closeSieve();
       if (!$('#liner').hidden) return closeLiner();
       if (RP.token) return stopReplay(true);
       if (!$('#sleepMenu').hidden) return void ($('#sleepMenu').hidden = true);
@@ -2068,11 +2083,15 @@
   function paintDiscs() { discs.forEach((el, slug) => paintDisc(el, bySlug(slug))); }
   let crateOrder = [];
   function rankWorks() {
-    const pool = WORKS.filter(w => PV.form === 'semua' || w.form === PV.form);
+    // saringan menyisihkan piringan; kalau tak ada yang lolos, tumpukannya tetap utuh
+    const sieved = svOn() ? WORKS.filter(w => svMatch(w)) : WORKS, base = sieved.length ? sieved : WORKS;
+    const pool = base.filter(w => PV.form === 'semua' || w.form === PV.form);
     const score = w => Math.abs(w.minutes - PV.min) + (w.minutes > PV.min ? 3 : 0) + (readSet.has(w.slug) ? .6 : 0);
-    return [...pool.sort((a, b) => score(a) - score(b)), ...WORKS.filter(w => !pool.includes(w))];
+    return [...pool.sort((a, b) => score(a) - score(b)), ...base.filter(w => !pool.includes(w))];
   }
   function layoutCrate() {
+    // piringan yang tersaring keluar dari tumpukan
+    discs.forEach((el, slug) => { if (!crateOrder.some(w => w.slug === slug)) { el.dataset.hide = 'true'; el.classList.remove('top'); el.style.setProperty('--i', 6); el.style.zIndex = 0; el.tabIndex = -1; } });
     crateOrder.forEach((w, i) => {
       const el = discs.get(w.slug);
       el.style.setProperty('--i', i);
@@ -2640,7 +2659,128 @@
   const todayMix = () => dailyOf(wibDate());
   const inHours = ms => { const m = Math.round(ms / 60000), mn = t(' menit', ' min'); return m < 60 ? m + mn : Math.floor(m / 60) + t(' jam', ' h') + (m % 60 ? ' ' + (m % 60) + mn : ''); };
 
-  const albumOf = id => ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id))) || (/^harian-/.test(id || '') ? dailyOf(id.slice(7)) : undefined) || (id === 'semua' ? allAlbum() : undefined);
+  /* ======================================================================
+     SARINGAN: satu saringan untuk tumpukan piringan, pemilih, dan koleksi.
+     Di dalam satu kelompok pilihannya "atau", antarkelompok "dan". Setiap pilihan
+     menunjukkan berapa piringan yang tersisa kalau ia ikut dipilih, dan kalau hasilnya
+     kosong, saringan menyarankan satu pilihan yang paling layak dilepas.
+     ====================================================================== */
+  let SV = (o => (o && typeof o === 'object' ? o : {}))(store.get('saring', {}));
+  const saveSv = () => store.set('saring', SV);
+  const svOn = () => Object.values(SV).some(a => Array.isArray(a) && a.length);
+  // panjang yang dihitung adalah satu kali duduk: rata-rata satu sisi atau satu bab
+  const sitting = w => Math.round(tracksOf(w).reduce((n, d) => n + d.minutes, 0) / tracksOf(w).length);
+  const wordSet = new Map();
+  const wordsIn = w => wordSet.get(w.slug) || (wordSet.set(w.slug, new Set(fold(tracksOf(w).map(fullText).join(' ')).match(/[a-z]+/g) || [])), wordSet.get(w.slug));
+  const stateOf = w => {
+    const ds = tracksOf(w);
+    if (ds.every(d => ST.done.includes(d.key))) return 'selesai';
+    return ds.some(d => readSet.has(d.key) || progOf(d) > .02) ? 'tengah' : 'belum';
+  };
+  // benang: kata khas yang muncul di lebih dari satu karya didahulukan, lalu kata khas terkuat
+  const EN_FILLER = new Set('about above after again against along already although always among another anyone anything around because become before behind being below between beyond cannot could during either enough every everything first found further getting going having itself might myself never nothing often other others perhaps quite rather really right seems should since something sometimes still their theirs there these thing things think those though thought through toward towards turned under until upon wanted where whether which while within without would yours yourself current least later little looked people seemed began began finally simply almost knows known'.split(' '));
+  let svWordsCache = null;
+  function svWords() {
+    if (svWordsCache) return svWordsCache;
+    const score = {};
+    // kata dari tulisan yang berbahasa sama dengan pembaca, tanpa kata pengisi bahasa Inggris
+    const same = DOCS.filter(d => (d.lost || LANG) === LANG), pool = same.length >= 3 ? same : DOCS;
+    pool.forEach(d => khas(d, 6).filter(k => !EN_FILLER.has(k)).slice(0, 4).forEach((k, i) => { score[k] = (score[k] || 0) + (4 - i); }));
+    const reach = k => WORKS.filter(w => wordsIn(w).has(k)).length;
+    return (svWordsCache = Object.keys(score).map(k => [k, score[k], reach(k)])
+      .sort((a, b) => (b[2] > 1) - (a[2] > 1) || b[1] - a[1]).slice(0, 12).map(x => x[0]));
+  }
+  const SV_GROUPS = () => [
+    { id: 'cat', label: t('Jenis', 'Kind'), opts: [...new Set(WORKS.map(w => w.cat))].map(c => ({ v: c, label: catOf(c).label, ink: catOf(c).ink })), test: (w, v) => w.cat === v },
+    { id: 'len', label: t('Sekali duduk', 'One sitting'), opts: [
+      { v: 'singkat', label: t('Sebentar', 'Brief'), hint: '≤ 7 ' + t('mnt', 'min') },
+      { v: 'sedang', label: t('Secangkir kopi', 'A cup of coffee'), hint: '8–20 ' + t('mnt', 'min') },
+      { v: 'panjang', label: t('Tenggelam', 'Sink in'), hint: '> 20 ' + t('mnt', 'min') }],
+      test: (w, v) => { const m = sitting(w); return v === 'singkat' ? m <= 7 : v === 'sedang' ? m > 7 && m <= 20 : m > 20; } },
+    { id: 'state', label: t('Bagimu', 'For you'), opts: [
+      { v: 'belum', label: t('Belum diputar', 'Not played') }, { v: 'tengah', label: t('Di tengah jalan', 'Halfway') }, { v: 'selesai', label: t('Sudah selesai', 'Finished') }],
+      test: (w, v) => stateOf(w) === v },
+    { id: 'shape', label: t('Bentuk', 'Shape'), opts: [
+      { v: 'banyak', label: t('Bersisi banyak', 'Many sides') }, { v: 'bab', label: t('Berbab', 'In chapters') },
+      { v: 'satu', label: t('Satu sisi', 'One side') }, { v: 'dwi', label: t('Dua bahasa', 'Two languages') }],
+      test: (w, v) => (v === 'banyak' ? multi(w) : v === 'bab' ? !!w.CH : v === 'satu' ? !w.CH && !multi(w) : !!w.bilingual) },
+    { id: 'word', label: t('Benang', 'Threads'), opts: svWords().map(k => ({ v: k, label: k })), test: (w, v) => wordsIn(w).has(v) }
+  ];
+  // pilihan yang tidak dimiliki satu karya pun tidak ditampilkan
+  const svGroups = () => SV_GROUPS().map(g => ({ ...g, opts: g.opts.filter(o => (SV[g.id] || []).includes(o.v) || WORKS.some(w => g.test(w, o.v))) }));
+  // lolos semua kelompok kecuali yang dilewati (untuk hitungan per pilihan)
+  function svMatch(w, skip, sel = SV) {
+    return SV_GROUPS().every(g => g.id === skip || !(sel[g.id] || []).length || sel[g.id].some(v => g.test(w, v)));
+  }
+  const svWorks = (sel = SV) => WORKS.filter(w => svMatch(w, null, sel));
+  // judul ringkas saringan yang aktif, dipakai tombol dan album hasilnya
+  function svSummary() {
+    if (!svOn()) return '';
+    const parts = SV_GROUPS().flatMap(g => (SV[g.id] || []).map(v => g.opts.find(o => o.v === v)?.label || v));
+    return parts.length > 2 ? parts.slice(0, 2).join(' · ') + ` +${parts.length - 2}` : parts.join(' · ');
+  }
+  function sieveAlbum() {
+    const ws = svWorks();
+    if (!ws.length) return undefined;
+    return { id: 'saringan', title: svOn() ? t('Saringan: ', 'Filtered: ') + svSummary() : t('Semua tulisan', 'All writing'), note: t('Hasil saringanmu, diputar berurutan.', 'Your filtered results, played in order.'), tracks: ws.flatMap(tracksOf) };
+  }
+  function renderSieve() {
+    const res = svWorks(), groups = svGroups();
+    $('#svCount').textContent = t(`${res.length} dari ${WORKS.length} piringan`, `${res.length} of ${WORKS.length} records`);
+    $('#svMins').textContent = res.length ? `${res.flatMap(tracksOf).length} ${t('sisi', 'sides')} · ${res.flatMap(tracksOf).reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}` : '';
+    $('#svDiscs').innerHTML = res.slice(0, 9).map((w, i) => `<span style="--k:${i}" title="${esc(w.title)}">${mdisc(w)}</span>`).join('') + (res.length > 9 ? `<i>+${res.length - 9}</i>` : '');
+    $('#svBody').innerHTML = groups.filter(g => g.opts.length > 1 || (SV[g.id] || []).length || g.id === 'word' && g.opts.length).map(g => `<section class="sv-g"><h3>${g.label}</h3><div class="sv-opts">${g.opts.map(o => {
+      const on = (SV[g.id] || []).includes(o.v);
+      // berapa yang tersisa kalau pilihan ini ikut dipilih
+      const n = WORKS.filter(w => svMatch(w, g.id) && (g.test(w, o.v) || (!on && (SV[g.id] || []).some(v => g.test(w, v))))).length;
+      return `<button type="button" class="sv-o${on ? ' on' : ''}${!on && !n ? ' zero' : ''}" data-g="${g.id}" data-v="${esc(o.v)}" aria-pressed="${on}">${o.ink ? `<i class="sv-ink" style="--c:${o.ink}"></i>` : ''}${g.id === 'word' ? '<em>' + esc(o.label) + '</em>' : esc(o.label)}${o.hint ? `<small>${o.hint}</small>` : ''}<b>${n}</b></button>`;
+    }).join('')}</div></section>`).join('');
+    // hasil kosong: cari satu pilihan yang kalau dilepas memberi hasil terbanyak
+    let hint = '';
+    if (!res.length && svOn()) {
+      let best = null;
+      groups.forEach(g => (SV[g.id] || []).forEach(v => {
+        const sel = { ...SV, [g.id]: SV[g.id].filter(x => x !== v) }, n = svWorks(sel).length;
+        if (n && (!best || n > best.n)) best = { g: g.id, v, n, label: g.opts.find(o => o.v === v)?.label || v };
+      }));
+      hint = best ? `${t('Tak ada yang lolos.', 'Nothing gets through.')} <button type="button" data-relax="${best.g}" data-v="${esc(best.v)}">${t(`Lepas “${esc(best.label)}”`, `Drop “${esc(best.label)}”`)}</button> ${t(`untuk ${best.n} piringan.`, `for ${best.n} ${best.n === 1 ? 'record' : 'records'}.`)}` : t('Tak ada yang lolos. Coba hapus saringan.', 'Nothing gets through. Try clearing the filter.');
+    }
+    $('#svHint').innerHTML = hint; $('#svHint').hidden = !hint;
+    $('#svReset').disabled = !svOn();
+    $('#svPlay').disabled = !res.length;
+    syncSieveBtns();
+  }
+  function syncSieveBtns() {
+    const on = svOn(), n = svWorks().length;
+    $$('[data-sieve]').forEach(b => {
+      b.classList.toggle('on', on);
+      $('.sv-n', b) && ($('.sv-n', b).textContent = on ? n : '');
+      b.setAttribute('aria-label', on ? t(`Saringan aktif: ${svSummary()}, ${n} piringan`, `Filter on: ${svSummary()}, ${n} records`) : t('Saring koleksi', 'Filter the collection'));
+    });
+  }
+  // terapkan ke tumpukan piringan, pemilih, dan koleksi
+  function applySieve() {
+    saveSv(); renderSieve();
+    rerank();
+    sievePicker();
+    if (view === 'sapa' && feedMode === 'koleksi') renderFeed();
+  }
+  function sievePicker() { $$('.pk-item', pkCar).forEach(it => { it.hidden = svOn() && !svMatch(bySlug(it.dataset.slug)) && it.dataset.slug !== PK.slug; }); }
+  function openSieve() { svWordsCache = null; renderSieve(); $('#sieve').hidden = false; $('.sv-o', $('#svBody'))?.focus({ preventScroll: true }); }
+  const closeSieve = () => { $('#sieve').hidden = true; };
+  $('#sieve').addEventListener('click', e => {
+    if (e.target.id === 'sieve') { closeSieve(); return; }
+    const o = e.target.closest('[data-g]');
+    if (o) { const g = o.dataset.g, v = o.dataset.v, cur = SV[g] || []; SV = { ...SV, [g]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }; if (!SV[g].length) delete SV[g]; applySieve(); return; }
+    const r = e.target.closest('[data-relax]');
+    if (r) { const g = r.dataset.relax; SV = { ...SV, [g]: (SV[g] || []).filter(x => x !== r.dataset.v) }; if (!SV[g].length) delete SV[g]; applySieve(); }
+  });
+  $('#svReset').addEventListener('click', () => { SV = {}; applySieve(); });
+  $('#svDone').addEventListener('click', closeSieve);
+  $('#svPlay').addEventListener('click', () => { closeSieve(); playAlbum('saringan', 0); });
+  document.addEventListener('click', e => { if (e.target.closest('[data-sieve]')) openSieve(); });
+
+  const albumOf = id => (id === 'saringan' ? sieveAlbum() : undefined) || ALBUMS.find(a => a.id === id) || ((m => m && mixAlbum(m))(MIXES.find(m => m.id === id))) || (/^harian-/.test(id || '') ? dailyOf(id.slice(7)) : undefined) || (id === 'semua' ? allAlbum() : undefined);
   // semua sisi, dari yang terbaru; dipakai tombol "Putar semua" di halaman profil
   let allCache = null;
   function allAlbum() {
@@ -2944,6 +3084,7 @@
   $('#pkLiner').addEventListener('click', () => openLiner(pkDoc() || bySlug(PK.slug)));
 
   function initPutar() {
+    sievePicker(); syncSieveBtns();
     setListen(PV.listen);
     requestAnimationFrame(() => setFace(pkIndex(), false));
     tick(); setInterval(tick, 10000);

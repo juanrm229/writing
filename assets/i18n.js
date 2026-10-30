@@ -275,6 +275,11 @@ window.JM_EN = {
   'Diputar saat menulis': 'Playing while writing',
   'Kata paling khas': 'Most telling words',
   'Penulis': 'Writer',
+  'Saringan': 'Filter',
+  'Saring koleksi': 'Filter the collection',
+  'Hapus saringan': 'Clear filter',
+  'Putar hasilnya': 'Play the results',
+  'Lihat hasilnya': 'See the results',
   // pemberitahuan
   'Antrean dikosongkan.': "Queue cleared.",
   'Antreanmu masih kosong.': "Your queue is empty.",
