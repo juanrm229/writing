@@ -243,6 +243,7 @@
               <button type="button" id="lsPlay" class="ls-play" aria-label="Jeda"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button>
               <button type="button" id="lsNext" aria-label="Paragraf berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 6v12l8.5-6z"/><path d="M17.5 6v12"/></svg></button>
               <span class="ls-t"><b><i class="ls-eq" aria-hidden="true"><i></i><i></i><i></i></i><span id="lsLabel">Dibacakan</span></b><small id="lsPos"></small></span>
+              <button type="button" id="lsLyr" class="ls-lyr" aria-label="Mode lirik" title="Mode lirik (L)">Lirik</button>
               <button type="button" id="lsSkip" aria-label="Sisi berikutnya" title="Sisi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 6v12l7.5-6zM12 6v12l7.5-6z"/></svg></button>
               <button type="button" id="lsStop" aria-label="Berhenti membacakan">×</button>
             </div>
@@ -387,6 +388,26 @@
               <button class="back-float" id="advBack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>Kembali</button>
             </div>
           </div>
+        </div>
+        <!-- mode lirik -->
+        <div class="lyrics" id="lyrics" role="dialog" aria-modal="true" aria-label="Mode lirik" hidden>
+          <canvas class="ly-art" id="lyArt" aria-hidden="true"></canvas>
+          <header class="ly-head">
+            <button type="button" class="ly-ic" id="lyClose" aria-label="Tutup lirik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></button>
+            <span class="mdisc" id="lyDisc" aria-hidden="true"><i></i></span>
+            <span class="ly-t"><b id="lyTitle"></b><small id="lySub"></small></span>
+          </header>
+          <div class="ly-list" id="lyList" aria-live="off"></div>
+          <button type="button" class="ly-back" id="lyBack" hidden>Kembali ke baris</button>
+          <footer class="ly-foot">
+            <div class="ly-prog" aria-hidden="true"><i id="lyProg"></i></div>
+            <div class="ly-ctl">
+              <button type="button" class="ly-ic" id="lyPrev" aria-label="Kalimat sebelumnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M17 6v12l-8.5-6z"/><path d="M6.5 6v12"/></svg></button>
+              <button type="button" class="ly-play" id="lyPlay" aria-label="Jeda"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button>
+              <button type="button" class="ly-ic" id="lyNext" aria-label="Kalimat berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 6v12l8.5-6z"/><path d="M17.5 6v12"/></svg></button>
+              <button type="button" class="ly-ic" id="lySkip" aria-label="Sisi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 6v12l7.5-6zM12 6v12l7.5-6z"/></svg></button>
+            </div>
+          </footer>
         </div>
         <button class="aa-fab" id="aaFab" type="button" aria-label="Pengaturan baca" aria-expanded="false">Aa</button>
       </section>

@@ -241,7 +241,7 @@
     win.dataset.view = v;
     syncPill();
     if (v === 'sapa' && typeof renderGreet === 'function') { renderGreet(true); if (feedMode !== 'search') renderFeed(false); }
-    if (v !== 'baca') { if (typeof hideUpNext === 'function') hideUpNext(); stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
+    if (v !== 'baca') { if (typeof Lyr !== 'undefined') Lyr.hide(); if (typeof hideUpNext === 'function') hideUpNext(); stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
     const btns = $$('.pill [data-go]');
@@ -900,6 +900,7 @@
       $('#unDisc').classList.toggle('b', n.d.side === 'b');
     }
     unEl.hidden = false; win.classList.add('upnext-on');
+    if (typeof Lyr !== 'undefined') Lyr.ending(n);
     unEl.classList.remove('in'); void unEl.offsetWidth; unEl.classList.add('in');
     const auto = PV.autoplay !== false && !n.end;
     $('#unAuto').setAttribute('aria-checked', String(PV.autoplay !== false));
@@ -919,7 +920,7 @@
     if (UN.left <= 0) { playUpNext(); return; }
     UN.raf = requestAnimationFrame(tickUpNext);
   }
-  function hideUpNext() { cancelAnimationFrame(UN.raf); unEl.hidden = true; UN.next = null; win.classList.remove('upnext-on'); }
+  function hideUpNext() { cancelAnimationFrame(UN.raf); unEl.hidden = true; UN.next = null; win.classList.remove('upnext-on'); if (typeof Lyr !== 'undefined') Lyr.ending(null); }
   function playUpNext() {
     const d = UN.next, listen = UN.listen, viaQ = UN.queue;
     hideUpNext();
@@ -1049,49 +1050,72 @@
     };
   })();
 
-  let speaking = false, speakIdx = 0, speakTok = 0, speakPaused = false;
+  // Dibacakan per kalimat (per baris untuk puisi): jeda dan lanjut jadi tepat, dan lirik bisa ikut menyala kalimat demi kalimat.
+  let speaking = false, speakIdx = 0, speakSent = 0, speakTok = 0, speakPaused = false, PLAN = [], planFor = null;
+  function speechPlan() {
+    if (planFor === current?.key && PLAN.length) return PLAN;
+    PLAN = []; planFor = current?.key;
+    if (!current) return PLAN;
+    current.body.forEach((p, para) => {
+      const us = units(plain(p), current.form === 'puisi');
+      (us.length ? us : [plain(p)]).forEach((text, k) => PLAN.push({ para, text, first: k === 0 }));
+    });
+    return PLAN;
+  }
+  const firstOf = para => Math.max(0, speechPlan().findIndex(x => x.para === para));
   function stopSpeech(hard = true) {
     speakTok++; speaking = false; speakPaused = false;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
     $('#rsVoice').setAttribute('aria-pressed', 'false');
-    Now.stop(hard); renderLs();
+    Now.stop(hard); renderLs(); Lyr.sync();
   }
   function pauseSpeech() {
     if (!speaking) return;
     speakTok++; speaking = false; speakPaused = true;
     speechSynthesis.cancel();
     $('#rsVoice').setAttribute('aria-pressed', 'false');
-    Now.pause(); renderLs();
+    Now.pause(); renderLs(); Lyr.sync();
   }
+  // mulai dari paragraf (angka) atau dari kalimat tertentu ({ sent })
   function startSpeech(from = 0) {
     if (!('speechSynthesis' in window)) { toast('Peramban ini belum bisa membacakan teks.'); return; }
     speechSynthesis.cancel();
+    const plan = speechPlan(); if (!plan.length) return;
     const tok = ++speakTok;
     speaking = true; speakPaused = false;
     $('#rsVoice').setAttribute('aria-pressed', 'true');
     const paras = [...body.children], d = current;
     Now.play(d);
     const voice = speechSynthesis.getVoices().find(v => /^id|indones/i.test(v.lang + v.name));
-    const next = j => {
+    const next = s => {
       if (tok !== speakTok) return;
-      $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
-      if (j >= paras.length) {
-        // selesai dibacakan sampai paragraf terakhir: audio senyap dibiarkan sebentar supaya sisi berikutnya bisa menyambung
+      if (s >= plan.length) {
+        $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
+        // selesai dibacakan sampai kalimat terakhir: audio senyap dibiarkan sebentar supaya sisi berikutnya bisa menyambung
         stopSpeech(false);
         if (current) { if (!ST.done.includes(current.key)) { ST.done = [...ST.done, current.key]; saveST(); } UN.shownFor = null; showUpNext(current, true); }
         return;
       }
-      speakIdx = j; renderLs(); Now.position(j, paras.length, d);
-      paras[j].classList.add('speaking');
-      scrollToPara(paras[j]);
-      const u = new SpeechSynthesisUtterance(paras[j].textContent);
+      const it = plan[s], changed = it.para !== speakIdx || s === start;
+      speakSent = s; speakIdx = it.para;
+      if (changed) {
+        $$('.speaking', body).forEach(p => p.classList.remove('speaking'));
+        paras[it.para]?.classList.add('speaking');
+        if (paras[it.para] && !Lyr.open) scrollToPara(paras[it.para]);
+      }
+      renderLs(); Now.position(s, plan.length, d); Lyr.sync();
+      const u = new SpeechSynthesisUtterance(it.text);
       u.lang = 'id-ID'; if (voice) u.voice = voice; u.rate = .95;
-      u.onend = () => next(j + 1); u.onerror = () => { if (tok === speakTok) stopSpeech(); };
+      // bila peramban mengirim posisi kata, baris lirik terisi seperti karaoke
+      u.onboundary = e => { if (tok === speakTok && e.charIndex != null) Lyr.fill(s, (e.charIndex + (e.charLength || 0)) / Math.max(1, it.text.length)); };
+      u.onend = () => { Lyr.fill(s, 1); next(s + 1); }; u.onerror = () => { if (tok === speakTok) stopSpeech(); };
       speechSynthesis.speak(u);
     };
     if (isMobile()) setSheet(false);
-    next(clamp(from, 0, paras.length - 1));
+    const start = typeof from === 'object' ? clamp(from.sent, 0, plan.length - 1) : firstOf(clamp(from, 0, paras.length - 1));
+    speakIdx = -1;
+    next(start);
   }
   // bilah dengar di dalam kartu baca, dengan tombol yang sama seperti di layar kunci
   function renderLs() {
@@ -1104,7 +1128,7 @@
     $('#lsLabel').textContent = speakPaused ? 'Dijeda' : 'Dibacakan';
     $('#lsPos').textContent = `paragraf ${speakIdx + 1} dari ${body.children.length}`;
   }
-  const resumeSpeech = () => { if (current && !speaking) startSpeech(speakPaused ? speakIdx : speakIdx || 0); };
+  const resumeSpeech = () => { if (current && !speaking) startSpeech(speakPaused ? { sent: speakSent } : speakIdx || 0); };
   function skipSide() {
     if (UN.next && !unEl.hidden) { playUpNext(); return; }
     const n = current && upNextOf(current);
@@ -1115,16 +1139,90 @@
   $('#lsNext').addEventListener('click', () => { if (speakIdx + 1 < body.children.length) startSpeech(speakIdx + 1); });
   $('#lsSkip').addEventListener('click', skipSide);
   $('#lsStop').addEventListener('click', () => stopSpeech(true));
+  $('#lsLyr').addEventListener('click', () => Lyr.show());
   Now.on({
     play: resumeSpeech,
     pause: pauseSpeech,
     stop: () => stopSpeech(true),
     nexttrack: skipSide,
-    previoustrack: () => { if (speakIdx > 0) startSpeech(0); else { pendingListen = true; pendingStart = 0; $('#rdPrev').click(); } },
+    previoustrack: () => { if (speakSent > 0) startSpeech(0); else { pendingListen = true; pendingStart = 0; $('#rdPrev').click(); } },
     seekforward: () => { if (speakIdx + 1 < body.children.length) startSpeech(speakIdx + 1); },
     seekbackward: () => startSpeech(Math.max(0, speakIdx - 1))
   });
-  $('#rsVoice').addEventListener('click', () => { if (speaking) stopSpeech(); else startSpeech(speakPaused ? speakIdx : 0); });
+  $('#rsVoice').addEventListener('click', () => { if (speaking) stopSpeech(); else startSpeech(speakPaused ? { sent: speakSent } : 0); });
+
+  /* ---------- MODE LIRIK: kalimat yang sedang dibacakan menyala besar, seperti lirik lagu ---------- */
+  const Lyr = (() => {
+    const el = $('#lyrics'), list = $('#lyList');
+    let open = false, forKey = null, userT = 0, follow = true, lastNow = -1;
+    function build() {
+      const d = current, plan = speechPlan();
+      forKey = d.key; lastNow = -1;
+      el.style.setProperty('--ly', catOf(d.cat).ink);
+      el.classList.toggle('side-b', d.side === 'b');
+      el.classList.toggle('poem', d.form === 'puisi');
+      $('#lyTitle').textContent = d.title;
+      $('#lySub').textContent = `${d.A.B ? (d.side === 'b' ? 'Sisi B' : 'Sisi A') + ' · ' : ''}${SITE.author}${playing() ? ' · ' + playing().title : ''}`;
+      $('#lyDisc').style.setProperty('--lc', catOf(d.cat).ink); $('#lyDisc').classList.toggle('b', d.side === 'b');
+      list.innerHTML = plan.map((x, i) => `<p data-s="${i}" class="${x.first && i ? 'pb' : ''}"><span>${esc(x.text)}</span></p>`).join('') + '<div class="ly-end" id="lyEnd"></div>';
+      const bg = $('#lyArt');
+      requestAnimationFrame(() => drawThread(bg, fullText(d), { w: Math.min(innerWidth, 900), h: Math.min(innerWidth, 900), pad: 20, color: '#fff', seed: d.key, weight: 1.1, pins: false }));
+    }
+    function sync() {
+      if (!open) return;
+      if (current && forKey !== current.key) build();
+      const now = speaking || speakPaused ? speakSent : -1;
+      el.classList.toggle('paused', !speaking);
+      $('#lyPlay').setAttribute('aria-label', speaking ? 'Jeda' : 'Putar');
+      const plan = speechPlan();
+      $('#lyProg').style.transform = `scaleX(${plan.length ? Math.max(0, now + 1) / plan.length : 0})`;
+      if (now === lastNow) return;
+      lastNow = now;
+      $$('p[data-s]', list).forEach(p => { const i = +p.dataset.s; p.classList.toggle('past', now >= 0 && i < now); p.classList.toggle('now', i === now); if (i !== now) p.style.removeProperty('--fill'); });
+      const cur = $(`p[data-s="${now}"]`, list);
+      if (cur && follow) list.scrollTo({ top: cur.offsetTop - list.clientHeight * .3, behavior: reduced ? 'auto' : 'smooth' });
+    }
+    function fill(i, f) { if (!open) return; const p = $(`p[data-s="${i}"]`, list); if (p) p.style.setProperty('--fill', (clamp(f, 0, 1) * 100).toFixed(1) + '%'); }
+    function show() {
+      if (!current) return;
+      open = true; el.hidden = false; win.classList.add('lyrics-on');
+      el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
+      build(); follow = true; $('#lyBack').hidden = true; sync();
+      if (!speaking && !speakPaused) startSpeech(speakIdx || 0);
+      $('#lyClose').focus({ preventScroll: true });
+    }
+    function hide() { if (!open) return; open = false; el.hidden = true; win.classList.remove('lyrics-on'); if (current && speakIdx >= 0 && body.children[speakIdx]) scrollToPara(body.children[speakIdx]); }
+    function ending(n) {
+      if (!open) return;
+      const end = $('#lyEnd'); if (!end) return;
+      end.innerHTML = n ? `<small>${n.end ? (n.end.shared || n.end.daily ? 'Racikan' : 'Album') + ' selesai' : 'Berikutnya'}</small><b>${esc(n.end ? n.end.title : n.d.title)}</b>${n.d ? '<button type="button" id="lyGoNext">Putar sekarang</button>' : ''}` : '';
+      end.classList.toggle('on', !!n);
+      if (n && follow) list.scrollTo({ top: end.offsetTop - list.clientHeight * .3, behavior: reduced ? 'auto' : 'smooth' });
+    }
+    // ketuk kalimat untuk mulai dari situ
+    list.addEventListener('click', e => {
+      if (e.target.closest('#lyGoNext')) { playUpNext(); return; }
+      const p = e.target.closest('p[data-s]'); if (!p) return;
+      follow = true; $('#lyBack').hidden = true; hideUpNext(); UN.shownFor = null;
+      startSpeech({ sent: +p.dataset.s });
+    });
+    // menggulir sendiri menahan guliran otomatis sebentar
+    const userScroll = () => { follow = false; $('#lyBack').hidden = false; clearTimeout(userT); userT = setTimeout(() => { follow = true; $('#lyBack').hidden = true; lastNow = -1; sync(); }, 5000); };
+    list.addEventListener('wheel', userScroll, { passive: true });
+    list.addEventListener('touchmove', userScroll, { passive: true });
+    $('#lyBack').addEventListener('click', () => { clearTimeout(userT); follow = true; $('#lyBack').hidden = true; lastNow = -1; sync(); });
+    $('#lyClose').addEventListener('click', hide);
+    $('#lyPlay').addEventListener('click', () => (speaking ? pauseSpeech() : resumeSpeech()));
+    $('#lyPrev').addEventListener('click', () => startSpeech({ sent: Math.max(0, speakSent - 1) }));
+    $('#lyNext').addEventListener('click', () => { const n = speechPlan().length; if (speakSent + 1 < n) startSpeech({ sent: speakSent + 1 }); });
+    $('#lySkip').addEventListener('click', skipSide);
+    // geser turun untuk menutup, seperti lembar lirik di aplikasi musik
+    let sy = null;
+    $('.ly-head').addEventListener('pointerdown', e => { sy = e.clientY; });
+    $('.ly-head').addEventListener('pointerup', e => { if (sy != null && e.clientY - sy > 60) hide(); sy = null; });
+    return { show, hide, sync, fill, ending, get open() { return open; } };
+  })();
+
 
   let hits = [], hit = 0;
   function openFind() { $('#rdFind').hidden = false; $('#findIn').focus(); if (isMobile()) setSheet(false); }
@@ -1180,6 +1278,7 @@
     { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
     { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + ' sisi', run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
     { label: 'Lihat antrean', hint: QUEUE.length + ' menunggu', run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
+    { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: 'Buka tulisan acak', hint: 'kejutan', run: () => openPicker(WORKS[Math.floor(Math.random() * WORKS.length)].slug) },
@@ -1238,6 +1337,7 @@
       if (!$('#quoteModal').hidden) return closeQuote();
       if (!$('#mixModal').hidden) return closeMix();
       if (RP.token) return stopReplay(true);
+      if (Lyr.open) return Lyr.hide();
       if (!$('#upNext').hidden) return $('#unCancel').click();
       if (!$('#rdFind').hidden) return closeFind();
       if (rs.classList.contains('open')) return setSheet(false);
@@ -1251,7 +1351,9 @@
       if (e.key === 'ArrowRight' && !$('#rdNext').disabled) $('#rdNext').click();
       if (e.key === 'ArrowLeft') $('#rdPrev').click();
       if (e.key.toLowerCase() === 'f') $('#rsFocus').click();
-      if (e.key.toLowerCase() === 'b' && current?.A.B) $('#rdFlip').click();
+      if (e.key.toLowerCase() === 'b' && current?.A.B && !Lyr.open) $('#rdFlip').click();
+      if (e.key.toLowerCase() === 'l') (Lyr.open ? Lyr.hide() : Lyr.show());
+      if (e.key === ' ' && Lyr.open) { e.preventDefault(); speaking ? pauseSpeech() : resumeSpeech(); }
     }
     if (view === 'pilih' && palette.hidden) {
       if (e.key.toLowerCase() === 'b') setSide(PK.side === 'a' ? 'b' : 'a');

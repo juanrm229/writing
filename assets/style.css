@@ -1286,3 +1286,58 @@ output.bump { animation: bump .35s var(--spring); }
 }
 @media (max-width: 400px) { #lsPrev, #lsNext { display: none; } }
 @media (prefers-reduced-motion: reduce) { .ls-eq i { animation: none; } }
+
+/* ================================================================
+   MODE LIRIK
+   ================================================================ */
+.lyrics {
+  --ly: #2F5BFF; position: absolute; inset: 0; z-index: 30; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden;
+  color: #fff; font-family: var(--f-ui);
+  background: radial-gradient(120% 80% at 20% 0%, color-mix(in srgb, var(--ly) 85%, #fff 15%), transparent 60%), linear-gradient(170deg, var(--ly), color-mix(in srgb, var(--ly) 45%, #000) 75%);
+}
+.lyrics.side-b { background: radial-gradient(120% 80% at 80% 0%, color-mix(in srgb, var(--ly) 55%, #fff 45%), transparent 60%), linear-gradient(170deg, color-mix(in srgb, var(--ly) 70%, #111), #0E0F11 80%); }
+.lyrics.in { animation: lyIn .55s var(--ease-out); }
+@keyframes lyIn { from { opacity: 0; transform: translateY(40px); } }
+.ly-art { position: absolute; left: 50%; top: 50%; width: min(140vmin, 1200px); height: min(140vmin, 1200px); translate: -50% -50%; opacity: .12; pointer-events: none; animation: spin 90s linear infinite; }
+.ly-head { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 12px; padding: max(16px, env(safe-area-inset-top, 0px)) 20px 10px; touch-action: none; }
+.ly-head .mdisc { width: 40px; height: 40px; animation: spin 6s linear infinite; }
+.lyrics.paused .ly-head .mdisc { animation-play-state: paused; }
+.ly-t { display: grid; min-width: 0; }
+.ly-t b { font: 600 15px var(--f-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ly-t small { font-size: 12.5px; color: rgb(255 255 255 / .7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ly-ic { width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgb(255 255 255 / .14); color: #fff; display: grid; place-items: center; cursor: pointer; transition: background-color .2s, transform .3s var(--spring); }
+.ly-ic:hover { background: rgb(255 255 255 / .24); }
+.ly-ic:active { transform: scale(.9); }
+.ly-ic svg { width: 20px; height: 20px; stroke-width: 2.4; }
+.ly-list {
+  position: relative; overflow-y: auto; scrollbar-width: none; padding: 26vh clamp(22px, 8vw, 120px) 50vh; max-width: 980px; width: 100%; justify-self: center;
+  -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 80%, transparent);
+}
+.ly-list::-webkit-scrollbar { display: none; }
+.ly-list p { --fill: 0%; margin: 0 0 .5em; font: 800 clamp(26px, 4.4vw, 46px)/1.22 var(--f-ui); letter-spacing: -.025em; cursor: pointer; color: rgb(255 255 255 / .38); transition: color .5s, transform .6s var(--spring), opacity .5s; transform-origin: left center; }
+.lyrics.poem .ly-list p { font-family: var(--f-read); font-weight: 500; font-style: italic; letter-spacing: -.01em; }
+.ly-list p.pb { margin-top: 1.1em; }
+.ly-list p.past { color: rgb(255 255 255 / .5); }
+.ly-list p.now { color: #fff; transform: scale(1.03); text-shadow: 0 2px 24px rgb(0 0 0 / .18); }
+/* karaoke: isi baris sedang dibaca dari kiri ke kanan bila peramban mengirim posisi kata */
+.ly-list p.now span { background: linear-gradient(90deg, #fff var(--fill), rgb(255 255 255 / .75) var(--fill)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ly-list p:hover:not(.now) { color: rgb(255 255 255 / .8); }
+.ly-end { min-height: 30vh; display: grid; align-content: start; gap: 6px; opacity: 0; transition: opacity .5s; }
+.ly-end.on { opacity: 1; }
+.ly-end small { font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .7); }
+.ly-end b { font: 800 clamp(30px, 5vw, 52px)/1.1 var(--f-ui); letter-spacing: -.03em; }
+.ly-end button { justify-self: start; margin-top: 10px; height: 44px; padding: 0 20px; border: 0; border-radius: 22px; background: #fff; color: #0E0F11; font: 600 15px var(--f-ui); cursor: pointer; }
+.ly-back { position: absolute; left: 50%; bottom: 120px; translate: -50% 0; z-index: 2; height: 38px; padding: 0 16px; border: 0; border-radius: 19px; background: #fff; color: #0E0F11; font: 600 13px var(--f-ui); cursor: pointer; box-shadow: 0 10px 30px -10px rgb(0 0 0 / .5); animation: unIn .4s var(--spring); }
+.ly-foot { position: relative; display: grid; gap: 14px; padding: 6px 24px max(22px, env(safe-area-inset-bottom, 0px)); }
+.ly-prog { height: 4px; border-radius: 2px; background: rgb(255 255 255 / .22); overflow: hidden; }
+.ly-prog i { display: block; height: 100%; background: #fff; transform-origin: left; transform: scaleX(0); transition: transform .5s var(--ease-out); }
+.ly-ctl { display: flex; justify-content: center; align-items: center; gap: 18px; }
+.ly-play { width: 64px; height: 64px; border: 0; border-radius: 50%; background: #fff; color: #0E0F11; display: grid; place-items: center; cursor: pointer; transition: transform .3s var(--spring); }
+.ly-play svg { width: 26px; height: 26px; stroke-width: 2.6; }
+.ly-play:active { transform: scale(.92); }
+.ly-play .i-play, .lyrics.paused .ly-play .i-pause { display: none; }
+.lyrics.paused .ly-play .i-play { display: block; }
+.ls-lyr { width: auto !important; padding: 0 12px; border-radius: 17px !important; font: 600 12.5px var(--f-ui) !important; background: #2C2D31 !important; }
+.win.lyrics-on .aa-fab, .win.lyrics-on .lsbar, .win.lyrics-on .upnext { visibility: hidden; }
+@media (max-width: 860px) { .ly-list { padding-top: 18vh; } .ly-ctl { gap: 12px; } }
+@media (prefers-reduced-motion: reduce) { .ly-art, .ly-head .mdisc { animation: none; } }
