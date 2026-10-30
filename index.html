@@ -80,7 +80,10 @@
               <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8.5 6.5v11l9-5.5z"/></svg>
             </button>
             <p class="th-clock" id="thClock" aria-live="off"><span id="thHH">00</span><i>:</i><span id="thMM">00</span></p>
-            <button class="th-pill" id="crateShuffle" type="button">Acak</button>
+            <span class="th-pills">
+              <button class="th-pill th-sieve" id="crateSieve" type="button" data-sieve aria-label="Saring koleksi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16l-6 7.2V19l-4-1.6v-4.2z"/></svg><b class="sv-n"></b></button>
+              <button class="th-pill" id="crateShuffle" type="button">Acak</button>
+            </span>
           </div>
           <div class="th-sheet" id="thSheet">
             <div class="th-status">
@@ -545,6 +548,23 @@
       <button class="q-btn" id="mixCopy" type="button">Salin tautan</button>
       <button class="q-close" id="mixClose" type="button">Tutup</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ saringan ============ -->
+<div class="qmodal" id="sieve" hidden>
+  <div class="svcard" role="dialog" aria-modal="true" aria-labelledby="svHead">
+    <header class="sv-head">
+      <div><p class="sv-kick" id="svHead">Saringan</p><p class="sv-count" id="svCount"></p><p class="sv-mins" id="svMins"></p></div>
+      <div class="sv-discs" id="svDiscs" aria-hidden="true"></div>
+    </header>
+    <div class="sv-body" id="svBody"></div>
+    <p class="sv-hint" id="svHint" hidden></p>
+    <footer class="sv-foot">
+      <button class="q-btn" id="svReset" type="button">Hapus saringan</button>
+      <button class="q-btn" id="svPlay" type="button">Putar hasilnya</button>
+      <button class="q-btn primary" id="svDone" type="button">Lihat hasilnya</button>
+    </footer>
   </div>
 </div>
 
