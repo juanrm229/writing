@@ -5,12 +5,13 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v19';
+const VERSION = 'v20';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
   './', 'index.html', 'assets/style.css', 'assets/i18n.js', 'assets/app.js', 'manifest.webmanifest',
   'content/site.json', 'content/works.json',
+  'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
 

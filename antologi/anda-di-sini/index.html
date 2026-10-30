@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anda di Sini · Juan Menulis</title>
+<meta name="description" content="Konon, di sebuah kota bernama Saujana, ada peta yang tidak menunjukkan jalan pulang.">
+<meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17181B" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<link rel="stylesheet" href="peta.css">
+<script>
+  try {
+    var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t));
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- peta Saujana: digambar ulang setiap kali posisi baca berubah -->
+<canvas class="map" id="map" aria-hidden="true"></canvas>
+<div class="sky" id="sky" aria-hidden="true"></div>
+<canvas class="rain" id="rain" aria-hidden="true"></canvas>
+<div class="hud" id="hud" aria-hidden="true" hidden>
+  <span><small>Peta</small><b id="hudMap">0 m</b></span>
+  <span><small>Roda ukur</small><b id="hudWheel">0 m</b></span>
+</div>
+<div class="nav-chip" id="navChip" aria-hidden="true" hidden></div>
+<div class="sticker" id="sticker" aria-hidden="true" hidden><b>ANDA DI SINI</b></div>
+
+<main class="read" id="read" tabindex="-1">
+  <header class="status" id="status" aria-hidden="true">
+    <span class="st-time" id="stTime"></span>
+    <span class="st-app">Catatan</span>
+    <span class="st-bat"><i id="stBatBar"></i><b id="stBat"></b></span>
+  </header>
+  <button class="resume" id="resume" type="button" hidden></button>
+  <div class="story" id="story" aria-live="off">
+    <p class="loading">Memuat peta…</p>
+  </div>
+  <footer class="after" id="after" hidden>
+    <p class="after-k">Aplikasi itu tidak bisa dibagikan.</p>
+    <p class="after-t">Tapi cerita bisa.</p>
+    <button class="after-btn" id="tell" type="button">Ceritakan pada seseorang</button>
+    <p class="after-note">Yang dibagikan hanya legendanya, seperti orang asing di terminal itu.</p>
+    <a class="after-back" href="../../#putar">Kembali ke meja tulis</a>
+  </footer>
+  <nav class="bar" id="bar" aria-label="Pengaturan baca">
+    <a class="bar-b" href="../../#putar" aria-label="Kembali ke meja tulis" title="Kembali ke meja tulis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
+    <button class="bar-b" id="smaller" type="button" aria-label="Perkecil huruf" title="Perkecil huruf"><span class="aa">A</span>−</button>
+    <button class="bar-b" id="bigger" type="button" aria-label="Perbesar huruf" title="Perbesar huruf"><span class="aa">A</span>+</button>
+    <button class="bar-b wide" id="listen" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Dengarkan</span></button>
+    <span class="bar-p" id="pct" aria-hidden="true">0%</span>
+  </nav>
+</main>
+
+<div class="lock" id="lock" aria-hidden="true"></div>
+<button class="ghost-icon" id="ghostIcon" type="button" hidden aria-label="Aplikasi tanpa nama"><i></i></button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="peta.js"></script>
+</body>
+</html>
