@@ -155,6 +155,7 @@
         <div class="pk-stage">
           <div class="pk-disc" id="pkDisc" aria-live="polite"></div>
           <p class="pk-title" id="pkTitle"></p>
+          <button type="button" class="pk-liner" id="pkLiner"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg>Catatan sampul</button>
           <div class="pk-sides" role="tablist" aria-label="Sisi piringan">
             <button type="button" role="tab" data-side="a" aria-selected="true">Sisi A</button>
             <button type="button" role="tab" data-side="b" aria-selected="false">Sisi B</button>
@@ -227,6 +228,10 @@
                 <div class="rd-body" id="rdBody"></div>
                 <footer class="rd-end">
                   <a class="rd-flipcard" id="rdFlipCard" href="#" hidden></a>
+                  <button type="button" class="rd-liner" id="rdLiner">
+                    <span class="rl-sleeve" aria-hidden="true"><canvas id="rlArt"></canvas></span>
+                    <span class="rr-t"><small>Catatan sampul</small><b>Di balik tulisan ini</b><span id="rlTeaser"></span></span>
+                  </button>
                   <button type="button" class="rd-radio" id="rdRadio">
                     <span class="rr-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 9a10 10 0 0 1 14 0M7.5 11.5a6.5 6.5 0 0 1 9 0"/><circle cx="12" cy="15" r="1.6" class="f"/><path d="M12 16.6V21"/></svg></span>
                     <span class="rr-t"><small id="rrKick">Radio</small><b id="rrTitle">Mulai radio dari tulisan ini</b><span id="rrSub">Tulisan yang paling dekat kata dan suasananya, dibacakan tanpa henti.</span></span>
@@ -510,6 +515,15 @@
       <button class="q-btn" id="quoteCopy" type="button">Salin teks</button>
       <button class="q-close" id="quoteClose" type="button">Tutup</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ catatan sampul (gatefold) ============ -->
+<div class="liner" id="liner" hidden>
+  <div class="ln-fold" role="dialog" aria-modal="true" aria-labelledby="lnHead">
+    <section class="ln-front" id="lnFront" aria-hidden="true"><canvas id="lnArt"></canvas><div class="ln-ft"><b id="lnFTitle"></b><small id="lnFBy"></small></div></section>
+    <section class="ln-back" id="lnBack"></section>
+    <button type="button" class="ln-close" id="lnClose" aria-label="Tutup catatan sampul">×</button>
   </div>
 </div>
 
