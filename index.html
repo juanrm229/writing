@@ -238,6 +238,14 @@
             </div>
             <div class="rd-dim" id="rdDim" aria-hidden="true"></div>
             <div class="rd-progress" aria-hidden="true"><i id="rdProg"></i></div>
+            <div class="lsbar" id="lsBar" role="region" aria-label="Kontrol dengar" hidden>
+              <button type="button" id="lsPrev" aria-label="Paragraf sebelumnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M17 6v12l-8.5-6z"/><path d="M6.5 6v12"/></svg></button>
+              <button type="button" id="lsPlay" class="ls-play" aria-label="Jeda"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button>
+              <button type="button" id="lsNext" aria-label="Paragraf berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 6v12l8.5-6z"/><path d="M17.5 6v12"/></svg></button>
+              <span class="ls-t"><b><i class="ls-eq" aria-hidden="true"><i></i><i></i><i></i></i><span id="lsLabel">Dibacakan</span></b><small id="lsPos"></small></span>
+              <button type="button" id="lsSkip" aria-label="Sisi berikutnya" title="Sisi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M4.5 6v12l7.5-6zM12 6v12l7.5-6z"/></svg></button>
+              <button type="button" id="lsStop" aria-label="Berhenti membacakan">×</button>
+            </div>
             <div class="upnext" id="upNext" role="region" aria-label="Berikutnya" aria-live="polite" hidden>
               <button class="un-go" id="unGo" type="button" aria-label="Putar sekarang">
                 <svg class="un-ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="base" cx="32" cy="32" r="29"/><circle class="arc" id="unArc" cx="32" cy="32" r="29" pathLength="1"/></svg>
