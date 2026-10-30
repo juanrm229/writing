@@ -23,7 +23,7 @@
   if (!work) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')}</p>`; document.documentElement.classList.remove('js'); return; }
   const chapters = (EN && work.en?.chapters) || work.chapters;
 
-  $('#kick').textContent = t('Titik Biru · Bagian II', 'Titik Biru · Part II');
+  $('#kick').textContent = t('Temusai · Bagian I', 'Temusai · Part I');
   $('#sub').textContent = t('Tiga suara di antara dua kota. Dialog muncul sebagai pesan, keterangan di antaranya, dan lokasi di setiap perpindahan.', 'Three voices between two cities. Dialogue arrives as messages, with the telling in between and a location at every move.');
   $('.top').insertAdjacentHTML('beforeend', `<p class="cast">${['arka', 'nara', 'sinta'].map(v => `<span style="--c:var(--${v})"><i>${v[0].toUpperCase()}</i>${v[0].toUpperCase() + v.slice(1)}</span>`).join('')}</p>`);
   $('#back').setAttribute('aria-label', t('Kembali ke meja tulis', 'Back to the desk'));

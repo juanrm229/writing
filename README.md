@@ -94,7 +94,7 @@ Lalu buka <http://localhost:8000>. Konten dimuat dengan `fetch`, jadi membuka `i
 
 ### Interlude (antologi/interlude/)
 
-Bagian kedua antologi Titik Biru, dibaca seperti percakapan di aplikasi chat yang gelap dan minimal. Teksnya tetap dari `content/works.json` (bab ID, terjemahan di `en`) dan tidak diubah:
+Pembuka antologi Temusai (album `temusai`, sampul layar gelap dengan dua titik, Arka dan Nara), dibaca seperti percakapan di aplikasi chat yang gelap dan minimal. Teksnya tetap dari `content/works.json` (bab ID, terjemahan di `en`) dan tidak diubah:
 
 - **Gelembung**: kalimat dalam tanda petik menjadi pesan. Pesan dari tokoh yang bercerita di kanan, lawan bicaranya di kiri. Penuturnya ditebak dari keterangan di luar petik (nama, "kataku", "katanya"), lalu dari narasi tepat sebelumnya, kalau tidak jelas bergantian.
 - **Keterangan**: narasi tampil sebagai teks miring di antara pesan.

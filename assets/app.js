@@ -2824,6 +2824,17 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 2), S = Math.round(size * dpr);
     c.width = c.height = S; c.style.width = c.style.height = size + 'px';
     const ctx = c.getContext('2d');
+    // antologi Temusai: layar gelap dengan dua titik yang hampir bersentuhan, Arka dan Nara
+    if (a.kind === 'antologi' && a.id === 'temusai') {
+      ctx.fillStyle = '#0E0F11'; ctx.fillRect(0, 0, S, S);
+      [['#7FB077', .44], ['#84AEDC', .56]].forEach(([c, x]) => {
+        const g = ctx.createRadialGradient(S * x, S / 2, 0, S * x, S / 2, S * .16);
+        g.addColorStop(0, c + '55'); g.addColorStop(1, c + '00');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(S * x, S / 2, S * .16, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(S * x, S / 2, S * .042, 0, Math.PI * 2); ctx.fill();
+      });
+      return;
+    }
     // antologi Titik Biru: sampulnya ikon aplikasi tanpa nama itu, persegi putih dengan satu titik biru
     if (a.kind === 'antologi') {
       ctx.fillStyle = '#F7F7F5'; ctx.fillRect(0, 0, S, S);
