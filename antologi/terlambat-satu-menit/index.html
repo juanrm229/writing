@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
-<link rel="stylesheet" href="minute.css?v=31">
+<link rel="stylesheet" href="minute.css?v=32">
 </head>
 <body>
 <header class="topbar" id="topbar">
@@ -29,7 +29,7 @@
     <p class="search-note" id="searchNote">Masukkan nomor resi untuk melihat riwayat pengiriman.</p>
     <form class="search-form" id="trackForm" role="search">
       <label class="sr-only" for="resi" id="resiLabel">Nomor resi</label>
-      <input id="resi" name="resi" autocomplete="off" spellcheck="false" readonly value="">
+      <input id="resi" name="resi" autocomplete="off" autocapitalize="characters" spellcheck="false" readonly value="">
       <button id="trackButton" type="submit">Lacak</button>
     </form>
   </section>
@@ -45,6 +45,7 @@
     <p class="eyebrow" id="detailKicker">Riwayat pengiriman</p>
     <p class="resi-big" id="resiBig"></p>
     <dl class="route" id="route"></dl>
+    <section class="addresses" id="addresses" hidden aria-live="polite"></section>
     <p class="side-line"><span id="sideTitle">Bidak</span> · <span id="voice">Pak Saman</span></p>
     <div class="actions"><button class="begin" id="begin" type="button">Lihat riwayat</button><button class="contents-button" id="openContents" type="button" aria-haspopup="dialog" aria-controls="contentsDialog">Lihat isi</button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari pemindaian terakhir</button></div>
   </header>
@@ -52,6 +53,7 @@
     <span class="status-chip" id="statusChip" data-tone="pending">Belum dilacak</span>
     <ol class="stages" id="stages" aria-hidden="true"></ol>
     <span class="last-scan" id="lastScan"></span>
+    <button class="order-toggle" id="orderToggle" type="button" aria-pressed="false">↓ Terlama dulu</button>
     <button class="contents-mini" id="openContentsMini" type="button" aria-haspopup="dialog" aria-controls="contentsDialog">Isi</button>
   </div>
   <ol class="timeline" id="story"><li class="loading">Mencari kiriman…</li></ol>
@@ -82,8 +84,8 @@
   <div class="contents-body" id="contentsBody" aria-live="polite"></div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
-<script src="sound.js?v=31"></script>
-<script src="track.js?v=31"></script>
-<script src="minute.js?v=31"></script>
+<script src="sound.js?v=32"></script>
+<script src="track.js?v=32"></script>
+<script src="minute.js?v=32"></script>
 </body>
 </html>

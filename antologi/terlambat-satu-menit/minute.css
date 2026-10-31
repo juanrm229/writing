@@ -254,3 +254,61 @@ html[data-calm] *, html[data-calm] *::before, html[data-calm] *::after { animati
   .letter::before { left: 22px; }
   .letter-meta dd { font-size: 12px; }
 }
+
+/* Kolom resi, 52 surat, kiriman lain */
+#resi:not([readonly]) { cursor: text; }
+.ship-card.static { cursor: default; }
+.ship-card.static:hover { transform: none; border-color: var(--line); }
+.letter.mini { padding: 16px 16px 18px 34px; box-shadow: none; border: 1px solid var(--line); }
+.letter.mini::before { left: 22px; }
+.letter.mini .letter-line { font-size: 17px; line-height: 30px; margin-bottom: 30px; }
+.letter.mini .letter-line:last-child { margin-bottom: 0; }
+.letter.mini { background: repeating-linear-gradient(to bottom, transparent 0 29px, var(--rule) 29px 30px), var(--card); background-position: 0 12px; }
+.open-side { justify-self: start; color: var(--transit); padding: 0; }
+.reset-search { min-height: 40px; margin: 12px 0 0; padding: 0; border: 0; background: none; color: var(--transit); font: 600 13px var(--ui); }
+.not-found { padding: 22px 18px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); }
+.not-found p { margin: 0; }
+.manifest li { padding: 0; }
+.manifest li button { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; min-height: 40px; padding: 6px 0; border: 0; background: none; color: var(--muted); font: 12px var(--mono); text-align: left; }
+.manifest li button:hover { color: var(--ink); }
+.manifest li button span:nth-child(2) { font-family: var(--ui); }
+
+/* Urutan */
+.order-toggle { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: none; font: 600 12px var(--ui); white-space: nowrap; }
+.order-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.status-bar { grid-template-columns: auto 1fr auto auto auto; }
+
+/* Riwayat alamat */
+.addresses { margin: -6px 0 22px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.addresses ol { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.addresses li { font-size: 13px; color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+.addresses li:not(:last-child)::after { content: '→'; margin-left: 10px; color: var(--faint); display: inline-block; text-decoration: none; }
+.addresses li[aria-current] { color: var(--ink); font-weight: 600; text-decoration: none; }
+.addresses li[data-back] { color: var(--done); }
+
+/* Catatan yang tidak dapat ditampilkan */
+.redacted-status { margin: 0 0 12px; }
+.redacted { position: relative; display: grid; gap: 14px; padding: 26px 22px; border-radius: 6px; background: var(--card); box-shadow: var(--shadow); overflow: hidden; }
+.redacted span { display: block; width: var(--w); height: 13px; border-radius: 2px; background: var(--ink); opacity: .85; }
+.redacted b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); padding: 6px 14px; border: 2px solid var(--lost); border-radius: 6px; color: var(--lost); background: color-mix(in srgb, var(--card) 85%, transparent); font: 700 13px var(--ui); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.ship-card .redacted { box-shadow: none; border: 1px solid var(--line); padding: 18px; gap: 10px; }
+.ship-card .redacted span { height: 10px; }
+
+/* Bukti penerimaan untuk dicetak */
+.print-head { display: none; }
+.print-proof { margin-top: 14px; min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 10px; background: none; font: 600 13px var(--ui); }
+@media print {
+  html[data-print="proof"] body { background: #fff; color: #000; }
+  html[data-print="proof"] body > *:not(#detail), html[data-print="proof"] #detail > *:not(#story), html[data-print="proof"] #story > li:not(:has(#proof)), html[data-print="proof"] #story .when, html[data-print="proof"] #story .dot, html[data-print="proof"] #story .entry-head, html[data-print="proof"] #story .passage, html[data-print="proof"] .print-proof { display: none !important; }
+  html[data-print="proof"] #story, html[data-print="proof"] #story > li { display: block; padding: 0; margin: 0; }
+  html[data-print="proof"] .timeline::before { display: none; }
+  html[data-print="proof"] .proof { border-color: #000; box-shadow: none; animation: none; }
+  html[data-print="proof"] .print-head { display: block; margin: 14px 0 0; font: 12px var(--mono); color: #444; }
+}
+@media (max-width: 640px) {
+  .status-bar { grid-template-columns: 1fr auto auto; }
+  .status-bar .last-scan { display: none; }
+  .order-toggle { padding: 0 10px; }
+}
+
+@media (max-width: 1100px) and (min-width: 641px) { .status-bar .last-scan { display: none; } .status-bar { grid-template-columns: auto 1fr auto auto; } }
