@@ -24,10 +24,10 @@
     brandName: ['Lacak Kiriman', 'Track a Shipment'], homeTitle: ['Lacak Kiriman', 'Track a Shipment'], searchNote: ['Masukkan nomor resi untuk melihat riwayat pengiriman.', 'Enter a tracking number to see the shipment history.'],
     resiLabel: ['Nomor resi', 'Tracking number'], trackButton: ['Lacak', 'Track'], detailKicker: ['Riwayat pengiriman', 'Shipment history'],
     settingsTitle: ['Pengaturan baca', 'Reading settings'], sizeLabel: ['Ukuran huruf', 'Text size'], soundLabel: ['Bunyi pemindai', 'Scanner sounds'], volumeLabel: ['Volume', 'Volume'],
-    motionLabel: ['Gerak', 'Motion'], themeLabel: ['Tampilan', 'Appearance'], languageLabel: ['Bahasa', 'Language'], allShipments: ['Semua kiriman', 'All shipments'], endSummary: ['Ringkasan pengiriman', 'Delivery summary']
+    motionLabel: ['Gerak', 'Motion'], themeLabel: ['Tampilan', 'Appearance'], languageLabel: ['Bahasa', 'Language'], allShipments: ['Semua kiriman', 'All shipments'], endSummary: ['Ringkasan pengiriman', 'Delivery summary'], openContents: ['Lihat isi', 'View contents'], openContentsMini: ['Isi', 'Contents']
   };
   Object.entries(labels).forEach(([id, value]) => { $('#' + id).textContent = t(...value); });
-  [['back', t('Kembali ke meja tulis', 'Back to the writing desk')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, label]) => $('#' + id).setAttribute('aria-label', label));
+  [['openContentsMini', t('Lihat isi kiriman', 'View the contents')], ['back', t('Kembali ke meja tulis', 'Back to the writing desk')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, label]) => $('#' + id).setAttribute('aria-label', label));
   document.querySelectorAll('[data-close]').forEach(b => { b.setAttribute('aria-label', t('Tutup', 'Close')); b.onclick = () => b.closest('dialog').close(); });
   const setView = view => { root.dataset.view = view; $('#home').hidden = view !== 'home'; $('#detail').hidden = view !== 'detail'; $('#summary').hidden = view !== 'summary'; };
 
@@ -77,6 +77,17 @@
   const beatAt = (i, p) => sideData(i).beats.find(beat => beat.p === p);
   const markerP = (i, key) => (sideData(i).beats.find(beat => beat[key]) || {}).p ?? Infinity;
 
+  // Isi kiriman: kutipan miring dari paragraf aslinya; setiap bagian terbuka setelah paragrafnya terbaca.
+  const italics = text => [...String(text).matchAll(/\*([^*]+)\*/g)].map(m => m[1].trim()).join(' ');
+  const CONTENTS = (TRACK?.CONTENTS || [[], [], []]).map((items, i) => items.map(item => ({
+    ...item,
+    sealedP: item.sealed ? docs[i].body.findIndex(p => p.includes(item.sealed[L])) : -1,
+    sentP: item.sent ? docs[i].body.findIndex(p => p.includes(item.sent[L])) : -1,
+    parts: item.parts.map(part => { const p = docs[i].body.findIndex(text => text.includes(part.find[L])); return { ...part, p, text: p >= 0 ? italics(docs[i].body[p]) : '' }; }).filter(part => part.text)
+  })));
+  const contentParts = new Set(CONTENTS.flatMap((items, i) => items.flatMap(item => item.parts.map(part => i + ':' + part.p))));
+  let contentsTab = '', contentsSeen = '';
+
   const keyOf = index => SLUG + (index ? ':' + LETTERS[index] : '');
   const done = new Set(PREVIEW ? [] : array(store.get('stats', {}).done));
   let places = PREVIEW ? {} : object(store.get('minute:places', {}));
@@ -86,7 +97,7 @@
   const allDone = () => PREVIEW || LETTERS.every((_, i) => done.has(keyOf(i)));
   let sideIndex = 0, paragraphs = [], weights = new Map(), totalWords = 0, currentParagraph = -1, latestPlace = null, view = '';
   let saveTimer = 0, raf = 0, shownStatus = '';
-  const dialogs = [$('#settingsDialog')];
+  const dialogs = [$('#settingsDialog'), $('#contentsDialog')];
   const calm = () => root.hasAttribute('data-calm');
   const line = () => innerHeight * .5;
 
@@ -227,6 +238,7 @@
       if (!(r.bottom <= line() + 20 && r.bottom >= 56)) return;
       scans[sideIndex][p] = Date.now(); changed = true;
       const li = node.closest('.entry'); renderStamp(li, sideIndex, p);
+      if (contentParts.has(sideIndex + ':' + p) || CONTENTS[sideIndex].some(item => item.sealedP === p)) { ['#openContents', '#openContentsMini'].forEach(id => { $(id).classList.remove('fresh'); void $(id).offsetWidth; $(id).classList.add('fresh'); }); }
       const beat = beatAt(sideIndex, p);
       if (beat?.status) {
         li.classList.add('just'); sound.play(beat.sound || 'status');
@@ -315,6 +327,30 @@
     }
     scrollTo({ top: 0, behavior: 'instant' }); frame();
   };
+
+  // Isi kiriman
+  const unlocked = (i, part) => part.always || !!scans[i][part.p];
+  const renderContents = () => {
+    const i = sideIndex, items = CONTENTS[i].filter(item => item.sealed || item.parts.some(part => unlocked(i, part)));
+    $('#contentsResi').textContent = sideData(i).resi; $('#contentsTitle').textContent = t('Isi kiriman', 'Contents');
+    if (!items.length) { $('#contentsTabs').innerHTML = ''; $('#contentsBody').innerHTML = `<p class="contents-empty">${t('Belum ada isi yang terbaca. Isinya muncul setelah kalimatnya ditulis dalam cerita.', 'Nothing readable yet. The contents appear once the story writes them.')}</p>`; return; }
+    // Kiriman yang baru terbuka langsung ditampilkan; pilihan pembaca tetap dihormati sesudahnya.
+    const key = i + ':' + items.length;
+    if (!items.some(item => item.id === contentsTab) || contentsSeen !== key) contentsTab = contentsSeen && contentsSeen.split(':')[0] === String(i) && contentsSeen === key ? contentsTab : items.at(-1).id;
+    contentsSeen = key;
+    $('#contentsTabs').innerHTML = items.length > 1 ? items.map(item => `<button type="button" data-tab="${item.id}" aria-pressed="${item.id === contentsTab}">${esc(pick(item.label))}</button>`).join('') : '';
+    $('#contentsTabs').querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => { contentsTab = b.dataset.tab; renderContents(); $(`#contentsTabs [data-tab="${contentsTab}"]`).focus(); }; });
+    const item = items.find(x => x.id === contentsTab), sealed = item.sealed && !scans[i][item.sealedP];
+    const meta = `<dl class="letter-meta"><div><dt>${t('Dari', 'From')}</dt><dd>${esc(item.from)}</dd></div><div><dt>${t('Untuk', 'To')}</dt><dd>${esc(item.to)}</dd></div><div><dt>${t('Amplop', 'Envelope')}</dt><dd>${sealed ? t('Tertutup', 'Sealed') : item.sealed ? t('Dibuka', 'Opened') : item.sentP >= 0 && scans[i][item.sentP] ? t('Dikirim', 'Posted') : esc(pick(item.idle || ['—', '—']))}</dd></div></dl>`;
+    const body = sealed ? `<div class="sealed" role="img" aria-label="${t('Amplop tertutup', 'Sealed envelope')}"><span></span></div><p class="contents-empty">${t('Amplop belum dibuka.', 'The envelope has not been opened.')}</p>`
+      : `<article class="letter" data-hand="${item.hand}">${item.parts.filter(part => unlocked(i, part)).map(part => `<p class="letter-line${part.faded ? ' faded' : ''}">${esc(part.text)}</p>`).join('')}</article>`;
+    $('#contentsBody').innerHTML = `<p class="contents-label">${esc(pick(item.label))}</p>` + meta + body;
+  };
+  const openContents = () => {
+    persist(); ['#openContents', '#openContentsMini'].forEach(id => $(id).classList.remove('fresh'));
+    renderContents(); $('#contentsDialog').showModal();
+  };
+  $('#openContents').onclick = openContents; $('#openContentsMini').onclick = openContents;
 
   // Ringkasan
   const showSummary = () => {

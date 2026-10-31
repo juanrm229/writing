@@ -217,3 +217,40 @@ body:has(dialog[open]) { overflow: hidden; }
 html[data-calm] *, html[data-calm] *::before, html[data-calm] *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 #summaryTitle:focus { outline: none; }
+
+/* Isi kiriman */
+.contents-button { min-height: 46px; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-weight: 600; position: relative; }
+.contents-mini { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: 600 12px var(--ui); position: relative; }
+.contents-button.fresh::after, .contents-mini.fresh::after { content: ''; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--transit); box-shadow: 0 0 0 2px var(--bg); animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+.status-bar { grid-template-columns: auto 1fr auto auto; }
+.contents-dialog { width: min(560px, calc(100% - 24px)); background: var(--bg); }
+.contents-dialog .dialog-head { background: var(--bg); padding-bottom: 8px; }
+.contents-dialog .dialog-head .eyebrow { font: 500 11px var(--mono); letter-spacing: .06em; margin-bottom: 4px; }
+.contents-tabs { display: flex; gap: 6px; padding: 0 20px 10px; flex-wrap: wrap; }
+.contents-tabs:empty { display: none; }
+.contents-tabs button { min-height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: none; font: 600 12px var(--ui); color: var(--muted); }
+.contents-tabs button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.contents-body { padding: 4px 20px 24px; }
+.contents-label { margin: 0 0 10px; font: 600 15px var(--ui); }
+.letter-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 0 0 16px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); }
+.letter-meta div { padding: 9px 12px; background: var(--card); }
+.letter-meta dt { color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.letter-meta dd { margin: 2px 0 0; font-weight: 600; font-size: 13px; }
+.letter { --rule: color-mix(in srgb, var(--transit) 22%, transparent); --ink-letter: color-mix(in srgb, var(--ink) 82%, #1b3a8a 18%); position: relative; padding: 26px 24px 30px 44px; border-radius: 6px; background: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px), var(--card); background-position: 0 14px; box-shadow: var(--shadow); color: var(--ink-letter); }
+.letter::before { content: ''; position: absolute; left: 30px; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--lost) 35%, transparent); }
+.letter-line { margin: 0 0 36px; font: 400 calc(var(--size) + 1px)/36px var(--serif); animation: write 1.2s ease both; }
+.letter-line:last-child { margin-bottom: 0; }
+.letter[data-hand="saman"] .letter-line, .letter[data-hand="maryam"] .letter-line { font-style: italic; letter-spacing: .015em; }
+.letter[data-hand="saman"] .letter-line { word-spacing: .12em; }
+.letter-line.faded { opacity: .55; filter: saturate(.4); }
+@keyframes write { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.contents-empty { margin: 12px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.sealed { position: relative; height: 150px; border-radius: 6px; background: var(--card); box-shadow: var(--shadow); overflow: hidden; }
+.sealed::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1px), var(--line) 50%, transparent calc(50% + 1px)) left / 50% 100% no-repeat, linear-gradient(to bottom left, transparent calc(50% - 1px), var(--line) 50%, transparent calc(50% + 1px)) right / 50% 100% no-repeat; }
+.sealed span { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: var(--lost); opacity: .7; }
+@media (max-width: 640px) {
+  .status-bar { grid-template-columns: 1fr auto auto; }
+  .letter { padding: 22px 16px 26px 34px; }
+  .letter::before { left: 22px; }
+  .letter-meta dd { font-size: 12px; }
+}

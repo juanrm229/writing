@@ -82,5 +82,25 @@
     { speaker: 0, find: ['Besok datang lagi ya', 'Come again tomorrow'] },
     { speaker: 1, find: ['Besok aku datang lagi', "Tomorrow I'll come again"] }
   ];
-  window.MinuteTrack = { SIDES, SUMMARY, CODA };
+  // Isi kiriman: kutipan bercetak miring dari naskah. Setiap bagian terlihat setelah paragrafnya terbaca.
+  // sealed: isi tertutup sampai paragraf itu terbaca (amplop dibuka). always: sudah ada sejak awal.
+  const CONTENTS = [
+    [{ id: 'saman', label: ['Surat Saman', "Saman's letter"], from: 'Saman', to: 'Banyu', hand: 'saman', idle: ['Di laci', 'In the drawer'], sent: ['Surat itu jatuh ke dalam logam', 'The letter fell into the metal'], parts: [
+      { find: ['Lima puluh dua amplop', 'Fifty-two envelopes'], always: true },
+      { find: ['Dan kalau kamu tidak bisa pulang', 'And if you cannot come home'], faded: true }
+    ] }],
+    [{ id: 'saman', label: ['Surat Saman', "Saman's letter"], from: 'Saman', to: 'Banyu', hand: 'saman', sealed: ['membalik amplop itu, dan membukanya', 'turned the envelope over, and opened it'], parts: [
+      { find: ['tertulis empat kalimat', 'four sentences were written'] },
+      { find: ['Dan kalau kamu tidak bisa pulang', 'And if you cannot come home'], faded: true }
+    ] }, { id: 'reply', label: ['Balasan Banyu', "Banyu's reply"], from: 'Banyu', to: 'Saman', hand: 'banyu', idle: ['Ditulis', 'Written'], sent: ['pagi itu juga, ia mengirimkannya', 'that very morning, he sent it'], parts: [
+      { find: ['Aku marah sama Bapak', "I've been angry at you"] },
+      { find: ['Aku juga mau minta satu hal', 'I also want to ask for one thing'] },
+      { find: ['Aku akan pulang minggu ini', 'I am coming home this week'] }
+    ] }],
+    [{ id: 'maryam', label: ['Surat Maryam', "Maryam's letter"], from: 'Maryam', to: 'Banyu', hand: 'maryam', idle: ['Ditulis', 'Written'], sent: ['Ia melipat surat itu. Ia menulis alamat', 'She folded the letter. She wrote the address'], parts: [
+      { find: ['Ibu tidak akan menjelaskan', 'I will not explain why I left'] },
+      { find: ['kalau ada seseorang yang mencoba menawarimu', 'if there is someone who tries to offer'] }
+    ] }]
+  ];
+  window.MinuteTrack = { SIDES, SUMMARY, CODA, CONTENTS };
 })();

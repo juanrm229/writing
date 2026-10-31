@@ -340,6 +340,83 @@ class MinuteSmoke(unittest.TestCase):
         self.assertEqual(visits[-1], self.page.evaluate("(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()"))
         self.assertEqual(rows.count(), len(visits) - 1)
 
+    # Isi kiriman
+
+    def italic(self, text):
+        return ' '.join(m.strip() for m in re.findall(r'\*([^*]+)\*', text))
+
+    def contents(self):
+        self.page.locator('#openContentsMini').click()
+        lines = self.page.locator('.letter-line').all_text_contents()
+        sealed = self.page.locator('.sealed').count() == 1
+        envelope = self.page.locator('.letter-meta div:nth-child(3) dd').inner_text()
+        self.page.keyboard.press('Escape')
+        return lines, sealed, envelope
+
+    def test_samans_letter_grows_when_he_adds_the_sentence(self):
+        body = self.work['body']
+        self.open('#a')
+        lines, sealed, envelope = self.contents()
+        self.assertEqual(lines, [self.italic(body[2])])
+        self.assertFalse(sealed)
+        self.assertEqual(envelope, 'Di laci')
+        self.read_range('a', 55, 56)
+        self.assertIsNotNone(self.page.locator('#openContentsMini').get_attribute('class').find('fresh'))
+        lines, _, envelope = self.contents()
+        self.assertEqual(lines, [self.italic(body[2]), self.italic(body[56])])
+        self.page.locator('#openContentsMini').click()
+        self.assertEqual(self.page.locator('.letter-line:not(.faded)').all_text_contents(), [self.italic(body[2])])
+        self.assertEqual(self.page.locator('.letter-line.faded').all_text_contents(), [self.italic(body[56])])
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openContentsMini')
+        self.read_range('a', 58, 58)
+        self.assertEqual(self.contents()[2], 'Dikirim')
+
+    def test_banyus_envelope_stays_sealed_until_he_opens_it(self):
+        side = self.work['sides'][0]['body']
+        self.open('#b-20')
+        lines, sealed, envelope = self.contents()
+        self.assertEqual((lines, sealed, envelope), ([], True, 'Tertutup'))
+        self.read_range('b', 34, 35)
+        lines, sealed, envelope = self.contents()
+        self.assertEqual((lines, sealed, envelope), ([self.italic(side[35])], False, 'Dibuka'))
+        self.read_range('b', 37, 42)
+        self.page.locator('#openContentsMini').click()
+        self.assertEqual(self.page.locator('#contentsTabs button').all_text_contents(), ['Surat Saman', 'Balasan Banyu'])
+        self.assertEqual(self.page.locator('#contentsTabs [aria-pressed="true"]').inner_text(), 'Balasan Banyu')
+        self.assertEqual(self.page.locator('.letter-line').all_text_contents(), [self.italic(side[p]) for p in [40, 41, 42]])
+        self.page.locator('#contentsTabs [data-tab="saman"]').click()
+        self.assertEqual(self.page.locator('.letter-line').all_text_contents(), [self.italic(side[35]), self.italic(side[37])])
+        self.page.keyboard.press('Escape')
+
+    def test_maryams_letter_appears_only_as_she_writes_it_in_both_languages(self):
+        for lang, start, first, second in [('id', 68, 70, 73), ('en', 67, 69, 72)]:
+            with self.subTest(lang=lang):
+                body = (self.work['en'] if lang == 'en' else self.work)['sides'][1]['body']
+                self.open(f'?lang={lang}#c-{start}')
+                self.page.locator('#openContentsMini').click()
+                self.assertEqual(self.page.locator('.letter-line').count(), 0)
+                self.assertTrue(self.page.locator('.contents-empty').is_visible())
+                self.page.keyboard.press('Escape')
+                self.read_range('c', first, second)
+                lines, _, envelope = self.contents()
+                self.assertEqual(lines, [self.italic(body[first]), self.italic(body[second])])
+                self.assertEqual(envelope, 'Ditulis' if lang == 'id' else 'Written')
+
+    def test_every_contents_marker_points_to_one_italic_paragraph(self):
+        self.open('#a')
+        contents = self.page.evaluate('MinuteTrack.CONTENTS')
+        for lang, li in [('id', 0), ('en', 1)]:
+            source = self.work['en'] if lang == 'en' else self.work
+            docs = [source] + source['sides']
+            for side, items in enumerate(contents):
+                for item in items:
+                    for marker in [part['find'] for part in item['parts']] + [m for m in [item.get('sealed'), item.get('sent')] if m]:
+                        hits = [p for p in docs[side]['body'] if marker[li] in p]
+                        self.assertEqual(len(hits), 1, f'{lang} {side} {marker[li]}')
+                    for part in item['parts']:
+                        self.assertTrue(self.italic(next(p for p in docs[side]['body'] if part['find'][li] in p)))
+
     # Ringkasan
 
     def test_summary_waits_for_all_three_histories(self):
