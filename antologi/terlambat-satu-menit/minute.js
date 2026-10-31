@@ -361,6 +361,7 @@
   const nextOf = i => ORDER[(ORDER.indexOf(i) + 1) % ORDER.length];
   const renderSide = (index, record = true) => {
     clearTimeout(saveTimer); persist(); dialogs.forEach(d => { if (d.open) d.close(); });
+    clearInterval(typing); root.dataset.ready = '';
     view = 'detail'; setView('detail'); sideIndex = clamp(index, 0, N - 1); latestPlace = null; currentParagraph = -1; shownStatus = '';
     const doc = docs[sideIndex], side = LETTERS[sideIndex], s = sideData(sideIndex); root.dataset.side = side;
     if (sideIndex === 1 && done.has(keyOf(1))) recordVisit();

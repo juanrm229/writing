@@ -5,7 +5,7 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v32';
+const VERSION = 'v33';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
@@ -13,6 +13,7 @@ const SHELL_FILES = [
   'content/site.json', 'content/works.json',
   'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js', 'antologi/interlude/index.html', 'antologi/interlude/interlude.css', 'antologi/interlude/ambience.js', 'antologi/interlude/interlude.js',
   'antologi/terlambat-satu-menit/', 'antologi/terlambat-satu-menit/index.html', 'antologi/terlambat-satu-menit/minute.css', 'antologi/terlambat-satu-menit/minute.js', 'antologi/terlambat-satu-menit/sound.js', 'antologi/terlambat-satu-menit/track.js',
+  'antologi/pabrik-mimpi/', 'antologi/pabrik-mimpi/index.html', 'antologi/pabrik-mimpi/mimpi.css', 'antologi/pabrik-mimpi/mimpi.js', 'antologi/pabrik-mimpi/shift.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
 
