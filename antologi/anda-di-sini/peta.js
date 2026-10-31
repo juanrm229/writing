@@ -12,8 +12,10 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const store = {
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
+    // pratinjau dari admin tidak menulis riwayat pembaca; pengaturan baca tetap diingat
+    set(k, v) { if (PREVIEW && HISTORY.includes(k)) return; try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
+  const PREVIEW = /[?&]preview=1/.test(location.search), HISTORY = ['read', 'stats', 'last', 'prog', 'darimana', 'tidurku'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -29,7 +31,7 @@
      NASKAH: dari works.json (atau pratinjau admin), diurai menjadi blok
      ====================================================================== */
   let works = null, albums = null;
-  if (/[?&]preview=1/.test(location.search)) { try { ({ works, albums } = JSON.parse(localStorage.getItem('jm:preview') || 'null') || {}); } catch (e) { /* */ } }
+  if (PREVIEW) { try { ({ works, albums } = JSON.parse(localStorage.getItem('jm:preview') || 'null') || {}); } catch (e) { /* */ } }
   if (!works) [works, albums] = await Promise.all(['works', 'albums'].map(f => fetch(`../../content/${f}.json`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)));
   // antologi tempat tulisan ini berada, kalau ada: judulnya tampil di atas judul cerita
   const ANTH = (Array.isArray(albums) ? albums : []).find(a => a.kind === 'antologi' && (a.tracks || []).includes(SLUG));
@@ -106,6 +108,8 @@
   add(`<h1 class="title">${esc(W.title || 'Anda di Sini')}</h1>`, W.title || '');
   add(`<p class="byline">Juan · ${new Date((W.date || '2026-10-30') + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`, '');
   add('<p class="cover-hint"><i aria-hidden="true"></i>Gulir pelan-pelan. Petanya mengikuti.</p>', '');
+  // pembaca berbahasa Inggris: ceritanya belum diterjemahkan, sama seperti catatan di pembaca situs utama
+  if ((new URLSearchParams(location.search).get('lang') || store.get('lang', 'id')) === 'en' && !W.en?.body) add('<p class="lost" lang="en">This story isn’t available in English yet, so it’s shown in the original Indonesian.</p>', '');
   /* ---------- INTERLUDE: satu alat kecil di jeda setiap bagian ----------
      Tidak ada yang wajib disentuh; terus menggulir sama saja dengan melewatinya. */
   const IL_HOME = [

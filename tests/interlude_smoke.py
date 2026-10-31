@@ -31,7 +31,7 @@ class InterludeSmoke(unittest.TestCase):
         cls.url = f'http://127.0.0.1:{cls.server.server_port}/antologi/interlude/'
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch(
-            executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+            executable_path=next((p for p in ['/usr/bin/chromium', '/opt/pw-browsers/chromium'] if Path(p).exists()), None), args=['--no-sandbox'])
         cls.work = next(w for w in json.loads((ROOT / 'content/works.json').read_text())
                         if w['slug'] == 'interlude')
 

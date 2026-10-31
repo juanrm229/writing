@@ -49,7 +49,10 @@
   darkQuery.addEventListener('change', applyTheme);
   addEventListener('storage', e => { if (e.key === 'jm:theme') applyTheme(); });
   applyTheme();
-  if (!PREVIEW) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(site => { if (site?.theme) { siteTheme = site.theme; applyTheme(); } }).catch(() => {});
+  // judul tab mengikuti pola situs utama: judul tulisan · nama situs
+  let siteName = 'Quiet Margins', workTitle = '';
+  const setTitle = name => { if (name) siteName = name; if (workTitle) document.title = workTitle + ' · ' + siteName; };
+  if (!PREVIEW) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(site => { if (site?.theme) { siteTheme = site.theme; applyTheme(); } if (site?.title) setTitle(site.title); }).catch(() => {});
 
   const failed = message => { setView('detail'); $('#story').innerHTML = `<li class="loading">${esc(message)} <a href="${esc(location.href)}">${t('Coba lagi', 'Try again')}</a></li>`; $('#begin').disabled = true; };
   let works;
@@ -65,7 +68,7 @@
   });
   if (docs.some(d => !Array.isArray(d.body) || !d.body.length || d.body.some(p => typeof p !== 'string'))) { failed(t('Naskah belum lengkap.', 'The story is incomplete.')); return; }
   const title = EN ? work.en?.title || work.title : work.title;
-  document.title = title + ' · ' + t('Lacak Surat', 'Track the Letter'); $('#workTitle').textContent = title;
+  workTitle = title; setTitle(); $('#workTitle').textContent = title;
 
   const N = base.length, ORDER = (TRACK?.ORDER || [0, 1, 2, 3]).filter(i => i < N);
   // Data pelacakan: setiap ketukan dicari lewat penanda teks, jadi pembagian paragraf ID/EN tidak menggeser statusnya.

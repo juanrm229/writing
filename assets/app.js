@@ -71,6 +71,9 @@
   const OTHER = LANG !== BASE;
   // teks antarmuka dwibahasa ditulis langsung di tempatnya: t('Indonesia', 'English')
   const t = (id, en) => (LANG === 'en' && en != null ? en : id);
+  // angka + kata benda: bahasa Inggris membedakan tunggal dan jamak (1 side, 2 sides)
+  const countOf = (n, id, one, many) => `${n} ${t(id, n === 1 ? one : many)}`;
+  const trackCount = a => (a.kind === 'antologi' ? countOf(a.tracks.length, 'cerita', 'story', 'stories') : countOf(a.tracks.length, 'sisi', 'side', 'sides'));
   const LOCALE = LANG === 'en' ? 'en-GB' : 'id-ID';
   document.documentElement.lang = LANG;
   // antarmuka berbahasa Inggris: teks yang persis sama dengan kunci kamus (assets/i18n.js) diganti,
@@ -538,7 +541,7 @@
     if (animate && !reduced) g.classList.add('reveal');
     $('#tkMeta').innerHTML = `
       <span title="${t('piringan', 'records')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>${WORKS.length} ${t('piringan', WORKS.length === 1 ? 'record' : 'records')}</span><i class="sep"></i>
-      <span title="${t('sisi', 'sides')}"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4" ry="8"/></svg>${DOCS.length} ${t('sisi', 'sides')}</span><i class="sep"></i>
+      <span title="${t('sisi', 'sides')}"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="4" ry="8"/></svg>${countOf(DOCS.length, 'sisi', 'side', 'sides')}</span><i class="sep"></i>
       <span title="${t('kata', 'words')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>${num(total)} ${t('kata', 'words')}</span><i class="sep"></i>
       <span title="${t('waktu yang sudah kamu putar', 'time you have played')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>${minsPlayed()} ${t('mnt', 'min')}</span>`;
   }
@@ -624,7 +627,7 @@
     if (RADIO) html += `<p class="np-h"><span>${t('Radio menyala', 'Radio on')}</span><button type="button" class="np-link" data-radio-stop>${t('Hentikan', 'Stop')}</button></p>
       <div class="np-radio"><span class="nr-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="sg-t"><b>Radio “${esc(bySlug(RADIO.seed).title)}”</b><span>${RADIO.heard.length} ${t('sisi diputar · tulisan yang paling dekat kata dan suasananya', 'played · the pieces closest in words and mood')}</span></span></div>`;
     if (tm) html += `<p class="np-h"><span>${t('Racikan hari ini', 'Today’s mix')}</span><span>${t('berganti dalam', 'changes in')} ${inHours(untilMidnight())}</span></p>
-      <div class="np-daily"><button type="button" class="nd-open" data-open-album="${esc(tm.id)}"><canvas data-cover="${esc(tm.id)}" data-size="56"></canvas><span class="sg-t"><b>${esc(tm.title)}</b><span>${esc(tm.sub)} · ${tm.tracks.length} ${t('sisi', 'tracks')} · ${albumMins(tm)} ${t('menit', 'min')}</span></span></button>
+      <div class="np-daily"><button type="button" class="nd-open" data-open-album="${esc(tm.id)}"><canvas data-cover="${esc(tm.id)}" data-size="56"></canvas><span class="sg-t"><b>${esc(tm.title)}</b><span>${esc(tm.sub)} · ${countOf(tm.tracks.length, 'sisi', 'side', 'sides')} · ${albumMins(tm)} ${t('menit', 'min')}</span></span></button>
       <button type="button" class="nd-play" data-dplay="${esc(tm.id)}" aria-label="${t('Putar', 'Play')} ${esc(tm.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg></button></div>`;
     const qd = QUEUE.map(docByKey).filter(Boolean);
     html += `<p class="np-h"><span>${t('Antreanmu', 'Your queue')}${qd.length ? ' · ' + qd.length : ''}</span>${qd.length ? `<button type="button" class="np-link" data-qclear>${t('Kosongkan', 'Clear')}</button>` : ''}</p>`;
@@ -662,7 +665,7 @@
     const list = all().filter(w => pass(w) && (!svOn() || svMatch(w)));
     return `<div class="kc-filters" role="radiogroup" aria-label="${t('Saring koleksi', 'Filter collection')}">${K_FILTERS.filter(([k]) => k !== 'bab' || WORKS.some(w => w.CH)).map(([k, l]) => `<button type="button" role="radio" data-kf="${k}" aria-checked="${k === kFilter}">${l}</button>`).join('')}<button type="button" class="kc-sieve${svOn() ? ' on' : ''}" data-sieve>${SIEVE_ICON}<span>${svOn() ? esc(svSummary()) : t('Saring', 'Filter')}</span><b class="sv-n">${svOn() ? svWorks().length : ''}</b></button></div>
       <ul class="tk-list kc">${list.map((w, i) => `<li style="--k:${i}"><button type="button" data-pick="${w.key}">${mdisc(w)}
-        <span class="sg-t"><b>${esc(w.title)}</b><span>${esc(catOf(w.cat).label)} · ${w.CH ? `${w.CH.length} ${t('bab', 'chapters')} · ${w.minutes} ${t('mnt', 'min')}` : multi(w) ? `${w.S.length} ${t('sisi', 'sides')} · ${w.S.reduce((n, d) => n + d.minutes, 0)} ${t('mnt', 'min')}` : `${w.minutes} ${t('mnt', 'min')}`}</span></span>
+        <span class="sg-t"><b>${esc(w.title)}</b><span>${esc(catOf(w.cat).label)} · ${w.CH ? `${w.CH.length} ${t('bab', 'chapters')} · ${w.minutes} ${t('mnt', 'min')}` : multi(w) ? `${countOf(w.S.length, 'sisi', 'side', 'sides')} · ${w.S.reduce((n, d) => n + d.minutes, 0)} ${t('mnt', 'min')}` : `${w.minutes} ${t('mnt', 'min')}`}</span></span>
         <span class="kc-ab">${workRings(w)}</span></button></li>`).join('') || `<li class="tk-none">${t('Tidak ada piringan di sini.', 'No records here.')}</li>`}</ul>`;
   }
 
@@ -1578,7 +1581,7 @@
     { label: t('Bab berikutnya', 'Next chapter'), hint: (current && nextChapter(current))?.title || '', run: () => openDoc(nextChapter(current)), show: view === 'baca' && !!current && !!nextChapter(current) },
     { label: PV.autoplay === false ? 'Nyalakan putar terus' : 'Matikan putar terus', hint: 'sisi berikutnya menyusul otomatis', run: () => { PV.autoplay = PV.autoplay === false; savePv(); toast(PV.autoplay ? 'Putar terus menyala.' : 'Putar terus dimatikan.'); } },
     { label: 'Tambah ke antrean', hint: (view === 'pilih' ? pkDoc() : current)?.title, run: () => enqueue([view === 'pilih' ? pkDoc() : current]), show: (view === 'baca' && !!current) || (view === 'pilih' && !!pkDoc()) },
-    { label: 'Bagikan antrean sebagai racikan', hint: QUEUE.length + t(' sisi', ' sides'), run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
+    { label: 'Bagikan antrean sebagai racikan', hint: countOf(QUEUE.length, 'sisi', 'side', 'sides'), run: () => openMix(QUEUE.slice()), show: QUEUE.length > 0 },
     { label: 'Lihat antrean', hint: QUEUE.length + t(' menunggu', ' waiting'), run: () => { feedMode = 'now'; go('sapa'); }, show: QUEUE.length > 0 },
     { label: Sleep.mode ? 'Matikan pengatur waktu tidur' : 'Pengatur waktu tidur: 30 menit', hint: Sleep.mode ? sleepLabel() : 'pembacaan berhenti sendiri', run: () => setSleep(Sleep.mode ? 'off' : 30), show: view === 'baca' },
     { label: 'Berhenti di akhir sisi ini', hint: 'pengatur waktu tidur', run: () => setSleep('side'), show: view === 'baca' && Sleep.mode !== 'side' },
@@ -1596,7 +1599,7 @@
     { label: 'Pilih piringan', hint: t('sisi A, B, atau bab', 'side A, B, or a chapter'), run: () => go('pilih') },
     { label: 'Ke sapa', hint: 'panel', run: () => go('sapa'), show: !!SITE.features.dock },
     ...(todayMix() ? [{ label: 'Putar racikan hari ini', hint: todayMix().sub, run: () => playAlbum(todayMix().id, 0) }] : []),
-    ...ALBUMS.map(a => ({ label: t('Putar album “', 'Play the album “') + a.title + '”', hint: a.tracks.length + t(' sisi', ' sides'), run: () => playAlbum(a.id, 0) })),
+    ...ALBUMS.map(a => ({ label: t('Putar album “', 'Play the album “') + a.title + '”', hint: trackCount(a), run: () => playAlbum(a.id, 0) })),
     { label: 'Ganti latar', hint: 'wallpaper', run: () => $('#chipBackdrop').click() },
     { label: 'Pasang aplikasi', hint: 'layar utama', run: install, show: !$('#chipInstall').hidden }
   ].filter(c => c.show !== false);
@@ -2563,7 +2566,7 @@
      ALBUM: sisi-sisi pilihan penulis, diputar berurutan seperti playlist
      ====================================================================== */
   const ALBUMS = (Array.isArray(content.albums) ? content.albums : [])
-    .map(a => ({ id: String(a.id || ''), title: String(a.title || ''), note: String(a.note || ''), kind: a.kind === 'antologi' ? 'antologi' : '', tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
+    .map(a => ({ id: String(a.id || ''), title: String(trOf(a).title || a.title || ''), note: String(trOf(a).note || a.note || ''), kind: a.kind === 'antologi' ? 'antologi' : '', tracks: (a.tracks || []).map(docByKey).filter(Boolean) }))
     .filter(a => a.id && a.title && a.tracks.length);
   /* ---------- RACIKAN: playlist pembaca yang dibagikan lewat tautan, tanpa server ---------- */
   // isinya ada di tautan itu sendiri: #racikan?s=kopi-kedua,kopi-kedua:b&t=Judul&n=Pengirim
@@ -2602,7 +2605,7 @@
     $('#mixFrom').value = store.get('mixFrom', '');
     const ds = mixKeys.map(docByKey);
     $('#mixList').innerHTML = ds.map(d => `<li>${mdisc(d)}<span>${esc(d.title)}${badge(d) ? ' ' + badge(d) : ''}</span><small>${d.minutes} ${t('mnt', 'min')}</small></li>`).join('');
-    $('#mixCount').textContent = `${ds.length} ${t('sisi', 'sides')} · ${ds.reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}`;
+    $('#mixCount').textContent = `${countOf(ds.length, 'sisi', 'side', 'sides')} · ${ds.reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}`;
     $('#mixModal').hidden = false;
     requestAnimationFrame(() => paintCover($('#mixCover'), { tracks: ds }, Math.min(300, $('.mix-art').clientWidth || 260)));
     $('#mixTitle').select();
@@ -2743,7 +2746,7 @@
   function renderSieve() {
     const res = svWorks(), groups = svGroups();
     $('#svCount').textContent = t(`${res.length} dari ${WORKS.length} piringan`, `${res.length} of ${WORKS.length} records`);
-    $('#svMins').textContent = res.length ? `${res.flatMap(tracksOf).length} ${t('sisi', 'sides')} · ${res.flatMap(tracksOf).reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}` : '';
+    $('#svMins').textContent = res.length ? `${countOf(res.flatMap(tracksOf).length, 'sisi', 'side', 'sides')} · ${res.flatMap(tracksOf).reduce((n, d) => n + d.minutes, 0)} ${t('menit', 'min')}` : '';
     $('#svDiscs').innerHTML = res.slice(0, 9).map((w, i) => `<span style="--k:${i}" title="${esc(w.title)}">${mdisc(w)}</span>`).join('') + (res.length > 9 ? `<i>+${res.length - 9}</i>` : '');
     $('#svBody').innerHTML = groups.filter(g => g.opts.length > 1 || (SV[g.id] || []).length || g.id === 'word' && g.opts.length).map(g => `<section class="sv-g"><h3>${g.label}</h3><div class="sv-opts">${g.opts.map(o => {
       const on = (SV[g.id] || []).includes(o.v);
@@ -2866,13 +2869,13 @@
       const tm = todayMix(), tOn = tm && now && now.id === tm.id;
       host.innerHTML = `${tm ? `<button type="button" class="al-daily" data-album="${esc(tm.id)}">${sleeve(tm, 220, tOn)}
           <span class="ad-t"><span class="al-kicker">${t("Racikan harian · berganti dalam", "Daily mix · changes in")} ${inHours(untilMidnight())}</span><b>${esc(tm.title)}</b><span class="ad-sub">${esc(tm.sub)}</span>
-          <span class="ad-meta">${tm.tracks.length} ${t('sisi', 'sides')} · ${albumMins(tm)} ${t('menit', 'min')}${tOn ? t(' · sedang diputar', ' · playing') : ''}</span></span></button>` : ''}
+          <span class="ad-meta">${countOf(tm.tracks.length, 'sisi', 'side', 'sides')} · ${albumMins(tm)} ${t('menit', 'min')}${tOn ? t(' · sedang diputar', ' · playing') : ''}</span></span></button>` : ''}
         <header class="al-head"><p class="al-kicker">${t('Koleksi', 'Collection')}</p><h2>${t('Album', 'Albums')}</h2><p class="al-sub">${t('Sisi-sisi pilihan, disusun untuk didengar berurutan.', 'Hand-picked sides, ordered to be heard one after another.')}</p></header>
         <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
-          <b>${esc(a.title)}</b><small>${a.tracks.length} ${t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}${now && now.id === a.id ? t(' · sedang diputar', ' · playing') : ''}</small></button>`).join('') || `<p class="al-empty">${t('Belum ada album. Buat yang pertama di panel admin.', 'No albums yet. Make the first one in the admin panel.')}</p>`}</div>
+          <b>${esc(a.title)}</b><small>${trackCount(a)} · ${albumMins(a)} ${t('menit', 'min')}${now && now.id === a.id ? t(' · sedang diputar', ' · playing') : ''}</small></button>`).join('') || `<p class="al-empty">${t('Belum ada album. Buat yang pertama di panel admin.', 'No albums yet. Make the first one in the admin panel.')}</p>`}</div>
         ${MIXES.length ? `<header class="al-head al-head-sm"><p class="al-kicker">${t('Racikan', 'Mixes')}</p><p class="al-sub">${t('Urutan baca yang kamu buat atau yang dibagikan padamu lewat tautan.', 'Reading orders you made, or that were shared with you by link.')}</p></header>
         <div class="al-grid">${MIXES.map(mixAlbum).filter(a => a.tracks.length).map((a, i) => `<button type="button" class="al-card mix" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
-          <b>${esc(a.title)}</b><small>${a.mine ? t('Racikanmu', 'Your mix') : a.from ? t('dari ', 'from ') + esc(a.from) : t('dibagikan padamu', 'shared with you')} · ${a.tracks.length} ${t('sisi', 'sides')}</small></button>`).join('')}</div>` : ''}`;
+          <b>${esc(a.title)}</b><small>${a.mine ? t('Racikanmu', 'Your mix') : a.from ? t('dari ', 'from ') + esc(a.from) : t('dibagikan padamu', 'shared with you')} · ${countOf(a.tracks.length, 'sisi', 'side', 'sides')}</small></button>`).join('')}</div>` : ''}`;
       document.title = 'Album · ' + SITE.title;
     } else {
       const a = albumOf(id), on = now && now.id === a.id;
@@ -2880,13 +2883,13 @@
         <div class="al-detail">
           <div class="al-art">${sleeve(a, 300, on)}</div>
           <div class="al-info">
-            <p class="al-kicker">${a.daily ? t('Racikan harian · ', 'Daily mix · ') + esc(a.sub) : a.shared ? t('Racikan', 'Mix') : a.kind === 'antologi' ? t('Antologi', 'Anthology') : 'Album'} · ${a.tracks.length} ${a.kind === 'antologi' ? t('cerita', a.tracks.length === 1 ? 'story' : 'stories') : t('sisi', 'sides')} · ${albumMins(a)} ${t('menit', 'min')}</p>
+            <p class="al-kicker">${a.daily ? t('Racikan harian · ', 'Daily mix · ') + esc(a.sub) : a.shared ? t('Racikan', 'Mix') : a.kind === 'antologi' ? t('Antologi', 'Anthology') : 'Album'} · ${trackCount(a)} · ${albumMins(a)} ${t('menit', 'min')}</p>
             <h2>${esc(a.title)}</h2>
             ${a.note ? `<p class="al-note">${esc(a.note)}${a.shared && !a.mine ? ` <span class="al-ago">${t('Diterima', 'Received')} ${ago(a.at)}.</span>` : ''}${a.daily && a.date === wibDate() ? ` <span class="al-ago">${t('Berganti dalam', 'Changes in')} ${inHours(untilMidnight())}.</span>` : a.daily ? ` <span class="al-ago">${t('Ini racikan hari yang sudah lewat.', 'This is a mix from a day gone by.')}</span>` : ''}</p>` : ''}
             <div class="al-actions">
               <button type="button" class="al-play" data-play="${esc(a.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${on ? t('Lanjutkan', 'Resume') : t('Putar', 'Play')}</button>
               <button type="button" class="al-btn" data-shuffle="${esc(a.id)}" aria-label="Putar acak"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.2c2.2 0 3.4 1 4.6 3.2l1.4 2.6c1.2 2.2 2.4 3.2 4.6 3.2H20M4 17h3.2c1.4 0 2.4-.4 3.2-1.3M20 7h-2.2c-1.4 0-2.4.4-3.2 1.3M17.5 4.5 20 7l-2.5 2.5M17.5 13.5 20 16l-2.5 2.5"/></svg></button>
-              <button type="button" class="al-btn" data-qalbum="${esc(a.id)}" aria-label="Tambahkan album ke antrean" title="Tambahkan ke antrean">${QICON}</button>
+              <button type="button" class="al-btn" data-qalbum="${esc(a.id)}" aria-label="${t('Tambahkan album ke antrean', 'Add the album to your queue')}" title="${t('Tambahkan ke antrean', 'Add to queue')}">${QICON}</button>
               ${a.shared ? `<button type="button" class="al-btn" data-unmix="${esc(a.id)}" aria-label="${t('Hapus racikan dari rak', 'Remove the mix from the shelf')}" title="${t('Hapus dari rak', 'Remove from shelf')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>` : ''}
               <button type="button" class="al-btn" data-share="${esc(a.id)}" aria-label="${t('Bagikan ' + (a.shared ? 'racikan' : 'album'), 'Share the ' + (a.shared ? 'mix' : 'album'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
             </div>
@@ -2994,7 +2997,7 @@
           <div class="pf-actions">
             <button type="button" class="al-play" data-pf="all"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${t('Putar semua', 'Play all')}</button>
             <button type="button" class="pf-radio" data-pf="radio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a10 10 0 0 1 14 0M7.5 11.5a6.5 6.5 0 0 1 9 0"/><circle cx="12" cy="15" r="1.6" class="f"/><path d="M12 16.6V21"/></svg>Radio ${esc(name)}</button>
-            <button type="button" class="al-btn" data-pf="share" aria-label="Bagikan profil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
+            <button type="button" class="al-btn" data-pf="share" aria-label="${t('Bagikan profil', 'Share profile')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M6 11.5H5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 5 20.5h14a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></button>
           </div>
           <p class="pf-you">${you}</p>
         </div>
@@ -3018,7 +3021,7 @@
           ${it.works.length ? `<p class="pt-works"><span>${it.works.length} ${t('tulisan terbit', it.works.length === 1 ? 'piece published' : 'pieces published')}</span>${it.works.map(w => `<button type="button" data-pick="${w.key}">${mdisc(w)}${esc(w.title)}</button>`).join('')}</p>` : ''}</div></li>`; }).join('')}</ol></section>
 
       ${albums.length ? `<section class="pf-sec"><h2 class="pf-h">Diskografi</h2>
-        <div class="pf-disco">${albums.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 170, false)}<b>${esc(a.title)}</b><small>${a.daily ? t('Racikan harian', 'Daily mix') : 'Album'} · ${a.tracks.length} ${t('sisi', 'sides')}</small></button>`).join('')}</div></section>` : ''}
+        <div class="pf-disco">${albums.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 170, false)}<b>${esc(a.title)}</b><small>${a.daily ? t('Racikan harian', 'Daily mix') : a.kind === 'antologi' ? t('Antologi', 'Anthology') : 'Album'} · ${trackCount(a)}</small></button>`).join('')}</div></section>` : ''}
 
       ${quote ? `<blockquote class="pf-quote"><p>${rich(quote.text)}</p><cite>${esc(quote.source)}</cite></blockquote>` : ''}
 

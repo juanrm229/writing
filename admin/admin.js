@@ -942,6 +942,7 @@
     $('.ae-pool').style.visibility = a ? '' : 'hidden';
     if (!a) return;
     $('#aeTitle').value = a.title; $('#aeId').value = a.id; $('#aeNote').value = a.note || '';
+    { const k = albumTrKey(), tr = a[k] || {}; $('#aeTrSum').textContent = k === 'en' ? 'Dalam bahasa Inggris' : 'Dalam bahasa Indonesia'; $('#aeTitleTr').value = tr.title || ''; $('#aeNoteTr').value = tr.note || ''; $('#aeTr').open = !!(tr.title || tr.note); }
     $('#aeIdErr').hidden = true;
     $('#aeDelConfirm').hidden = true; $('#aeDel').hidden = false;
     renderTracks(); renderPool();
@@ -998,6 +999,16 @@
     if (!err) { a.id = v; S.selAlbum = v; delete a._autoId; renderAlbumList(); $('#aePreview').href = '../?preview=1#album-' + v; changed(); }
   });
   $('#aeNote').addEventListener('input', e => { const a = curAlbum(); if (a) { a.note = e.target.value; changed(); } });
+  // terjemahan album disimpan di kunci bahasa lain situs (mis. "en"), sama seperti tulisan
+  const albumTrKey = () => (S.site.lang === 'en' ? 'id' : 'en');
+  const setAlbumTr = (field, value) => {
+    const a = curAlbum(); if (!a) return; const k = albumTrKey(), tr = { ...(a[k] || {}) };
+    if (value.trim()) tr[field] = value; else delete tr[field];
+    if (Object.keys(tr).length) a[k] = tr; else delete a[k];
+    changed();
+  };
+  $('#aeTitleTr').addEventListener('input', e => setAlbumTr('title', e.target.value));
+  $('#aeNoteTr').addEventListener('input', e => setAlbumTr('note', e.target.value));
   $('#aeQ').addEventListener('input', renderPool);
   $('#aePool').addEventListener('click', e => {
     const b = e.target.closest('.ae-add'); if (!b || b.disabled) return;

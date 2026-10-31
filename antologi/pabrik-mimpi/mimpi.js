@@ -64,12 +64,15 @@
   let works;
   if (PREVIEW) works = store.get('preview', null)?.works;
   try { if (!works) { const r = await fetch('../../content/works.json', { cache: 'no-cache' }); if (!r.ok) throw new Error('content'); works = await r.json(); } } catch (_) {}
-  if (!PREVIEW) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => { if (s?.theme) { siteTheme = s.theme; applyTheme(); } }).catch(() => {});
+  // judul tab mengikuti pola situs utama: judul tulisan · nama situs
+  let siteName = 'Quiet Margins', workTitle = '';
+  const setTitle = name => { if (name) siteName = name; if (workTitle) document.title = workTitle + ' · ' + siteName; };
+  if (!PREVIEW) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => { if (s?.theme) { siteTheme = s.theme; applyTheme(); } if (s?.title) setTitle(s.title); }).catch(() => {});
   const work = Array.isArray(works) && works.find(w => w.slug === SLUG);
   if (!work || !Array.isArray(work.body) || !work.body.length) { $('#story').innerHTML = `<p class="loading">${t('Naskah belum bisa dimuat.', 'The story could not be loaded.')} <a href="${esc(location.href)}">${t('Coba lagi', 'Try again')}</a></p>`; return; }
   const body = EN && Array.isArray(work.en?.body) && work.en.body.length ? work.en.body : work.body;
   const title = EN ? work.en?.title || work.title : work.title;
-  document.title = title + ' · ' + t('Kalender', 'Calendar'); $('#coverTitle').textContent = title;
+  workTitle = title; setTitle(); $('#coverTitle').textContent = title;
   const findP = m => body.findIndex(p => p.includes(m[L]));
   const quoteIn = m => { const p = body[findP(m)] || ''; const q = [...plain(p).matchAll(/["“]([^"”]+)["”]/g)].map(x => x[1]); return q.at(-1) || ''; };
   const EVENTS = K.EVENTS.map(e => ({ ...e, p: findP(e.start) })).filter(e => e.p >= 0).sort((a, b) => a.p - b.p);
