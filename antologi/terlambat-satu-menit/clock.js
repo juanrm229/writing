@@ -16,9 +16,10 @@
   const hand = h => `<g class="hand hand-${h.key}" data-hand="${h.key}"><g class="${h.key === 'c' ? 'twitch' : 'still'}"><line x1="0" y1="${(h.tail * R).toFixed(1)}" x2="0" y2="${(-h.length * R).toFixed(1)}" stroke-width="${h.width}"/>${h.key === 'c' ? `<circle cx="0" cy="${(h.tail * R - 2).toFixed(1)}" r="3.2"/>` : ''}<line class="hit" x1="0" y1="0" x2="0" y2="${(-h.length * R).toFixed(1)}"/></g></g>`;
 
   class MinuteClock {
-    constructor(host, { minimal = false } = {}) {
+    constructor(host, { minimal = false, giant = false } = {}) {
       this.host = host;
-      host.innerHTML = `<svg class="clock${minimal ? ' minimal' : ''}" viewBox="-100 -100 200 200" aria-hidden="true" focusable="false"><circle class="rim" r="${R + 6}"/>${minimal ? '' : ticks()}<g class="hands">${HANDS.map(hand).join('')}</g><circle class="pin" r="${minimal ? 6 : 3.6}"/></svg>`;
+      const rings = giant ? `<circle class="face-disc" r="${R + 6}"/><circle class="ring inner" r="${R - 16}"/><circle class="ring outer" r="${R + 9}"/>` : '';
+      host.innerHTML = `<svg class="clock${minimal ? ' minimal' : ''}${giant ? ' giant-clock' : ''}" viewBox="-100 -100 200 200" aria-hidden="true" focusable="false">${rings}<circle class="rim" r="${R + 6}"/>${minimal ? '' : ticks()}<g class="hands">${HANDS.map(hand).join('')}</g><circle class="pin" r="${minimal ? 6 : 3.6}"/></svg>`;
       this.svg = host.querySelector('svg');
       this.hands = HANDS.map(h => host.querySelector('.hand-' + h.key));
       this.angles = [0, 0, 0]; this.anim = 0;
