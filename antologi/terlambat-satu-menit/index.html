@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Terlambat Satu Menit · Quiet Margins</title>
 <meta name="description" content="Satu Menit. Tiga jarum, tiga ingatan, dan satu lonceng di atas pintu.">
-<meta name="theme-color" content="#f7f7f4">
+<meta name="theme-color" content="#f7f7f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121412" media="(prefers-color-scheme: dark)">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 <link rel="icon" href="../../assets/icons/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,7 +70,7 @@
 
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
-  <div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Gerak jarum</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div>
+  <div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Gerak jarum</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div>
 </dialog>
 <dialog class="traces-dialog" id="tracesDialog" aria-labelledby="tracesTitle">
   <header class="dialog-head"><div><p class="eyebrow" id="tracesKicker">Satu Menit</p><h2 id="tracesTitle">Laci</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>

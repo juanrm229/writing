@@ -1,4 +1,10 @@
-:root { --paper: #f7f7f4; --ink: #303631; --muted: #71796f; --line: #dedfd7; --accent: #526c5c; --saman: #303631; --banyu: #526c5c; --maryam: #a2573a; --size: 19px; --bar-height: 56px; --serif: 'Newsreader', Georgia, serif; --ui: 'Geist', system-ui, sans-serif; color-scheme: light; }
+:root { --paper: #f7f7f4; --ink: #303631; --muted: #71796f; --line: #dedfd7; --accent: #526c5c; --saman: #303631; --banyu: #526c5c; --maryam: #a2573a; --hover: var(--hover); --tick: var(--tick); --hand-dim: var(--hand-dim); --glass: var(--glass); --glass-edge: var(--glass-edge); --cork: var(--cork); --shine: #fff; --gear: var(--gear); --backdrop: var(--backdrop); --size: 19px; --bar-height: 56px; --serif: 'Newsreader', Georgia, serif; --ui: 'Geist', system-ui, sans-serif; color-scheme: light; }
+/* Tema mengikuti situs: pilihan pembaca (data-theme) lebih dulu, lalu pengaturan perangkat. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #121412; --ink: #e4e7e1; --muted: #8e968b; --line: #2a2e2a; --accent: #93b7a0; --saman: #e4e7e1; --banyu: #93b7a0; --maryam: #dc8e6c; --hover: #1e221e; --tick: #3a3f3a; --hand-dim: #4a504a; --glass: rgba(150,170,155,.08); --glass-edge: #66705f; --cork: #8f7a5e; --shine: rgba(255,255,255,.35); --gear: #a7ad9f; --backdrop: rgba(0,0,0,.55); color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #121412; --ink: #e4e7e1; --muted: #8e968b; --line: #2a2e2a; --accent: #93b7a0; --saman: #e4e7e1; --banyu: #93b7a0; --maryam: #dc8e6c; --hover: #1e221e; --tick: #3a3f3a; --hand-dim: #4a504a; --glass: rgba(150,170,155,.08); --glass-edge: #66705f; --cork: #8f7a5e; --shine: rgba(255,255,255,.35); --gear: #a7ad9f; --backdrop: rgba(0,0,0,.55); color-scheme: dark; }
+body { transition: background-color .3s ease, color .3s ease; }
 * { box-sizing: border-box; }
 html { scroll-behavior: auto; }
 body { margin: 0; padding-top: var(--bar-height); background: var(--paper); color: var(--ink); font: 14px/1.5 var(--ui); -webkit-font-smoothing: antialiased; }
@@ -15,7 +21,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .icon { width: 40px; height: 40px; flex: none; border: 0; display: inline-grid; place-items: center; background: transparent; color: var(--ink); border-radius: 50%; text-decoration: none; font: 300 26px var(--ui); }
 .back { font-size: 34px; }
 .settings-icon { font: 400 16px var(--serif); }
-.icon:hover { background: #eaede5; }
+.icon:hover { background: var(--hover); }
 .dial-toggle { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 44px; padding: 4px 8px; background: none; border: 0; color: var(--ink); font-size: 12px; }
 .mini-dial { width: 30px; height: 30px; flex: none; display: block; }
 .current-voice { color: var(--muted); }
@@ -35,7 +41,7 @@ html:not([data-view="read"]) .reading-line { display: none; }
 /* Jam */
 .clock { display: block; width: 100%; height: 100%; overflow: visible; }
 .clock .rim { fill: none; stroke: var(--line); stroke-width: 1; }
-.clock .tick { stroke: #c9cbc1; stroke-width: 1; }
+.clock .tick { stroke: var(--tick); stroke-width: 1; }
 .clock .tick.major { stroke: var(--muted); stroke-width: 1.4; }
 .clock .hand line { stroke-linecap: round; transition: opacity .3s ease, stroke-width .3s ease; }
 .clock .hand .hit { stroke: transparent; stroke-width: 16; cursor: pointer; }
@@ -49,7 +55,7 @@ html:not([data-view="read"]) .reading-line { display: none; }
 @keyframes twitch { 0%, 70%, 100% { transform: rotate(0); } 78% { transform: rotate(1.6deg); } 86% { transform: rotate(-.3deg); } }
 .clock.minimal .rim { stroke: var(--muted); stroke-width: 9; }
 .clock.minimal .twitch, .clock.running .twitch, .clock.free .twitch { animation: none; }
-.clock.minimal .hand line:not(.hit) { stroke: #b7bcb2; }
+.clock.minimal .hand line:not(.hit) { stroke: var(--hand-dim); }
 .clock.minimal .hand.current line:not(.hit) { stroke: var(--ink); }
 .clock.minimal .hand-c.current line:not(.hit) { stroke: var(--maryam); }
 .clock.minimal .hand circle { display: none; }
@@ -81,14 +87,14 @@ html[data-time="free"] .dial-note { font-style: normal; font-family: var(--ui); 
 .shelf-bottle { width: 78px; height: 130px; }
 .bottle-caption { margin: 18px 0 0; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 .bottle { display: block; width: 100%; height: 100%; overflow: visible; }
-.bottle .glass { fill: rgba(226,232,224,.35); stroke: #9aa597; stroke-width: 1; }
-.bottle .cork { fill: #c8b294; }
-.bottle .shine { stroke: #fff; stroke-width: 1.6; stroke-linecap: round; opacity: .8; }
-.bottle .gear { fill: #8b8f86; fill-rule: evenodd; }
+.bottle .glass { fill: var(--glass); stroke: var(--glass-edge); stroke-width: 1; }
+.bottle .cork { fill: var(--cork); }
+.bottle .shine { stroke: var(--shine); stroke-width: 1.6; stroke-linecap: round; opacity: .8; }
+.bottle .gear { fill: var(--gear); fill-rule: evenodd; }
 .bottle .gear:last-child { animation: settle .6s ease; }
 @keyframes settle { 0% { opacity: 0; transform: translateY(-12px); } 100% { opacity: 1; transform: none; } }
 .gear-fall { position: fixed; z-index: 20; width: 14px; height: 14px; pointer-events: none; }
-.gear-fall path { fill: #8b8f86; fill-rule: evenodd; }
+.gear-fall path { fill: var(--gear); fill-rule: evenodd; }
 .read { min-width: 0; padding: 72px 0 160px; }
 .intro { padding: 0 0 85px; min-height: 65vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .eyebrow { margin: 0 0 20px; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
@@ -161,7 +167,7 @@ html[data-struck] .final-clock .clock { animation: strike 1.6s ease; }
 
 /* Dialog */
 dialog { width: min(480px, calc(100% - 28px)); max-height: 85dvh; overflow: auto; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); overscroll-behavior: contain; }
-dialog::backdrop { background: rgba(31,39,31,.2); backdrop-filter: blur(5px); }
+dialog::backdrop { background: var(--backdrop); backdrop-filter: blur(5px); }
 body:has(dialog[open]) { overflow: hidden; }
 .dialog-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 22px 24px; background: var(--paper); z-index: 1; }
 .dialog-head h2 { margin: 0; font: 400 29px/1.2 var(--serif); }

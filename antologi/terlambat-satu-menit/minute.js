@@ -28,6 +28,26 @@
   };
   Object.entries(labels).forEach(([id, value]) => { $('#' + id).textContent = t(...value); });
   [['back', t('Kembali ke meja tulis', 'Back to the writing desk')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')], ['handList', t('Tiga sisi cerita', 'Three sides of the story')], ['stage', t('Botol kaca', 'Glass bottle')]].forEach(([id, label]) => $('#' + id).setAttribute('aria-label', label));
+  // Tema mengikuti situs: pilihan pembaca (jm:theme), lalu pengaturan admin, lalu perangkat.
+  const darkQuery = matchMedia('(prefers-color-scheme: dark)'), root = document.documentElement;
+  let siteTheme = PREVIEW ? store.get('preview', null)?.site?.theme : null;
+  const isDark = () => { const value = root.getAttribute('data-theme'); return value ? value === 'dark' : darkQuery.matches; };
+  const applyTheme = () => {
+    const chosen = store.get('theme', null);
+    if (chosen === 'dark' || chosen === 'light') root.setAttribute('data-theme', chosen);
+    else if (siteTheme === 'gelap' || siteTheme === 'terang') root.setAttribute('data-theme', siteTheme === 'gelap' ? 'dark' : 'light');
+    else root.removeAttribute('data-theme');
+    const dark = isDark(), paper = getComputedStyle(root).getPropertyValue('--paper').trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = paper; });
+    $('#theme').setAttribute('aria-pressed', String(dark)); $('#theme').textContent = dark ? t('Gelap', 'Dark') : t('Terang', 'Light');
+    $('#theme').setAttribute('aria-label', t('Tampilan: ', 'Appearance: ') + (dark ? t('gelap. Ganti ke terang', 'dark. Switch to light') : t('terang. Ganti ke gelap', 'light. Switch to dark')));
+  };
+  $('#themeLabel').textContent = t('Tampilan', 'Appearance');
+  $('#theme').onclick = () => { store.set('theme', isDark() ? 'light' : 'dark'); applyTheme(); };
+  darkQuery.addEventListener('change', applyTheme);
+  addEventListener('storage', e => { if (e.key === 'jm:theme') applyTheme(); });
+  applyTheme();
+  if (!PREVIEW) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(site => { if (site?.theme) { siteTheme = site.theme; applyTheme(); } }).catch(() => {});
   document.querySelectorAll('[data-close]').forEach(b => { b.setAttribute('aria-label', t('Tutup', 'Close')); b.onclick = () => b.closest('dialog').close(); });
   const failed = message => {
     setView('read');

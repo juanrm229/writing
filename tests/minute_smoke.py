@@ -560,6 +560,45 @@ class MinuteSmoke(unittest.TestCase):
         self.open('#c-77')
         self.assertTrue(self.page.locator('#endFinal').is_hidden())
 
+    def paper(self):
+        return self.page.evaluate("getComputedStyle(document.body).backgroundColor")
+
+    def test_theme_follows_the_site_choice_then_the_device(self):
+        light, dark = 'rgb(247, 247, 244)', 'rgb(18, 20, 18)'
+        self.open('#a')
+        self.page.wait_for_timeout(350)
+        self.assertEqual(self.paper(), light)
+        self.page.emulate_media(color_scheme='dark')
+        self.page.wait_for_timeout(350)
+        self.assertEqual(self.paper(), dark)
+        self.assertEqual(self.page.locator('#theme').get_attribute('aria-pressed'), 'true')
+        self.assertEqual(self.page.locator('meta[name="theme-color"]').first.get_attribute('content'), '#121412')
+        # Pilihan di situs utama (jm:theme) menang atas perangkat, juga dari tab lain.
+        self.page.evaluate("""() => { localStorage.setItem('jm:theme', JSON.stringify('light'));
+          dispatchEvent(new StorageEvent('storage', { key: 'jm:theme' })); }""")
+        self.page.wait_for_timeout(350)
+        self.assertEqual(self.page.locator('html').get_attribute('data-theme'), 'light')
+        self.assertEqual(self.paper(), light)
+        self.page.locator('#openSettings').click()
+        self.page.locator('#theme').click()
+        self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:theme'))"), 'dark')
+        self.page.keyboard.press('Escape')
+        self.page.emulate_media(color_scheme='light')
+        self.open('#menit')
+        self.page.wait_for_timeout(350)
+        self.assertEqual(self.page.locator('html').get_attribute('data-theme'), 'dark')
+        self.assertEqual(self.paper(), dark)
+
+    def test_admin_theme_applies_when_the_reader_has_not_chosen(self):
+        self.context.route('**/content/site.json', lambda route: route.fulfill(json={'theme': 'gelap'}))
+        self.open('#b')
+        self.page.wait_for_function("document.documentElement.getAttribute('data-theme') === 'dark'")
+        self.page.evaluate("localStorage.setItem('jm:theme', JSON.stringify('light'))")
+        self.page.reload(wait_until='domcontentloaded')
+        self.page.wait_for_selector('.passage')
+        self.page.wait_for_timeout(400)
+        self.assertEqual(self.page.locator('html').get_attribute('data-theme'), 'light')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
