@@ -135,6 +135,13 @@
   const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   const voiceOf = s => (/^(arka|nara|sinta)\b/i.exec(s.trim()) || [])[1]?.toLowerCase() || '';
   const DRAFT = [6, 9]; // bab 7 dan 10: halaman buku tulis Arka
+  // Pasangan dipilih secara editorial. Batas akhir rentang tidak ikut ditampilkan.
+  const MEMORIES = [
+    { title: t('Belajar memberi ruang', 'Learning to leave room'), note: t('Dua momen ketika batas mulai bisa diucapkan.', 'Two moments when a boundary can begin to be spoken.'), arka: [6, 26, 34], nara: [7, 22, 29] },
+    { title: t('Senang, sekaligus takut', 'Happy, and afraid'), note: t('Menjelang keberangkatan, ada yang diucapkan dan ada yang ditahan.', 'Before the departure, some things are said and others held back.'), arka: [6, 55, 63], nara: [7, 92, 98] },
+    { title: t('Sesudah berpisah', 'After parting'), note: t('Keseharian terus berjalan, dengan cara yang berbeda bagi keduanya.', 'Ordinary life goes on, differently for each of them.'), arka: [9, 58, 61], nara: [10, 3, 6] },
+    { title: t('Meja dekat rak', 'The table by the shelves'), note: t('Arka menunggu di dalam. Nara masih berada di seberang jalan.', 'Arka waits inside. Nara is still across the street.'), arka: [11, 24, 29], nara: [11, 46, 51] }
+  ];
   // Arsip merujuk naskah yang sama; tidak merekonstruksi kata-kata yang dihapus.
   const archiveKind = { unsent: t('Tak terkirim', 'Unsent'), photo: t('Foto', 'Photo'), notebook: t('Buku tulis', 'Notebook'), note: t('Catatan pribadi', 'Private note') };
   const entryAt = (kind, key, owner, title) => {
@@ -254,9 +261,41 @@
   const sections = [...document.querySelectorAll('.ch')];
   const passages = [...document.querySelectorAll('.passage')];
   const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')];
-  const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
-  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), atmosphereDialog = $('#atmosphereDialog'), resume = $('#resume');
-  const dialogs = [dialog, archiveDialog, photoViewer, atmosphereDialog];
+  const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct'), headerTyping = $('#headerTyping');
+  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), atmosphereDialog = $('#atmosphereDialog'), memoriesDialog = $('#memoriesDialog'), resume = $('#resume');
+  const dialogs = [dialog, archiveDialog, photoViewer, atmosphereDialog, memoriesDialog];
+  let memoriesUnlocked = false, memoryIndex = 0;
+  $('#memoriesTitle').textContent = t('Dua Ingatan', 'Two Memories');
+  $('#memoriesKick').textContent = t('Interlude · Sesudah halaman terakhir', 'Interlude · After the last page');
+  $('#memoriesNote').textContent = t('Petikan yang saling bersinggungan, dari sisi Arka dan Nara. Keduanya boleh tinggal berdampingan.', 'Passages that meet each other, from Arka’s side and Nara’s. Both can stay alongside each other.');
+  $('#memoriesInvitationText').textContent = t('Kamu sudah mendengar keduanya. Ada beberapa hal yang bisa dibaca sekali lagi.', 'You have heard them both. Some things can be read once more.');
+  $('#memorySelectLabel').textContent = t('Pilih ingatan', 'Choose a memory');
+  $('#closeMemories').setAttribute('aria-label', t('Tutup', 'Close'));
+  $('#previousMemory').setAttribute('aria-label', t('Ingatan sebelumnya', 'Previous memory'));
+  $('#nextMemory').setAttribute('aria-label', t('Ingatan berikutnya', 'Next memory'));
+  $('#memoryNavigation').setAttribute('aria-label', t('Ingatan', 'Memories'));
+  document.querySelectorAll('[data-open-memories]').forEach(b => { b.textContent = t('Dua Ingatan', 'Two Memories'); });
+  const unlockMemories = (announce = true) => {
+    if (memoriesUnlocked) return;
+    memoriesUnlocked = true;
+    document.querySelectorAll('[data-open-memories]').forEach(b => { b.hidden = false; });
+    $('#memoriesInvitation').hidden = false; $('#memoriesArchive').hidden = false;
+    if (announce) $('#memoriesAnnouncement').textContent = t('Dua Ingatan kini terbuka. Kamu bisa membaca kembali sisi Arka dan Nara.', 'Two Memories is now open. You can revisit Arka’s and Nara’s sides.');
+  };
+  const finishedStories = store.get('stats', {}).done;
+  if (Array.isArray(finishedStories) && finishedStories.includes(SLUG)) unlockMemories(false);
+  const renderMemory = () => {
+    if (!memoriesUnlocked) return;
+    const pair = MEMORIES[memoryIndex];
+    $('#memorySelect').value = String(memoryIndex); $('#memoryContext').textContent = pair.note;
+    $('#memoryPosition').textContent = t(`Ingatan ${memoryIndex + 1} dari ${MEMORIES.length}`, `Memory ${memoryIndex + 1} of ${MEMORIES.length}`);
+    $('#previousMemory').disabled = memoryIndex === 0; $('#nextMemory').disabled = memoryIndex === MEMORIES.length - 1;
+    $('#memoryPair').innerHTML = ['arka', 'nara'].map(voice => {
+      const [chapter, first, end] = pair[voice], name = voice === 'arka' ? 'Arka' : 'Nara';
+      return `<article class="memory-voice" data-memory-voice="${voice}" style="--c:var(--${voice})"><header><span class="av" aria-hidden="true">${name[0]}</span><div><h3>${name}</h3><small>${t('Bab', 'Chapter')} ${chapter + 1} · ${esc(chapterTitle(chapter))}</small></div></header><div class="memory-text">${chapters[chapter].body.slice(first, end).map(p => `<p>${inline(p)}</p>`).join('')}</div><a class="memory-source" href="#p-${chapter}-${first}" data-memory-source="p-${chapter}-${first}">${t('Ke adegan ', 'Go to ') + name}${t('', '’s scene')} →</a></article>`;
+    }).join('');
+    memoriesDialog.scrollTop = 0;
+  };
   const soundToggle = $('#soundToggle'), soundVolume = $('#soundVolume'), soundStatus = $('#soundStatus');
   $('#atmosphereTitle').textContent = t('Suasana membaca', 'Reading atmosphere');
   $('#openAtmosphere').setAttribute('aria-label', t('Suasana membaca', 'Reading atmosphere'));
@@ -348,7 +387,9 @@
   const cancelEffects = () => {
     effectEpoch++; effectTimers.forEach(clearTimeout); effectTimers.clear(); typing = 0; compBusy = false;
     comp.hidden = true; compT.textContent = ''; headKey = '';
+    headerTyping.hidden = true;
     document.querySelectorAll('.typing').forEach(el => el.classList.remove('typing'));
+    document.querySelectorAll('.typing-indicator').forEach(el => el.remove());
     document.querySelectorAll('.photo.in').forEach(el => el.classList.add('sharp'));
     document.querySelectorAll('.lock.in').forEach(el => el.classList.add('open'));
   };
@@ -357,7 +398,8 @@
     let lo = 0, hi = elements.length - 1, found = -1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      if (elements[mid].getBoundingClientRect().top <= line) { found = mid; lo = mid + 1; } else hi = mid - 1;
+      // Guliran peramban dibulatkan; toleransi subpiksel menjaga paragraf tujuan.
+      if (elements[mid].getBoundingClientRect().top <= line + .5) { found = mid; lo = mid + 1; } else hi = mid - 1;
     }
     return found;
   };
@@ -378,6 +420,7 @@
     if (latestPlace.progress === 1) {
       const st = store.get('stats', {}); st.done = st.done || [];
       if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); }
+      unlockMemories();
     }
   };
   const frame = () => {
@@ -476,6 +519,21 @@
     persistPlace(); cancelEffects(); renderArchive(); archiveDialog.showModal();
   };
   $('#closeArchive').onclick = () => archiveDialog.close();
+  document.querySelectorAll('[data-open-memories]').forEach(b => b.addEventListener('click', () => {
+    if (!memoriesUnlocked) return;
+    persistPlace(); cancelEffects();
+    $('#memorySelect').innerHTML = MEMORIES.map((m, i) => `<option value="${i}">${esc(m.title)}</option>`).join('');
+    renderMemory(); memoriesDialog.showModal();
+  }));
+  $('#closeMemories').onclick = () => memoriesDialog.close();
+  $('#memorySelect').onchange = () => { memoryIndex = clamp(+$('#memorySelect').value || 0, 0, MEMORIES.length - 1); renderMemory(); };
+  $('#previousMemory').onclick = () => { memoryIndex = Math.max(0, memoryIndex - 1); renderMemory(); };
+  $('#nextMemory').onclick = () => { memoryIndex = Math.min(MEMORIES.length - 1, memoryIndex + 1); renderMemory(); };
+  $('#memoryPair').addEventListener('click', e => {
+    const a = e.target.closest('[data-memory-source]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); goTo(document.getElementById(a.dataset.memorySource));
+  });
   $('#openAtmosphere').onclick = () => { persistPlace(); cancelEffects(); atmosphereDialog.showModal(); };
   $('#closeAtmosphere').onclick = () => atmosphereDialog.close();
   $('#archiveList').addEventListener('click', e => {
@@ -602,9 +660,16 @@
     if (el.classList.contains('lock')) { if (calm) el.classList.add('open'); else later(() => el.classList.add('open'), 900); return; }
     if (calm || document.hidden || !active) return;
     if (buzz && el.classList.contains('sms') && el.classList.contains('you')) try { navigator.vibrate?.([18, 60, 18]); } catch (e) { /* tidak didukung */ }
-    if (!el.classList.contains('you') || el.classList.contains('note') || scrollY < 200) return;
-    el.classList.add('typing'); typing++; hLoc.textContent = (el.dataset.who ? el.dataset.who + ' ' : '') + t('sedang mengetik…', 'is typing…');
-    later(() => { el.classList.remove('typing'); if (!--typing) { headKey = ''; frame(); } }, 520 + Math.min(900, el.textContent.length * 9));
+    if (!el.classList.contains('you') || el.classList.contains('note') || el.classList.contains('photo') || scrollY < 200) return;
+    const duration = 620 + Math.min(900, el.textContent.length * 9);
+    const indicator = document.createElement('span'); indicator.className = 'typing-indicator typing-dots';
+    indicator.setAttribute('aria-hidden', 'true'); indicator.innerHTML = '<i></i><i></i><i></i>';
+    el.append(indicator); el.classList.add('typing'); typing++; headerTyping.hidden = false;
+    hLoc.textContent = (el.dataset.who ? el.dataset.who + ' ' : '') + t('sedang mengetik…', 'is typing…');
+    later(() => {
+      indicator.remove(); el.classList.remove('typing');
+      if (!--typing) { headerTyping.hidden = true; headKey = ''; frame(); }
+    }, duration);
   };
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }

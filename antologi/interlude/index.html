@@ -20,7 +20,7 @@
 <header class="chat-h" id="chatH">
   <a class="ch-back" href="../../#putar" id="back" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
   <span class="av" id="hAv" aria-hidden="true">I</span>
-  <button class="h-t" id="openChapters" type="button" aria-haspopup="dialog" aria-controls="chapterDialog" aria-label="Daftar percakapan"><b id="hName">Interlude</b><small id="hLoc"></small></button>
+  <button class="h-t" id="openChapters" type="button" aria-haspopup="dialog" aria-controls="chapterDialog" aria-label="Daftar percakapan"><b id="hName">Interlude</b><span class="h-sub"><small id="hLoc"></small><span class="typing-dots" id="headerTyping" hidden aria-hidden="true"><i></i><i></i><i></i></span></span></button>
   <span class="bar-p" id="pct" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</span>
   <button class="archive-toggle" id="openAtmosphere" type="button" aria-haspopup="dialog" aria-controls="atmosphereDialog" aria-label="Suasana membaca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 14v-3a7 7 0 0 1 14 0v3M5 13H3v6h4v-6zM19 13h2v6h-4v-6z"/></svg></button>
   <button class="archive-toggle" id="openArchive" type="button" aria-haspopup="dialog" aria-controls="archiveDialog" aria-label="Buka arsip Interlude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 4h18v5H3zM9 13h6"/></svg><span id="archiveCount" hidden aria-hidden="true">0</span></button>
@@ -35,10 +35,11 @@
   <div class="reading-start">
     <button class="resume" id="resume" type="button" hidden></button>
     <button class="begin" id="begin" type="button">Mulai membaca</button>
+    <button class="memories-open" type="button" data-open-memories hidden aria-haspopup="dialog" aria-controls="memoriesDialog">Dua Ingatan</button>
     <p class="reading-note" id="readingNote">Posisi bacamu diingat di perangkat ini.</p>
   </div>
   <div class="story" id="story"><p class="loading">…</p></div>
-  <footer class="after" id="after" hidden><a class="after-back" href="../../#putar" id="back2"></a></footer>
+  <footer class="after" id="after" hidden><div class="memories-invitation" id="memoriesInvitation" hidden><p id="memoriesInvitationText">Kamu sudah mendengar keduanya. Ada beberapa hal yang bisa dibaca sekali lagi.</p><button class="memories-open" type="button" data-open-memories hidden aria-haspopup="dialog" aria-controls="memoriesDialog">Dua Ingatan</button></div><a class="after-back" href="../../#putar" id="back2"></a></footer>
 </main>
 <dialog class="chapter-dialog" id="chapterDialog" aria-labelledby="chaptersTitle">
   <header class="dialog-h"><div><p class="kick">Interlude · Temusai</p><h2 id="chaptersTitle">Daftar percakapan</h2></div><button id="closeChapters" type="button" aria-label="Tutup">×</button></header>
@@ -60,7 +61,17 @@
   <header class="dialog-h"><div><p class="kick" id="archiveKick">Interlude · Arsip</p><h2 id="archiveTitle">Yang tertinggal</h2></div><button id="closeArchive" type="button" aria-label="Tutup arsip">×</button></header>
   <p class="archive-note" id="archiveNote">Draf, foto, dan catatan yang sudah kamu temui tinggal di sini. Tersimpan di perangkat ini.</p>
   <div class="archive-list" id="archiveList"></div>
+  <div class="archive-afterword" id="memoriesArchive" hidden><button class="memories-open" type="button" data-open-memories hidden aria-haspopup="dialog" aria-controls="memoriesDialog">Dua Ingatan</button></div>
 </dialog>
+<dialog class="chapter-dialog memories-dialog" id="memoriesDialog" aria-labelledby="memoriesTitle" aria-describedby="memoriesNote">
+  <header class="dialog-h"><div><p class="kick" id="memoriesKick">Interlude · Sesudah halaman terakhir</p><h2 id="memoriesTitle">Dua Ingatan</h2></div><button id="closeMemories" type="button" aria-label="Tutup">×</button></header>
+  <p class="memories-note" id="memoriesNote">Petikan yang saling bersinggungan, dari sisi Arka dan Nara. Keduanya boleh tinggal berdampingan.</p>
+  <div class="memory-choice"><label for="memorySelect" id="memorySelectLabel">Pilih ingatan</label><select id="memorySelect"></select></div>
+  <p class="memory-context" id="memoryContext"></p>
+  <div class="memory-pair" id="memoryPair"></div>
+  <nav class="memory-navigation" aria-label="Ingatan" id="memoryNavigation"><button id="previousMemory" type="button" aria-label="Ingatan sebelumnya">←</button><span id="memoryPosition" role="status" aria-live="polite"></span><button id="nextMemory" type="button" aria-label="Ingatan berikutnya">→</button></nav>
+</dialog>
+<p class="sr-only" id="memoriesAnnouncement" role="status" aria-live="polite"></p>
 <dialog class="photo-viewer" id="photoViewer" aria-labelledby="photoTitle">
   <header class="dialog-h"><h2 id="photoTitle"></h2><button id="closePhoto" type="button" aria-label="Tutup foto">×</button></header>
   <img id="photoImage" alt="">
