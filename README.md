@@ -178,4 +178,18 @@ Data acara, foto, kutipan, dan penanda ruangan yang berdiri (dengan penanda ID/E
 python3 tests/mimpi_smoke.py
 ```
 
+### The Moon Behind My Eyes (antologi/the-moon-behind-my-eyes/)
+
+Puisi pertama yang punya pengalaman baca sendiri: pembaca duduk di kamar, menghadap jendela malam, dan melakukan sendiri apa yang dilakukan puisinya. Larik-lariknya dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Kamar, jam, dan bulan adalah bingkainya.
+
+- **Kaca yang dijaga bening**: kacanya berembun dan bisa diusap dengan jari atau tetikus; embunnya kembali pelan-pelan selama bait pertama.
+- **Bintang yang tepat waktu**: mulai bait kedua, setiap detik jam yang sungguhan satu bintang datang, *punctual and indifferent*. Di bawah jendela tertulis berapa persen bulan malam ini, *tidak terlihat dari jendela ini*.
+- **Tirai**: saat *So, I drew the curtains* terbaca, tirainya bisa diseret ke tengah atau ditutup lewat tombol; lewat dari baitnya, tirai menutup sendiri, lalu kamar berbalik membelakangi kaca.
+- **Tahan untuk memejam**: setelah *I finally closed my eyes*, pembaca menahan tombol (atau spasi). Kelopak mata turun, dan di balik gelapnya bulan muncul bersama dua bait terakhir, larik demi larik. Melepas tombol membuka mata dan menjeda lariknya. Di alur baca, dua bait itu buram sampai pernah dibaca dengan mata terpejam; sesudahnya bulannya tetap tinggal sebagai cahaya pucat di kamar. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan.
+- **Bacaan dan tema**: tercatat di riwayat situs utama (selesai setelah bait terakhir terbaca), penanda baca per bahasa, `#baca-2` untuk bait ketiga, ukuran huruf, gerak tenang, dan tema terang/gelap yang mengikuti situs (langitnya tetap malam). Pratinjau `?preview=1` tidak menulis riwayat.
+
+```bash
+python3 tests/moon_smoke.py
+```
+
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.

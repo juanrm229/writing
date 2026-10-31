@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Moon Behind My Eyes · Quiet Margins</title>
+<meta name="description" content="Sebuah jendela, kaca yang dijaga bening, dan bulan yang hanya terlihat saat mata terpejam.">
+<meta property="og:title" content="The Moon Behind My Eyes">
+<meta property="og:description" content="I kept the glass perfectly clean, believing that clarity would make it easier for the light to find me.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#121318">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="moon.css?v=1">
+</head>
+<body>
+<div class="scene" id="scene" aria-hidden="true">
+  <div class="room">
+    <div class="window" id="window">
+      <div class="sky"><div class="rumor" id="rumor"></div><div class="stars" id="stars"></div>
+        <svg class="land" viewBox="0 0 400 160" preserveAspectRatio="none"><path class="far" d="M0 92 L40 88 L70 94 L110 86 L150 90 L200 84 L240 90 L290 85 L330 91 L370 87 L400 90 V160 H0Z"/><path class="yard" d="M0 118 H400 V160 H0Z"/><g class="fence"><path d="M0 112 H400"/><path d="M20 104 V124 M60 104 V124 M100 104 V124 M140 104 V124 M180 104 V124 M220 104 V124 M260 104 V124 M300 104 V124 M340 104 V124 M380 104 V124"/></g></svg>
+      </div>
+      <canvas class="fog" id="fog"></canvas>
+      <div class="frame"><i></i><i></i></div>
+      <div class="curtain left" id="curtainL"><span class="pull"></span></div>
+      <div class="curtain right" id="curtainR"><span class="pull"></span></div>
+    </div>
+    <div class="sill"></div>
+    <p class="clock" id="clock"><span id="clockTime">00.00.00</span><small id="moonNote"></small></p>
+    <div class="room-glow" id="roomGlow"></div>
+  </div>
+  <div class="lids" id="lids"><i class="top"></i><i class="bottom"></i></div>
+</div>
+
+<div class="inner" id="inner" aria-live="polite">
+  <div class="inner-moon" id="innerMoon"></div>
+  <div class="inner-text" id="innerText"></div>
+</div>
+
+<header class="bar" id="bar">
+  <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+  <span class="bar-title" id="barTitle">The Moon Behind My Eyes</span>
+  <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
+</header>
+
+<main class="poem" id="poem">
+  <header class="cover" id="cover">
+    <p class="kicker" id="kicker">Puisi</p>
+    <h1 id="title">The Moon Behind My Eyes</h1>
+    <p class="byline" id="byline"></p>
+    <p class="lost" id="lost" hidden></p>
+    <p class="hint" id="coverHint">Gulir pelan-pelan. Jendelanya ada di depanmu.</p>
+    <button class="secondary" id="resume" type="button" hidden>Lanjutkan</button>
+  </header>
+  <div id="stanzas"><p class="loading">…</p></div>
+</main>
+
+<div class="actions" id="actions">
+  <button class="chip" id="closeCurtains" type="button" hidden>Tutup tirai</button>
+  <div class="hold-wrap" id="holdWrap" hidden>
+    <button class="hold" id="hold" type="button" aria-describedby="holdHint"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="track" cx="32" cy="32" r="29"/><circle class="ring" id="holdRing" cx="32" cy="32" r="29"/></svg><span class="eye" aria-hidden="true"></span><span class="hold-label" id="holdLabel">Tahan untuk memejam</span></button>
+    <p class="hold-hint" id="holdHint">Tahan layar atau tombol spasi. Lepaskan untuk membuka mata.</p>
+    <button class="text-button" id="openEyes" type="button">Baca dengan mata terbuka</button>
+  </div>
+</div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="moon.js?v=1"></script>
+</body>
+</html>
