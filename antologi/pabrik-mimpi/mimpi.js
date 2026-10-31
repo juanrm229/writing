@@ -22,13 +22,14 @@
   const LOCALE = EN ? 'en-GB' : 'id-ID';
   const labels = {
     sideBackLabel: ['Meja tulis', 'Writing desk'], appName: ['Kalender', 'Calendar'], calsLabel: ['Kalender saya', 'My calendars'], ownerName: ['Pak Wangsa', 'Mr. Wangsa'],
-    ownerNote: ['Perajin mimpi · stasiun paling ujung', 'Dream crafter · the end station'], today: ['Hari ini', 'Today'], viewChip: ['Jadwal', 'Schedule'],
+    ownerNote: ['Perajin mimpi · stasiun paling ujung', 'Dream crafter · the end station'], todayLabel: ['Hari ini', 'Today'], viewChip: ['Jadwal', 'Schedule'], coverBackLabel: ['Meja tulis', 'Writing desk'],
+    sideYears: ['Tampilan tahun · 1985–2025', 'Year view · 1985–2025'], yearsKicker: ['Tampilan tahun', 'Year view'],
     coverKicker: ['Kalender Pak Wangsa', "Mr. Wangsa's calendar"], coverNote: ['Empat puluh tahun shift malam. Satu acara yang selalu dijadwalkan ulang.', 'Forty years of night shifts. One event that was always rescheduled.'],
     resume: ['Lanjutkan', 'Continue'], settingsTitle: ['Pengaturan baca', 'Reading settings'], sizeLabel: ['Ukuran huruf', 'Text size'], motionLabel: ['Gerak', 'Motion'],
     themeLabel: ['Tampilan', 'Appearance'], languageLabel: ['Bahasa', 'Language'], lightboxTitle: ['Lampiran', 'Attachment']
   };
   Object.entries(labels).forEach(([id, v]) => { $('#' + id).textContent = t(...v); });
-  [['back', t('Kembali ke meja tulis', 'Back to the writing desk')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, l]) => $('#' + id).setAttribute('aria-label', l));
+  [['menu', t('Buka menu kalender', 'Open the calendar menu')], ['coverBack', t('Kembali ke meja tulis', 'Back to the writing desk')], ['today', t('Hari ini', 'Today')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, l]) => $('#' + id).setAttribute('aria-label', l));
   document.querySelectorAll('[data-close]').forEach(b => { b.setAttribute('aria-label', t('Tutup', 'Close')); b.onclick = () => b.closest('dialog').close(); });
 
   // Tema mengikuti situs.
@@ -57,6 +58,7 @@
   $('#motion').onclick = () => { store.set('mimpi:motion', $('#motion').getAttribute('aria-pressed') !== 'true'); setMotion(); };
   motionQuery.addEventListener('change', setMotion); setMotion();
   const calm = () => root.hasAttribute('data-calm');
+  const buzz = pattern => { if (!calm()) try { navigator.vibrate?.(pattern); } catch (_) {} };
 
   // Naskah
   let works;
@@ -77,6 +79,8 @@
   const inviteTitle = quoteIn(K.QUOTES.invite || ['', '']);
   const lilaReply = quoteIn(K.QUOTES.reply || ['', '']);
   const postpone = plain(K.QUOTES.postpone ? K.QUOTES.postpone[L] : '');
+  const gateReason = (() => { const g = K.QUOTES.gate?.[L]; if (!g) return ''; const p = plain(body[findP([K.QUOTES.gate[0][0], K.QUOTES.gate[1][0]])] || ''), a = p.indexOf(g[0]), b = p.indexOf(g[1], a); return a < 0 || b < 0 ? '' : p.slice(a, b) + '.'; })();
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   // Tanggal
   const D = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -103,6 +107,17 @@
     const names = Array.from({ length: 7 }, (_, i) => fmt(new Date(2024, 0, 1 + i), { weekday: 'narrow' }));
     $('#miniGrid').innerHTML = names.map(n => `<b>${n}</b>`).join('') + Array.from({ length: offset }, () => '<i></i>').join('') + Array.from({ length: days }, (_, i) => `<span${i + 1 === date.getDate() ? ' class="on"' : ''}>${i + 1}</span>`).join('');
     $('#appIconDay').textContent = String(date.getDate());
+    renderWeek(date);
+  };
+  // Pita minggu di ponsel: tujuh hari di sekitar acara yang sedang dibaca.
+  const dayColor = new Map(); K.EVENTS.forEach(e => { if (!e.empty && !dayColor.has(e.date)) dayColor.set(e.date, calColor(e.cal)); });
+  const renderWeek = date => {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate() - (date.getDay() + 6) % 7);
+    $('#week').innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), c = dayColor.get(iso(d)), on = d.getTime() === date.getTime();
+      return `<span class="${on ? 'on' : ''}"${c ? ` style="--c:${c}"` : ''}><small>${esc(fmt(d, { weekday: 'narrow' }))}</small><b>${d.getDate()}</b>${c ? '<i></i>' : ''}</span>`;
+    }).join('');
+    if (!calm()) { const w = $('#week'); w.classList.remove('turn'); void w.offsetWidth; w.classList.add('turn'); }
   };
 
   // Jadwal
@@ -112,7 +127,8 @@
   const years = () => K.LAST_YEAR - K.FIRST_YEAR;
   const reschedule = () => `<section class="resched" aria-labelledby="reschedTitle">
       <p class="resched-head" id="reschedTitle">${t('Riwayat jadwal ulang', 'Reschedule history')}</p>
-      <div class="resched-card" id="reschedCard"><span class="rc-date" id="rcDate"></span><span class="rc-title">${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</span><span class="rc-task"><span class="box" aria-hidden="true"></span>${t('Bawa pulang mimpi', 'Take the dream home')}</span><span class="rc-stamp" aria-hidden="true">↻</span></div>
+      <div class="resched-card" id="reschedCard"><span class="rc-date" id="rcDate"></span><span class="rc-title">${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</span><button class="rc-task" id="rcTask" type="button" aria-describedby="rcGate"><span class="box" aria-hidden="true"></span>${t('Bawa pulang mimpi', 'Take the dream home')}</button><span class="rc-stamp" aria-hidden="true">↻</span><span class="rc-hint" aria-hidden="true">${t('geser untuk menunda', 'swipe to put off')} →</span></div>
+      <p class="rc-gate" id="rcGate" hidden></p>
       <label class="sr-only" for="years">${t('Tahun', 'Year')}</label><input type="range" id="years" min="${K.FIRST_YEAR}" max="${K.LAST_YEAR - 1}" value="${K.FIRST_YEAR}">
       <div class="resched-foot"><p class="rc-log" id="rcLog" aria-live="polite"></p><button class="secondary small" id="playYears" type="button">${t('Putar empat puluh tahun', 'Play forty years')}</button></div>
     </section>`;
@@ -122,6 +138,7 @@
     if (e.live) return `<header class="event-head"><span class="badge live" id="liveBadge">● ${t('Sedang berlangsung', 'Happening now')}</span><span class="time">${esc(pick(e.time))} <span class="mono" id="liveTimer"></span></span><h3>${esc(inviteTitle)}</h3><p class="meta">⌖ ${esc(pick(e.place))}</p></header>`;
     return `<header class="event-head"><span class="time">${esc(pick(e.time))}</span><h3>${esc(pick(e.title))}</h3>${meta ? `<p class="meta">${meta}</p>` : ''}${e.task ? `<p class="task" data-task="${e.id}"><span class="box" aria-hidden="true"></span>${esc(pick(e.task))}</p>` : ''}${e.taskState ? `<p class="task undone"><span class="box" aria-hidden="true"></span>${t('Bawa pulang mimpi', 'Take the dream home')} · <b>${esc(pick(e.taskState))}</b></p>` : ''}</header>`;
   };
+  const SEATS = 96;
   const build = () => {
     let html = '';
     EVENTS.forEach((e, n) => {
@@ -136,14 +153,16 @@
       if (e.invite) inner += `<div class="rsvp" id="rsvp"><p class="rsvp-q">${t('Hadir?', 'Going?')}</p><div class="rsvp-buttons" role="group" aria-label="${t('Jawab undangan', 'Reply to the invitation')}"><button type="button" data-rsvp="hadir">${t('Hadir', 'Yes')}</button><button type="button" data-rsvp="mungkin">${t('Mungkin', 'Maybe')}</button><button type="button" data-rsvp="tidak">${t('Tidak', 'No')}</button></div><p class="lila-reply" id="lilaReply" hidden><span class="avatar small" aria-hidden="true">L</span><span><b>Lila</b>${esc(lilaReply)}</span></p></div>`;
       if (e.empty) {
         const months = Array.from({ length: 12 }, (_, m) => `<li><span>${esc(fmt(new Date(2025, m, 1), { month: 'short' }))}</span><i></i><small>${t('Tidak ada acara', 'No events')}</small></li>`).join('');
-        html += `<section class="day empty-year" data-event="${e.id}" data-date="${e.date}"><div class="date-col"><span class="dnum">2025</span></div><div class="empty-body"><ul class="months">${months}</ul>${inner}</div></section>`;
+        html += `<section class="day empty-year" data-event="${e.id}" data-date="${e.date}"><p class="date-line"><b>2025</b> ${t('Satu tahun', 'One year')}</p><div class="date-col"><span class="dnum">2025</span></div><div class="empty-body"><ul class="months">${months}</ul>${inner}</div></section>`;
         return;
       }
       const lock = e.live && rsvp !== 'hadir' ? ' hidden' : '';
-      html += `<section class="day" data-event="${e.id}" data-date="${e.date}"${lock}><div class="date-col"><span class="dow">${esc(fmt(date, { weekday: 'short' }))}</span><span class="dnum">${date.getDate()}</span><span class="mon">${esc(fmt(date, { month: 'short', year: 'numeric' }))}</span></div><article class="event${e.invite ? ' invite' : ''}${e.live ? ' live' : ''}" style="--c:${calColor(e.cal)}">${eventHead(e)}<div class="desc">${inner}</div></article></section>`;
+      const dateLine = EVENTS[n - 1]?.date === e.date ? '' : `<p class="date-line"><b>${esc(fmt(date, { weekday: 'long' }))}</b> ${esc(dayLong(date))}</p>`;
+      const hall = e.live ? `<div class="hall" id="hall" data-state="dark"><div class="stage" aria-hidden="true"><i></i></div><div class="seats" aria-hidden="true">${'<i></i>'.repeat(SEATS)}</div><p class="hall-status" id="hallStatus" aria-live="polite"></p></div>` : '';
+      html += `<section class="day" data-event="${e.id}" data-date="${e.date}"${lock}>${dateLine}<div class="date-col"><span class="dow">${esc(fmt(date, { weekday: 'short' }))}</span><span class="dnum">${date.getDate()}</span><span class="mon">${esc(fmt(date, { month: 'short', year: 'numeric' }))}</span></div><article class="event${e.invite ? ' invite' : ''}${e.live ? ' live' : ''}" style="--c:${calColor(e.cal)}">${eventHead(e)}<div class="desc">${inner}</div>${hall}</article></section>`;
     });
     const now = new Date();
-    html += `<section class="day closing" id="closing"${rsvp !== 'hadir' ? ' hidden' : ''}><div class="date-col"><span class="dow">${esc(fmt(now, { weekday: 'short' }))}</span><span class="dnum">${now.getDate()}</span><span class="mon">${esc(fmt(now, { month: 'short', year: 'numeric' }))}</span></div><article class="event" style="--c:${calColor('pribadi')}"><header class="event-head"><span class="badge today-badge">${t('Hari ini', 'Today')}</span><h3>${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</h3><p class="task done"><span class="box" aria-hidden="true"></span>${t('Terjadi · dengan mata terbuka', 'Happened · with open eyes')}</p><p class="meta">${t('Tidak dijadwalkan ulang lagi.', 'Never rescheduled again.')}</p></header><div class="end-links"><a class="secondary small" href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button class="secondary small" id="readAgain" type="button">${t('Kembali ke 1985', 'Back to 1985')}</button></div></article></section>`;
+    html += `<section class="day closing" id="closing"${rsvp !== 'hadir' ? ' hidden' : ''}><p class="date-line"><b>${t('Hari ini', 'Today')}</b> ${esc(dayLong(now))}</p><div class="date-col"><span class="dow">${esc(fmt(now, { weekday: 'short' }))}</span><span class="dnum">${now.getDate()}</span><span class="mon">${esc(fmt(now, { month: 'short', year: 'numeric' }))}</span></div><article class="event" style="--c:${calColor('pribadi')}"><header class="event-head"><span class="badge today-badge">${t('Hari ini', 'Today')}</span><h3>${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</h3><p class="task done"><span class="box" aria-hidden="true"></span>${t('Terjadi · dengan mata terbuka', 'Happened · with open eyes')}</p><p class="meta">${t('Tidak dijadwalkan ulang lagi.', 'Never rescheduled again.')}</p></header><div class="end-links"><a class="secondary small" href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button class="secondary small" id="readAgain" type="button">${t('Kembali ke 1985', 'Back to 1985')}</button></div></article></section>`;
     $('#story').innerHTML = html;
   };
   build();
@@ -165,13 +184,35 @@
     if (calm()) { setYear(K.LAST_YEAR - 1, false); return; }
     playing = setInterval(() => { y++; if (y > K.LAST_YEAR - 1) { clearInterval(playing); return; } setYear(y, true); }, 110);
   };
-  if ($('#years')) { setYear(K.FIRST_YEAR, false); $('#years').oninput = () => { clearInterval(playing); setYear(+$('#years').value, true); }; $('#playYears').onclick = play; }
+  // Menunda satu tahun: geser kartunya, atau coba centang tugasnya.
+  const postponeOne = () => {
+    clearInterval(playing); const y = +$('#years').value;
+    if (y >= K.LAST_YEAR - 1) { const c = $('#reschedCard'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); return false; }
+    setYear(y + 1, true); buzz(12); return true;
+  };
+  const card = $('#reschedCard');
+  if (card) {
+    setYear(K.FIRST_YEAR, false);
+    $('#years').oninput = () => { clearInterval(playing); setYear(+$('#years').value, true); };
+    $('#playYears').onclick = play;
+    $('#rcTask').onclick = e => {
+      e.stopPropagation(); const box = $('#rcTask'); box.classList.remove('refuse'); void box.offsetWidth; box.classList.add('refuse');
+      if (gateReason) { $('#rcGate').textContent = gateReason; $('#rcGate').hidden = false; }
+      buzz([20, 40, 20]); setTimeout(postponeOne, calm() ? 0 : 650);
+    };
+    let sx = null, dx = 0;
+    const reset = () => { sx = null; card.classList.remove('drag'); ['--dx', '--rot', '--o'].forEach(v => card.style.removeProperty(v)); };
+    card.addEventListener('pointerdown', e => { if (e.target.closest('button') || e.button > 0) return; sx = e.clientX; dx = 0; card.classList.add('drag'); card.setPointerCapture?.(e.pointerId); });
+    card.addEventListener('pointermove', e => { if (sx == null) return; dx = clamp(e.clientX - sx, 0, 160); card.style.setProperty('--dx', dx + 'px'); card.style.setProperty('--rot', dx / 60 + 'deg'); card.style.setProperty('--o', 1 - dx / 320); });
+    card.addEventListener('pointerup', () => { if (sx == null) return; const go = dx > 64; reset(); if (go) postponeOne(); });
+    card.addEventListener('pointercancel', reset);
+  }
 
   // Undangan
   const answer = value => {
     document.querySelectorAll('[data-rsvp]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rsvp === value)));
     if (value !== 'hadir') { $('#lilaReply').hidden = false; $('#lilaReply').classList.remove('arrive'); void $('#lilaReply').offsetWidth; $('#lilaReply').classList.add('arrive'); return; }
-    rsvp = 'hadir'; if (!PREVIEW) store.set('mimpi:rsvp', 'hadir'); if (!PREVIEW) store.set('mimpi:rsvpAt', Date.now());
+    buzz(18); rsvp = 'hadir'; if (!PREVIEW) store.set('mimpi:rsvp', 'hadir'); if (!PREVIEW) store.set('mimpi:rsvpAt', Date.now());
     $('#lilaReply').hidden = true;
     document.querySelectorAll('[data-event="live"], #closing').forEach(s => { s.hidden = false; });
     measure(); toast('live', t('Sedang berlangsung · lantai produksi', 'Happening now · production floor'));
@@ -196,17 +237,109 @@
 
   // Pengingat
   let toastTimer = 0;
+  const hideToast = () => { clearTimeout(toastTimer); $('#toast').hidden = true; };
   const toast = (key, text) => {
     if (seenToasts.has(key)) return; seenToasts.add(key);
-    const el = $('#toast'); el.innerHTML = `<span class="toast-icon" aria-hidden="true"></span><span>${esc(text)}</span>`; el.hidden = false;
-    el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 4200);
+    const [head, ...rest] = text.split(' · '), el = $('#toast');
+    el.innerHTML = `<span class="toast-icon" aria-hidden="true"><b>${new Date().getDate()}</b></span><span class="toast-body"><small>${t('Kalender', 'Calendar')} · ${t('sekarang', 'now')}</small><b>${esc(head)}</b>${rest.length ? `<span>${esc(rest.join(' · '))}</span>` : ''}</span>`;
+    el.hidden = false; el.style.removeProperty('--dy'); el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); buzz(10);
+    clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5200);
   };
+  { // Spanduk bisa disentuh atau diusap ke atas untuk ditutup.
+    const el = $('#toast'); let sy = null, dy = 0;
+    el.addEventListener('pointerdown', e => { sy = e.clientY; dy = 0; el.setPointerCapture?.(e.pointerId); });
+    el.addEventListener('pointermove', e => { if (sy == null) return; dy = Math.min(0, e.clientY - sy); el.style.setProperty('--dy', dy + 'px'); });
+    el.addEventListener('pointerup', () => { if (sy == null) return; sy = null; el.style.removeProperty('--dy'); hideToast(); });
+    el.addEventListener('pointercancel', () => { sy = null; el.style.removeProperty('--dy'); });
+  }
   const TOASTS = {
     annual: [t('Pengingat · Malam terakhir sebelum libur', 'Reminder · The last night before the holiday'), t('Setiap tahun · 30 Des', 'Every year · 30 Dec')],
     archive: [t('Lila membagikan kalender denganmu', 'Lila shared a calendar with you'), t('“Arsip pesanan”', '“Order archive”')],
     invite: [t('Undangan baru dari Lila', 'New invitation from Lila'), t('30 Des · 22.00', '30 Dec · 10 PM')]
   };
+
+  // Ruangan yang berdiri: kursi di acara terakhir ikut cerita.
+  const STAND = Object.fromEntries(Object.entries(K.STAND || {}).map(([k, m]) => [k, findP(m)]));
+  const seatOrder = (() => {
+    const cols = 24, first = 11; // kursi barisan depan, sedikit di kiri tengah
+    return Array.from({ length: SEATS }, (_, i) => i).sort((a, b) => Math.hypot(a % cols - first, (a / cols | 0) * 1.6) - Math.hypot(b % cols - first, (b / cols | 0) * 1.6));
+  })();
+  const HALL = {
+    dark: t('Lantai produksi · ban berjalan dimatikan', 'Production floor · conveyor belts off'),
+    seated: t('Ratusan kursi · semuanya terisi', 'Hundreds of chairs · all taken'),
+    first: t('Satu orang berdiri · barisan depan', 'One person standing · front row'),
+    clap: t('Satu orang bertepuk tangan', 'One person clapping'),
+    wave: t('Yang di sebelahnya berdiri…', 'The next one stands…'),
+    all: t('Seluruh ruangan berdiri', 'The whole room is standing')
+  };
+  let hallState = '', hallLit = -1;
+  const hallFrame = place => {
+    const hall = $('#hall'); if (!hall || hall.closest('[hidden]') || STAND.all == null || STAND.all < 0) return;
+    const p = place ? place.paragraph : -1;
+    let state = 'dark', lit = 0;
+    if (p >= STAND.chairs) state = 'seated';
+    if (p >= STAND.first) { state = 'first'; lit = 1; }
+    if (p >= STAND.clap) state = 'clap';
+    if (p === STAND.all) { state = 'wave'; lit = clamp(Math.round(place.offset * 1.4 * SEATS), 2, SEATS); }
+    if (p > STAND.all || (p === STAND.all && lit >= SEATS)) { state = 'all'; lit = SEATS; }
+    if (lit !== hallLit) { const seats = hall.querySelectorAll('.seats i'); seatOrder.forEach((s, k) => seats[s].classList.toggle('up', k < lit)); hallLit = lit; }
+    if (state !== hallState) {
+      if (hallState && (state === 'clap' || state === 'all')) buzz(state === 'all' ? [10, 50, 10, 50, 10, 50, 10] : [10, 70, 10]);
+      hallState = state; hall.dataset.state = state; $('#hallStatus').textContent = HALL[state];
+    }
+  };
+
+  // Tampilan tahun: empat puluh satu ubin, satu titik 30 Desember di setiap tahun.
+  let reached = PREVIEW ? -1 : +(places[LANG]?.paragraph ?? -1);
+  const evP = id => EVENTS.find(e => e.id === id)?.p ?? Infinity;
+  const reschedP = (() => { const a = K.EVENTS.find(e => e.reschedule); return a ? findP(a.reschedule) : Infinity; })();
+  const yearState = y => {
+    if (y === K.LAST_YEAR + 1) return reached < evP('invite') ? '' : rsvp === 'hadir' ? 'done' : 'invite';
+    if (y === K.LAST_YEAR) return reached >= evP('gate') ? 'cancel' : 'planned';
+    return reached >= reschedP || (y === K.FIRST_YEAR && reached >= evP('annual')) ? 'moved' : 'planned';
+  };
+  const renderYears = () => {
+    const nights = Math.round((D('2024-12-31') - D('1985-02-04')) / 864e5), num = n => n.toLocaleString(LOCALE);
+    const stats = [[num(nights), t('malam sejak shift pertama', 'nights since the first shift')], [reached >= reschedP ? '40' : '…', t('kali “Tahun depan, mungkin.”', 'times “Next year, perhaps.”')], ['0', t('mimpi dibawa pulang', 'dreams taken home')]];
+    if (rsvp === 'hadir') stats.push(['1', t('malam yang terjadi', 'night that happened')]);
+    $('#yearsStats').innerHTML = stats.map(([n, l]) => `<div><dt>${n}</dt><dd>${esc(l)}</dd></div>`).join('');
+    const here = (() => { const e = current >= 0 ? eventAt(current) : null; if (!e) return -1; if (e.reschedule && $('#years')) return +$('#years').value; return D(e.date).getFullYear(); })();
+    const label = { planned: t('dijadwalkan', 'scheduled'), moved: t('dijadwalkan ulang', 'rescheduled'), cancel: t('tidak dibawa pulang', 'not taken home'), invite: t('undangan dari Lila', 'invitation from Lila'), done: t('terjadi', 'happened'), '': t('tidak ada acara', 'no events') };
+    let html = '';
+    for (let y = K.FIRST_YEAR; y <= K.LAST_YEAR + 1; y++) {
+      const st = yearState(y), last = y === K.LAST_YEAR + 1, lila = last && reached >= evP('archive');
+      const bars = Array.from({ length: 12 }, (_, m) => `<i class="${last ? (lila ? 'lila' : '') : (y === K.FIRST_YEAR && m === 0 ? '' : 'on')}"></i>`).join('');
+      html += `<li><button type="button" class="yr${y === here ? ' here' : ''}${last ? ' after' : ''}" data-year="${y}" aria-label="${y} · ${esc(label[st])}"><b>${y}</b><span class="bars" aria-hidden="true">${bars}</span><span class="dec s-${st}" aria-hidden="true"></span></button></li>`;
+    }
+    $('#yearsGrid').innerHTML = html;
+    $('#yearsLegend').innerHTML = [['planned', label.planned], ['moved', label.moved], ['cancel', label.cancel], ['done', label.done]].map(([k, l]) => `<span><span class="dec s-${k}" aria-hidden="true"></span>${esc(l)}</span>`).join('') + `<span class="legend-note">${t('Titik: 30 Desember', 'Dot: 30 December')}</span>`;
+  };
+  const openYears = () => { setDrawer(false); persist(); renderYears(); $('#yearsDialog').showModal(); $('#yearsGrid .here')?.focus(); };
+  ['#monthButton', '#viewChip', '#sideYears'].forEach(id => { $(id).onclick = openYears; });
+  $('#yearsGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-year]'); if (!b) return; const y = +b.dataset.year;
+    $('#yearsDialog').close();
+    if (y === K.FIRST_YEAR) goTo(evP('annual'));
+    else if (y < K.LAST_YEAR) { goTo(reschedP); setYear(y, true); $('.resched')?.scrollIntoView({ block: 'center', behavior: 'instant' }); frame(); }
+    else if (y === K.LAST_YEAR) goTo(evP('lila'));
+    else goTo(evP('empty'));
+  });
+
+  // Laci kalender di ponsel
+  const narrow = matchMedia('(max-width: 900px)'), sidebar = $('#sidebar');
+  const setDrawer = open => {
+    const on = !!open && narrow.matches;
+    root.toggleAttribute('data-drawer', on); $('#menu').setAttribute('aria-expanded', String(on)); $('#scrim').hidden = !on;
+    sidebar.inert = narrow.matches && !on;
+    if (on) sidebar.focus({ preventScroll: true });
+  };
+  $('#menu').onclick = () => setDrawer(!root.hasAttribute('data-drawer'));
+  $('#scrim').onclick = () => { setDrawer(false); $('#menu').focus(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && root.hasAttribute('data-drawer')) { setDrawer(false); $('#menu').focus(); } });
+  narrow.addEventListener('change', () => setDrawer(false));
+  { let sx = null; sidebar.addEventListener('pointerdown', e => { sx = e.clientX; }); sidebar.addEventListener('pointerup', e => { if (sx != null && e.clientX - sx < -60) { setDrawer(false); $('#menu').focus(); } sx = null; }); }
+  setDrawer(false);
+  $('#todayNum').textContent = String(new Date().getDate());
 
   // Membaca
   let paragraphs = [], weights = new Map(), total = 0, current = -1, latest = null, saveTimer = 0, raf = 0, lastEvent = null, sharedShown = false;
@@ -234,7 +367,8 @@
   const eventAt = p => EVENTS.filter(e => e.p <= p).at(-1) || null;
   const frame = () => {
     if ([...document.querySelectorAll('dialog')].some(d => d.open)) return;
-    const place = capture(); current = place ? place.paragraph : -1;
+    const place = capture(); current = place ? place.paragraph : -1; if (current > reached) reached = current;
+    hallFrame(place);
     const e = current >= 0 ? eventAt(current) : null;
     root.toggleAttribute('data-reading', !!e);
     if (e) {

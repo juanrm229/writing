@@ -35,7 +35,16 @@
   const QUOTES = {
     postpone: ['"Tahun depan, mungkin."', '"Next year, perhaps."'],
     reply: ['Bapak tidak punya tahun depan lagi', "You don't have a next year anymore"],
-    invite: ['Lila mengetuk pintu', 'Lila knocked on the door']
+    invite: ['Lila mengetuk pintu', 'Lila knocked on the door'],
+    // Alasan gerbang: potongan kalimat dari awal penanda sampai sebelum ujungnya.
+    gate: [['Sebab gerbang akan mendeteksinya', ', dan pekerjaan ini'], ['Because the gate would detect it', ', and this job']]
   };
-  window.MimpiKalender = { CALENDARS, EVENTS, PHOTOS, QUOTES, FIRST_YEAR: 1985, LAST_YEAR: 2024 };
+  // Ruangan yang berdiri: penanda paragraf untuk daftar tamu acara terakhir.
+  const STAND = {
+    chairs: ['Ratusan kursi. Dan di kursi-kursi itu', 'Hundreds of chairs. And in those chairs'],
+    first: ['Lalu seorang perempuan di barisan depan', 'Then a woman in the front row'],
+    clap: ['Dan ia mulai bertepuk tangan.', 'And she began to clap.'],
+    all: ['Lalu yang di sebelahnya berdiri', 'Then the person next to her stood']
+  };
+  window.MimpiKalender = { CALENDARS, EVENTS, PHOTOS, QUOTES, STAND, FIRST_YEAR: 1985, LAST_YEAR: 2024 };
 })();

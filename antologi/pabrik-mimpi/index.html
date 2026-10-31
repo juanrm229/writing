@@ -11,28 +11,33 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
-<link rel="stylesheet" href="mimpi.css?v=3">
+<link rel="stylesheet" href="mimpi.css?v=4">
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar" id="sidebar">
+  <button class="scrim" id="scrim" type="button" tabindex="-1" aria-hidden="true" hidden></button>
+  <aside class="sidebar" id="sidebar" tabindex="-1">
     <a class="side-back" href="../../#putar" id="sideBack">‹ <span id="sideBackLabel">Meja tulis</span></a>
     <p class="app-name"><span class="app-icon" aria-hidden="true"><b id="appIconDay">30</b></span><span id="appName">Kalender</span></p>
-    <section class="mini" aria-labelledby="miniTitle"><p class="mini-title" id="miniTitle">Februari 1985</p><div class="mini-grid" id="miniGrid" aria-hidden="true"></div></section>
+    <section class="mini" aria-labelledby="miniTitle"><p class="mini-title" id="miniTitle">Februari 1985</p><div class="mini-grid" id="miniGrid" aria-hidden="true"></div><button class="side-link" id="sideYears" type="button" aria-haspopup="dialog" aria-controls="yearsDialog">Tampilan tahun · 1985–2025</button></section>
     <section class="cals"><p class="side-label" id="calsLabel">Kalender saya</p><ul id="calList"></ul></section>
     <p class="owner"><span class="avatar" aria-hidden="true">W</span><span><b id="ownerName">Pak Wangsa</b><small id="ownerNote">Perajin mimpi · stasiun paling ujung</small></span></p>
   </aside>
   <div class="main">
-    <header class="toolbar" id="toolbar">
-      <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
-      <button class="today" id="today" type="button">Hari ini</button>
-      <h1 class="month" id="monthTitle" aria-live="polite">Pabrik Mimpi</h1>
-      <span class="view-chip" id="viewChip">Jadwal</span>
-      <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+    <div class="top" id="top">
+      <header class="toolbar" id="toolbar">
+        <button class="icon menu" id="menu" type="button" aria-label="Buka menu kalender" aria-expanded="false" aria-controls="sidebar"><span aria-hidden="true"></span></button>
+        <button class="today" id="today" type="button"><span class="today-num" id="todayNum" aria-hidden="true"></span><span id="todayLabel">Hari ini</span></button>
+        <h1 class="month"><button class="month-button" id="monthButton" type="button" aria-haspopup="dialog" aria-controls="yearsDialog"><span id="monthTitle" aria-live="polite">Pabrik Mimpi</span><span class="caret" aria-hidden="true"></span></button></h1>
+        <button class="view-chip" id="viewChip" type="button" aria-haspopup="dialog" aria-controls="yearsDialog">Jadwal</button>
+        <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+      </header>
+      <div class="week" id="week" aria-hidden="true"></div>
       <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
-    </header>
+    </div>
     <main class="agenda" id="agenda">
       <header class="cover" id="cover">
+        <a class="cover-back" href="../../#putar" id="coverBack">‹ <span id="coverBackLabel">Meja tulis</span></a>
         <p class="eyebrow" id="coverKicker">Kalender Pak Wangsa</p>
         <h2 id="coverTitle">Pabrik Mimpi</h2>
         <p class="cover-note" id="coverNote">Empat puluh tahun shift malam. Satu acara yang selalu dijadwalkan ulang.</p>
@@ -48,6 +53,12 @@
   <figure class="footage big" id="lightboxFigure"></figure>
   <button class="close" data-close type="button" aria-label="Tutup">×</button>
 </dialog>
+<dialog class="years-dialog" id="yearsDialog" aria-labelledby="yearsTitle">
+  <header class="dialog-head"><div><p class="eyebrow" id="yearsKicker">Tampilan tahun</p><h2 id="yearsTitle">1985 – 2025</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <dl class="years-stats" id="yearsStats"></dl>
+  <ol class="years-grid" id="yearsGrid"></ol>
+  <p class="years-legend" id="yearsLegend"></p>
+</dialog>
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body">
@@ -58,7 +69,7 @@
   </div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
-<script src="kalender.js?v=3"></script>
-<script src="mimpi.js?v=3"></script>
+<script src="kalender.js?v=4"></script>
+<script src="mimpi.js?v=4"></script>
 </body>
 </html>
