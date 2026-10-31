@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Terlambat Satu Menit · Quiet Margins</title>
+<meta name="description" content="Tiga sisi sebuah keluarga. Ada benda-benda yang menyimpan lebih lama daripada ingatan.">
+<meta name="theme-color" content="#f5f2eb">
+<link rel="icon" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="minute.css">
+</head>
+<body>
+<header class="topbar" id="topbar">
+  <a class="icon" href="../../#putar" id="back" aria-label="Kembali ke meja tulis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></a>
+  <button class="part-toggle" id="openParts" type="button" aria-haspopup="dialog" aria-controls="partsDialog"><span id="partNumber">I</span><span id="partLabel">Terlambat Satu Menit</span><span aria-hidden="true">⌄</span></button>
+  <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></svg></button>
+  <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
+</header>
+<main class="layout">
+  <aside class="stage" id="stage" data-room="tailor" data-king="waiting" data-door="inside" aria-label="Meja dalam cerita">
+    <svg class="room" id="room" viewBox="0 0 420 300" aria-hidden="true">
+      <defs>
+        <g id="clock"><circle r="23"/><circle r="19" class="faint"/><path d="M0-14v14l9 6"/><circle r="1.5" class="solid"/></g>
+        <g id="bag"><path d="M-13-10q0-12 13-12t13 12v31h-26zM-7-22v-5h14v5M-13 2h26M-9 9h18v8h-18z"/><path d="M-13-8q-8 6-5 24M13-8q8 6 5 24" class="faint"/></g>
+        <g id="spoon"><ellipse cy="-8" rx="3" ry="6"/><path d="M0-2v18"/></g>
+      </defs>
+      <g class="room-common">
+        <path d="M30 258h360" class="ground"/>
+        <path d="M41 231h338M60 232v26M360 232v26" class="table"/>
+        <path d="M47 39h104v112H47zM99 39v112M47 96h104" class="window"/>
+        <path d="m55 151 39 79m25-79 35 79" class="light-ray"/>
+      </g>
+      <g class="in-tailor" id="tailorRoom">
+        <path d="M238 210h115v12H230v-12h8v-42h52v15h39v-20h-22v-15h27v47h-76v15M252 183h34M258 195v13"/>
+        <circle cx="349" cy="179" r="23"/><circle cx="349" cy="179" r="16" class="faint"/><path d="M349 156v46m-23-23h46" class="faint"/>
+        <path d="M282 146v-21h12v21M280 127h16"/><path d="M287 146v20" class="thread"/>
+        <g id="chessBoard"><path d="M64 173h104v56H64z"/><g id="squares"></g><circle cx="115" cy="190" r="5" class="king-space"/></g>
+        <g id="kingButton"><circle r="7" class="button-fill"/><circle r="4.5" class="faint"/><circle cx="-2" cy="-1" r=".8" class="solid"/><circle cx="2" cy="1" r=".8" class="solid"/></g>
+        <g id="trap"><path d="M174 208h39v23h-39zM174 208l12-11h28l-1 11M182 209v21m9-21v21m10-21v21"/><path class="trap-lid" d="M174 208h39"/></g>
+        <g id="ratTrace" class="faint"><path d="m180 245 2-1m7-2 2-1m7-2 2-1"/></g>
+        <path d="M241 245h79v13h-79zM273 251h15" class="drawer"/>
+      </g>
+      <g class="in-clock" id="clockRoom">
+        <path d="M174 93h198M174 157h198M182 92v78M364 92v78" class="shelf"/>
+        <use href="#clock" x="210" y="66"/><use href="#clock" x="274" y="66"/>
+        <g transform="translate(338 65) rotate(-9)"><use href="#clock"/></g>
+        <use href="#clock" x="210" y="131"/><use href="#clock" x="274" y="131"/>
+        <path d="m166 43-8 14 6 10-7 11" class="faint"/>
+        <g id="bottle"><path d="M326 119v-12h16v12l7 9v29h-30v-29zM325 103h18v5h-18z"/><path class="glass" d="M323 133v18m4-21v9"/><g id="gears"><circle cx="328" cy="149" r="3"/><circle cx="339" cy="151" r="4"/><path d="m331 141 4 3-3 4-4-3z"/></g></g>
+        <path d="M181 229v-35h12v35M202 229l19-31m-23 26 8-3" class="faint"/>
+      </g>
+      <g class="in-house" id="houseRoom"><path d="M172 220h184v-30H172zM181 199h166M181 214h166"/><g id="spoons"></g></g>
+      <g class="in-travel" id="travelRoom"><path d="M174 230h139M180 195h52v34h-52z" class="faint"/><path d="M181 196q25 13 50 0M183 208h46" class="faint"/></g>
+      <g id="envelope"><path d="M186 179h69v44h-69zM186 179l35 26 34-26M186 223l25-24m44 24-25-24"/><path id="letterPage" d="M197 187v-26h47v26m-38-17h30m-30 6h25m-25 6h30"/></g>
+      <g id="parcel"><path d="m67 211 21-13 48 10-17 20-46-4z" class="parcel-fill"/><path d="m88 198 7 26m-28-13 69-3m-64 16 48-4"/></g>
+      <g id="backpack"><use href="#bag" x="54" y="229"/></g>
+      <g id="pocketWatch"><circle cx="289" cy="212" r="15"/><circle cx="289" cy="192" r="4"/><path d="M289 202v10l7 4"/></g>
+      <g id="keptSpoon"><use href="#spoon" x="312" y="213" transform="rotate(-35 312 213)"/></g>
+      <g id="cup"><path d="M264 202h28v22q-14 8-28 0zM292 206q20-2 8 12h-8M258 231h45"/><path d="M273 188q-5-6 0-12m8 12q-5-6 0-12" class="faint"/></g>
+      <g id="cloth"><path d="M178 223q40-7 77 4l-6 29q-39-10-78-3z" class="cloth-fill"/><g id="stitches"></g></g>
+      <g id="chairs"><path d="M75 256v-20h35v20m-32-20v-25h29v25"/><path class="second-chair" d="M294 256v-20h35v20m-32-20v-25h29v25"/></g>
+      <g class="in-door" id="threshold">
+        <path d="M136 260V32h148v228M145 260V42h130v218"/>
+        <g class="door-face"><path d="M153 254V50h113v204M163 61h93v92h-93zM258 164h-13"/><path d="M173 79h71m-71 13h71m-71 13h71m-71 13h71m-71 13h71" class="frost"/>
+        <path d="M206 194v-33q0-17 12-17m-12 39-19 16" class="hand"/></g>
+        <path d="M202 28q0-13 8-13t8 13M200 28h20m-10 0v4" class="bell"/><g class="bell-waves"><path d="m191 17-4-3m42 3 4-3m-23-9V1"/></g>
+        <path d="M116 260h188"/>
+      </g>
+    </svg>
+    <div class="scene-foot"><span id="sceneCaption">Meja dekat jendela</span><button class="scene-action" id="inspectObject" type="button" hidden aria-haspopup="dialog" aria-controls="objectDialog">Surat</button><button class="scene-action" id="turnDoor" type="button" hidden>Lihat dari luar</button></div>
+  </aside>
+  <article class="read" id="read">
+    <header class="intro" id="intro"><p class="eyebrow" id="workTitle">Terlambat Satu Menit</p><h1 id="sideTitle">Bidak</h1><p class="byline" id="voice">Pak Saman</p><div class="entry"><button class="begin" id="begin" type="button"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="9"/><circle cx="12" cy="13" r="1"/><circle cx="18" cy="17" r="1"/></svg><span id="beginLabel">Letakkan kancingnya</span></button><button class="resume" id="resume" type="button" hidden></button><button class="resume" id="visitAgain" type="button" hidden>Duduk sebentar</button></div><p class="entry-note" id="entryNote">Satu cerita, dari tiga sisi.</p></header>
+    <div id="story"><p class="loading">Membuka laci…</p></div>
+    <footer class="part-end" id="partEnd" hidden><span class="end-mark" aria-hidden="true">· · ·</span><p id="endNote"></p><button class="next-side" id="nextSide" type="button">Dari seberang pintu →</button><a class="back-link" href="../../#putar" id="backEnd">Kembali ke meja tulis</a></footer>
+    <section class="afterword" id="afterword" hidden aria-labelledby="afterwordTitle"><p class="eyebrow" id="afterwordTitle">Satu sore lagi</p><blockquote id="greeting"></blockquote><button class="next-side" id="sit" type="button">Duduk sebentar</button><p id="answer" hidden></p></section>
+  </article>
+</main>
+<dialog id="partsDialog" aria-labelledby="partsTitle"><header class="dialog-head"><h2 id="partsTitle">Tiga sisi</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header><nav id="partsList" aria-label="Sisi cerita"></nav><p class="dialog-note" id="partsNote">Saman, Banyu, lalu Maryam. Kamu bisa kembali kapan saja.</p></dialog>
+<dialog id="settingsDialog" aria-labelledby="settingsTitle"><header class="dialog-head"><h2 id="settingsTitle">Di meja ini</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header><div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi benda</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Lonceng dan detak hanya berbunyi jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Gerak halus</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div></dialog>
+<dialog class="object-dialog" id="objectDialog" aria-labelledby="objectTitle"><header class="dialog-head"><h2 id="objectTitle">Surat</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header><div class="object-text" id="objectText"></div><p class="object-source" id="objectSource"></p></dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite"></p>
+<script src="sound.js"></script>
+<script src="minute.js"></script>
+</body>
+</html>

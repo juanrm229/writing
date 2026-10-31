@@ -938,8 +938,8 @@
     // karya dengan pengalaman baca sendiri (mis. Anda di Sini) dibuka di halamannya; entri #baca diganti supaya tombol kembali tidak memantul
     const ex = bySlug(slug)?.experience;
     if (ex) {
-      const chapter = slug === 'interlude' && ch > 1 ? '#bab-' + ch : '';
-      location.replace(new URL(String(ex) + location.search + chapter, location.href.split('#')[0]).href); return;
+      const fragment = slug === 'interlude' && ch > 1 ? '#bab-' + ch : slug === 'terlambat-satu-menit' ? '#' + side : '';
+      location.replace(new URL(String(ex) + location.search + fragment, location.href.split('#')[0]).href); return;
     }
     const w = docOf(slug, side, ch) || docOf(slug);
     if (!w) return;

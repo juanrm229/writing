@@ -127,3 +127,23 @@ python3 tests/interlude_smoke.py
 ```
 
 Pemeriksaan menjalankan server sementara sendiri, memakai profil browser terpisah, dan mencakup bahasa Inggris, tautan bab, navigasi keyboard dialog, pemulihan posisi baca, ukuran huruf, pembatalan efek, mode tenang, serta tata letak ponsel dan desktop. Arsip diperiksa untuk pembukaan fragmen sesuai adegan, pencegahan bocoran dari bab yang dilompati, penyimpanan lintas kunjungan dan bahasa, serta tautan kembali ke adegan. Foto diperiksa untuk pemuatan aset dan navigasi kiriman. Pemeriksaan suasana mengukur keluaran Web Audio, memastikan tidak ada pemutaran otomatis, menguji jeda tab dan pelepasan sumber, serta memeriksa mode fokus, kegagalan modul suara, dan pemuatan offline melalui service worker. Dua Ingatan diperiksa untuk penguncian sebelum tamat, petikan asli, bahasa, posisi baca, dan tata letak kedua sisi; indikator mengetik diperiksa untuk animasi, pembersihan, dan kestabilan tinggi halaman. Penerbitan dan autentikasi GitHub tidak dijalankan.
+
+### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
+
+Pengalaman baca minimalis untuk *Terlambat Satu Menit / One Minute Too Late*: satu ilustrasi meja yang menetap di samping teks (di atas teks pada ponsel), dengan benda yang berubah mengikuti naskah. Ketiga sisi dan terjemahannya tetap diambil utuh dari `content/works.json`.
+
+- **Kancing**: bisa diletakkan di petak raja saat mulai membaca; kemudian hilang, kembali, dan memperoleh arti baru sesuai adegan.
+- **Ambang yang sama**: akhir Saman menampilkan pintu dari dalam dengan lonceng yang tertahan. Perjalanan Banyu kembali ke ambang yang sama dari luar; lonceng baru dilepas ketika Banyu membuka pintu. Sesudah adegan itu ditemukan, pembaca bisa membalik sudut pandang ilustrasinya.
+- **Toko jam**: satu geometri SVG dipakai kembali untuk ingatan Banyu dan Maryam. Rak, jam yang miring, retak dinding, ransel, dan bungkusan bekal tetap berada pada tempat yang sama; hubungan mereka mengikuti pengungkapan dalam naskah tanpa penjelasan tambahan.
+- **Benda**: sentuh benda yang sedang ditandai atau gunakan tombol keterangannya untuk membuka petikan yang sudah dicapai. Surat hanya menampilkan kalimat asli yang sudah muncul, termasuk tambahan yang terbuka pada waktunya.
+- **Satu sore lagi**: setelah ketiga sisi selesai, pembaca bisa duduk kembali di meja. Satu kunjungan meninggalkan satu jahitan tambahan, sementara sapaan Saman tetap sama. Penutup ini tidak menimpa penanda baca.
+- **Bacaan**: posisi disimpan per bahasa dan sisi, mengikuti paragraf saat ukuran huruf atau layar berubah. Tautan `#a`, `#b`, `#c` memilih sisi; `#b-53` menunjuk paragraf pada bahasa yang dipilih. Tautan lama seperti `#baca-terlambat-satu-menit:b` dari situs utama ikut diteruskan. Pratinjau admin memakai `?preview=1` dan tidak menulis riwayat pembaca.
+- **Bunyi dan gerak**: lonceng, detak, sendok, dan sentuhan dibuat dengan Web Audio setelah dipilih pembaca. Bunyi berhenti saat tab tidak aktif. Pengaturan kurangi animasi dihormati. Service worker menyimpan halaman dan modulnya untuk pembacaan offline setelah pemuatan pertama.
+
+Ketukan adegan berada di `BEATS` dalam `minute.js`. Versi ID/EN memiliki tabel terpisah karena beberapa paragraf terjemahan digabung atau dipecah. Jika naskah dipindah, periksa ketukan dan rujukan petikan untuk kedua bahasa. Ilustrasi ada di HTML/CSS; pengalaman ini tidak memerlukan paket atau proses build tambahan.
+
+```bash
+python3 tests/minute_smoke.py
+```
+
+Pemeriksaan meliputi keutuhan seluruh paragraf dalam dua bahasa, urutan benda dan ambang, pengenalan toko jam, surat tanpa bocoran, posisi baca, jahitan lintas kunjungan, tautan situs utama, pratinjau, suara, akses keyboard, layar ponsel/desktop, dan pembacaan offline.
