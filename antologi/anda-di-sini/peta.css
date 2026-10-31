@@ -212,6 +212,7 @@ button { font: inherit; color: inherit; }
 .anth { display: flex; align-items: center; gap: 9px; margin: 14vh 0 -10vh; font: 600 12px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .anth i { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent); }
 .anth + .title { margin-top: 14vh; }
+.lost { max-width: 34em; margin: 0 0 1.4em; padding: 10px 14px; border-radius: 12px; background: var(--chip); color: var(--muted); font: 13px/1.5 var(--f-ui); }
 
 /* ---------- folder Catatan: daftar catatan di awal setiap bagian ---------- */
 .folder { margin: -6vh 0 0; padding: 6px; border-radius: 18px; background: var(--chip); font-family: var(--f-ui); }

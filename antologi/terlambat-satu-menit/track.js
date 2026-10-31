@@ -90,7 +90,7 @@
   ];
   // Urutan tampil: surat Saman, meja pengalihan, Banyu, Maryam.
   const ORDER = [0, 3, 1, 2];
-  // Ringkasan setelah ketiga riwayat terbaca: setiap baris menunjuk ketukan yang benar-benar dibaca.
+  // Ringkasan setelah keempat riwayat terbaca: setiap baris menunjuk ketukan yang benar-benar dibaca.
   const SUMMARY = [
     { label: ['Surat Saman → Banyu', "Saman's letter → Banyu"], resi: 'SMN 0052 ID', side: 1, beat: 'ada satu kalimat tambahan' },
     { label: ['Catatan Maryam → Banyu', "Maryam's note → Banyu"], resi: 'MRY 0011 ID', side: 2, beat: 'Catatan itu tidak pernah sampai' },

@@ -6,7 +6,10 @@
     "note": "Antologi Juan, dibuka dengan Anda di Sini.",
     "tracks": [
       "anda-di-sini"
-    ]
+    ],
+    "en": {
+      "note": "Juan's anthology, opening with Anda di Sini."
+    }
   },
   {
     "id": "temusai",
@@ -15,6 +18,9 @@
     "note": "Antologi Juan, dibuka dengan Interlude.",
     "tracks": [
       "interlude"
-    ]
+    ],
+    "en": {
+      "note": "Juan's anthology, opening with Interlude."
+    }
   }
 ]

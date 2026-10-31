@@ -5,13 +5,13 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v35';
+const VERSION = 'v36';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
   './', 'index.html', 'assets/style.css', 'assets/i18n.js', 'assets/app.js', 'manifest.webmanifest',
-  'content/site.json', 'content/works.json',
-  'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js', 'antologi/interlude/index.html', 'antologi/interlude/interlude.css', 'antologi/interlude/ambience.js', 'antologi/interlude/interlude.js',
+  'content/site.json', 'content/works.json', 'content/albums.json',
+  'antologi/anda-di-sini/', 'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js', 'antologi/interlude/', 'antologi/interlude/index.html', 'antologi/interlude/interlude.css', 'antologi/interlude/ambience.js', 'antologi/interlude/interlude.js',
   'antologi/terlambat-satu-menit/', 'antologi/terlambat-satu-menit/index.html', 'antologi/terlambat-satu-menit/minute.css', 'antologi/terlambat-satu-menit/minute.js', 'antologi/terlambat-satu-menit/sound.js', 'antologi/terlambat-satu-menit/track.js',
   'antologi/pabrik-mimpi/', 'antologi/pabrik-mimpi/index.html', 'antologi/pabrik-mimpi/mimpi.css', 'antologi/pabrik-mimpi/mimpi.js', 'antologi/pabrik-mimpi/kalender.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'

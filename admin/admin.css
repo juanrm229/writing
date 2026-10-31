@@ -377,6 +377,10 @@ a { color: inherit; }
 .ae-fields input, .ae-fields textarea, #aeQ { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid transparent; background: var(--chip-2); outline: none; resize: vertical; transition: border-color .2s, background-color .2s; }
 .ae-fields input, #aeQ { height: 40px; }
 .ae-fields input:focus, .ae-fields textarea:focus, #aeQ:focus { border-color: var(--navy); background: var(--card); }
+.ae-tr { display: block; }
+.ae-tr label + label { margin-top: 10px; }
+.ae-tr > summary { cursor: pointer; font-size: 13px; color: var(--soft); }
+.ae-tr[open] > summary { margin-bottom: 8px; }
 #aeTitle { font: 500 20px var(--f-read); height: 46px; }
 #aeId { padding-left: 70px; }
 .ae-fields .slug-prefix { bottom: 11px; }

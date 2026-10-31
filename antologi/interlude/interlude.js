@@ -6,8 +6,10 @@
   const $ = s => document.querySelector(s);
   const store = {
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
+    // pratinjau dari admin tidak menulis riwayat pembaca; pengaturan baca tetap diingat
+    set(k, v) { if (PREVIEW && HISTORY.includes(k)) return; try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
+  const PREVIEW = new URLSearchParams(location.search).get('preview') === '1', HISTORY = ['read', 'stats', 'last', 'prog', 'il:place', 'il:archive', 'il:visited'];
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
@@ -21,7 +23,8 @@
   document.documentElement.classList.add('js');
 
   let work;
-  try { work = (await (await fetch('../../content/works.json', { cache: 'no-cache' })).json()).find(w => w.slug === SLUG); } catch (e) { /* luring */ }
+  if (PREVIEW) work = (store.get('preview', null)?.works || []).find(w => w.slug === SLUG);
+  try { if (!work) work = (await (await fetch('../../content/works.json', { cache: 'no-cache' })).json()).find(w => w.slug === SLUG); } catch (e) { /* luring */ }
   const story = $('#story');
   if (!work || !Array.isArray(work.chapters) || !work.chapters.length) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Go back')}</a></p>`; document.documentElement.classList.remove('js'); $('#readerTools').hidden = true; $('#openArchive').hidden = true; $('#openAtmosphere').hidden = true; $('.reading-start').hidden = true; return; }
   const chapters = (EN && work.en?.chapters) || work.chapters;
@@ -592,6 +595,7 @@
 
   const r = store.get('read', []); if (!r.includes(SLUG)) store.set('read', [...r, SLUG]);
   const st = store.get('stats', {}); st.plays = st.plays || {}; st.plays[SLUG] = (st.plays[SLUG] || 0) + 1; store.set('stats', st);
+  store.set('last', { key: SLUG, at: Date.now() });
   if (savedPassage || legacyProgress > .02 && legacyProgress < .97) {
     resume.hidden = false; $('.reading-start').classList.add('has-resume');
     resume.textContent = savedPassage ? t(`Lanjutkan · Bab ${saved.chapter + 1}`, `Continue · Chapter ${saved.chapter + 1}`) : t(`Lanjutkan dari ${Math.round(legacyProgress * 100)}%`, `Continue from ${Math.round(legacyProgress * 100)}%`);
