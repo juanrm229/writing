@@ -78,10 +78,21 @@
   const ST = [[9, 11, 'far'], [10, 27, 'back'], [11, 50, 'on'], [11, 99, 'both']];
   // foto yang dikirim di dalam cerita: [bab, paragraf, pengirim, keterangan]
   const PHOTO = {
-    '3,40': ['Arka', t('nota', 'the receipt')], '4,19': ['Nara', t('meja lain, sudutnya penuh kertas', 'another table, one corner covered in paper')],
-    '6,44': ['Nara', t('tangkapan layar · satu baris ditandai', 'screenshot · one line highlighted')], '7,27': ['Arka', t('halaman buku', 'a page of the book')],
-    '9,12': ['Nara', t('roti, bungkusnya sudah terbuka', 'the bread, wrapping open')], '9,15': ['Nara', t('kamar · jalan · pasar', 'room · street · market')]
+    '3,40': ['Arka', t('nota', 'the receipt'), ['receipt']], '4,19': ['Nara', t('meja lain, sudutnya penuh kertas', 'another table, one corner covered in paper'), ['desk']],
+    '6,44': ['Nara', t('tangkapan layar · satu baris ditandai', 'screenshot · one line highlighted'), ['acceptance']], '7,27': ['Arka', t('halaman buku', 'a page of the book'), ['book']],
+    '9,12': ['Nara', t('roti, bungkusnya sudah terbuka', 'the bread, wrapping open'), ['bread']], '9,15': ['Nara', t('kamar · jalan · pasar', 'room · street · market'), ['room', 'street', 'market']]
   };
+  const PHOTO_ALT = {
+    receipt: t('Bagian belakang nota dengan tulisan tangan di atas meja kedai.', 'The back of a receipt with a handwritten note on a café table.'),
+    desk: t('Meja kamar Nara dengan tumpukan kertas dan cetakan foto.', 'Nara’s bedroom desk piled with papers and photographic prints.'),
+    acceptance: t('Foto layar laptop, dengan baris kabar diterima ditandai kuning.', 'A photograph of a laptop screen with the acceptance line highlighted in yellow.'),
+    book: t('Halaman buku terbuka di bawah cahaya lampu malam.', 'An open book under the warm light of a bedside lamp.'),
+    bread: t('Roti di dalam bungkus plastik yang terbuka, di kursi ruang tunggu bandara.', 'Bread in an open plastic wrapper on an airport waiting-area seat.'),
+    room: t('Kamar baru Nara, dengan koper yang belum selesai dibongkar.', 'Nara’s new room, with a suitcase still being unpacked.'),
+    street: t('Trotoar menuju tempat belajar, masih basah sesudah hujan.', 'The pavement on the way to class, still wet after rain.'),
+    market: t('Peti buah di pasar dekat tempat tinggal Nara.', 'Crates of fruit at the market near Nara’s room.')
+  };
+  const photoMarkup = scene => `<div class="photo-grid${PHOTO[scene][2].length > 1 ? ' photo-grid-many' : ''}">${PHOTO[scene][2].map((file, index) => `<button class="ph" type="button" data-photo="${scene}" data-photo-index="${index}" aria-label="${esc(t('Perbesar foto: ', 'Enlarge photo: ') + PHOTO_ALT[file])}"><img src="photos/${file}.webp" alt="${esc(PHOTO_ALT[file])}" width="1448" height="1086" loading="lazy" decoding="async"><span aria-hidden="true">${esc(PHOTO[scene][2].length > 1 ? t(['kamar', 'jalan', 'pasar'][index], ['room', 'street', 'market'][index]) : PHOTO[scene][1])}</span></button>`).join('')}</div>`;
   // panggilan: masuk, keluar, berakhir
   const CALL = { '5,53': ['out', 'Arka'], '7,96': ['in', 'Arka'], '7,102': ['end', ''], '9,36': ['in', 'Nara'], '11,31': ['in', 'Tegar'] };
   // pemisah hari, seperti di aplikasi chat
@@ -201,7 +212,7 @@
         subj = first && /^(Aku|I)\b/.test(p) ? ['me', ''] : n ? [n.toLowerCase() === pov ? 'me' : 'you', n] : null;
       }
       const ph = PHOTO[i + ',' + k], cl = CALL[i + ',' + k];
-      if (ph) { html += `<div class="msg you photo" data-who="${ph[0]}"><span class="nm" style="--nc:var(--${ph[0].toLowerCase()})">${ph[0]} · ${t('foto', 'photo')}</span><div class="ph" style="--pc:var(--${ph[0].toLowerCase()})"><i></i><span>${esc(ph[1])}</span></div></div>`; last = 'you'; lastName = ph[0]; }
+      if (ph) { html += `<div class="msg you photo" data-who="${ph[0]}"><span class="nm" style="--nc:var(--${ph[0].toLowerCase()})">${ph[0]} · ${t('foto', 'photo')}</span>${photoMarkup(i + ',' + k)}</div>`; last = 'you'; lastName = ph[0]; }
       if (cl) html += `<p class="loc call ${cl[0]}"><span>${TEL}${cl[0] === 'in' ? t('Panggilan masuk · ', 'Incoming call · ') + cl[1] : cl[0] === 'out' ? t('Memanggil ', 'Calling ') + cl[1] + '…' : t('Panggilan berakhir', 'Call ended')}</span></p>`;
       if (/sembilan puluh, kamu sepuluh|ninety to give/i.test(p)) html += `<div class="split"><button class="split-bar" type="button" aria-label="${t('Balik', 'Flip')}"><span class="split-a" style="flex-grow:90">90</span><span class="split-n" style="flex-grow:10">10</span></button><small>${t('Ketuk untuk membalik', 'Tap to flip')}</small></div>`;
       (archivePoints.get(`${i},${k}`) || []).forEach(e => { html += `<span class="archive-point" data-archive="${e.id}" aria-hidden="true"></span>`; });
@@ -238,7 +249,7 @@
   const passages = [...document.querySelectorAll('.passage')];
   const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')];
   const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
-  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), resume = $('#resume');
+  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), resume = $('#resume');
   const renderArchive = () => {
     const entries = archiveEntries.filter(e => collected.has(e.id));
     const count = $('#archiveCount'); count.textContent = entries.length; count.hidden = !entries.length;
@@ -247,7 +258,7 @@
     $('#archiveList').innerHTML = entries.length ? entries.map(e => {
       const color = NAMES.includes(e.owner) ? e.owner.toLowerCase() : 'muted';
       let object = '';
-      if (e.kind === 'photo') object = `<div class="ph" style="--pc:var(--${color})" aria-hidden="true"><i></i><span>${esc(e.title)}</span></div>`;
+      if (e.kind === 'photo') object = photoMarkup(`${e.chapter},${e.paragraph}`);
       if (e.draft?.ghost) object = `<div class="archive-ghost" aria-hidden="true"><i></i><i></i><i></i></div><p class="archive-caption">${t('Tiga baris ditulis. Dua dihapus.', 'Three lines written. Two erased.')}</p>`;
       else if (e.draft?.text) object = `<blockquote>${esc(e.draft.text)}</blockquote><p class="archive-caption">${t('Dihapus sebelum dikirim.', 'Erased before it was sent.')}</p>`;
       else if (e.draft) object = `<p class="archive-caption">${t('Percakapan dibuka, lalu ditutup tanpa mengetik.', 'A conversation opened, then closed without typing.')}</p>`;
@@ -323,7 +334,7 @@
     }
   };
   const frame = () => {
-    if (dialog.open || archiveDialog.open) return;
+    if (dialog.open || archiveDialog.open || photoViewer.open) return;
     const ci = atLine(sections, 110);
     collectVisible(ci);
     if (ci !== currentChapter) {
@@ -367,7 +378,7 @@
   const scheduleFrame = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); }); };
   addEventListener('scroll', scheduleFrame, { passive: true });
   addEventListener('resize', () => {
-    if (latestPlace && currentChapter >= 0 && !dialog.open && !archiveDialog.open) {
+    if (latestPlace && currentChapter >= 0 && !dialog.open && !archiveDialog.open && !photoViewer.open) {
       goTo(document.getElementById(`p-${latestPlace.chapter}-${latestPlace.paragraph}`), latestPlace.offset, false, false);
     } else scheduleFrame();
   });
@@ -380,6 +391,7 @@
     if (!el) return;
     if (dialog.open) dialog.close();
     if (archiveDialog.open) archiveDialog.close();
+    if (photoViewer.open) photoViewer.close();
     cancelEffects();
     scrollTo({ top: scrollY + el.getBoundingClientRect().top - 94 + offset * el.getBoundingClientRect().height, behavior: 'instant' });
     if (changeHash) history.replaceState(null, '', '#' + el.id);
@@ -411,7 +423,32 @@
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault(); goTo(document.getElementById(a.dataset.source));
   });
-  [dialog, archiveDialog].forEach(d => {
+  let photoScene = '', photoIndex = 0;
+  const showPhoto = () => {
+    const files = PHOTO[photoScene][2], file = files[photoIndex];
+    $('#photoImage').src = `photos/${file}.webp`; $('#photoImage').alt = PHOTO_ALT[file];
+    $('#photoTitle').textContent = PHOTO_ALT[file];
+    $('#photoCounter').textContent = `${photoIndex + 1} / ${files.length}`;
+    $('#photoNavigation').hidden = files.length < 2;
+    $('#previousPhoto').disabled = photoIndex === 0; $('#nextPhoto').disabled = photoIndex === files.length - 1;
+  };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-photo]');
+    if (!b || !PHOTO[b.dataset.photo]) return;
+    photoScene = b.dataset.photo; photoIndex = +b.dataset.photoIndex;
+    persistPlace(); cancelEffects(); showPhoto(); photoViewer.showModal();
+  });
+  const stepPhoto = delta => { photoIndex = clamp(photoIndex + delta, 0, PHOTO[photoScene][2].length - 1); showPhoto(); };
+  $('#previousPhoto').onclick = () => stepPhoto(-1); $('#nextPhoto').onclick = () => stepPhoto(1);
+  $('#closePhoto').onclick = () => photoViewer.close();
+  $('#closePhoto').setAttribute('aria-label', t('Tutup foto', 'Close photo'));
+  $('#previousPhoto').setAttribute('aria-label', t('Foto sebelumnya', 'Previous photo'));
+  $('#nextPhoto').setAttribute('aria-label', t('Foto berikutnya', 'Next photo'));
+  $('#photoNavigation').setAttribute('aria-label', t('Foto dalam kiriman ini', 'Photos in this message'));
+  photoViewer.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); stepPhoto(e.key === 'ArrowLeft' ? -1 : 1); }
+  });
+  [dialog, archiveDialog, photoViewer].forEach(d => {
     d.addEventListener('close', scheduleFrame);
     d.addEventListener('click', e => {
       const r = d.getBoundingClientRect();
@@ -499,7 +536,7 @@
   const show = el => {
     el.classList.add('in');
     const rect = el.getBoundingClientRect();
-    const active = !dialog.open && !archiveDialog.open && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
+    const active = !dialog.open && !archiveDialog.open && !photoViewer.open && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
     if (el.classList.contains('del')) return active ? erase(el.dataset) : undefined;
     if (el.classList.contains('photo')) { if (calm) el.classList.add('sharp'); else later(() => el.classList.add('sharp'), 700); }
     if (el.classList.contains('lock')) { if (calm) el.classList.add('open'); else later(() => el.classList.add('open'), 900); return; }

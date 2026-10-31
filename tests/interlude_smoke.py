@@ -217,6 +217,51 @@ class InterludeSmoke(unittest.TestCase):
         self.page.locator('[data-entry="notebook-6-0"] summary').click()
         self.assertEqual(self.page.locator('[data-entry="notebook-6-0"] .archive-excerpt').inner_text(), self.work['chapters'][6]['body'][0])
 
+    def test_real_photo_assets_load_and_have_descriptions(self):
+        self.open('#p-3-40')
+        images = self.page.locator('#story .photo img')
+        self.assertEqual(images.count(), 8)
+        for image in images.all():
+            self.assertTrue(image.get_attribute('alt'))
+            response = self.context.request.get(image.evaluate('(e) => e.src'))
+            self.assertEqual(response.status, 200)
+            self.assertIn('image/webp', response.headers['content-type'])
+        images.evaluate_all("images => images.forEach(img => img.loading = 'eager')")
+        self.page.wait_for_function("[...document.querySelectorAll('#story .photo img')].every(img => img.complete && img.naturalWidth > 0)")
+
+    def test_photo_viewer_keeps_photos_in_their_message_and_returns_to_archive(self):
+        self.page.emulate_media(reduced_motion='reduce')
+        self.open('#p-3-40')
+        thumbnail = self.page.locator('#p-3-40 [data-photo]')
+        thumbnail.click()
+        self.page.wait_for_function("document.querySelector('#photoImage').naturalWidth > 0")
+        self.assertTrue(self.page.locator('#photoViewer').evaluate('(e) => e.open'))
+        self.assertTrue(self.page.locator('#photoNavigation').is_hidden())
+        self.page.keyboard.press('ArrowRight')
+        self.assertTrue(self.page.locator('#photoImage').get_attribute('src').endswith('receipt.webp'))
+        for width in [320, 390, 1440]:
+            self.page.set_viewport_size({'width': width, 'height': 844})
+            self.assertFalse(self.page.locator('#photoViewer').evaluate('(e) => e.scrollWidth > e.clientWidth'))
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.evaluate('document.activeElement.dataset.photo'), '3,40')
+        self.page.set_viewport_size({'width': 390, 'height': 844})
+        self.page.evaluate("location.hash = 'p-9-15'")
+        self.page.locator('#p-9-15 [data-photo-index="0"]').click()
+        self.assertEqual(self.page.locator('#photoCounter').inner_text(), '1 / 3')
+        self.page.keyboard.press('ArrowRight')
+        self.assertTrue(self.page.locator('#photoImage').get_attribute('src').endswith('street.webp'))
+        self.page.keyboard.press('ArrowRight')
+        self.assertTrue(self.page.locator('#photoImage').get_attribute('src').endswith('market.webp'))
+        self.assertTrue(self.page.locator('#nextPhoto').is_disabled())
+        self.page.keyboard.press('Escape')
+        self.page.locator('#openArchive').click()
+        self.page.locator('[data-entry="photo-3-40"] summary').click()
+        self.page.locator('[data-entry="photo-3-40"] [data-photo]').click()
+        self.assertTrue(self.page.locator('#archiveDialog').evaluate('(e) => e.open'))
+        self.page.keyboard.press('Escape')
+        self.assertFalse(self.page.locator('#photoViewer').evaluate('(e) => e.open'))
+        self.assertTrue(self.page.locator('#archiveDialog').evaluate('(e) => e.open'))
+
     def test_mobile_and_desktop_have_no_horizontal_overflow(self):
         for width in [320, 390, 1440]:
             with self.subTest(width=width):

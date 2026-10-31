@@ -47,6 +47,11 @@
   <p class="archive-note" id="archiveNote">Draf, foto, dan catatan yang sudah kamu temui tinggal di sini. Tersimpan di perangkat ini.</p>
   <div class="archive-list" id="archiveList"></div>
 </dialog>
+<dialog class="photo-viewer" id="photoViewer" aria-labelledby="photoTitle">
+  <header class="dialog-h"><h2 id="photoTitle"></h2><button id="closePhoto" type="button" aria-label="Tutup foto">×</button></header>
+  <img id="photoImage" alt="">
+  <nav class="photo-navigation" id="photoNavigation" aria-label="Foto dalam kiriman ini"><button id="previousPhoto" type="button" aria-label="Foto sebelumnya">←</button><span id="photoCounter"></span><button id="nextPhoto" type="button" aria-label="Foto berikutnya">→</button></nav>
+</dialog>
 <p class="sr-only" id="archiveAnnouncement" role="status" aria-live="polite" aria-atomic="true"></p>
 <div class="comp" id="comp" hidden aria-hidden="true"><small id="compW"></small><span class="comp-t" id="compT"></span><i class="caret"></i></div>
 <nav class="sz" id="readerTools" aria-label="Pengaturan bacaan">
