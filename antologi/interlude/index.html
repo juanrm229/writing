@@ -16,11 +16,13 @@
 <link rel="stylesheet" href="interlude.css">
 </head>
 <body>
+<div class="scene-light" aria-hidden="true"></div>
 <header class="chat-h" id="chatH">
   <a class="ch-back" href="../../#putar" id="back" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
   <span class="av" id="hAv" aria-hidden="true">I</span>
   <button class="h-t" id="openChapters" type="button" aria-haspopup="dialog" aria-controls="chapterDialog" aria-label="Daftar percakapan"><b id="hName">Interlude</b><small id="hLoc"></small></button>
   <span class="bar-p" id="pct" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</span>
+  <button class="archive-toggle" id="openAtmosphere" type="button" aria-haspopup="dialog" aria-controls="atmosphereDialog" aria-label="Suasana membaca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 14v-3a7 7 0 0 1 14 0v3M5 13H3v6h4v-6zM19 13h2v6h-4v-6z"/></svg></button>
   <button class="archive-toggle" id="openArchive" type="button" aria-haspopup="dialog" aria-controls="archiveDialog" aria-label="Buka arsip Interlude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 4h18v5H3zM9 13h6"/></svg><span id="archiveCount" hidden aria-hidden="true">0</span></button>
 </header>
 <main class="read" id="read" tabindex="-1">
@@ -41,6 +43,18 @@
 <dialog class="chapter-dialog" id="chapterDialog" aria-labelledby="chaptersTitle">
   <header class="dialog-h"><div><p class="kick">Interlude · Temusai</p><h2 id="chaptersTitle">Daftar percakapan</h2></div><button id="closeChapters" type="button" aria-label="Tutup">×</button></header>
   <nav id="chapterList" aria-label="Bab"></nav>
+</dialog>
+<dialog class="chapter-dialog atmosphere-dialog" id="atmosphereDialog" aria-labelledby="atmosphereTitle">
+  <header class="dialog-h"><div><p class="kick">Interlude</p><h2 id="atmosphereTitle">Suasana membaca</h2></div><button id="closeAtmosphere" type="button" aria-label="Tutup">×</button></header>
+  <div class="atmosphere-body">
+    <p class="sound-place" id="soundPlace"></p>
+    <p class="setting-note" id="soundNote">Suara ruang mengikuti tempat dalam cerita. Nyalakan jika ingin ditemani.</p>
+    <button class="setting-switch" id="soundToggle" type="button" aria-pressed="false" aria-describedby="soundNote">Nyalakan suara ruang</button>
+    <p class="setting-status" id="soundStatus" role="status" aria-live="polite"></p>
+    <label class="volume-label" for="soundVolume"><span id="volumeLabel">Volume</span><output id="soundVolumeValue" for="soundVolume">28%</output></label>
+    <input id="soundVolume" type="range" min="0" max="100" value="28">
+    <div class="focus-setting"><button class="setting-switch" id="focusToggle" type="button" aria-pressed="false" aria-describedby="focusNote">Ruang baca</button><p class="setting-note" id="focusNote">Sembunyikan bilah alat bawah agar layar lebih lapang. Daftar bab tetap bisa dibuka dari kepala percakapan.</p></div>
+  </div>
 </dialog>
 <dialog class="chapter-dialog archive-dialog" id="archiveDialog" aria-labelledby="archiveTitle" aria-describedby="archiveNote">
   <header class="dialog-h"><div><p class="kick" id="archiveKick">Interlude · Arsip</p><h2 id="archiveTitle">Yang tertinggal</h2></div><button id="closeArchive" type="button" aria-label="Tutup arsip">×</button></header>
@@ -64,6 +78,7 @@
   <button id="smaller" type="button" aria-label="A−"><span class="aa">A</span>−</button>
   <button id="bigger" type="button" aria-label="A+"><span class="aa">A</span>+</button>
 </nav>
+<script src="ambience.js"></script>
 <script src="interlude.js"></script>
 </body>
 </html>

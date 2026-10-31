@@ -23,7 +23,7 @@
   let work;
   try { work = (await (await fetch('../../content/works.json', { cache: 'no-cache' })).json()).find(w => w.slug === SLUG); } catch (e) { /* luring */ }
   const story = $('#story');
-  if (!work || !Array.isArray(work.chapters) || !work.chapters.length) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Go back')}</a></p>`; document.documentElement.classList.remove('js'); $('#readerTools').hidden = true; $('#openArchive').hidden = true; $('.reading-start').hidden = true; return; }
+  if (!work || !Array.isArray(work.chapters) || !work.chapters.length) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Go back')}</a></p>`; document.documentElement.classList.remove('js'); $('#readerTools').hidden = true; $('#openArchive').hidden = true; $('#openAtmosphere').hidden = true; $('.reading-start').hidden = true; return; }
   const chapters = (EN && work.en?.chapters) || work.chapters;
   const wordCount = text => (text.match(/\S+/g) || []).length;
   const minutes = c => Math.max(1, Math.ceil(wordCount(c.body.join(' ')) / 180));
@@ -58,6 +58,12 @@
     ibu: ['Makan bersama ibu Nara', 'Dinner with Nara’s mother'], teras: ['Teras rumah Nara', 'Nara’s porch'], rnara: ['Rumah Nara', 'Nara’s house'],
     dsinta: ['Dapur rumah baru', 'The new kitchen'], bandara: ['Bandara', 'The airport'], jauh: ['Kota lain', 'Another city'], halte: ['Halte', 'The bus stop'],
     kolam: ['Kolam renang', 'The swimming pool'], mobil: ['Mobil Tegar', 'Tegar’s car']
+  };
+  const SPACES = {
+    baru: 'room', lama: 'room', tunggu: 'room', kedai: 'cafe', rsinta: 'room', studio: 'room',
+    darka: 'room', warung: 'cafe', jalan: 'outdoors', knara: 'night', fotokopi: 'room', karka: 'night',
+    ibu: 'room', teras: 'outdoors', rnara: 'room', dsinta: 'room', bandara: 'terminal', jauh: 'room',
+    halte: 'outdoors', kolam: 'water', mobil: 'transit'
   };
   // koreksi penutur yang sudah diperiksa per baris: 'me' = tokoh yang bercerita (kanan), 'you:nama' = lawan bicara (kiri)
   const OV = {
@@ -218,7 +224,7 @@
       (archivePoints.get(`${i},${k}`) || []).forEach(e => { html += `<span class="archive-point" data-archive="${e.id}" aria-hidden="true"></span>`; });
       html += '</div>';
     });
-    html += `${draft ? `<p class="draft-f">${t('Dari buku tulis Arka · tidak pernah dikirim', 'From Arka\u2019s notebook · never sent')}</p>` : ''}</section>`;
+    html += `${draft ? `<p class="draft-f">${t('Dari buku tulis Arka · tidak pernah dikirim', 'From Arka\u2019s notebook · never sent')}</p>` : ''}${i < chapters.length - 1 ? `<footer class="chapter-pause"><span aria-hidden="true">· · ·</span><a class="chapter-next" data-next="${i + 1}" href="#bab-${i + 2}">${t('Percakapan berikutnya', 'The next conversation')} <span aria-hidden="true">→</span></a><small>${t('Boleh berhenti sejenak di sini.', 'You can pause here for a while.')}</small></footer>` : ''}</section>`;
   });
   // daftar percakapan: setiap bab satu utas, seperti layar depan aplikasi chat
   const oldSeen = store.get('il:seen', -1), visited = store.get('il:visited', null);
@@ -249,7 +255,48 @@
   const passages = [...document.querySelectorAll('.passage')];
   const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')];
   const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
-  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), resume = $('#resume');
+  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), atmosphereDialog = $('#atmosphereDialog'), resume = $('#resume');
+  const dialogs = [dialog, archiveDialog, photoViewer, atmosphereDialog];
+  const soundToggle = $('#soundToggle'), soundVolume = $('#soundVolume'), soundStatus = $('#soundStatus');
+  $('#atmosphereTitle').textContent = t('Suasana membaca', 'Reading atmosphere');
+  $('#openAtmosphere').setAttribute('aria-label', t('Suasana membaca', 'Reading atmosphere'));
+  $('#closeAtmosphere').setAttribute('aria-label', t('Tutup', 'Close'));
+  $('#soundNote').textContent = t('Suara ruang mengikuti tempat dalam cerita. Nyalakan jika ingin ditemani.', 'Room tones follow the places in the story. Turn them on if you would like some company.');
+  $('#volumeLabel').textContent = t('Volume', 'Volume');
+  $('#focusToggle').textContent = t('Ruang baca', 'Reading room');
+  $('#focusNote').textContent = t('Sembunyikan bilah alat bawah agar layar lebih lapang. Daftar bab tetap bisa dibuka dari kepala percakapan.', 'Hide the bottom toolbar for a little more room. You can still open chapters from the conversation header.');
+  const renderSound = state => {
+    soundToggle.disabled = !state.supported;
+    soundToggle.setAttribute('aria-pressed', state.enabled);
+    $('#openAtmosphere').toggleAttribute('data-playing', state.playing);
+    const retry = state.enabled && !state.playing && !state.paused && state.scene;
+    soundToggle.textContent = state.enabled ? (retry ? t('Lanjutkan suara', 'Resume sound') : t('Matikan suara ruang', 'Turn room tones off')) : t('Nyalakan suara ruang', 'Turn room tones on');
+    const message = !state.supported ? t('Suara belum tersedia di peramban ini. Kamu tetap bisa membaca.', 'Sound is unavailable in this browser. You can keep reading.')
+      : state.error ? t('Suara belum bisa dimulai. Coba nyalakan lagi.', 'Sound could not start. Try turning it on again.')
+      : !state.enabled ? t('Hening. Suara hanya menyala saat kamu memilihnya.', 'Silence. Sound only starts when you choose it.')
+      : state.paused ? t('Suara dijeda selama tab tidak aktif.', 'Sound is paused while this tab is inactive.')
+      : !state.scene ? t('Suara akan hadir saat kamu mulai membaca.', 'Sound will join you when you start reading.')
+      : state.playing ? t('Suara ruang menyala pelan, mengikuti adegan.', 'Room tones are on, softly following the scene.')
+      : t('Ketuk lanjutkan untuk mendengar kembali.', 'Tap resume to listen again.');
+    if (soundStatus.textContent !== message) soundStatus.textContent = message;
+  };
+  const ambience = typeof window.InterludeAmbience === 'function' ? new window.InterludeAmbience(renderSound) : {
+    supported: false, enabled: false, playing: false, setScene() {}, setVolume() {}, setPaused() {}, dispose() {}
+  };
+  const storedVolume = store.get('il:volume', 28);
+  soundVolume.value = Number.isFinite(storedVolume) ? clamp(storedVolume, 0, 100) : 28;
+  const setVolume = () => {
+    const value = +soundVolume.value; $('#soundVolumeValue').value = value + '%';
+    soundVolume.setAttribute('aria-valuetext', value + '%'); store.set('il:volume', value); ambience.setVolume(value / 100);
+  };
+  soundVolume.oninput = setVolume; setVolume(); renderSound(ambience);
+  soundToggle.onclick = () => ambience.setEnabled(!ambience.enabled || !ambience.playing && !ambience.paused && !!ambience.scene);
+  const setFocus = value => {
+    const focused = !!value; document.documentElement.toggleAttribute('data-focus', focused);
+    $('#focusToggle').setAttribute('aria-pressed', focused); store.set('il:focus', focused);
+  };
+  setFocus(store.get('il:focus', false));
+  $('#focusToggle').onclick = () => setFocus(!document.documentElement.hasAttribute('data-focus'));
   const renderArchive = () => {
     const entries = archiveEntries.filter(e => collected.has(e.id));
     const count = $('#archiveCount'); count.textContent = entries.length; count.hidden = !entries.length;
@@ -334,7 +381,7 @@
     }
   };
   const frame = () => {
-    if (dialog.open || archiveDialog.open || photoViewer.open) return;
+    if (dialogs.some(d => d.open)) return;
     const ci = atLine(sections, 110);
     collectVisible(ci);
     if (ci !== currentChapter) {
@@ -360,6 +407,13 @@
     const other = v === 'arka' ? 'Nara' : v === 'nara' ? 'Arka' : '', draft = DRAFT.includes(ci);
     const status = draft ? t('menulis untukmu', 'writing to you') : stt === 'both' ? t('online · membaca menu yang sama', 'online · reading the same menu') : stt && other ? `${other} · ${stt === 'on' ? 'online' : stt === 'back' ? t('di kota yang sama', 'in the same city') : t('terakhir dilihat di kota lain', 'last seen in another city')}` : '';
     const key = v + '|' + loc + '|' + status;
+    const scenePlace = ci < 0 ? '' : loc || B.find(b => b[0] === ci && b[2].pl)?.[2].pl || '';
+    $('#soundPlace').textContent = scenePlace ? PL[scenePlace][EN ? 1 : 0] : t('Di ambang cerita', 'At the beginning of the story');
+    ambience.setScene(SPACES[scenePlace] || '');
+    if (document.documentElement.dataset.voice !== v) {
+      document.documentElement.dataset.voice = v;
+      document.documentElement.style.setProperty('--scene-tint', `var(--${v || 'bg'})`);
+    }
     if (key !== headKey && !typing) {
       headKey = key;
       const duo = stt === 'both';
@@ -378,20 +432,20 @@
   const scheduleFrame = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); }); };
   addEventListener('scroll', scheduleFrame, { passive: true });
   addEventListener('resize', () => {
-    if (latestPlace && currentChapter >= 0 && !dialog.open && !archiveDialog.open && !photoViewer.open) {
+    if (latestPlace && currentChapter >= 0 && !dialogs.some(d => d.open)) {
       goTo(document.getElementById(`p-${latestPlace.chapter}-${latestPlace.paragraph}`), latestPlace.offset, false, false);
     } else scheduleFrame();
   });
   addEventListener('pagehide', persistPlace);
+  addEventListener('pagehide', () => ambience.dispose());
   document.addEventListener('visibilitychange', () => {
+    ambience.setPaused(document.hidden);
     if (document.hidden) { persistPlace(); cancelEffects(); } else frame();
   });
 
   const goTo = (el, offset = 0, changeHash = true, focus = true) => {
     if (!el) return;
-    if (dialog.open) dialog.close();
-    if (archiveDialog.open) archiveDialog.close();
-    if (photoViewer.open) photoViewer.close();
+    dialogs.forEach(d => { if (d.open) d.close(); });
     cancelEffects();
     scrollTo({ top: scrollY + el.getBoundingClientRect().top - 94 + offset * el.getBoundingClientRect().height, behavior: 'instant' });
     if (changeHash) history.replaceState(null, '', '#' + el.id);
@@ -401,6 +455,10 @@
   $('#begin').onclick = () => goTo(sections[0]);
   $('#previousChapter').onclick = () => goTo(sections[Math.max(0, currentChapter - 1)]);
   $('#nextChapter').onclick = () => goTo(sections[Math.min(chapters.length - 1, currentChapter + 1)]);
+  document.querySelectorAll('.chapter-next').forEach(a => a.addEventListener('click', e => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); goTo(sections[+a.dataset.next]);
+  }));
   document.querySelectorAll('.inbox [data-go]').forEach(a => a.addEventListener('click', e => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault(); goTo(sections[+a.dataset.go]);
@@ -418,6 +476,8 @@
     persistPlace(); cancelEffects(); renderArchive(); archiveDialog.showModal();
   };
   $('#closeArchive').onclick = () => archiveDialog.close();
+  $('#openAtmosphere').onclick = () => { persistPlace(); cancelEffects(); atmosphereDialog.showModal(); };
+  $('#closeAtmosphere').onclick = () => atmosphereDialog.close();
   $('#archiveList').addEventListener('click', e => {
     const a = e.target.closest('[data-source]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -448,7 +508,7 @@
   photoViewer.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); stepPhoto(e.key === 'ArrowLeft' ? -1 : 1); }
   });
-  [dialog, archiveDialog, photoViewer].forEach(d => {
+  dialogs.forEach(d => {
     d.addEventListener('close', scheduleFrame);
     d.addEventListener('click', e => {
       const r = d.getBoundingClientRect();
@@ -536,7 +596,7 @@
   const show = el => {
     el.classList.add('in');
     const rect = el.getBoundingClientRect();
-    const active = !dialog.open && !archiveDialog.open && !photoViewer.open && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
+    const active = !dialogs.some(d => d.open) && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
     if (el.classList.contains('del')) return active ? erase(el.dataset) : undefined;
     if (el.classList.contains('photo')) { if (calm) el.classList.add('sharp'); else later(() => el.classList.add('sharp'), 700); }
     if (el.classList.contains('lock')) { if (calm) el.classList.add('open'); else later(() => el.classList.add('open'), 900); return; }

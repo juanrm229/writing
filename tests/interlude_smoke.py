@@ -274,9 +274,113 @@ class InterludeSmoke(unittest.TestCase):
                 self.page.locator('#openArchive').click()
                 self.assertFalse(self.page.locator('#archiveDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
                 self.page.keyboard.press('Escape')
+                self.page.locator('#openAtmosphere').click()
+                self.assertFalse(self.page.locator('#atmosphereDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
+                self.page.keyboard.press('Escape')
                 self.page.locator('#begin').click()
                 self.page.wait_for_function("document.querySelector('#chapterToggle').textContent === 'Bab 1/12'")
                 self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
+
+    def test_room_tones_require_consent_and_produce_quiet_audio(self):
+        self.context.add_init_script("""
+          window.testAudioContexts = [];
+          const Audio = window.AudioContext;
+          window.AudioContext = class extends Audio {
+            constructor(...args) { super(...args); window.testAudioContexts.push(this); }
+          };
+          const connect = AudioNode.prototype.connect;
+          AudioNode.prototype.connect = function(target, ...args) {
+            const result = connect.call(this, target, ...args);
+            if (target instanceof AudioDestinationNode) {
+              window.testOutput = target.context.createAnalyser();
+              window.testOutput.fftSize = 2048;
+              connect.call(this, window.testOutput);
+            }
+            return result;
+          };
+          window.testAudioPeak = () => {
+            if (!window.testOutput) return 0;
+            const samples = new Float32Array(window.testOutput.fftSize);
+            window.testOutput.getFloatTimeDomainData(samples);
+            return Math.max(...samples.map(Math.abs));
+          };
+        """)
+        self.open('#p-0-0')
+        self.assertEqual(self.page.evaluate('testAudioContexts.length'), 0)
+        self.page.locator('#openAtmosphere').click()
+        self.page.locator('#soundToggle').click()
+        self.page.wait_for_function("testAudioContexts[0]?.state === 'running' && testAudioPeak() > .0001")
+        self.assertLess(self.page.evaluate('testAudioPeak()'), .5)
+        self.page.locator('#soundVolume').focus()
+        self.page.keyboard.press('End')
+        self.assertEqual(self.page.locator('#soundVolumeValue').inner_text(), '100%')
+        self.page.wait_for_function('testAudioPeak() > .001')
+        self.assertLess(self.page.evaluate('testAudioPeak()'), .5)
+        self.page.keyboard.press('Escape')
+        self.page.evaluate("location.hash = 'p-9-0'")
+        self.page.wait_for_function("document.querySelector('#chapterToggle').textContent === 'Bab 10/12'")
+        self.page.locator('#openAtmosphere').click()
+        self.assertIn('Bandara', self.page.locator('#soundPlace').inner_text())
+        self.assertEqual(self.page.evaluate('testAudioContexts.length'), 1)
+        self.page.evaluate("Object.defineProperty(document, 'hidden', {value: true, configurable: true}); document.dispatchEvent(new Event('visibilitychange'))")
+        self.page.wait_for_function("testAudioContexts[0].state === 'suspended'")
+        self.page.evaluate("Object.defineProperty(document, 'hidden', {value: false, configurable: true}); document.dispatchEvent(new Event('visibilitychange'))")
+        self.page.wait_for_function("testAudioContexts[0].state === 'running'")
+        self.page.locator('#soundToggle').click()
+        self.page.wait_for_function("testAudioContexts[0].state === 'suspended'")
+        self.assertEqual(self.page.locator('#soundToggle').get_attribute('aria-pressed'), 'false')
+        self.page.locator('#soundToggle').click()
+        self.page.wait_for_function("testAudioContexts[0].state === 'running'")
+        self.page.evaluate("dispatchEvent(new PageTransitionEvent('pagehide', {persisted: true}))")
+        self.page.wait_for_function("testAudioContexts[0].state === 'closed'")
+        self.open()
+        self.assertEqual(self.page.evaluate('testAudioContexts.length'), 0)
+        self.page.locator('#openAtmosphere').click()
+        self.assertEqual(self.page.locator('#soundVolumeValue').inner_text(), '100%')
+        self.assertEqual(self.page.locator('#soundToggle').get_attribute('aria-pressed'), 'false')
+
+    def test_focus_mode_preserves_the_place_and_chapter_end_navigation(self):
+        self.open('?lang=en#p-3-20')
+        self.page.wait_for_function("JSON.parse(localStorage.getItem('jm:il:place') || '{}').paragraph === 20")
+        y = self.page.evaluate('scrollY')
+        self.page.locator('#openAtmosphere').click()
+        self.assertEqual(self.page.locator('#atmosphereTitle').inner_text(), 'Reading atmosphere')
+        self.page.locator('#focusToggle').click()
+        self.page.keyboard.press('Escape')
+        self.assertTrue(self.page.locator('#readerTools').is_hidden())
+        self.assertAlmostEqual(self.page.evaluate('scrollY'), y, delta=1)
+        self.page.locator('#openChapters').click()
+        self.page.locator('#chapterList [data-go="0"]').click()
+        self.page.locator('#bab-1 .chapter-next').click()
+        self.page.wait_for_function("document.querySelector('#chapterToggle').textContent === 'Ch. 2/12'")
+        self.open('?lang=en')
+        self.assertTrue(self.page.locator('#readerTools').is_hidden())
+        self.page.locator('#openAtmosphere').click()
+        self.page.locator('#focusToggle').click()
+        self.page.keyboard.press('Escape')
+        self.assertTrue(self.page.locator('#readerTools').is_visible())
+
+    def test_reading_survives_a_missing_audio_module(self):
+        self.context.route('**/ambience.js', lambda route: route.abort())
+        self.open('#p-0-0')
+        self.assertGreater(len(self.page.locator('#p-0-0').inner_text()), 100)
+        self.page.locator('#openAtmosphere').click()
+        self.assertTrue(self.page.locator('#soundToggle').is_disabled())
+        self.assertIn('belum tersedia', self.page.locator('#soundStatus').inner_text())
+        self.page.locator('#focusToggle').click()
+        self.assertEqual(self.page.locator('#focusToggle').get_attribute('aria-pressed'), 'true')
+
+    def test_reader_and_audio_module_are_available_offline_after_install(self):
+        root = self.url.removesuffix('antologi/interlude/')
+        self.page.goto(root, wait_until='domcontentloaded')
+        self.page.evaluate('navigator.serviceWorker.ready.then(() => true)')
+        self.open('#p-0-0')
+        self.context.set_offline(True)
+        self.page.reload(wait_until='domcontentloaded')
+        self.page.wait_for_selector('.passage')
+        self.assertTrue(self.page.evaluate("typeof window.InterludeAmbience === 'function'"))
+        self.page.locator('#openAtmosphere').click()
+        self.assertFalse(self.page.locator('#soundToggle').is_disabled())
 
 
 if __name__ == '__main__':
