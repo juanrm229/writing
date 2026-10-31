@@ -178,4 +178,34 @@ Data acara, foto, kutipan, dan penanda ruangan yang berdiri (dengan penanda ID/E
 python3 tests/mimpi_smoke.py
 ```
 
+### The Moon Behind My Eyes (antologi/the-moon-behind-my-eyes/)
+
+Puisi ini dibaca di **layar kunci ponsel**, tanpa ilustrasi: hanya jam, widget, notifikasi, pusat kontrol, dan layar yang dimatikan. Setiap bait datang sebagai catatan di layar kunci. Larik dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Wallpaper mengikuti tema situs; layar yang dimatikan selalu hitam.
+
+- **Kaca yang dijaga bening**: kacanya kaca layar itu sendiri. Layar kunci mula-mula buram; usap dengan jari atau tetikus (atau tombol *Usap*) sampai jelas.
+- **Bulan yang tidak datang**: begitu layar jelas, aktivitas langsung *Bulan terbit* menghitung mundur, lalu berganti *Bulan sudah terbit · tidak terlihat*; widget *Terbit* menulis *Tertunda*. Widget *Bintang* bertambah tepat setiap detik, widget *Bulan* menulis persentase bulan malam itu, *tidak terlihat*.
+- **Penantian yang menghantui**: notifikasi *Langit · Bulan belum terlihat* terus datang; pembaca menekan *Ingatkan lagi* tiga kali.
+- **Tirai**: di pusat kontrol (tombol ☾), penggeser *Kecerahan · tirai* diturunkan sampai habis; Fokus *Tidur* menyala dan notifikasi bulan dibisukan.
+- **Memejam**: tahan tombol kunci (atau spasi). Layar mati, dan di layar yang hitam itu *Bulan: terlihat* serta dua bait terakhir menyala pelan, larik demi larik; melepas tombol menyalakan layar lagi dan menjeda lariknya. Setelah selesai, notifikasi terakhir datang: *Bulan terlihat · lokasi: di balik matamu*. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan, dan *Mulai lagi* di akhir.
+- Penanda `#baca-2` membuka bait ketiga, `#baca-3` langsung ke langkah memejam.
+
+```bash
+python3 tests/moon_smoke.py
+```
+
+### Trillions of Seconds (antologi/trillions-of-seconds/)
+
+Puisi ini dibaca di **aplikasi Jam**, di tab *Stopwatch*. Larik dimuat utuh dari `content/works.json`; tampilannya mengikuti tema situs.
+
+- **Mulai** menjalankan stopwatch dan membuka bait pertama. Setiap **Putaran** mencatat berapa lama pembaca berpikir di satu bait lalu membuka bait berikutnya. Seperti aplikasi Jam, putaran terbaru di atas, yang tercepat hijau dan terlama merah; bait lama bisa dibuka lagi. Jarum detiknya satu titik kecil, *that tiny speck*.
+- **Jam Dunia**: setelah *the coast of answers and longing*, sebuah kota bertambah: *Pantai Jawaban dan Kerinduan*, zona waktu tidak diketahui. **Alarm**: tidak ada alarm.
+- **Timer**: saat *Trillions of seconds* terbuka, timer *1 triliun detik* mulai berjalan bersama stopwatch (±31.689 tahun). Pembaca boleh mengisi tahun lahirnya untuk melihat detiknya sendiri; disimpan hanya di perangkatnya.
+- **"I am you."**: saat *I encountered an entity* terbuka, muncul **stopwatch lain di dekatmu**, *Entitas*, dengan waktu dan daftar putaran yang sama persis dengan milik pembaca. Di bait berikutnya ia hanyut menjauh (*Putaran 1–5: sama persis dengan milikmu*) lalu hilang.
+- **I stopped thinking**: di bait terakhir, pembaca sendiri yang menekan **Berhenti**; waktunya membeku dan puisinya selesai. Menjeda di tengah puisi tidak menyelesaikannya; stopwatch yang ditinggalkan dijeda dan diingat.
+- Penanda `#baca-3` membuka bait keempat dengan putaran sebelumnya ditandai dilewati.
+
+```bash
+python3 tests/seconds_smoke.py
+```
+
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.

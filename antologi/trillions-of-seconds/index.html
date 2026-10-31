@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trillions of Seconds · Quiet Margins</title>
+<meta name="description" content="Dibaca di aplikasi Jam: setiap putaran stopwatch membuka satu bait, dan sebuah stopwatch lain punya putaran yang persis sama.">
+<meta property="og:title" content="Trillions of Seconds">
+<meta property="og:description" content="Trillions of seconds have slipped away, spent on nothing but thought.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#000000">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="seconds.css?v=2">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+    <span class="top-title" id="topTitle">Stopwatch</span>
+    <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  </header>
+
+  <main class="tabs-body">
+    <section class="tab" id="tab-world" role="tabpanel" aria-labelledby="t-world" hidden>
+      <h1 class="large" id="worldTitle">Jam Dunia</h1>
+      <ul class="world" id="worldList"></ul>
+    </section>
+
+    <section class="tab" id="tab-alarm" role="tabpanel" aria-labelledby="t-alarm" hidden>
+      <h1 class="large" id="alarmTitle">Alarm</h1>
+      <p class="empty" id="alarmEmpty">Tidak ada alarm</p>
+    </section>
+
+    <section class="tab" id="tab-stopwatch" role="tabpanel" aria-labelledby="t-stopwatch">
+      <header class="poem-head">
+        <p class="kicker" id="kicker">Puisi · Juan</p>
+        <h1 class="poem-title" id="title">Trillions of Seconds</h1>
+        <p class="lost" id="lost" hidden></p>
+      </header>
+      <div class="dial-wrap">
+        <svg class="dial" id="dial" viewBox="0 0 300 300" aria-hidden="true"><g id="ticks"></g><g id="nums"></g><path class="trail" id="trail" d=""/><circle class="speck" id="speck" cx="150" cy="18" r="5"/></svg>
+        <p class="digital" id="digital" role="timer" aria-live="off">00:00,00</p>
+      </div>
+      <div class="controls">
+        <button class="round gray" id="lapBtn" type="button" disabled>Putaran</button>
+        <p class="hint" id="hint">Tekan Mulai.</p>
+        <button class="round green" id="startBtn" type="button">Mulai</button>
+      </div>
+      <ol class="laps" id="laps" aria-live="polite"></ol>
+      <footer class="end" id="end" hidden></footer>
+    </section>
+
+    <section class="tab" id="tab-timer" role="tabpanel" aria-labelledby="t-timer" hidden>
+      <h1 class="large" id="timerTitle">Timer</h1>
+      <div class="timer" id="timer">
+        <p class="timer-label" id="timerLabel">1 triliun detik</p>
+        <p class="timer-big mono" id="timerLeft">1.000.000.000.000</p>
+        <p class="timer-sub" id="timerSub"></p>
+        <div class="born"><label for="born" id="bornLabel">Tahun lahirmu</label><input id="born" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1999"></div>
+        <p class="lived" id="lived" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" role="tablist" aria-label="Jam">
+    <button role="tab" id="t-world" data-tab="world" aria-controls="tab-world" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span id="tWorld">Jam Dunia</span><i class="badge" hidden></i></button>
+    <button role="tab" id="t-alarm" data-tab="alarm" aria-controls="tab-alarm" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M5 4 3 6M19 4l2 2"/></svg><span id="tAlarm">Alarm</span><i class="badge" hidden></i></button>
+    <button role="tab" id="t-stopwatch" data-tab="stopwatch" aria-controls="tab-stopwatch" aria-selected="true" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M12 3v3"/></svg><span id="tStopwatch">Stopwatch</span><i class="badge" hidden></i></button>
+    <button role="tab" id="t-timer" data-tab="timer" aria-controls="tab-timer" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/></svg><span id="tTimer">Timer</span><i class="badge" hidden></i></button>
+  </nav>
+</div>
+
+<div class="banner" id="banner" role="status" aria-live="polite" hidden></div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="seconds.js?v=2"></script>
+</body>
+</html>
