@@ -35,7 +35,7 @@
     play(kind) {
       if (!this.playing) return;
       const c = this.context, now = c.currentTime;
-      const notes = kind === 'bell' ? [[1046, .42, .9], [1568, .14, .6]] : kind === 'chime' ? [[1397, .3, .7], [2093, .1, .5]] : kind === 'spoon' ? [[2349, .18, .25]] : kind === 'button' ? [[540, .12, .09]] : [[1500, .08, .045], [900, .04, .03]];
+      const notes = kind === 'bell' ? [[1046, .42, .9], [1568, .14, .6]] : kind === 'chime' ? [[1397, .3, .7], [2093, .1, .5]] : kind === 'spoon' ? [[2349, .18, .25]] : kind === 'button' ? [[540, .12, .09]] : kind === 'gear' ? [[2637, .1, .22], [3951, .04, .14]] : [[1500, .08, .045], [900, .04, .03]];
       notes.forEach(([hz, amplitude, duration]) => {
         const o = c.createOscillator(), gain = c.createGain(); o.type = 'sine'; o.frequency.value = hz;
         gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(amplitude, now + .003); gain.gain.exponentialRampToValueAtTime(.0001, now + duration);

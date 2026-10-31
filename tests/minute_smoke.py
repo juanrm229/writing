@@ -1,4 +1,4 @@
-"""Browser checks for Terlambat Satu Menit: python3 tests/minute_smoke.py.
+"""Browser checks for Terlambat Satu Menit (Satu Menit): python3 tests/minute_smoke.py.
 
 Uses the cloud environment's Python Playwright and system Chromium.
 No authentication, remote writes, or external assets are needed.
@@ -37,7 +37,8 @@ class MinuteSmoke(unittest.TestCase):
         cls.root = f'http://127.0.0.1:{cls.server.server_port}/'
         cls.url = cls.root + 'antologi/terlambat-satu-menit/'
         cls.playwright = sync_playwright().start()
-        cls.browser = cls.playwright.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+        chromium = next((p for p in ['/usr/bin/chromium', '/opt/pw-browsers/chromium'] if Path(p).exists()), None)
+        cls.browser = cls.playwright.chromium.launch(executable_path=chromium, args=['--no-sandbox'])
         cls.work = next(w for w in json.loads((ROOT / 'content/works.json').read_text()) if w['slug'] == 'terlambat-satu-menit')
 
     @classmethod
@@ -57,14 +58,17 @@ class MinuteSmoke(unittest.TestCase):
 
     def open(self, fragment=''):
         self.page.goto(self.url + fragment, wait_until='domcontentloaded')
-        self.page.wait_for_selector('.passage')
+        if re.search(r'#[abc]', fragment):
+            self.page.wait_for_selector('.passage')
+        else:
+            self.page.wait_for_function("['dial', 'final'].includes(document.documentElement.dataset.view)")
 
     def go(self, side, paragraph):
         self.page.evaluate('(hash) => location.hash = hash', f'{side}-{paragraph}')
         self.page.wait_for_function('(side) => document.documentElement.dataset.side === side', arg=side)
         self.page.wait_for_function('''(p) => {
           const r = document.querySelector('#p-' + p).getBoundingClientRect();
-          const line = innerWidth <= 800 ? document.querySelector('#stage').getBoundingClientRect().bottom + 18 : document.querySelector('#topbar').getBoundingClientRect().bottom + 28;
+          const line = document.querySelector('#topbar').getBoundingClientRect().bottom + 28;
           const aligned = Math.abs(r.top - line) < 1;
           const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 1;
           return aligned || atEnd && r.top >= 58 && r.bottom < innerHeight;
@@ -140,8 +144,7 @@ class MinuteSmoke(unittest.TestCase):
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:prog')"))
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:read')"))
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:places')"))
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:recognition')"))
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:crossings')"))
+        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:bottle')"))
         self.read_range('b', 28, 31)
         self.page.locator('#openTraces').click()
         self.assertTrue(self.page.locator('[data-open-trace="banyu-silence"]').is_visible())
@@ -154,9 +157,11 @@ class MinuteSmoke(unittest.TestCase):
                 self.open('#b-53')
                 self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
                 self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-calm")'))
+                self.assertFalse(self.page.locator('#openSettings').evaluate('(e) => e.getBoundingClientRect().right > innerWidth'))
                 self.page.locator('#openParts').click()
-                self.page.keyboard.press('Escape')
-                self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openParts')
+                self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
+                self.page.locator('.hand-link[data-side="1"]').click()
+                self.page.wait_for_selector('.passage')
 
                 self.page.locator('#openTraces').click()
                 self.assertFalse(self.page.locator('#tracesDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
@@ -206,130 +211,6 @@ class MinuteSmoke(unittest.TestCase):
             if node.count():
                 node.evaluate('(e) => scrollTo({top: scrollY + e.getBoundingClientRect().bottom - innerHeight + 44, behavior: "instant"})')
                 self.page.wait_for_timeout(35)
-
-    def unlock_meeting(self):
-        self.open('#b-12')
-        self.read_range('b', 12, 13)
-        self.read_range('c', 45, 55)
-        self.page.wait_for_function("!document.querySelector('[data-crossing=meeting]').hidden")
-
-    def test_contacts_open_all_three_original_sides_without_illustrations(self):
-        self.open()
-        self.assertEqual(self.page.locator('main img, main canvas, main svg').count(), 0)
-        self.page.locator('#openParts').click()
-        self.assertEqual(self.page.locator('.part-link b').all_text_contents(), ['Saman', 'Banyu', 'Maryam'])
-        self.page.locator('[data-side="2"]').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'), 'c')
-        self.assertEqual(self.page.locator('#contactObserver').inner_text(), 'Dalam ingatan Maryam')
-        self.assertEqual(self.page.locator('#contactName').inner_text(), 'Saman')
-        self.page.locator('#begin').click()
-        self.assertTrue(self.page.locator('#p-0').evaluate('(e) => e === document.activeElement'))
-
-    def test_saman_loses_the_name_but_presence_grows_in_both_languages(self):
-        for lang, greeting, presence in [('id', 55, 66), ('en', 56, 67)]:
-            with self.subTest(lang=lang):
-                self.open(f'?lang={lang}#b-51')
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Banyu')
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Anak' if lang == 'id' else 'Son')
-                self.go('b', greeting - 1)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Banyu')
-                self.go('b', greeting)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Mas' if lang == 'id' else 'Sir')
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Pelanggan' if lang == 'id' else 'Customer')
-                self.assertIn('Saman', self.page.locator('#contactObserver').inner_text())
-                self.go('b', presence - 1)
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Pelanggan' if lang == 'id' else 'Customer')
-                self.go('b', presence)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Mas' if lang == 'id' else 'Sir')
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Datang setiap sore' if lang == 'id' else 'Comes every afternoon')
-                self.go('b', 51)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Banyu')
-
-    def test_the_unrecognized_contacts_keep_their_own_perspectives(self):
-        for lang, arrival, shelter, departure in [('id',45,48,59),('en',44,47,58)]:
-            with self.subTest(lang=lang):
-                self.open(f'?lang={lang}#b-12')
-                self.assertNotIn('Maryam', self.page.locator('#contactName').inner_text())
-                self.assertIn('Banyu', self.page.locator('#contactObserver').inner_text())
-                self.go('c', 15 if lang == 'id' else 14)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Banyu')
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Anak' if lang == 'id' else 'Son')
-                self.go('c', arrival)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Anak perantau' if lang == 'id' else 'The wandering boy')
-                self.assertIn('Maryam', self.page.locator('#contactObserver').inner_text())
-                self.go('c', shelter)
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Tinggal di gudang belakang' if lang == 'id' else 'Stays in the back room')
-                self.go('c', departure)
-                self.assertEqual(self.page.locator('#contactName').inner_text(), 'Anak perantau' if lang == 'id' else 'The wandering boy')
-                self.assertEqual(self.page.locator('#contactRelation').inner_text(), 'Pergi tanpa berpamitan' if lang == 'id' else 'Left without saying goodbye')
-
-    def test_contact_history_contains_only_names_encountered_and_preserves_focus(self):
-        self.open('#b-51')
-        self.go('b', 55)
-        self.page.locator('#openContact').click()
-        self.assertEqual(self.page.locator('#contactHistory b').all_text_contents(), ['Banyu', 'Mas'])
-        self.assertNotIn('Datang setiap sore', self.page.locator('#contactHistory').inner_text())
-        y = self.page.evaluate('scrollY')
-        self.page.keyboard.press('Escape')
-        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openContact')
-        self.assertAlmostEqual(self.page.evaluate('scrollY'), y, delta=1)
-        self.go('b', 66)
-        self.page.locator('#openContact').click()
-        self.assertIn('Datang setiap sore', self.page.locator('#contactHistory').inner_text())
-        self.page.locator('[data-history="b-son"]').click()
-        self.assertEqual(self.page.locator('#contactName').inner_text(), 'Banyu')
-        self.assertFalse(self.page.locator('#contactDialog').evaluate('(e) => e.open'))
-        self.page.reload(wait_until='domcontentloaded')
-        self.page.wait_for_selector('.passage')
-        self.go('b', 66)
-        self.page.locator('#openContact').click()
-        self.assertIn('Banyu', self.page.locator('#contactHistory').inner_text())
-
-    def test_crossing_requires_both_scenes_and_does_not_unlock_skipped_paragraphs(self):
-        self.open('#b-12')
-        self.assertTrue(self.page.locator('#opposite').is_hidden())
-        self.read_range('b', 12, 13)
-        self.go('c', 55)
-        self.assertTrue(self.page.locator('[data-crossing="meeting"]').is_hidden())
-        self.read_range('c', 45, 55)
-        self.assertFalse(self.page.locator('[data-crossing="meeting"]').is_hidden())
-        self.assertTrue(self.page.locator('[data-crossing="departure"]').is_hidden())
-        self.read_range('c', 58, 65)
-        self.assertTrue(self.page.locator('[data-crossing="departure"]').is_hidden())
-        self.read_range('b', 14, 15)
-        self.assertFalse(self.page.locator('[data-crossing="departure"]').is_hidden())
-
-    def test_crossing_and_return_preserve_both_bookmarks_and_main_history(self):
-        self.unlock_meeting()
-        self.go('c', 53)
-        self.page.wait_for_timeout(420)
-        before = self.page.evaluate("({places:localStorage.getItem('jm:minute:places'),stats:localStorage.getItem('jm:stats'),last:localStorage.getItem('jm:last'),prog:localStorage.getItem('jm:prog')})")
-        y = self.page.evaluate('scrollY')
-        self.page.locator('#opposite').click()
-        self.page.wait_for_function("document.documentElement.dataset.side === 'b'")
-        self.assertIn('Banyu', self.page.locator('#contactObserver').inner_text())
-        self.assertNotIn('Maryam', self.page.locator('#contactName').inner_text())
-        self.assertTrue(self.page.locator('#returnCross').is_visible())
-        self.page.wait_for_timeout(420)
-        during = self.page.evaluate("({places:localStorage.getItem('jm:minute:places'),stats:localStorage.getItem('jm:stats'),last:localStorage.getItem('jm:last'),prog:localStorage.getItem('jm:prog')})")
-        self.assertEqual(before, during)
-        self.page.locator('#returnCross').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'), 'c')
-        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'p-53')
-        self.assertAlmostEqual(self.page.evaluate('scrollY'), y, delta=1)
-        self.assertTrue(self.page.locator('#crossStrip').is_hidden())
-
-    def test_crossings_persist_across_visits_and_languages(self):
-        self.unlock_meeting()
-        self.open('?lang=en#b-13')
-        self.assertFalse(self.page.locator('#opposite').is_hidden())
-        self.assertEqual(self.page.locator('#opposite').inner_text(), 'See the other side ↔')
-        self.page.locator('#opposite').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'), 'c')
-        self.assertIn('Maryam', self.page.locator('#contactObserver').inner_text())
-        self.assertNotIn('Banyu', self.page.locator('#contactName').inner_text())
-        self.page.locator('#returnCross').click()
-        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'p-13')
 
     def test_each_side_still_records_completion_in_the_main_site(self):
         self.open()
@@ -500,9 +381,184 @@ class MinuteSmoke(unittest.TestCase):
     def test_missing_traces_module_keeps_the_complete_reader_working(self):
         self.context.route('**/terlambat-satu-menit/traces.js',lambda route:route.abort())
         self.open('#b-55')
-        self.assertEqual(self.page.locator('#contactName').inner_text(),'Mas')
         self.assertTrue(self.page.locator('#openTraces').is_disabled())
         self.assertEqual(self.page.locator('.passage').count(),len([p for p in self.work['sides'][0]['body'] if p != '***']))
+
+    # Satu Menit: muka jam, botol kaca, dan satu menit terakhir.
+
+    def seed(self, script):
+        self.context.add_init_script("if (!sessionStorage.getItem('seeded')) { " + script + "; sessionStorage.setItem('seeded', '1'); }")
+
+    def seed_done(self, sides='abc'):
+        keys = ['terlambat-satu-menit' + ('' if s == 'a' else ':' + s) for s in sides]
+        self.seed("localStorage.setItem('jm:stats', JSON.stringify({done: " + json.dumps(keys) + "}))")
+
+    def angles(self, selector='#face'):
+        return self.page.evaluate(r'''(sel) => [...document.querySelectorAll(sel + ' .hand')].map(h => {
+          const m = /rotate\(([-\d.]+)\)/.exec(h.getAttribute('transform') || ''); return m ? +m[1] : 0; })''', selector)
+
+    def view(self):
+        return self.page.locator('html').get_attribute('data-view')
+
+    def scrub(self, second):
+        self.page.evaluate("(v) => { const s = document.querySelector('#seconds'); s.value = v; s.dispatchEvent(new Event('input')); }", second)
+
+    def located(self, lang, entry):
+        source = self.work['en'] if lang == 'en' else self.work
+        body = ([source] + source['sides'])[entry['side']]['body']
+        out = []
+        for pair in entry['find']:
+            hits = [i for i, p in enumerate(body) if pair[1 if lang == 'en' else 0] in p]
+            self.assertTrue(hits, f'{lang}: {pair}')
+            if hits[0] not in out:
+                out.append(hits[0])
+        return [body[i].replace('*', '') for i in out]
+
+    def test_the_clock_face_is_the_cover_and_each_hand_opens_its_side(self):
+        self.open()
+        self.assertEqual(self.view(), 'dial')
+        self.assertEqual(self.page.locator('.hand-link b').all_text_contents(), ['Saman', 'Banyu', 'Maryam'])
+        self.assertEqual(self.page.locator('.hand-link small').all_text_contents(), ['Jarum jam · Bidak', 'Jarum menit · Alamat yang Tertukar', 'Jarum detik · Perempuan yang Menghitung Mundur'])
+        self.assertEqual(self.angles(), [0, 0, 0])
+        self.assertTrue(self.page.locator('#toFinal').is_hidden())
+        self.page.locator('.hand-link[data-side="2"]').click()
+        self.assertEqual(self.view(), 'read')
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'), 'c')
+        self.assertEqual(self.page.evaluate('location.hash'), '#c')
+        self.page.locator('#begin').click()
+        self.assertTrue(self.page.locator('#p-0').evaluate('(e) => e === document.activeElement'))
+        self.page.locator('#openParts').click()
+        self.assertEqual(self.view(), 'dial')
+        self.assertEqual(self.page.evaluate('location.hash'), '')
+        self.assertEqual(self.page.evaluate('document.activeElement.dataset.side'), '0')
+
+    def test_hands_follow_reading_and_stop_one_minute_before_twelve(self):
+        self.seed("localStorage.setItem('jm:prog', JSON.stringify({'terlambat-satu-menit:b': .5}));"
+                  "localStorage.setItem('jm:stats', JSON.stringify({done: ['terlambat-satu-menit']}))")
+        self.open()
+        a, b, c = self.angles()
+        self.assertAlmostEqual(a, 354, delta=.01)
+        self.assertAlmostEqual(b, 177, delta=.01)
+        self.assertEqual(c, 0)
+        self.assertEqual(self.page.locator('.hand-state').all_text_contents(), ['terbaca', '50%', 'belum'])
+        self.open('#a-30')
+        mini = self.angles('#miniDial')
+        self.assertAlmostEqual(mini[1], 177, delta=.01)
+        self.assertEqual(self.page.locator('#miniDial .hand.current').get_attribute('data-hand'), 'a')
+        self.assertTrue(0 < mini[0] < 354)
+
+    def test_the_last_minute_waits_for_all_three_hands(self):
+        self.seed_done('ab')
+        self.page.goto(self.url + '#menit', wait_until='domcontentloaded')
+        self.page.wait_for_function("document.documentElement.dataset.view === 'dial'")
+        self.assertEqual(self.page.evaluate('location.hash'), '')
+        self.assertTrue(self.page.locator('#toFinal').is_hidden())
+        self.assertIn('ketiga jarum', self.page.locator('#dialNote').inner_text())
+        self.go('c', 77)
+        self.page.wait_for_function('() => JSON.parse(localStorage.getItem("jm:stats")).done.includes("terlambat-satu-menit:c")')
+        self.assertTrue(self.page.locator('#endFinal').is_visible())
+        self.page.locator('#endFinal').click()
+        self.assertEqual(self.view(), 'final')
+        self.assertEqual(self.page.evaluate('location.hash'), '#menit')
+
+    def test_the_bottle_keeps_only_unspoken_italics_that_were_seen(self):
+        self.open('#a')
+        self.assertEqual(self.page.locator('#shelfBottle .gear').count(), 0)
+        self.read_range('a', 12, 13)
+        self.page.wait_for_function("document.querySelectorAll('#shelfBottle .gear').length === 1")
+        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
+        # "Bapak, aku pergi ya" diucapkan Banyu; hanya kalimat yang ditelan Saman menjadi gir.
+        self.assertEqual(bottle['held'], ['id:0:13:0'])
+        self.read_range('a', 27, 27)
+        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
+        self.assertEqual(bottle['held'], ['id:0:13:0'])
+        self.assertIn('id:0:27', bottle['spoken'])
+        self.assertIn('1 gir', self.page.locator('#shelfBottle').get_attribute('aria-label'))
+        self.page.set_viewport_size({'width': 390, 'height': 844})
+        self.assertTrue(self.page.locator('#miniBottle').is_visible())
+        self.assertEqual(self.page.locator('#miniBottle .gear').count(), 1)
+        self.open('?lang=en#a')
+        self.assertEqual(self.page.locator('#shelfBottle .gear').count(), 0)
+
+    def test_the_last_minute_uses_original_paragraphs_in_both_languages(self):
+        self.seed_done()
+        for lang in ['id', 'en']:
+            with self.subTest(lang=lang):
+                self.open(f'?lang={lang}#menit')
+                self.assertEqual(self.view(), 'final')
+                script = self.page.evaluate('MinuteFinal.script')
+                moments = self.page.locator('.moment')
+                self.assertEqual(moments.count(), len(script['SCRIPT']))
+                for i, entry in enumerate(script['SCRIPT']):
+                    self.assertEqual(moments.nth(i).locator('p').all_text_contents(), self.located(lang, entry))
+                self.assertEqual(self.page.locator('.moment[data-pending]').count(), len(script['SCRIPT']) - 1)
+                self.scrub(59)
+                self.assertTrue(self.page.locator('[data-bell]').evaluate('(e) => e.hasAttribute("data-pending")'))
+                self.assertTrue(self.page.locator('#after').is_hidden())
+                self.scrub(60)
+                self.assertFalse(self.page.locator('[data-bell]').evaluate('(e) => e.hasAttribute("data-pending")'))
+                self.assertEqual([round(a) % 360 for a in self.angles('#finalClock')], [0, 0, 0])
+                self.assertTrue(self.page.locator('#after').is_hidden())
+                self.scrub(61)
+                self.assertEqual(self.page.locator('#after p').all_text_contents(), self.located(lang, script['AFTER']))
+                coda = [self.located(lang, entry)[0] for entry in script['CODA']]
+                self.assertEqual(self.page.locator('.coda blockquote').all_text_contents(), coda)
+                self.assertTrue(self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:finale'))"))
+
+    def test_the_bottle_opens_after_the_bell_and_the_clock_runs_again(self):
+        self.seed("localStorage.setItem('jm:stats', JSON.stringify({done: ['terlambat-satu-menit','terlambat-satu-menit:b','terlambat-satu-menit:c']}));"
+                  "localStorage.setItem('jm:minute:bottle', JSON.stringify({held: ['id:0:13:0','id:1:40:0','en:1:40:0'], spoken: ['id:1:73','id:1:75','id:2:18']}))")
+        self.open('#menit')
+        self.scrub(61)
+        self.assertEqual(self.page.locator('#revealCount').inner_text(), '2 gir')
+        self.assertEqual(self.page.locator('#revealSpoken').inner_text(), 'Kalimat yang diucapkan keras-keras: 4.')
+        self.assertEqual(self.page.locator('#revealBottle .gear').count(), 2)
+        self.page.locator('.bottle-reveal summary').click()
+        expected = [re.findall(r'\*([^*]+)\*', self.work['body'][13])[0], re.findall(r'\*([^*]+)\*', self.work['sides'][0]['body'][40])[0]]
+        self.assertEqual(self.page.locator('.gear-list q').all_text_contents(), expected)
+        self.page.locator('#toDial').click()
+        self.assertEqual(self.view(), 'dial')
+        self.assertEqual(self.page.locator('html').get_attribute('data-time'), 'free')
+        self.assertEqual(self.page.locator('#dialNote').inner_text(), 'Jamnya berjalan lagi.')
+        now = self.page.evaluate('(() => { const d = new Date(); return [d.getHours() % 12 * 30 + d.getMinutes() / 2, d.getMinutes() * 6]; })()')
+        a, b, _ = self.angles()
+        self.assertAlmostEqual(a, now[0], delta=2)
+        self.assertAlmostEqual(b % 360, now[1], delta=7)
+        self.assertIn('Ulangi', self.page.locator('#toFinal').inner_text())
+
+    def test_the_last_minute_runs_in_real_time_with_ticks_and_one_bell(self):
+        self.seed_done()
+        self.open('#menit')
+        self.page.evaluate("() => { window.calls = []; MinuteSound.prototype.play = function (kind) { calls.push(kind) }; }")
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'play')
+        self.page.locator('#play').click()
+        self.assertEqual(self.page.locator('#play').get_attribute('aria-pressed'), 'true')
+        self.page.wait_for_timeout(2300)
+        second = int(self.page.locator('#seconds').input_value())
+        self.assertIn(second, [2, 3])
+        self.assertTrue(self.page.locator('.moment[data-at="0"]').evaluate('(e) => !e.hasAttribute("data-pending")'))
+        self.assertTrue(self.page.locator('.moment[data-at="8"]').evaluate('(e) => e.hasAttribute("data-pending")'))
+        self.assertIn('tick', self.page.evaluate('calls'))
+        self.page.locator('#play').click()
+        self.assertEqual(self.page.locator('#play').get_attribute('aria-pressed'), 'false')
+        held = self.page.locator('#seconds').input_value()
+        self.page.wait_for_timeout(1100)
+        self.assertEqual(self.page.locator('#seconds').input_value(), held)
+        self.scrub(57)
+        self.page.locator('#play').click()
+        self.page.wait_for_function("document.querySelector('#seconds').value === '61'", timeout=7000)
+        self.assertEqual(self.page.evaluate("calls.filter(c => c === 'bell').length"), 1)
+        self.assertEqual(self.page.locator('#play').inner_text(), 'Ulangi')
+        self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-struck")'))
+
+    def test_missing_finale_module_keeps_the_clock_and_story(self):
+        self.seed_done()
+        self.context.route('**/terlambat-satu-menit/final.js', lambda route: route.abort())
+        self.open()
+        self.assertTrue(self.page.locator('#toFinal').is_hidden())
+        self.assertEqual(self.page.locator('.hand-link').count(), 3)
+        self.open('#c-77')
+        self.assertTrue(self.page.locator('#endFinal').is_hidden())
 
 
 if __name__ == '__main__':
