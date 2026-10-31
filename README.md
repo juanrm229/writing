@@ -158,20 +158,21 @@ Pemeriksaan mencakup keutuhan naskah dua bahasa, penanda baca, tautan situs utam
 
 ### Pabrik Mimpi (antologi/pabrik-mimpi/)
 
-**Shift Malam** membaca *Pabrik Mimpi / The Dream Factory* dari terminal pekerja di stasiun paling ujung. Tanpa gambar. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`; label, status, dan kartu adalah antarmuka.
+**Kalender Pak Wangsa** membaca *Pabrik Mimpi / The Dream Factory* di aplikasi kalender milik Pak Wangsa: bilah samping dengan kalender mini dan daftar kalender, tampilan *Jadwal*, blok acara berwarna, pengingat, dan lampiran foto. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json` sebagai isi acaranya; tanggal, judul acara, dan foto adalah bingkainya.
 
-- **Kartu absen**: pembaca menekan *Absen masuk* dan jam masuknya dicap dengan jam sungguhan (nama dari `readerName` di pengaturan situs). Siang hari muncul catatan bahwa shift malam dimulai pukul 19.00, tetapi pembaca tetap boleh masuk.
-- **Ban berjalan**: setiap paragraf adalah satu muatan. Rel di kiri-kanan bergerak mengikuti gulir dan **berhenti** ketika *ban berjalan telah dimatikan*. Bilah atas menunjukkan stasiun yang sedang dibaca; cerobong kecil mengeluarkan kebocoran warna di kalimat tentang cerobong dan meledak penuh warna saat tepuk tangan.
-- **Pada kalimatnya**: label bahan mimpi (tawa anak-anak, keheningan dasar danau, langit pukul 17.00, serpih wajah), kutipan aturan *Perajin tidak diperkenankan mengonsumsi produk*, empat puluh kapsul yang larut di atas meja, kartu pesanan Pak Wangsa yang belum selesai, dan **arsip pesanan lama** berisi kalimat-kalimat pesanan dari naskah. Pesanan Pak Wangsa sendiri berstatus *Tahun depan, mungkin* sampai mimpinya *terjadi dengan mata terbuka*.
-- **Kapsul**: pilih kalimat mana pun (atau tombol *Kemas* per paragraf) untuk mengemasnya ke saku. Kapsul menyimpan posisi teks asli, jadi isinya tidak bisa diubah.
-- **Gerbang**: di akhir shift, aturan pabrik dibacakan. Kapsul yang **dibawa pulang larut menjelang pagi** (pukul 05.30 berikutnya, menurut jam pembaca). Kapsul yang **diberikan kepada seseorang** (menu berbagi bawaan, atau tautan yang disalin) tidak pernah larut. Penerima membuka tautan sebagai *Sebuah mimpi untukmu*, dan mimpi itu tersimpan di sakunya tanpa pernah larut. *Absen keluar* mencap jam keluar di kartu.
-- **Tepuk tangan**: saat perempuan di barisan depan mulai bertepuk tangan, pembaca bisa *Berdiri* dan ikut bertepuk tangan. Setiap tepukan menyalakan satu kursi di ruangan. Mikrofon **hanya pilihan**: tepukan tangan sungguhan dihitung setelah pembaca mengizinkan, dan dimatikan saat tab ditutup atau disembunyikan.
-- **Bacaan dan tema**: penanda baca per bahasa, ukuran huruf, tautan `#baca` dan `#baca-12`, tautan dari situs utama, serta tema terang/gelap yang mengikuti situs tetap berlaku. Bunyi kartu absen, kapsul, dan tepuk tangan opsional. Pratinjau `?preview=1` tidak menulis riwayat. Jika `shift.js` gagal dimuat, cerita tetap terbaca.
+- **Jadwal empat puluh tahun**: *Shift malam* setiap malam sejak 4 Februari 1985, *Stasiun paling ujung · pesanan khusus*, *Tidur · tanpa mimpi*, dan acara tahunan *Malam terakhir sebelum libur* dengan tugas *Bawa pulang mimpi*. Judul bulan di bilah atas dan kalender mini di samping mengikuti acara yang sedang dibaca.
+- **Riwayat jadwal ulang**: setelah mimpi itu larut di atas meja, kartu acara tahunan bisa digeser atau *diputar empat puluh tahun*; setiap tahun ia dipindahkan ke tahun berikutnya dengan *"Tahun depan, mungkin."* Pada malam terakhir tugasnya tercatat *Tidak dibawa pulang*, dan acara itu dipindahkan untuk ke-40 kalinya.
+- **Tahun yang kosong**: setelah *Pensiun*, 2025 tampil sebagai dua belas bulan *Tidak ada acara*.
+- **Kalender Lila**: Lila membagikan kalendernya; *Melacak penerima · arsip pesanan lama* dan *Bawa mereka semua ke pabrik* muncul berwarna hijau.
+- **Undangan**: kalimat Lila di pintu menjadi judul undangan, dari Lila, dengan ratusan tamu yang hadir. Pembaca menjawabnya. *Mungkin* atau *Tidak* dibalas Lila dengan kalimatnya sendiri dari naskah (*"Bapak tidak punya tahun depan lagi…"*). Hanya *Hadir* yang membuka sisa cerita: acara berubah menjadi **Sedang berlangsung** dengan penghitung waktu sejak pembaca menjawab, dan di akhir muncul *Hari ini* dengan acara tahunan yang akhirnya *Terjadi · dengan mata terbuka* dan tidak dijadwalkan ulang lagi.
+- **Foto temuan**: lima foto dari penulis (`photos/`) menjadi lampiran acara dengan bingkai rekaman (REC, cap waktu, butiran) dan bisa dibuka besar.
+- **Pengingat** muncul saat membaca maju ke acara tahunan, kalender Lila, dan undangan; melompat tidak memunculkannya.
+- **Bacaan dan tema**: penanda baca per bahasa, jawaban undangan yang diingat, tautan `#baca` dan `#baca-12`, tautan dari situs utama, ukuran huruf, gerak tenang, dan tema terang/gelap yang mengikuti situs. Pratinjau `?preview=1` tidak menulis riwayat. Jika `kalender.js` gagal dimuat, cerita tetap terbaca utuh sebagai satu acara.
 
-Modul: `shift.js` (penanda ketukan, arsip, dan aturan dalam ID/EN) dan `mimpi.js`.
+Data acara, foto, dan kutipan (dengan penanda ID/EN) ada di `kalender.js`.
 
 ```bash
 python3 tests/mimpi_smoke.py
 ```
 
-Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda, tautan situs utama dan status tamat, penanda baca dan bahasa, kartu absen, keadaan lantai per kalimat, kutipan aturan dan arsip, kapsul dari pilihan teks, larut menjelang pagi, memberi kapsul (termasuk batal berbagi), tautan hadiah, tepuk tangan dan mikrofon opsional, gerbang dan absen keluar, tata letak 320–1440 px, pratinjau, kegagalan modul, dan tema.
+Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.

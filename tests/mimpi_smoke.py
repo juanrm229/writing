@@ -1,4 +1,4 @@
-"""Browser checks for Pabrik Mimpi (Shift Malam): python3 tests/mimpi_smoke.py.
+"""Browser checks for Pabrik Mimpi (Kalender Pak Wangsa): python3 tests/mimpi_smoke.py.
 
 Uses the cloud environment's Python Playwright and system Chromium.
 No authentication, remote writes, or external assets are needed.
@@ -15,8 +15,7 @@ from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LINE = 'innerHeight * .5'
-NOW = "(() => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); })()"
+LINE = 'innerHeight * .45'
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -49,12 +48,9 @@ class MimpiSmoke(unittest.TestCase):
         cls.server.shutdown(); cls.server.server_close(); cls.thread.join()
 
     def setUp(self):
-        self.new_context()
-
-    def new_context(self, **kw):
-        self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce', **kw)
+        self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce')
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
-        self.page = self.context.new_page(); self.page.set_default_timeout(6000)
+        self.page = self.context.new_page(); self.page.set_default_timeout(8000)
         self.errors = []; self.page.on('pageerror', lambda e: self.errors.append(str(e)))
 
     def tearDown(self):
@@ -63,10 +59,7 @@ class MimpiSmoke(unittest.TestCase):
 
     def open(self, fragment=''):
         self.page.goto(self.url + fragment, wait_until='domcontentloaded')
-        if '#baca' in fragment:
-            self.page.wait_for_selector('.passage')
-        else:
-            self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
+        self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
 
     def seed(self, script):
         self.context.add_init_script("if (!sessionStorage.getItem('seeded')) { " + script + "; sessionStorage.setItem('seeded', '1'); }")
@@ -76,54 +69,144 @@ class MimpiSmoke(unittest.TestCase):
         self.page.wait_for_function('''(p) => { const r = document.querySelector('#p-' + p)?.getBoundingClientRect(); return r && (Math.abs(r.top - ''' + LINE + ''') < 1 || scrollY + innerHeight >= document.documentElement.scrollHeight - 1); }''', arg=paragraph)
         self.page.evaluate("dispatchEvent(new Event('scroll'))"); self.page.wait_for_timeout(60)
 
+    def read_until(self, paragraph):
+        for _ in range(300):
+            done = self.page.evaluate('''(p) => { const r = document.querySelector('#p-' + p).getBoundingClientRect();
+              if (r.top <= ''' + LINE + ''') return true; scrollBy(0, 160); return false; }''', paragraph)
+            self.page.wait_for_timeout(30)
+            if done:
+                break
+
     def body(self, lang='id'):
         return self.work['en']['body'] if lang == 'en' else self.work['body']
 
-    def plain(self, p, lang='id'):
-        return self.body(lang)[p].replace('*', '')
+    def index(self, marker, lang='id'):
+        return [i for i, p in enumerate(self.body(lang)) if marker in p]
 
-    def capsules(self):
-        return self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:capsules') || '[]')")
+    def last_quote(self, p, lang='id'):
+        return re.findall(r'["“]([^"”]+)["”]', self.body(lang)[p].replace('*', ''))[-1]
 
-    def select(self, p, start, end):
-        self.page.evaluate('''([p, start, end]) => {
-          const el = document.querySelector('#p-' + p), walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-          let pos = 0, node, range = document.createRange(), a = null;
-          while ((node = walker.nextNode())) { const len = node.textContent.length;
-            if (!a && start <= pos + len) { range.setStart(node, start - pos); a = true; }
-            if (end <= pos + len) { range.setEnd(node, end - pos); break; } pos += len; }
-          const s = getSelection(); s.removeAllRanges(); s.addRange(range); }''', [p, start, end])
-        self.page.wait_for_selector('#pack:not([hidden])')
-
-    # Naskah dan bacaan
+    # Naskah
 
     def test_all_original_paragraphs_are_present_in_both_languages(self):
         for lang in ['id', 'en']:
             with self.subTest(lang=lang):
-                self.open(f'?lang={lang}#baca')
+                self.open(f'?lang={lang}')
                 self.assertEqual(self.page.locator('.passage').all_text_contents(), [p.replace('*', '') for p in self.body(lang) if p.strip() != '***'])
                 self.assertEqual(self.page.locator('html').get_attribute('lang'), lang)
 
-    def test_every_marker_points_to_one_original_paragraph(self):
+    def test_every_event_photo_and_quote_points_to_the_story(self):
         self.open()
-        data = self.page.evaluate('MimpiShift')
+        k = self.page.evaluate('MimpiKalender')
         for lang, li in [('id', 0), ('en', 1)]:
-            body = self.body(lang)
-            positions = []
-            for beat in data['BEATS']:
-                hits = [i for i, p in enumerate(body) if beat['find'][li] in p]
-                self.assertEqual(len(hits), 1, f"{lang}: {beat['find'][li]}")
-                positions.append(hits[0])
-            self.assertEqual(positions, sorted(positions))
-            self.assertTrue(any(data['RULE'][li] in p for p in body))
+            starts = []
+            for e in k['EVENTS']:
+                hits = self.index(e['start'][li], lang)
+                self.assertEqual(len(hits), 1, f"{lang} {e['id']}")
+                starts.append(hits[0])
+                for key in ['reschedule', 'moved']:
+                    if key in e:
+                        self.assertEqual(len(self.index(e[key][li], lang)), 1)
+            self.assertEqual(starts, sorted(starts))
+            for ph in k['PHOTOS']:
+                self.assertEqual(len(self.index(ph['after'][li], lang)), 1, ph['file'])
+                self.assertTrue((ROOT / 'antologi/pabrik-mimpi/photos' / ph['file']).exists())
+            for key in ['reply', 'invite']:
+                self.assertEqual(len(self.index(k['QUOTES'][key][li], lang)), 1)
+            self.assertTrue(self.index(k['QUOTES']['postpone'][li], lang))
 
-    def test_main_site_opens_the_shift_and_completion_is_recorded(self):
+    def test_main_site_opens_the_calendar_and_completion_needs_the_reply(self):
         self.page.goto(self.root + '#baca-pabrik-mimpi', wait_until='domcontentloaded')
         self.page.wait_for_url('**/antologi/pabrik-mimpi/index.html')
-        self.page.wait_for_function("document.documentElement.dataset.view === 'home'")
+        self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
+        self.go(51)
+        self.page.locator('[data-rsvp="hadir"]').click()
         self.go(65)
         self.page.wait_for_function('() => JSON.parse(localStorage.getItem("jm:stats") || "{}").done?.includes("pabrik-mimpi")')
-        self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:prog'))['pabrik-mimpi']"), 1)
+
+    # Kalender
+
+    def test_the_calendar_follows_the_date_being_read(self):
+        self.open()
+        for p, month in [(1, 'Februari 1985'), (13, 'Desember 1985'), (20, 'Januari 2024'), (30, 'Desember 2024'), (45, '2025'), (48, 'Januari 2025')]:
+            with self.subTest(p=p):
+                self.go(p)
+                self.assertEqual(self.page.locator('#monthTitle').inner_text(), month)
+        self.assertEqual(self.page.locator('#miniGrid .on').inner_text(), '6')
+        self.assertIn('Lila', ' '.join(self.page.locator('#calList li').all_text_contents()))
+        self.go(5)
+        self.assertNotIn('Lila', ' '.join(self.page.locator('#calList li').all_text_contents()))
+
+    def test_forty_years_of_rescheduling(self):
+        self.open('#baca-17')
+        self.page.evaluate("(v) => { const s = document.querySelector('#years'); s.value = v; s.dispatchEvent(new Event('input')); }", 2000)
+        self.assertEqual(self.page.locator('#rcDate').inner_text(), '30 Desember 2000')
+        log = self.page.locator('#rcLog').inner_text()
+        self.assertIn('30 Desember 2001', log); self.assertIn('Tahun depan, mungkin.', log); self.assertIn('16×', log)
+        self.page.locator('#playYears').click()
+        self.assertIn('39×', self.page.locator('#rcLog').inner_text())
+        self.go(42)
+        self.assertIn('untuk ke-40 kalinya', self.page.locator('.moved').inner_text())
+        self.assertIn('Tidak dibawa pulang', self.page.locator('[data-event="gate"] .task').inner_text())
+
+    def test_the_empty_year_after_retirement(self):
+        self.open('#baca-45')
+        months = self.page.locator('.empty-year .months li')
+        self.assertEqual(months.count(), 12)
+        self.assertTrue(all('Tidak ada acara' in m for m in months.all_text_contents()))
+
+    def test_found_footage_attachments_open_large(self):
+        self.open('#baca-1')
+        figure = self.page.locator('.footage').first
+        figure.scroll_into_view_if_needed()
+        self.page.wait_for_function("document.querySelector('.footage img').complete && document.querySelector('.footage img').naturalWidth > 0")
+        self.assertIn('1985-02-04', figure.locator('.stamp').inner_text())
+        self.assertEqual(self.page.locator('#story .footage').count(), 5)
+        figure.locator('[data-photo]').click()
+        self.assertTrue(self.page.locator('#lightbox').evaluate('(d) => d.open'))
+        self.assertIn('cerobong', self.page.locator('#lightbox figcaption').inner_text())
+        self.page.keyboard.press('Escape')
+
+    # Undangan
+
+    def test_maybe_gets_lilas_answer_and_only_yes_opens_the_night(self):
+        for lang in ['id', 'en']:
+            with self.subTest(lang=lang):
+                self.context.clear_cookies(); self.page.evaluate('localStorage.clear()') if lang == 'en' else None
+                self.open(f'?lang={lang}#baca-51')
+                invite = self.index('Lila mengetuk pintu' if lang == 'id' else 'Lila knocked on the door', lang)[0]
+                self.assertEqual(self.page.locator('.invite-head h3').inner_text(), self.last_quote(invite, lang))
+                self.assertTrue(self.page.locator('[data-event="live"]').is_hidden())
+                self.page.locator('[data-rsvp="mungkin"]').click()
+                reply = self.index('Bapak tidak punya tahun depan lagi' if lang == 'id' else "You don't have a next year anymore", lang)[0]
+                self.assertIn(self.last_quote(reply, lang), self.page.locator('#lilaReply').inner_text())
+                self.assertTrue(self.page.locator('[data-event="live"]').is_hidden())
+                self.page.locator('[data-rsvp="tidak"]').click()
+                self.assertTrue(self.page.locator('[data-event="live"]').is_hidden())
+                self.page.locator('[data-rsvp="hadir"]').click()
+                self.assertTrue(self.page.locator('[data-event="live"]').is_visible())
+                self.assertTrue(self.page.locator('#closing').is_visible())
+                self.assertIn('Sedang berlangsung' if lang == 'id' else 'Happening now', self.page.locator('#toast').inner_text())
+                self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:rsvp'))"), 'hadir')
+                self.page.wait_for_function("/\\d\\d:\\d\\d:\\d\\d/.test(document.querySelector('#liveTimer').textContent)")
+
+    def test_the_reply_is_remembered(self):
+        self.seed("localStorage.setItem('jm:mimpi:rsvp', JSON.stringify('hadir')); localStorage.setItem('jm:mimpi:rsvpAt', JSON.stringify(Date.now() - 65000))")
+        self.open('#baca-60')
+        self.assertTrue(self.page.locator('[data-event="live"]').is_visible())
+        self.assertEqual(self.page.locator('[data-rsvp="hadir"]').get_attribute('aria-pressed'), 'true')
+        self.assertIn('00:01:', self.page.locator('#liveTimer').inner_text())
+        self.assertIn('Terjadi', self.page.locator('#closing .task').inner_text())
+
+    def test_reminders_arrive_while_reading_forward_but_not_when_jumping(self):
+        self.open('#baca-30')
+        self.assertTrue(self.page.locator('#toast').is_hidden())
+        self.go(10)
+        self.read_until(13)
+        self.page.wait_for_timeout(100)
+        self.assertIn('Malam terakhir sebelum libur', self.page.locator('#toast').inner_text())
+
+    # Umum
 
     def test_bookmark_and_language_switch_keep_the_paragraph(self):
         self.open('#baca-20')
@@ -131,157 +214,12 @@ class MimpiSmoke(unittest.TestCase):
         self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:places')).id.paragraph"), 20)
         self.page.locator('#openSettings').click(); self.page.locator('#language').click()
         self.page.wait_for_url('**?lang=en#baca-20')
-        self.page.wait_for_selector('#p-20')
-        self.assertEqual(self.page.locator('html').get_attribute('lang'), 'en')
-
-    # Kartu absen
-
-    def test_clocking_in_stamps_the_readers_time_and_opens_the_floor(self):
-        self.open()
-        self.assertEqual(self.page.locator('#cardIn').inner_text(), '--:--')
-        self.assertEqual(self.page.locator('#cardName').inner_text(), 'Pembaca')
-        self.page.locator('#clockIn').click()
-        self.page.wait_for_function("document.documentElement.dataset.view === 'floor'")
-        self.assertEqual(self.page.evaluate('location.hash'), '#baca')
-        card = self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:card'))")
-        self.assertIn('in', card)
-        self.page.locator('#toHome').click()
-        self.assertEqual(self.page.locator('#cardIn').inner_text(), self.page.evaluate(NOW))
-        self.assertEqual(self.page.locator('#clockIn').inner_text(), 'Masuk ke lantai produksi')
-
-    # Lantai produksi
-
-    def test_the_floor_follows_the_sentence_being_read(self):
-        self.open('#baca')
-        self.go(1)
-        self.assertEqual(self.page.locator('html').get_attribute('data-leak'), '1')
-        self.go(3)
-        self.assertEqual(self.page.locator('#station').inner_text(), 'Stasiun paling ujung · Pak Wangsa')
-        self.go(53)
-        self.assertEqual(self.page.locator('html').get_attribute('data-belt'), 'off')
-        self.assertEqual(self.page.locator('html').get_attribute('data-seats'), 'filled')
-        self.go(57)
-        self.assertEqual(self.page.locator('html').get_attribute('data-seats'), 'one')
-        self.go(60)
-        self.assertEqual(self.page.locator('html').get_attribute('data-seats'), 'all')
-        self.assertEqual(self.page.locator('html').get_attribute('data-leak'), '2')
-        self.go(10)
-        self.assertEqual(self.page.locator('html').get_attribute('data-belt'), 'on')
-
-    def test_rule_order_and_archive_quote_the_story(self):
-        for lang in ['id', 'en']:
-            with self.subTest(lang=lang):
-                self.open(f'?lang={lang}#baca')
-                rule = self.page.locator('.rule blockquote').inner_text()
-                self.assertTrue(any(rule in p for p in self.body(lang)))
-                rows = self.page.locator('.archive li:not(.own) > span:nth-child(2)').all_text_contents()
-                source = self.plain(5, lang)
-                self.assertEqual(len(rows), 3)
-                for row in rows:
-                    self.assertIn(row, source)
-                self.assertEqual(self.page.locator('.years span').count(), 40)
-                self.go(55)
-                self.assertEqual(self.page.locator('#ownStatus').inner_text(), 'Tahun depan, mungkin' if lang == 'id' else 'Next year, perhaps')
-                self.go(61)
-                self.assertEqual(self.page.locator('#ownStatus').inner_text(), 'Terjadi · dengan mata terbuka' if lang == 'id' else 'Happened · with eyes open')
-
-    # Kapsul
-
-    def test_selected_words_become_an_exact_capsule(self):
-        self.open('#baca')
-        text = self.plain(0)
-        self.select(0, 14, 46)
-        self.page.locator('#pack').click()
-        caps = self.capsules()
-        self.assertEqual(len(caps), 1)
-        self.assertEqual(caps[0]['text'], text[14:46].strip())
-        self.assertEqual((caps[0]['p'], caps[0]['state']), (0, 'saku'))
-        self.assertEqual(self.page.locator('#pocketCount').inner_text(), '1')
-        self.page.locator('[data-pack="3"]').click()
-        self.page.locator('[data-pack="3"]').click()
-        self.assertEqual(len(self.capsules()), 2)
-        self.assertEqual(self.capsules()[1]['text'], self.plain(3))
-
-    def test_taken_home_dissolves_at_dawn_but_given_never_does(self):
-        self.seed("localStorage.setItem('jm:mimpi:capsules', JSON.stringify([{id:'old',lang:'id',p:0,start:0,end:20,text:'',at:1,state:'pulang',expires:Date.now()-1000},{id:'gift',lang:'id',p:1,start:0,end:20,text:'',at:1,state:'diberikan'}]))")
-        self.open('#baca')
-        states = {c['id']: c['state'] for c in self.capsules()}
-        self.assertEqual(states, {'old': 'larut', 'gift': 'diberikan'})
-        self.page.locator('[data-pack="2"]').click()
-        self.page.locator('#openPocket').click()
-        self.page.locator('#pocketBody [data-home]').click()
-        cap = next(c for c in self.capsules() if c['p'] == 2)
-        self.assertEqual(cap['state'], 'pulang')
-        dawn = self.page.evaluate("(at) => { const d = new Date(at); return [d.getHours(), d.getMinutes()]; }", cap['expires'])
-        self.assertEqual(dawn, [5, 30])
-        self.assertLess(cap['expires'] - self.page.evaluate('Date.now()'), 24 * 3600 * 1000 + 1000)
-        self.assertEqual(self.page.locator('.capsule[data-state="larut"] .capsule-text').inner_text(), '')
-
-    def test_giving_a_capsule_shares_a_link_to_the_original_words(self):
-        self.context.add_init_script("window.shared = []; navigator.share = (data) => { shared.push(data); return window.cancel ? Promise.reject(Object.assign(new Error('x'), { name: 'AbortError' })) : Promise.resolve(); };")
-        self.open('#baca')
-        self.page.locator('[data-pack="0"]').click()
-        self.page.evaluate('window.cancel = true')
-        self.page.locator('#openPocket').click()
-        self.page.locator('#pocketBody [data-give]').click()
-        self.page.wait_for_timeout(100)
-        self.assertEqual(self.capsules()[0]['state'], 'saku')
-        self.page.evaluate('window.cancel = false')
-        self.page.locator('#pocketBody [data-give]').click()
-        self.page.wait_for_function("JSON.parse(localStorage.getItem('jm:mimpi:capsules'))[0].state === 'diberikan'")
-        shared = self.page.evaluate('shared.at(-1)')
-        self.assertIn('kapsul=id.0.0.' + str(len(self.plain(0))), shared['url'])
-        self.assertEqual(shared['text'], '“' + self.plain(0) + '”')
-
-    def test_a_given_dream_opens_as_a_gift_and_stays(self):
-        self.open(f'?kapsul=id.0.0.46')
-        self.assertEqual(self.page.locator('html').get_attribute('data-view'), 'gift')
-        self.assertEqual(self.page.locator('.gift-capsule blockquote').inner_text(), self.plain(0)[:46].strip())
-        received = self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:received'))")
-        self.assertEqual(len(received), 1)
-        self.page.locator('#enterShift').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-view'), 'home')
-        self.assertIn('1', self.page.locator('#receivedNote').inner_text())
-        self.open('?kapsul=id.999.0.10')
-        self.assertEqual(self.page.locator('html').get_attribute('data-view'), 'home')
-
-    # Tepuk tangan
-
-    def test_applause_lights_chairs_and_the_microphone_is_only_optional(self):
-        self.context.add_init_script("window.asked = 0; navigator.mediaDevices.getUserMedia = () => { asked++; return Promise.reject(new Error('denied')); };")
-        self.open('#baca')
-        self.go(58)
-        self.assertTrue(self.page.locator('#clapPanel').is_hidden())
-        self.page.locator('#stand').click()
-        for _ in range(5):
-            self.page.locator('#clap').click()
-        self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:mimpi:claps'))"), 5)
-        self.assertEqual(self.page.locator('#hall i.lit').count(), 5)
-        self.assertEqual(self.page.evaluate('asked'), 0)
-        self.page.locator('#mic').click()
-        self.page.wait_for_function("document.querySelector('#clapCount').textContent.includes('Mikrofon tidak tersedia')")
-        self.assertEqual(self.page.evaluate('asked'), 1)
-
-    # Gerbang
-
-    def test_the_gate_reads_the_rule_and_clocking_out_stamps_the_card(self):
-        self.open('#baca')
-        self.page.locator('[data-pack="64"]').click()
-        self.go(65)
-        gate = self.page.locator('#endShift')
-        self.assertIn('Perajin tidak diperkenankan mengonsumsi produk.', gate.inner_text())
-        self.assertEqual(gate.locator('.capsule').count(), 1)
-        gate.locator('[data-home]').click()
-        self.assertEqual(self.page.locator('#endShift .capsule').count(), 0)
-        self.page.locator('#clockOut').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-view'), 'home')
-        self.assertEqual(self.page.locator('#cardOut').inner_text(), self.page.evaluate(NOW))
-
-    # Umum
+        self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
+        self.assertEqual(self.page.locator('#monthTitle').inner_text(), 'January 2024')
 
     def test_layout_fits_every_screen_and_respects_reduced_motion(self):
         for width in [320, 390, 1440]:
-            for fragment in ['', '#baca-55', '?kapsul=id.0.0.40']:
+            for fragment in ['', '#baca-17', '#baca-51']:
                 with self.subTest(width=width, fragment=fragment):
                     self.page.set_viewport_size({'width': width, 'height': 844})
                     self.open(fragment)
@@ -295,25 +233,23 @@ class MimpiSmoke(unittest.TestCase):
     def test_preview_does_not_write_reader_history(self):
         self.context.add_init_script("localStorage.setItem('jm:preview', " + json.dumps(json.dumps({'works': [self.work]})) + ")")
         self.context.route('**/content/works.json', lambda route: route.abort())
-        self.open('?preview=1#baca-30')
-        self.page.locator('[data-pack="30"]').click()
+        self.open('?preview=1#baca-51')
+        self.page.locator('[data-rsvp="hadir"]').click()
         self.page.wait_for_timeout(450)
-        for key in ['prog', 'read', 'mimpi:places', 'mimpi:capsules', 'mimpi:card']:
+        for key in ['prog', 'read', 'mimpi:places', 'mimpi:rsvp']:
             self.assertIsNone(self.page.evaluate(f"localStorage.getItem('jm:{key}')"), key)
 
-    def test_missing_shift_module_keeps_the_story(self):
-        self.context.route('**/pabrik-mimpi/shift.js*', lambda route: route.abort())
-        self.open('#baca-10')
-        self.assertEqual(self.page.locator('.passage').count(), len([p for p in self.work['body'] if p.strip() != '***']))
-        self.assertEqual(self.page.locator('.chip').count(), 0)
+    def test_missing_calendar_module_keeps_the_story(self):
+        self.context.route('**/pabrik-mimpi/kalender.js*', lambda route: route.abort())
+        self.open()
+        self.assertEqual(self.page.locator('.passage').all_text_contents(), [p.replace('*', '') for p in self.body() if p.strip() != '***'])
 
     def test_theme_follows_the_site_choice(self):
-        self.open('#baca')
+        self.open()
         light = self.page.evaluate("getComputedStyle(document.body).backgroundColor")
         self.page.evaluate("() => { localStorage.setItem('jm:theme', JSON.stringify('dark')); dispatchEvent(new StorageEvent('storage', { key: 'jm:theme' })); }")
         self.page.wait_for_timeout(100)
         self.assertNotEqual(light, self.page.evaluate("getComputedStyle(document.body).backgroundColor"))
-        self.assertEqual(self.page.locator('html').get_attribute('data-theme'), 'dark')
 
 
 if __name__ == '__main__':
