@@ -1,82 +1,73 @@
 <!doctype html>
-<html lang="id" data-view="cover">
+<html lang="id" data-view="home">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Terlambat Satu Menit · Quiet Margins</title>
-<meta name="description" content="Satu Menit. Tiga jarum, tiga ingatan, dan satu lonceng di atas pintu.">
-<meta name="theme-color" content="#15110d">
+<meta name="description" content="Lacak Surat. Tiga riwayat kiriman, satu surat yang terlambat satu menit.">
+<meta name="theme-color" content="#f4f3ef">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 <link rel="icon" href="../../assets/icons/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap">
-<link rel="stylesheet" href="minute.css?v=29">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="minute.css?v=30">
 </head>
 <body>
-<div class="world" id="world" aria-hidden="true">
-  <div class="sky"></div>
-  <div class="giant" id="giant"></div>
-  <div class="scene-host" id="scene"></div>
-  <div class="vignette"></div>
-</div>
-<div class="flash" id="flash" aria-hidden="true"></div>
-
 <header class="topbar" id="topbar">
   <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
-  <button class="dial-toggle" id="openParts" type="button"><span class="mini-dial" id="miniDial" aria-hidden="true"></span><span class="current-voice" id="partLabel">Saman</span></button>
-  <span class="topbar-space"></span>
-  <span class="mini-bottle" id="miniBottle" role="img" aria-label="Botol kaca"></span>
+  <button class="brand" id="toHome" type="button"><span class="brand-mark" aria-hidden="true"></span><span id="brandName">Lacak Kiriman</span></button>
+  <span class="top-resi" id="topResi" aria-hidden="true"></span>
   <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
   <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
 </header>
 
-<main class="cover" id="cover" aria-labelledby="coverTitle">
-  <div class="cover-head">
-    <p class="eyebrow" id="coverKicker">Satu Menit</p>
-    <h1 id="coverTitle">Terlambat Satu Menit</h1>
-    <p class="cover-note" id="coverNote" role="status">Tiga jarum. Tiga ingatan. Satu lonceng.</p>
-  </div>
-  <nav class="hands" id="hands" aria-label="Tiga sisi cerita"></nav>
-  <button class="to-final" id="toFinal" type="button" hidden>Satu menit terakhir</button>
+<main class="home" id="home" aria-labelledby="homeTitle">
+  <section class="search">
+    <p class="eyebrow" id="workTitle">Terlambat Satu Menit</p>
+    <h1 id="homeTitle">Lacak Kiriman</h1>
+    <p class="search-note" id="searchNote">Masukkan nomor resi untuk melihat riwayat pengiriman.</p>
+    <form class="search-form" id="trackForm" role="search">
+      <label class="sr-only" for="resi" id="resiLabel">Nomor resi</label>
+      <input id="resi" name="resi" autocomplete="off" spellcheck="false" readonly value="">
+      <button id="trackButton" type="submit">Lacak</button>
+    </form>
+  </section>
+  <section class="results" id="results" aria-live="polite" hidden>
+    <p class="results-head" id="resultsHead"></p>
+    <ol class="shipments" id="shipments"></ol>
+    <div id="summaryCard"></div>
+  </section>
 </main>
 
-<main class="reader" id="reader" hidden>
-  <article class="read" id="read">
-    <header class="intro" id="intro">
-      <p class="eyebrow" id="sideKicker">Jarum jam</p>
-      <h1 id="sideTitle">Bidak</h1>
-      <p class="byline" id="voice">Pak Saman</p>
-      <div class="entry"><button class="begin" id="begin" type="button">Mulai membaca</button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari tempat terakhir</button></div>
-      <p class="scroll-hint" id="scrollHint">Gulir. Jarumnya ikut berjalan.</p>
-    </header>
-    <div id="story"><p class="loading">Memutar jarum…</p></div>
-    <footer class="part-end" id="partEnd" hidden>
-      <p class="end-note" id="endNote"></p>
-      <button class="next-side" id="nextSide" type="button">Jarum berikutnya</button>
-      <button class="final-link" id="endFinal" type="button" hidden>Satu menit terakhir</button>
-      <button class="text-button" id="toCover" type="button">Kembali ke muka jam</button>
-    </footer>
-  </article>
+<main class="detail" id="detail" hidden>
+  <header class="ship-head" id="shipHead">
+    <p class="eyebrow" id="detailKicker">Riwayat pengiriman</p>
+    <p class="resi-big" id="resiBig"></p>
+    <dl class="route" id="route"></dl>
+    <p class="side-line"><span id="sideTitle">Bidak</span> · <span id="voice">Pak Saman</span></p>
+    <div class="actions"><button class="begin" id="begin" type="button">Lihat riwayat</button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari pemindaian terakhir</button></div>
+  </header>
+  <div class="status-bar" id="statusBar" role="status" aria-live="polite">
+    <span class="status-chip" id="statusChip" data-tone="pending">Belum dilacak</span>
+    <ol class="stages" id="stages" aria-hidden="true"></ol>
+    <span class="last-scan" id="lastScan"></span>
+  </div>
+  <ol class="timeline" id="story"><li class="loading">Mencari kiriman…</li></ol>
+  <footer class="part-end" id="partEnd" hidden>
+    <button class="next-side" id="nextSide" type="button">Kiriman berikutnya</button>
+    <button class="next-side summary-link" id="endSummary" type="button" hidden>Ringkasan pengiriman</button>
+    <button class="text-button" id="allShipments" type="button">Semua kiriman</button>
+  </footer>
 </main>
 
-<main class="final" id="final" hidden aria-labelledby="finalTitle">
-  <div class="final-stage">
-    <p class="eyebrow" id="finalKicker">Tiga jarum</p>
-    <h1 class="sr-only" id="finalTitle">Satu menit terakhir</h1>
-    <p class="final-time" id="finalTime" aria-hidden="true">0:00</p>
-    <div class="moment-view" id="momentView" aria-live="polite"></div>
-    <div class="final-controls"><button class="play" id="play" type="button" aria-pressed="false">Biarkan berjalan</button><label class="sr-only" for="seconds" id="secondsLabel">Detik</label><input id="seconds" type="range" min="0" max="61" step="1" value="0"></div>
-    <ol class="timeline" id="timeline"></ol>
-  </div>
-  <section class="after" id="after" hidden></section>
-</main>
+<main class="summary" id="summary" hidden aria-labelledby="summaryTitle"></main>
 
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body">
     <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
-    <div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div>
+    <div class="setting-row"><span id="soundLabel">Bunyi pemindai</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div>
     <p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p>
     <label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25">
     <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
@@ -85,10 +76,8 @@
   </div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
-<script src="sound.js?v=29"></script>
-<script src="clock.js?v=29"></script>
-<script src="world.js?v=29"></script>
-<script src="final.js?v=29"></script>
-<script src="minute.js?v=29"></script>
+<script src="sound.js?v=30"></script>
+<script src="track.js?v=30"></script>
+<script src="minute.js?v=30"></script>
 </body>
 </html>
