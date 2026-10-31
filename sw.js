@@ -5,7 +5,7 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v30';
+const VERSION = 'v32';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [

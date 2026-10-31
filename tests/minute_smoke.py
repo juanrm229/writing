@@ -62,7 +62,7 @@ class MinuteSmoke(unittest.TestCase):
 
     def open(self, fragment=''):
         self.page.goto(self.url + fragment, wait_until='domcontentloaded')
-        if re.search(r'#[abc]', fragment):
+        if re.search(r'#[abcd]', fragment):
             self.page.wait_for_selector('.passage')
         else:
             self.page.wait_for_function("document.documentElement.dataset.view === 'summary' ? !!document.querySelector('#summaryTitle') : document.documentElement.dataset.view === 'home' && document.querySelector('#resi').value.length > 0")
@@ -70,7 +70,7 @@ class MinuteSmoke(unittest.TestCase):
     def seed(self, script):
         self.context.add_init_script("if (!sessionStorage.getItem('seeded')) { " + script + "; sessionStorage.setItem('seeded', '1'); }")
 
-    def seed_done(self, sides='abc'):
+    def seed_done(self, sides='abcd'):
         keys = ['terlambat-satu-menit' + ('' if s == 'a' else ':' + s) for s in sides]
         self.seed("localStorage.setItem('jm:stats', JSON.stringify({done: " + json.dumps(keys) + "}));localStorage.setItem('jm:minute:tracked', 'true')")
 
@@ -112,7 +112,7 @@ class MinuteSmoke(unittest.TestCase):
     def test_all_original_paragraphs_are_present_in_both_languages(self):
         for lang in ['id', 'en']:
             source = self.work['en'] if lang == 'en' else self.work
-            for side, doc in zip('abc', [source] + source['sides']):
+            for side, doc in zip('abcd', [source] + source['sides']):
                 with self.subTest(lang=lang, side=side):
                     self.open(f'?lang={lang}#{side}')
                     expected = [p.replace('*', '') for p in doc['body'] if p.strip() != '***']
@@ -223,7 +223,7 @@ class MinuteSmoke(unittest.TestCase):
 
     def test_each_side_still_records_completion_in_the_main_site(self):
         self.open('#a')
-        for side, length in [('a', 72), ('b', 76), ('c', 78)]:
+        for side, length in [('a', 72), ('b', 76), ('c', 78), ('d', 40)]:
             self.go(side, length - 1)
             key = 'terlambat-satu-menit' + (':' + side if side != 'a' else '')
             self.page.wait_for_function('(key) => JSON.parse(localStorage.getItem("jm:stats") || "{}").done?.includes(key)', arg=key)
@@ -236,9 +236,10 @@ class MinuteSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('#results').is_hidden())
         self.page.locator('#trackButton').click()
         self.page.wait_for_selector('.ship-card')
-        self.assertEqual(self.page.locator('#resultsHead').inner_text(), '3 kiriman ditemukan')
-        self.assertEqual(self.page.locator('.ship-card .resi').all_text_contents(), ['SMN 0052 ID', 'SMN 0052 ID', 'MRY 0012 ID'])
-        self.assertEqual(self.page.locator('.ship-card .status-chip').all_text_contents(), ['Belum dilacak'] * 3)
+        self.assertEqual(self.page.locator('#resultsHead').inner_text(), '4 kiriman ditemukan')
+        self.assertEqual(self.page.locator('.ship-card .resi').all_text_contents(), ['SMN 0052 ID', 'SMN 0052 ID', 'SMN 0052 ID', 'MRY 0012 ID'])
+        self.assertEqual([b.get_attribute('data-side') for b in self.page.locator('.ship-card').all()], ['0', '3', '1', '2'])
+        self.assertEqual(self.page.locator('.ship-card .status-chip').all_text_contents(), ['Belum dilacak'] * 4)
         self.assertEqual(self.page.evaluate('document.activeElement.dataset.side'), '0')
         self.page.locator('.ship-card[data-side="2"]').click()
         self.assertEqual(self.view(), 'detail')
@@ -340,10 +341,227 @@ class MinuteSmoke(unittest.TestCase):
         self.assertEqual(visits[-1], self.page.evaluate("(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()"))
         self.assertEqual(rows.count(), len(visits) - 1)
 
+    # Isi kiriman
+
+    def italic(self, text):
+        return ' '.join(m.strip() for m in re.findall(r'\*([^*]+)\*', text))
+
+    def contents(self):
+        self.page.locator('#openContentsMini').click()
+        lines = self.page.locator('.letter-line').all_text_contents()
+        sealed = self.page.locator('.sealed').count() == 1
+        envelope = self.page.locator('.letter-meta div:nth-child(3) dd').inner_text()
+        self.page.keyboard.press('Escape')
+        return lines, sealed, envelope
+
+    def test_samans_letter_grows_when_he_adds_the_sentence(self):
+        body = self.work['body']
+        self.open('#a')
+        lines, sealed, envelope = self.contents()
+        self.assertEqual(lines, [self.italic(body[2])])
+        self.assertFalse(sealed)
+        self.assertEqual(envelope, 'Di laci')
+        self.read_range('a', 55, 56)
+        self.assertIsNotNone(self.page.locator('#openContentsMini').get_attribute('class').find('fresh'))
+        lines, _, envelope = self.contents()
+        self.assertEqual(lines, [self.italic(body[2]), self.italic(body[56])])
+        self.page.locator('#openContentsMini').click()
+        self.assertEqual(self.page.locator('.letter-line:not(.faded)').all_text_contents(), [self.italic(body[2])])
+        self.assertEqual(self.page.locator('.letter-line.faded').all_text_contents(), [self.italic(body[56])])
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openContentsMini')
+        self.read_range('a', 58, 58)
+        self.assertEqual(self.contents()[2], 'Dikirim')
+
+    def test_banyus_envelope_stays_sealed_until_he_opens_it(self):
+        side = self.work['sides'][0]['body']
+        self.open('#b-20')
+        lines, sealed, envelope = self.contents()
+        self.assertEqual((lines, sealed, envelope), ([], True, 'Tertutup'))
+        self.read_range('b', 34, 35)
+        lines, sealed, envelope = self.contents()
+        self.assertEqual((lines, sealed, envelope), ([self.italic(side[35])], False, 'Dibuka'))
+        self.read_range('b', 37, 42)
+        self.page.locator('#openContentsMini').click()
+        self.assertEqual(self.page.locator('#contentsTabs button').all_text_contents(), ['Surat Saman', 'Balasan Banyu', 'Catatan Maryam'])
+        self.assertEqual(self.page.locator('#contentsTabs [aria-pressed="true"]').inner_text(), 'Catatan Maryam')
+        self.page.locator('#contentsTabs [data-tab="reply"]').click()
+        self.assertEqual(self.page.locator('.letter-line').all_text_contents(), [self.italic(side[p]) for p in [40, 41, 42]])
+        self.page.locator('#contentsTabs [data-tab="saman"]').click()
+        self.assertEqual(self.page.locator('.letter-line').all_text_contents(), [self.italic(side[35]), self.italic(side[37])])
+        self.page.keyboard.press('Escape')
+
+    def test_maryams_letter_appears_only_as_she_writes_it_in_both_languages(self):
+        for lang, start, first, second in [('id', 68, 70, 73), ('en', 67, 69, 72)]:
+            with self.subTest(lang=lang):
+                body = (self.work['en'] if lang == 'en' else self.work)['sides'][1]['body']
+                self.open(f'?lang={lang}#c-{start}')
+                self.page.locator('#openContentsMini').click()
+                self.assertEqual(self.page.locator('.letter-line').count(), 0)
+                self.assertTrue(self.page.locator('.contents-empty').is_visible())
+                self.page.keyboard.press('Escape')
+                self.read_range('c', first, second)
+                lines, _, envelope = self.contents()
+                self.assertEqual(lines, [self.italic(body[first]), self.italic(body[second])])
+                self.assertEqual(envelope, 'Ditulis' if lang == 'id' else 'Written')
+
+    def test_every_contents_marker_points_to_one_italic_paragraph(self):
+        self.open('#a')
+        contents = self.page.evaluate('MinuteTrack.CONTENTS')
+        for lang, li in [('id', 0), ('en', 1)]:
+            source = self.work['en'] if lang == 'en' else self.work
+            docs = [source] + source['sides']
+            for side, items in enumerate(contents):
+                for item in items:
+                    markers = [part['find'] for part in item.get('parts', []) + item.get('stages', [])] + [m for m in [item.get('sealed'), item.get('sent')] if m]
+                    for marker in markers:
+                        hits = [p for p in docs[side]['body'] if marker[li] in p]
+                        self.assertEqual(len(hits), 1, f'{lang} {side} {marker[li]}')
+                    for part in item.get('parts', []):
+                        self.assertTrue(self.italic(next(p for p in docs[side]['body'] if part['find'][li] in p)))
+
+    # Kolom resi
+
+    def search(self, value):
+        self.page.locator('#resi').fill(value)
+        self.page.locator('#trackButton').click()
+        self.page.wait_for_function("!document.querySelector('#resultsHead').textContent.includes('…')")
+
+    def test_the_resi_field_finds_each_of_the_52_letters_and_nothing_else(self):
+        self.seed("localStorage.setItem('jm:minute:tracked', 'true')")
+        self.open()
+        self.assertFalse(self.page.locator('#resi').evaluate('(e) => e.readOnly'))
+        self.search('smn 0007 id')
+        self.assertEqual(self.page.locator('.ship-card .resi').all_text_contents(), ['SMN 0007 ID'])
+        self.assertIn('Surat 7 dari 52', self.page.locator('.ship-card').inner_text())
+        self.assertEqual(self.page.locator('.ship-card .letter-line').all_text_contents(), [self.italic(self.work['body'][2])])
+        self.search('SMN0052ID')
+        self.assertEqual(self.page.locator('.ship-card').count(), 4)
+        for value in ['SMN 0053 ID', 'ABC 123', 'BNY 0001 ID', 'MRY 0011 ID']:
+            with self.subTest(value=value):
+                self.search(value)
+                self.assertEqual(self.page.locator('#resultsHead').inner_text(), 'Nomor resi tidak ditemukan')
+        self.page.locator('#resetSearch').click()
+        self.assertEqual(self.page.locator('.ship-card').count(), 4)
+        self.search('MRY 0012 ID')
+        self.assertEqual([b.get_attribute('data-side') for b in self.page.locator('.ship-card').all()], ['2'])
+
+    def test_shipments_written_in_the_story_become_trackable(self):
+        self.seed("localStorage.setItem('jm:minute:tracked', 'true')")
+        self.open('#b')
+        self.read_range('b', 39, 40)
+        self.page.locator('#allShipments').click()
+        self.search('BNY 0001 ID')
+        self.assertEqual(self.page.locator('.ship-card .status-chip').inner_text(), 'Ditulis')
+        self.assertEqual(self.page.locator('.ship-card .letter-line').all_text_contents(), [self.italic(self.work['sides'][0]['body'][40])])
+        self.page.locator('.open-side').click()
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'), 'b')
+        self.read_range('c', 33, 35)
+        self.page.locator('#allShipments').click()
+        self.search('MRY 0011 ID')
+        self.assertEqual(self.page.locator('.ship-card .status-chip').inner_text(), 'Tertahan · tidak pernah sampai')
+        self.assertEqual(self.page.locator('.ship-card .redacted').count(), 1)
+        self.assertEqual(self.page.locator('.ship-card .letter-line').count(), 0)
+
+    def test_the_manifest_rows_search_their_own_letter(self):
+        self.open('#a')
+        self.read_range('a', 1, 2)
+        self.page.locator('.manifest summary').click()
+        self.page.locator('.manifest [data-resi="SMN 0031 ID"]').click()
+        self.assertEqual(self.view(), 'home')
+        self.assertEqual(self.page.locator('.ship-card .resi').all_text_contents(), ['SMN 0031 ID'])
+
+    # Urutan
+
+    def test_newest_first_reads_the_history_backwards_without_moving_the_bookmark(self):
+        self.open('#c-40')
+        self.page.wait_for_timeout(450)
+        before = self.saved('c')
+        self.page.locator('#orderToggle').click()
+        self.assertEqual(self.page.locator('#orderToggle').get_attribute('aria-pressed'), 'true')
+        self.assertEqual(self.page.locator('#detailKicker').inner_text(), 'DIHITUNG MUNDUR')
+        entries = [int(e.get_attribute('data-entry')) for e in self.page.locator('#story .entry').all()]
+        self.assertEqual(entries, sorted(entries, reverse=True))
+        self.assertLess(abs(self.page.locator('#p-40').evaluate('(e) => e.getBoundingClientRect().top - innerHeight * .5')), 2)
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'orderToggle')
+        self.page.mouse.wheel(0, 900); self.page.wait_for_timeout(450)
+        self.assertEqual(self.saved('c'), before)
+        self.page.locator('#orderToggle').click()
+        entries = [int(e.get_attribute('data-entry')) for e in self.page.locator('#story .entry').all()]
+        self.assertEqual(entries, sorted(entries))
+        self.assertEqual(self.page.locator('#detailKicker').inner_text(), 'RIWAYAT PENGIRIMAN')
+
+    # Riwayat alamat
+
+    def test_address_history_strikes_each_old_address_as_it_is_learned(self):
+        self.open('#b')
+        self.assertTrue(self.page.locator('#addresses').is_hidden())
+        for p in [0, 12, 18, 25]:
+            self.read_range('b', p, p)
+        self.go('b', 0)
+        self.page.evaluate('scrollTo(0, 0)')
+        items = self.page.locator('#addresses li')
+        self.assertEqual(items.all_text_contents(), ['Alamat lama · kota seberang', 'Kota pelabuhan', 'Desa pegunungan', 'Kota besar', 'Apartemen kontrakan · kota ini'])
+        self.assertEqual(self.page.locator('#addresses li[aria-current]').inner_text(), 'Apartemen kontrakan · kota ini')
+        self.read_range('b', 51, 51)
+        self.assertIn('Toko jahit, ujung gang', self.page.locator('#addresses li[aria-current]').inner_text())
+        self.assertIsNotNone(self.page.locator('#addresses li[aria-current]').get_attribute('data-back'))
+        self.go('d', 5)
+        self.assertTrue(self.page.locator('#addresses').count() == 1)
+        self.go('a', 5)
+        self.assertTrue(self.page.locator('#addresses').is_hidden())
+
+    # Catatan Maryam
+
+    def test_maryams_note_can_never_be_displayed_on_any_side(self):
+        for side, start, end, status in [('a', 10, 11, 'Ditemukan Saman · disembunyikan di laci'), ('b', 41, 41, 'Diminta Banyu'), ('c', 33, 35, 'Tertahan · tidak pernah sampai')]:
+            with self.subTest(side=side):
+                self.open(f'#{side}')
+                self.read_range(side, start, end)
+                self.page.locator('#openContentsMini').click()
+                self.page.locator('#contentsTabs [data-tab="note"]').click() if self.page.locator('#contentsTabs [data-tab="note"]').count() else None
+                self.assertEqual(self.page.locator('.contents-label').inner_text(), 'Catatan Maryam')
+                self.assertEqual(self.page.locator('.redacted-status .status-chip').inner_text(), status)
+                self.assertEqual(self.page.locator('#contentsBody .redacted').count(), 1)
+                self.assertEqual(self.page.locator('#contentsBody .letter-line').count(), 0)
+                self.assertEqual(self.page.locator('#contentsBody .redacted').get_attribute('aria-label'), 'Isi tidak dapat ditampilkan')
+                self.page.keyboard.press('Escape')
+        self.read_range('b', 69, 69)
+        self.page.locator('#openContentsMini').click()
+        self.page.locator('#contentsTabs [data-tab="note"]').click()
+        self.assertEqual(self.page.locator('.redacted-status .status-chip').inner_text(), 'Dicari · tidak ditemukan')
+
+    # Cetak bukti
+
+    def test_the_proof_of_delivery_prints_on_its_own(self):
+        self.open('#b')
+        self.page.evaluate("() => { window.printed = []; window.print = () => printed.push(document.documentElement.dataset.print); }")
+        self.read_range('b', 53, 57)
+        self.page.locator('#printProof').click()
+        self.assertEqual(self.page.evaluate('printed'), ['proof'])
+        self.page.evaluate("document.documentElement.dataset.print = 'proof'")
+        self.page.emulate_media(media='print')
+        self.assertTrue(self.page.locator('#proof').is_visible())
+        self.assertTrue(self.page.locator('#p-57').is_hidden())
+        self.assertTrue(self.page.locator('#topbar').is_hidden())
+        self.assertIn('SMN 0052 ID', self.page.locator('.print-head').inner_text())
+        self.page.emulate_media(media='screen')
+
+    # Meja pengalihan
+
+    def test_the_forwarding_desk_is_a_fourth_history_in_both_languages(self):
+        for lang, marker, status in [('id', 'Alamat berikutnya: kota pelabuhan.', 'Dialihkan · kota pelabuhan'), ('en', 'Next address: the port city.', 'Forwarded · port city')]:
+            with self.subTest(lang=lang):
+                self.open(f'?lang={lang}#d')
+                self.assertEqual(self.page.locator('#sideTitle').inner_text(), 'Meja Pengalihan' if lang == 'id' else 'The Forwarding Desk')
+                self.go('d', self.beat_p(lang, 3, marker))
+                self.assertEqual(self.chip(), status)
+                self.assertEqual(self.page.locator('#nextSide').inner_text(), ('Kiriman berikutnya: ' if lang == 'id' else 'Next shipment: ') + 'SMN 0052 ID · ' + ('Alamat yang Tertukar' if lang == 'id' else 'The Misdirected Address'))
+
     # Ringkasan
 
-    def test_summary_waits_for_all_three_histories(self):
-        self.seed_done('ab')
+    def test_summary_waits_for_every_history(self):
+        self.seed_done('abd')
         self.open('#ringkasan')
         self.assertEqual(self.view(), 'home')
         self.assertEqual(self.page.evaluate('location.hash'), '')
@@ -361,10 +579,12 @@ class MinuteSmoke(unittest.TestCase):
             with self.subTest(lang=lang):
                 self.open(f'?lang={lang}#ringkasan')
                 self.assertEqual(self.view(), 'summary')
-                self.assertEqual(self.page.locator('.summary-rows li').count(), 5)
+                self.assertEqual(self.page.locator('.summary-rows li').count(), 6)
                 chips = self.page.locator('.summary-rows .status-chip').all_text_contents()
                 self.assertEqual(chips[1], 'Tertahan · tidak pernah sampai' if lang == 'id' else 'Withheld · never delivered')
-                self.assertEqual(chips[4], 'Diterima oleh: Mas' if lang == 'id' else 'Received by: Sir')
+                self.assertEqual(chips[2], 'Menunggu pembatalan pengalihan' if lang == 'id' else 'Awaiting cancellation of forwarding')
+                self.assertEqual(chips[5], 'Diterima oleh: Mas' if lang == 'id' else 'Received by: Sir')
+                self.assertEqual(self.page.locator('.summary-rows .resi').all_text_contents(), ['SMN 0052 ID', 'MRY 0011 ID', 'SMN 0052 ID', 'BNY 0001 ID', 'MRY 0012 ID', '—'])
                 source = self.work['en'] if lang == 'en' else self.work
                 body = source['sides'][0]['body']
                 markers = ['Besok datang lagi ya', 'Besok aku datang lagi'] if lang == 'id' else ['Come again tomorrow', "Tomorrow I'll come again"]

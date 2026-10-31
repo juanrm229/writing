@@ -68,13 +68,34 @@
         { find: ['Ia melipat surat itu. Ia menulis alamat', 'She folded the letter. She wrote the address'], status: ['Dikirim ke alamat usang · status tidak diketahui', 'Sent to an outdated address · status unknown'], tone: 'transit', stage: 3, loc: ['Kantor pos', 'Post office'], sound: 'stamp' },
         { find: ['meninggal dunia dengan tenang', 'passed away peacefully'], status: ['Jam berhenti', 'The clock stopped'], tone: 'lost', freeze: true, loc: ['Toko jam', 'Watch shop'] }
       ]
+    },
+    {
+      resi: 'SMN 0052 ID',
+      item: ['Kartu pengalihan', 'Change-of-address card'], from: ['Kantor pos', 'Post office'], fromPlace: ['Loket 3, kota seberang', 'Counter 3, the neighboring city'],
+      to: 'Banyu', toPlace: ['Alamat pengalihan', 'Forwarding address'],
+      stages: [['Terdaftar', 'Registered'], ['Diperbarui', 'Renewed'], ['Diterima loket', 'At the counter'], ['Dialihkan', 'Forwarded']],
+      beats: [
+        { find: ['di balik loket nomor tiga, ada satu laci kecil', 'behind counter number three, there was a small drawer'], status: ['Laci kartu pengalihan', 'Change-of-address drawer'], tone: 'pending', stage: 0, loc: ['Kantor pos, kota seberang · loket 3', 'Post office, neighboring city · counter 3'] },
+        { find: ['Kartu itu atas nama Banyu.', 'The card was in the name of Banyu.'], status: ['Terdaftar · atas nama Banyu', 'Registered · in the name of Banyu'], tone: 'pending', stage: 0 },
+        { find: ['Delapan bulan kemudian datang formulir', 'Eight months later an update form'], status: ['Alamat pengalihan diperbarui', 'Forwarding address renewed'], tone: 'transit', stage: 1 },
+        { find: ['tidak satu pun surat datang untuk Banyu', 'not a single letter came for Banyu'], status: ['Tidak ada kiriman · 12 tahun', 'No mail · 12 years'], tone: 'held', stage: 1 },
+        { find: ['Pada tahun kedua belas, surat itu datang.', 'In the twelfth year, the letter came.'], status: ['Diterima di loket', 'Received at the counter'], tone: 'transit', stage: 2 },
+        { find: ['Kamar sewaan dekat terminal. Untuk Banyu.', 'A rented room near the bus terminal. For Banyu.'], status: ['Alamat tujuan: alamat lama', 'Addressed to: old address'], tone: 'held' },
+        { find: ['Bu Asih memegang penanya lama sekali.', 'Mrs. Asih held her pen for a very long time.'], status: ['Menunggu keputusan petugas', "Awaiting the clerk's decision"], tone: 'held' },
+        { find: ['Alamat berikutnya: kota pelabuhan.', 'Next address: the port city.'], status: ['Dialihkan · kota pelabuhan', 'Forwarded · port city'], tone: 'transit', stage: 3, sound: 'stamp' },
+        { find: ['Ia mengembalikan kartu itu ke laci.', 'She put the card back in the drawer.'], status: ['Kartu tetap aktif', 'Card still active'], tone: 'done' },
+        { find: ['karena ia sudah pulang', 'because he had come home'], status: ['Menunggu pembatalan pengalihan', 'Awaiting cancellation of forwarding'], tone: 'pending' }
+      ]
     }
   ];
+  // Urutan tampil: surat Saman, meja pengalihan, Banyu, Maryam.
+  const ORDER = [0, 3, 1, 2];
   // Ringkasan setelah ketiga riwayat terbaca: setiap baris menunjuk ketukan yang benar-benar dibaca.
   const SUMMARY = [
     { label: ['Surat Saman → Banyu', "Saman's letter → Banyu"], resi: 'SMN 0052 ID', side: 1, beat: 'ada satu kalimat tambahan' },
-    { label: ['Catatan Maryam → Banyu', "Maryam's note → Banyu"], resi: 'MRY 0012 ID', side: 2, beat: 'Catatan itu tidak pernah sampai' },
-    { label: ['Balasan Banyu → Saman', "Banyu's reply → Saman"], resi: '—', side: 1, beat: 'pagi itu juga, ia mengirimkannya' },
+    { label: ['Catatan Maryam → Banyu', "Maryam's note → Banyu"], resi: 'MRY 0011 ID', side: 2, beat: 'Catatan itu tidak pernah sampai' },
+    { label: ['Kartu pengalihan atas nama Banyu', 'Change-of-address card for Banyu'], resi: 'SMN 0052 ID', side: 3, beat: 'karena ia sudah pulang' },
+    { label: ['Balasan Banyu → Saman', "Banyu's reply → Saman"], resi: 'BNY 0001 ID', side: 1, beat: 'pagi itu juga, ia mengirimkannya' },
     { label: ['Surat Maryam → Banyu', "Maryam's letter → Banyu"], resi: 'MRY 0012 ID', side: 2, beat: 'Ia melipat surat itu' },
     { label: ['Banyu → toko jahit', 'Banyu → the tailor shop'], resi: '—', side: 1, beat: '"Mari, Mas,"' }
   ];
@@ -82,5 +103,47 @@
     { speaker: 0, find: ['Besok datang lagi ya', 'Come again tomorrow'] },
     { speaker: 1, find: ['Besok aku datang lagi', "Tomorrow I'll come again"] }
   ];
-  window.MinuteTrack = { SIDES, SUMMARY, CODA };
+  // Isi kiriman: kutipan bercetak miring dari naskah. Setiap bagian terlihat setelah paragrafnya terbaca.
+  // sealed: isi tertutup sampai paragraf itu terbaca (amplop dibuka). always: sudah ada sejak awal.
+  const CONTENTS = [
+    [{ id: 'saman', label: ['Surat Saman', "Saman's letter"], from: 'Saman', to: 'Banyu', hand: 'saman', idle: ['Di laci', 'In the drawer'], sent: ['Surat itu jatuh ke dalam logam', 'The letter fell into the metal'], parts: [
+      { find: ['Lima puluh dua amplop', 'Fifty-two envelopes'], always: true },
+      { find: ['Dan kalau kamu tidak bisa pulang', 'And if you cannot come home'], faded: true }
+    ] }, { id: 'note', label: ['Catatan Maryam', "Maryam's note"], from: 'Maryam', to: 'Banyu', redacted: true, idle: ['Tanpa amplop', 'No envelope'], stages: [{ find: ['Ia meninggalkan catatan di meja dapur', 'She left a note on the kitchen table'], status: ['Ditemukan Saman · disembunyikan di laci', 'Found by Saman · hidden in the drawer'], tone: 'lost' }] }],
+    [{ id: 'saman', label: ['Surat Saman', "Saman's letter"], from: 'Saman', to: 'Banyu', hand: 'saman', sealed: ['membalik amplop itu, dan membukanya', 'turned the envelope over, and opened it'], parts: [
+      { find: ['tertulis empat kalimat', 'four sentences were written'] },
+      { find: ['Dan kalau kamu tidak bisa pulang', 'And if you cannot come home'], faded: true }
+    ] }, { id: 'reply', label: ['Balasan Banyu', "Banyu's reply"], from: 'Banyu', to: 'Saman', hand: 'banyu', idle: ['Ditulis', 'Written'], sent: ['pagi itu juga, ia mengirimkannya', 'that very morning, he sent it'], parts: [
+      { find: ['Aku marah sama Bapak', "I've been angry at you"] },
+      { find: ['Aku juga mau minta satu hal', 'I also want to ask for one thing'] },
+      { find: ['Aku akan pulang minggu ini', 'I am coming home this week'] }
+    ] }, { id: 'note', label: ['Catatan Maryam', "Maryam's note"], from: 'Maryam', to: 'Banyu', redacted: true, idle: ['Tanpa amplop', 'No envelope'], stages: [{ find: ['Aku juga mau minta satu hal', 'I also want to ask for one thing'], status: ['Diminta Banyu', 'Requested by Banyu'], tone: 'held' }, { find: ['Catatan ibu tidak pernah Banyu temukan', "Banyu never found his mother's note"], status: ['Dicari · tidak ditemukan', 'Searched for · not found'], tone: 'lost' }] }],
+    [{ id: 'note', label: ['Catatan Maryam', "Maryam's note"], from: 'Maryam', to: 'Banyu', redacted: true, idle: ['Tanpa amplop', 'No envelope'], stages: [{ find: ['Maka ia menulis. Tangan', 'So she wrote. Hands'], status: ['Ditinggalkan di bawah cangkir', 'Left under a cup'], tone: 'pending' }, { find: ['Catatan itu tidak pernah sampai ke Banyu', 'That note never reached Banyu'], status: ['Tertahan · tidak pernah sampai', 'Withheld · never delivered'], tone: 'lost' }] }, { id: 'maryam', label: ['Surat Maryam', "Maryam's letter"], from: 'Maryam', to: 'Banyu', hand: 'maryam', idle: ['Ditulis', 'Written'], sent: ['Ia melipat surat itu. Ia menulis alamat', 'She folded the letter. She wrote the address'], parts: [
+      { find: ['Ibu tidak akan menjelaskan', 'I will not explain why I left'] },
+      { find: ['kalau ada seseorang yang mencoba menawarimu', 'if there is someone who tries to offer'] }
+    ] }],
+    [{ id: 'card', label: ['Kartu pengalihan', 'Change-of-address card'], from: 'Banyu', to: ['Loket 3', 'Counter 3'], hand: 'banyu', idle: ['Di laci loket', 'In the counter drawer'], parts: [
+      { find: ['nanti saya kabari', "I'll let you know"] }
+    ] }, { id: 'log', label: ['Buku catatan loket', 'Counter logbook'], from: 'Bu Asih', to: ['Loket 3', 'Counter 3'], hand: 'asih', idle: ['—', '—'], parts: [
+      { find: ['Satu surat. Dialihkan.', 'One letter. Forwarded.'] }
+    ] }]
+  ];
+  // Riwayat alamat penerima: setiap alamat terlihat setelah salah satu penandanya terbaca (sisi: penanda).
+  const ADDRESSES = [
+    { label: ['Alamat lama · kota seberang', 'Old address · the neighboring city'], show: { 0: ['alamat lama anaknya di kota seberang', 'his son in the neighboring city'], 1: ['dari satu alamat usang ke alamat usang lainnya', 'from one obsolete address to another'], 3: ['Di kolom alamat lama ia menulis', 'Under old address he wrote'] } },
+    { label: ['Kota pelabuhan', 'The port city'], show: { 1: ['Ada kota pelabuhan', 'There was the port city'], 3: ['Di kolom alamat lama ia menulis', 'Under old address he wrote'] } },
+    { label: ['Desa pegunungan', 'The mountain village'], show: { 1: ['Ada desa di pegunungan', 'There was the village in the mountains'], 3: ['Delapan bulan kemudian datang formulir', 'Eight months later an update form'] } },
+    { label: ['Kota besar', 'The big city'], show: { 1: ['Dan ada kota besar', 'And there was the big city'], 3: ['Delapan bulan kemudian datang formulir', 'Eight months later an update form'] } },
+    { label: ['Apartemen kontrakan · kota ini', 'Rented apartment · this city'], show: { 1: ['Surat itu sampai pada hari yang salah', 'The letter arrived on the wrong day'], 3: ['Delapan bulan kemudian datang formulir', 'Eight months later an update form'] } },
+    { label: ['Toko jahit, ujung gang · alamat pengirim', 'Tailor shop, end of the alley · the sender'], back: true, show: { 1: ['Pada hari keempat, Banyu sampai', 'On the fourth day, Banyu arrived'] } }
+  ];
+  // Kolom resi: nomor lain yang bisa dilacak. after: kiriman baru ditemukan setelah paragrafnya terbaca.
+  const SEARCH = {
+    letters: { prefix: 'SMN', total: 52, side: 0, find: ['Lima puluh dua amplop', 'Fifty-two envelopes'] },
+    extra: [
+      { resi: 'BNY 0001 ID', item: 'reply', side: 1, label: ['Balasan Banyu', "Banyu's reply"], from: 'Banyu', to: 'Saman', after: ['mengambil secarik kertas dan pena', 'took a piece of paper and a pen'] },
+      { resi: 'MRY 0011 ID', item: 'note', side: 2, label: ['Catatan Maryam', "Maryam's note"], from: 'Maryam', to: 'Banyu', after: ['Maka ia menulis. Tangan', 'So she wrote. Hands'] }
+    ]
+  };
+  window.MinuteTrack = { SIDES, ORDER, SUMMARY, CODA, CONTENTS, ADDRESSES, SEARCH };
 })();
