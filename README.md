@@ -158,20 +158,18 @@ Pemeriksaan mencakup keutuhan naskah dua bahasa, penanda baca, tautan situs utam
 
 ### Pabrik Mimpi (antologi/pabrik-mimpi/)
 
-**Shift Malam** membaca *Pabrik Mimpi / The Dream Factory* dari terminal pekerja di stasiun paling ujung. Tanpa gambar. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`; label, status, dan kartu adalah antarmuka.
+**Larut** membaca *Pabrik Mimpi / The Dream Factory* seperti sebuah mimpi. Tidak ada bilah, kartu, atau tombol di layar: hanya langit dan teks. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`.
 
-- **Kartu absen**: pembaca menekan *Absen masuk* dan jam masuknya dicap dengan jam sungguhan (nama dari `readerName` di pengaturan situs). Siang hari muncul catatan bahwa shift malam dimulai pukul 19.00, tetapi pembaca tetap boleh masuk.
-- **Ban berjalan**: setiap paragraf adalah satu muatan. Rel di kiri-kanan bergerak mengikuti gulir dan **berhenti** ketika *ban berjalan telah dimatikan*. Bilah atas menunjukkan stasiun yang sedang dibaca; cerobong kecil mengeluarkan kebocoran warna di kalimat tentang cerobong dan meledak penuh warna saat tepuk tangan.
-- **Pada kalimatnya**: label bahan mimpi (tawa anak-anak, keheningan dasar danau, langit pukul 17.00, serpih wajah), kutipan aturan *Perajin tidak diperkenankan mengonsumsi produk*, empat puluh kapsul yang larut di atas meja, kartu pesanan Pak Wangsa yang belum selesai, dan **arsip pesanan lama** berisi kalimat-kalimat pesanan dari naskah. Pesanan Pak Wangsa sendiri berstatus *Tahun depan, mungkin* sampai mimpinya *terjadi dengan mata terbuka*.
-- **Kapsul**: pilih kalimat mana pun (atau tombol *Kemas* per paragraf) untuk mengemasnya ke saku. Kapsul menyimpan posisi teks asli, jadi isinya tidak bisa diubah.
-- **Gerbang**: di akhir shift, aturan pabrik dibacakan. Kapsul yang **dibawa pulang larut menjelang pagi** (pukul 05.30 berikutnya, menurut jam pembaca). Kapsul yang **diberikan kepada seseorang** (menu berbagi bawaan, atau tautan yang disalin) tidak pernah larut. Penerima membuka tautan sebagai *Sebuah mimpi untukmu*, dan mimpi itu tersimpan di sakunya tanpa pernah larut. *Absen keluar* mencap jam keluar di kartu.
-- **Tepuk tangan**: saat perempuan di barisan depan mulai bertepuk tangan, pembaca bisa *Berdiri* dan ikut bertepuk tangan. Setiap tepukan menyalakan satu kursi di ruangan. Mikrofon **hanya pilihan**: tepukan tangan sungguhan dihitung setelah pembaca mengizinkan, dan dimatikan saat tab ditutup atau disembunyikan.
-- **Bacaan dan tema**: penanda baca per bahasa, ukuran huruf, tautan `#baca` dan `#baca-12`, tautan dari situs utama, serta tema terang/gelap yang mengikuti situs tetap berlaku. Bunyi kartu absen, kapsul, dan tepuk tangan opsional. Pratinjau `?preview=1` tidak menulis riwayat. Jika `shift.js` gagal dimuat, cerita tetap terbaca.
+- **Langit**: gelap adalah langit malam; terang adalah langit pukul lima sore. Tema mengikuti situs (`jm:theme`, lalu panel admin, lalu perangkat).
+- **Yang sudah dibaca larut.** Setiap paragraf yang benar-benar dilewati pembaca (ujungnya terlihat, lalu naik melewati seperlima atas layar) memudar, naik, dan menjadi satu bintang di langit. Melompat lewat tautan tidak melarutkan apa pun. Di tempat paragraf itu tertinggal satu titik cahaya; mengetuknya memunculkan paragraf itu kembali sebentar, lalu ia larut lagi.
+- **Yang benar-benar terjadi tidak larut.** Sejak *Lila membawa mereka semua ke pabrik*, tidak ada lagi paragraf yang larut. Saat seluruh ruangan berdiri, semua bintang menyala berwarna dan cahaya naik dari bawah layar; di paragraf terakhir langit beranjak pagi.
+- **Langit disimpan.** Bintang dan paragraf yang sudah larut tetap begitu saat pembaca kembali (*Langitmu menyimpan N bintang*). *Tidur lagi* mengembalikan semua kalimat dan mengosongkan langit.
+- **Pengaturan**: ukuran huruf, *Biarkan kalimat larut* (bisa dimatikan; teks lalu tetap terbaca), gerak (menghormati kurangi animasi), tampilan, dan bahasa. Penanda baca per bahasa, tautan `#baca` dan `#baca-12`, dan tautan dari situs utama tetap berlaku. Pratinjau `?preview=1` tidak menulis riwayat.
 
-Modul: `shift.js` (penanda ketukan, arsip, dan aturan dalam ID/EN) dan `mimpi.js`.
+Penanda dua momen kunci (`MARKERS` di `mimpi.js`) menunjuk paragraf asli lewat teks ID/EN.
 
 ```bash
 python3 tests/mimpi_smoke.py
 ```
 
-Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda, tautan situs utama dan status tamat, penanda baca dan bahasa, kartu absen, keadaan lantai per kalimat, kutipan aturan dan arsip, kapsul dari pilihan teks, larut menjelang pagi, memberi kapsul (termasuk batal berbagi), tautan hadiah, tepuk tangan dan mikrofon opsional, gerbang dan absen keluar, tata letak 320–1440 px, pratinjau, kegagalan modul, dan tema.
+Pemeriksaan mencakup keutuhan naskah dua bahasa, penanda, tautan situs utama dan status tamat, paragraf yang larut hanya setelah dibaca, lompatan yang tidak melarutkan, bagian yang tidak pernah larut dan langit yang menyala, memunculkan kembali paragraf dari bintang, langit yang tersimpan dan *Tidur lagi*, mematikan larut, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, dan tema.
