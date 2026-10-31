@@ -1,4 +1,4 @@
-/* Petikan hanya terbuka jika ujung paragrafnya terlihat. Tidak ada teks cerita baru. */
+/* Laci: petikan hanya terbuka jika ujung paragrafnya terlihat. Tidak ada teks cerita baru. */
 (() => {
   'use strict';
   const esc = s => String(s).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -28,16 +28,16 @@
         ] },
         { id: 'presence', kind: 'presence', title: t('Satu sore lagi', 'One more afternoon'), person: t('Saman · Mas', 'Saman · Sir'), side: 1, at: 75 + b, required: [55 + b, 66 + b, 73 + b, 75 + b], greeting: 73 + b, answer: 75 + b }
       ];
-      this.groups = [['silence', t('Di balik diam', 'Behind the silence')], ['letter', t('Surat', 'Letters')], ['presence', t('Kehadiran', 'Presence')]];
-      document.querySelector('#openTraces').textContent = t('Jejak', 'Traces');
-      document.querySelector('#openTraces').setAttribute('aria-label', t('Buka jejak cerita', 'Open story traces'));
+      this.groups = [['letter', t('Amplop', 'Envelopes')], ['silence', t('Di balik diam', 'Behind the silence')], ['presence', t('Kehadiran', 'Presence')]];
+      document.querySelector('#openTraces').textContent = t('Laci', 'Drawer');
+      document.querySelector('#openTraces').setAttribute('aria-label', t('Buka laci', 'Open the drawer'));
       document.querySelector('#openTraces').disabled = false;
       document.querySelector('#openTraces').onclick = () => this.open();
       document.querySelector('#returnVisit').textContent = t('Satu sore lagi', 'One more afternoon');
       document.querySelector('#returnVisit').onclick = () => this.open('presence');
-      document.querySelector('#traceBack').textContent = t('← Semua jejak', '← All traces');
+      document.querySelector('#traceBack').textContent = t('← Seluruh laci', '← The whole drawer');
       document.querySelector('#traceBack').onclick = () => this.showIndex();
-      document.querySelector('#tracesKicker').textContent = t('Terakhir dikenali', 'Last recognized');
+      document.querySelector('#tracesKicker').textContent = t('Satu Menit', 'One Minute');
       document.querySelector('#story').addEventListener('click', e => {
         const button = e.target.closest('[data-trace]'); if (button && !button.disabled) this.open(button.dataset.trace);
       });
@@ -78,7 +78,7 @@
       document.querySelector('#returnVisit').hidden = !this.available(this.items.find(item => item.id === 'presence'));
       const unread = this.items.some(item => this.stepsFor(item).some(step => this.ready(item, step) && !this.seen.has(`viewed:${item.id}:${step.id}`)));
       document.querySelector('#openTraces').toggleAttribute('data-new', unread);
-      document.querySelector('#openTraces').setAttribute('aria-label', unread ? this.t('Buka jejak cerita · ada fragmen baru', 'Open story traces · new passages available') : this.t('Buka jejak cerita', 'Open story traces'));
+      document.querySelector('#openTraces').setAttribute('aria-label', unread ? this.t('Buka laci · ada yang baru', 'Open the drawer · something new') : this.t('Buka laci', 'Open the drawer'));
     }
     open(id) {
       const item = this.items.find(item => item.id === id);
@@ -88,16 +88,16 @@
       if (!this.dialog.open) this.dialog.showModal();
     }
     showIndex() {
-      this.current = null; document.querySelector('#tracesTitle').textContent = this.t('Jejak', 'Traces');
+      this.current = null; document.querySelector('#tracesTitle').textContent = this.t('Laci', 'Drawer');
       document.querySelector('#traceBack').hidden = true; document.querySelector('#traceDetail').hidden = true;
       const index = document.querySelector('#tracesIndex'); index.hidden = false;
-      let content = `<p class="trace-note">${this.t('Yang tertahan, yang dikirim, dan yang memilih tinggal. Petikan muncul setelah adegannya terbaca.', 'What was held back, what was sent, and who chose to stay. Passages appear after their scenes have been read.')}</p>`;
+      let content = `<p class="trace-note">${this.t('Amplop yang disimpan dan yang dikirim, kalimat yang tertahan, dan yang memilih tinggal. Isinya muncul setelah adegannya terbaca.', 'Envelopes kept and sent, sentences held back, and the one who chose to stay. Each appears after its scene has been read.')}</p>`;
       this.groups.forEach(([kind, title]) => {
         const items = this.items.filter(item => item.kind === kind && this.available(item));
         if (!items.length) return;
         content += `<section class="trace-group"><h3>${title}</h3>${items.map(item => `<button class="trace-row" type="button" data-open-trace="${item.id}"><span><b>${item.title}</b><small>${item.person}</small></span><span aria-hidden="true">→</span></button>`).join('')}</section>`;
       });
-      if (!this.items.some(item => this.available(item))) content += `<p class="trace-empty">${this.t('Belum ada jejak yang terbuka. Lanjutkan membaca; tidak ada bagian yang perlu diburu.', 'No traces have opened yet. Keep reading; there is nothing to hunt for.')}</p>`;
+      if (!this.items.some(item => this.available(item))) content += `<p class="trace-empty">${this.t('Laci masih kosong. Lanjutkan membaca; tidak ada yang perlu diburu.', 'The drawer is still empty. Keep reading; there is nothing to hunt for.')}</p>`;
       index.innerHTML = content;
       index.querySelectorAll('[data-open-trace]').forEach(button => { button.onclick = () => this.showItem(this.items.find(item => item.id === button.dataset.openTrace)); });
       this.dialog.scrollTop = 0;

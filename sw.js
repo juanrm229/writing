@@ -5,14 +5,14 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v27';
+const VERSION = 'v28';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
   './', 'index.html', 'assets/style.css', 'assets/i18n.js', 'assets/app.js', 'manifest.webmanifest',
   'content/site.json', 'content/works.json',
   'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js', 'antologi/interlude/index.html', 'antologi/interlude/interlude.css', 'antologi/interlude/ambience.js', 'antologi/interlude/interlude.js',
-  'antologi/terlambat-satu-menit/', 'antologi/terlambat-satu-menit/index.html', 'antologi/terlambat-satu-menit/minute.css', 'antologi/terlambat-satu-menit/minute.js', 'antologi/terlambat-satu-menit/sound.js', 'antologi/terlambat-satu-menit/traces.js',
+  'antologi/terlambat-satu-menit/', 'antologi/terlambat-satu-menit/index.html', 'antologi/terlambat-satu-menit/minute.css', 'antologi/terlambat-satu-menit/minute.js', 'antologi/terlambat-satu-menit/sound.js', 'antologi/terlambat-satu-menit/traces.js', 'antologi/terlambat-satu-menit/clock.js', 'antologi/terlambat-satu-menit/final.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
 

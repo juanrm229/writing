@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" data-view="dial">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Terlambat Satu Menit · Quiet Margins</title>
-<meta name="description" content="Terakhir Dikenali. Tiga nama, satu keluarga, dan cara mereka mengingat satu sama lain.">
-<meta name="theme-color" content="#f7f7f4">
+<meta name="description" content="Satu Menit. Tiga jarum, tiga ingatan, dan satu lonceng di atas pintu.">
+<meta name="theme-color" content="#f7f7f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121412" media="(prefers-color-scheme: dark)">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 <link rel="icon" href="../../assets/icons/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,52 +18,69 @@
 <header class="topbar" id="topbar">
   <div class="topbar-inner">
     <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
-    <button class="contacts-toggle" id="openParts" type="button" aria-haspopup="dialog" aria-controls="partsDialog"><span id="contactsLabel">Kontak</span><span class="current-voice" id="partLabel">Saman</span><span aria-hidden="true">⌄</span></button>
-    <div class="topbar-actions"><button class="icon traces-toggle" id="openTraces" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" disabled>Jejak</button><button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></div>
+    <button class="dial-toggle" id="openParts" type="button"><span class="mini-dial" id="miniDial" aria-hidden="true"></span><span class="current-voice" id="partLabel">Saman</span></button>
+    <span class="top-title" id="topTitle">Terlambat Satu Menit</span>
+    <div class="topbar-actions"><span class="mini-bottle" id="miniBottle" role="img" aria-label="Botol kaca"></span><button class="traces-toggle" id="openTraces" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" disabled>Laci</button><button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></div>
   </div>
-  <div class="cross-strip" id="crossStrip" hidden><button id="returnCross" type="button">← Kembali ke Banyu</button><span id="crossNote">Dari sisi lain</span></div>
+  <div class="cross-strip" id="crossStrip" hidden><button id="returnCross" type="button">← Kembali ke Banyu</button><span id="crossNote">Dari laci</span></div>
   <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
 </header>
-<main class="layout">
-  <aside class="stage" id="stage" aria-label="Terakhir dikenali">
-    <p class="contact-kicker" id="recognitionLabel">Terakhir dikenali</p>
-    <button class="contact-card" id="openContact" type="button" aria-haspopup="dialog" aria-controls="contactDialog">
-      <span class="initial" id="contactInitial" aria-hidden="true">B</span>
-      <span class="contact-identity" id="contactIdentity"><span class="contact-name" id="contactName">Banyu</span><span class="contact-relation" id="contactRelation">Anak</span></span>
-      <span class="observer" id="contactObserver">Dalam ingatan Saman</span>
-    </button>
-    <a class="opposite" id="opposite" href="#c-45" hidden>Lihat dari seberang <span aria-hidden="true">↔</span></a>
-  </aside>
-  <article class="read" id="read">
-    <header class="intro" id="intro">
-      <p class="eyebrow" id="workTitle">Terlambat Satu Menit</p>
-      <h1 id="sideTitle">Bidak</h1><p class="byline" id="voice">Pak Saman</p>
-      <div class="entry"><button class="begin" id="begin" type="button">Mulai membaca <span aria-hidden="true">→</span></button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari tempat terakhir</button><button class="resume" id="returnVisit" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" hidden>Satu sore lagi</button></div>
-      <p class="entry-note" id="entryNote">Tiga nama. Satu keluarga.</p>
-    </header>
-    <div id="story"><p class="loading">Membuka riwayat…</p></div>
-    <footer class="part-end" id="partEnd" hidden><span class="end-mark" aria-hidden="true">·</span><p id="endNote"></p><button class="next-side" id="nextSide" type="button">Dari ingatan Banyu →</button><button class="text-button" id="allContacts" type="button" aria-haspopup="dialog" aria-controls="partsDialog">Lihat semua kontak</button><a class="back-link" href="../../#putar" id="backEnd">Kembali ke meja tulis</a></footer>
-  </article>
+
+<main class="dial-view" id="dial" aria-labelledby="dialTitle">
+  <p class="eyebrow" id="dialKicker">Satu Menit</p>
+  <h1 class="dial-title" id="dialTitle">Terlambat Satu Menit</h1>
+  <div class="face" id="face"></div>
+  <p class="dial-note" id="dialNote" role="status">Tiga jarum, tiga ingatan.</p>
+  <nav class="hand-list" id="handList" aria-label="Tiga sisi cerita"></nav>
+  <button class="to-final" id="toFinal" type="button" hidden>Satu menit terakhir <span aria-hidden="true">→</span></button>
+  <a class="back-link" href="../../#putar" id="dialBack">Kembali ke meja tulis</a>
 </main>
-<dialog id="partsDialog" aria-labelledby="partsTitle">
-  <header class="dialog-head"><div><p class="eyebrow" id="partsKicker">Terakhir dikenali</p><h2 id="partsTitle">Kontak</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
-  <nav id="partsList" aria-label="Tiga sisi cerita"></nav><p class="dialog-note" id="partsNote">Saman, Banyu, lalu Maryam. Buka satu nama untuk membaca dari sisinya.</p>
-</dialog>
-<dialog class="contact-dialog" id="contactDialog" aria-labelledby="detailName">
-  <header class="dialog-head"><div><p class="eyebrow" id="detailObserver"></p><h2 id="detailName"></h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
-  <p class="detail-relation" id="detailRelation"></p><p class="history-label" id="historyLabel">Nama dalam pembacaanmu</p><ol class="contact-history" id="contactHistory"></ol>
-</dialog>
+
+<div class="reader" id="reader" hidden>
+  <main class="layout">
+    <aside class="stage" id="stage" aria-label="Botol kaca">
+      <div class="shelf-bottle" id="shelfBottle" role="img"></div>
+      <p class="bottle-caption" id="bottleCaption"></p>
+    </aside>
+    <article class="read" id="read">
+      <header class="intro" id="intro">
+        <p class="eyebrow" id="workTitle">Terlambat Satu Menit</p>
+        <h1 id="sideTitle">Bidak</h1><p class="byline" id="voice">Pak Saman</p>
+        <div class="entry"><button class="begin" id="begin" type="button">Mulai membaca <span aria-hidden="true">→</span></button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari tempat terakhir</button><button class="resume" id="returnVisit" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" hidden>Satu sore lagi</button></div>
+        <p class="entry-note" id="entryNote">Jarum jam.</p>
+      </header>
+      <div id="story"><p class="loading">Memutar jarum…</p></div>
+      <footer class="part-end" id="partEnd" hidden><span class="end-mark" aria-hidden="true">·</span><p id="endNote"></p><button class="next-side" id="nextSide" type="button">Jarum berikutnya →</button><button class="final-link" id="endFinal" type="button" hidden>Satu menit terakhir →</button><button class="text-button" id="allContacts" type="button">Kembali ke muka jam</button><a class="back-link" href="../../#putar" id="backEnd">Kembali ke meja tulis</a></footer>
+    </article>
+  </main>
+</div>
+
+<main class="final-view" id="final" hidden aria-labelledby="finalTitle">
+  <header class="final-head">
+    <p class="eyebrow" id="finalKicker">Tiga jarum</p>
+    <h1 id="finalTitle">Satu menit terakhir</h1>
+    <div class="final-dial"><div class="final-clock" id="finalClock"></div><p class="final-time" id="finalTime" aria-hidden="true">0:00</p></div>
+    <div class="final-controls"><button class="play" id="play" type="button" aria-pressed="false">Biarkan berjalan</button><label class="sr-only" for="seconds" id="secondsLabel">Detik</label><input id="seconds" type="range" min="0" max="61" step="1" value="0"></div>
+    <p class="final-note" id="finalNote">Satu menit, dalam waktu yang sebenarnya.</p>
+  </header>
+  <div class="moments" id="moments"></div>
+  <section class="after" id="after" hidden></section>
+  <section class="bottle-reveal" id="reveal" hidden></section>
+</main>
+
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
-  <div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Transisi nama</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div>
+  <div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Gerak jarum</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div>
 </dialog>
 <dialog class="traces-dialog" id="tracesDialog" aria-labelledby="tracesTitle">
-  <header class="dialog-head"><div><p class="eyebrow" id="tracesKicker">Terakhir dikenali</p><h2 id="tracesTitle">Jejak</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
-  <div class="traces-body"><button class="trace-back" id="traceBack" type="button" hidden>← Semua jejak</button><div id="tracesIndex"></div><section id="traceDetail" hidden></section></div>
+  <header class="dialog-head"><div><p class="eyebrow" id="tracesKicker">Satu Menit</p><h2 id="tracesTitle">Laci</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="traces-body"><button class="trace-back" id="traceBack" type="button" hidden>← Seluruh laci</button><div id="tracesIndex"></div><section id="traceDetail" hidden></section></div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="sound.js"></script>
+<script src="clock.js"></script>
 <script src="traces.js"></script>
+<script src="final.js"></script>
 <script src="minute.js"></script>
 </body>
 </html>
