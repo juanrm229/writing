@@ -180,14 +180,14 @@ python3 tests/mimpi_smoke.py
 
 ### The Moon Behind My Eyes (antologi/the-moon-behind-my-eyes/)
 
-Puisi ini dibaca di **aplikasi Kamera, mode malam**. Pembaca memotret langit dari balik jendela kamarnya; setiap foto masuk ke galeri dan menyimpan satu bait sebagai keterangannya. Larik dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Kamera sungguhan tidak dipakai: jendela bidik, foto, dan potretnya dilukis di kanvas. Bingkai aplikasinya mengikuti tema situs; jendela bidiknya selalu malam.
+Puisi ini dibaca di **layar kunci ponsel**, tanpa ilustrasi: hanya jam, widget, notifikasi, pusat kontrol, dan layar yang dimatikan. Setiap bait datang sebagai catatan di layar kunci. Larik dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Wallpaper mengikuti tema situs; layar yang dimatikan selalu hitam.
 
-- **Kaca yang dijaga bening**: jendela bidik mula-mula buram; ketuk atau geser **Fokus** sampai tajam, dan garis level lurus tepat di cakrawala. Mode malam menahan rana tiga detik untuk setiap foto.
-- **Bintang tepat waktu**: setelah bait kedua, deteksi adegan menghitung bintang bertambah setiap detik; *Bulan: tidak terdeteksi* tidak pernah berubah (dengan persentase bulan malam itu).
-- **Tirai**: setelah *So, I drew the curtains*, tirai bisa diseret menutup jendela bidik (atau lewat *Tarik tirai*); foto berikutnya menutupnya sendiri kalau belum.
-- **Membelakangi kaca**: setelah bait keempat, jendela tidak lagi memberi bait baru; tombol **balik kamera** berkedip.
-- **Kamera depan**: sosok dalam gelap. **Tahan tombol rana** (atau spasi) untuk memejam: matanya tertutup, bulan pucat muncul di balik matanya, dan dua bait terakhir datang larik demi larik; melepas tombol membuka mata dan menjeda lariknya. Setelah semuanya terbaca, foto terakhir tersimpan: *Bulan: terdeteksi · di balik mata*. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan.
-- **Galeri** menyimpan semua foto beserta baitnya; *Mulai lagi* mengosongkannya. Penanda `#baca-2` membuka foto ketiga, `#baca-4` langsung ke kamera depan.
+- **Kaca yang dijaga bening**: kacanya kaca layar itu sendiri. Layar kunci mula-mula buram; usap dengan jari atau tetikus (atau tombol *Usap*) sampai jelas.
+- **Bulan yang tidak datang**: begitu layar jelas, aktivitas langsung *Bulan terbit* menghitung mundur, lalu berganti *Bulan sudah terbit · tidak terlihat*; widget *Terbit* menulis *Tertunda*. Widget *Bintang* bertambah tepat setiap detik, widget *Bulan* menulis persentase bulan malam itu, *tidak terlihat*.
+- **Penantian yang menghantui**: notifikasi *Langit · Bulan belum terlihat* terus datang; pembaca menekan *Ingatkan lagi* tiga kali.
+- **Tirai**: di pusat kontrol (tombol ☾), penggeser *Kecerahan · tirai* diturunkan sampai habis; Fokus *Tidur* menyala dan notifikasi bulan dibisukan.
+- **Memejam**: tahan tombol kunci (atau spasi). Layar mati, dan di layar yang hitam itu *Bulan: terlihat* serta dua bait terakhir menyala pelan, larik demi larik; melepas tombol menyalakan layar lagi dan menjeda lariknya. Setelah selesai, notifikasi terakhir datang: *Bulan terlihat · lokasi: di balik matamu*. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan, dan *Mulai lagi* di akhir.
+- Penanda `#baca-2` membuka bait ketiga, `#baca-3` langsung ke langkah memejam.
 
 ```bash
 python3 tests/moon_smoke.py
