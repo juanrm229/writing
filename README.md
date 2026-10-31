@@ -180,13 +180,14 @@ python3 tests/mimpi_smoke.py
 
 ### The Moon Behind My Eyes (antologi/the-moon-behind-my-eyes/)
 
-Puisi pertama yang punya pengalaman baca sendiri: pembaca duduk di kamar, menghadap jendela malam, dan melakukan sendiri apa yang dilakukan puisinya. Larik-lariknya dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Kamar, jam, dan bulan adalah bingkainya.
+Puisi ini dibaca di **aplikasi Kamera, mode malam**. Pembaca memotret langit dari balik jendela kamarnya; setiap foto masuk ke galeri dan menyimpan satu bait sebagai keterangannya. Larik dimuat utuh dari `content/works.json` (bahasa asli Inggris; pembaca berbahasa Indonesia mendapat catatan bahwa puisinya belum diterjemahkan). Kamera sungguhan tidak dipakai: jendela bidik, foto, dan potretnya dilukis di kanvas. Bingkai aplikasinya mengikuti tema situs; jendela bidiknya selalu malam.
 
-- **Kaca yang dijaga bening**: kacanya berembun dan bisa diusap dengan jari atau tetikus; embunnya kembali pelan-pelan selama bait pertama.
-- **Bintang yang tepat waktu**: mulai bait kedua, setiap detik jam yang sungguhan satu bintang datang, *punctual and indifferent*. Di bawah jendela tertulis berapa persen bulan malam ini, *tidak terlihat dari jendela ini*.
-- **Tirai**: saat *So, I drew the curtains* terbaca, tirainya bisa diseret ke tengah atau ditutup lewat tombol; lewat dari baitnya, tirai menutup sendiri, lalu kamar berbalik membelakangi kaca.
-- **Tahan untuk memejam**: setelah *I finally closed my eyes*, pembaca menahan tombol (atau spasi). Kelopak mata turun, dan di balik gelapnya bulan muncul bersama dua bait terakhir, larik demi larik. Melepas tombol membuka mata dan menjeda lariknya. Di alur baca, dua bait itu buram sampai pernah dibaca dengan mata terpejam; sesudahnya bulannya tetap tinggal sebagai cahaya pucat di kamar. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan.
-- **Bacaan dan tema**: tercatat di riwayat situs utama (selesai setelah bait terakhir terbaca), penanda baca per bahasa, `#baca-2` untuk bait ketiga, ukuran huruf, gerak tenang, dan tema terang/gelap yang mengikuti situs (langitnya tetap malam). Pratinjau `?preview=1` tidak menulis riwayat.
+- **Kaca yang dijaga bening**: jendela bidik mula-mula buram; ketuk atau geser **Fokus** sampai tajam, dan garis level lurus tepat di cakrawala. Mode malam menahan rana tiga detik untuk setiap foto.
+- **Bintang tepat waktu**: setelah bait kedua, deteksi adegan menghitung bintang bertambah setiap detik; *Bulan: tidak terdeteksi* tidak pernah berubah (dengan persentase bulan malam itu).
+- **Tirai**: setelah *So, I drew the curtains*, tirai bisa diseret menutup jendela bidik (atau lewat *Tarik tirai*); foto berikutnya menutupnya sendiri kalau belum.
+- **Membelakangi kaca**: setelah bait keempat, jendela tidak lagi memberi bait baru; tombol **balik kamera** berkedip.
+- **Kamera depan**: sosok dalam gelap. **Tahan tombol rana** (atau spasi) untuk memejam: matanya tertutup, bulan pucat muncul di balik matanya, dan dua bait terakhir datang larik demi larik; melepas tombol membuka mata dan menjeda lariknya. Setelah semuanya terbaca, foto terakhir tersimpan: *Bulan: terdeteksi · di balik mata*. *Baca dengan mata terbuka* tersedia untuk yang tidak bisa menahan.
+- **Galeri** menyimpan semua foto beserta baitnya; *Mulai lagi* mengosongkannya. Penanda `#baca-2` membuka foto ketiga, `#baca-4` langsung ke kamera depan.
 
 ```bash
 python3 tests/moon_smoke.py
@@ -194,14 +195,14 @@ python3 tests/moon_smoke.py
 
 ### Trillions of Seconds (antologi/trillions-of-seconds/)
 
-Pembaca adalah titik kecil di laut malam yang digambar langsung di layar: garis pucat di laut gelap, atau garis tinta di atas kertas kalau tema terang. Larik-lariknya dimuat utuh dari `content/works.json` dan melayang di atas ombak.
+Puisi ini dibaca di **aplikasi Jam**, di tab *Stopwatch*. Larik dimuat utuh dari `content/works.json`; tampilannya mengikuti tema situs.
 
-- **Titik yang disetir**: geser ke kiri dan kanan (jari, tetikus, atau panah keyboard) untuk berenang; jejaknya hanyut ke belakang.
-- **Bisikan ombak**: di bait pertama ombak membawa kata-kata dari puisinya sendiri (*surrender*, *hope*, *curses*) menuju titik itu, memudar sebelum sampai, dan hilang setelah *But no, I never pay them mind*. Pantai jawaban dan kerinduan muncul di kejauhan dan tidak pernah tercapai; saat *God might steer my current toward you*, arusnya melengkung ke arah pembaca.
-- **Detik**: bilah atas menghitung detik yang lewat untuk berpikir sejak puisi dibuka. Di bait *Trillions of seconds* pembaca boleh mengisi tahun lahirnya (hanya disimpan di perangkatnya) untuk melihat detik hidupnya sendiri: satu triliun detik adalah ±31.689 tahun.
-- **"I am you."**: jalur titik pembaca direkam sejak awal. Saat *I encountered an entity just like me* terbaca, sebuah titik lain melintas dan memutar ulang jalur itu dengan kecepatan aslinya, sehingga jejaknya persis jejak pembaca sendiri. Setelah *he drifted past*, sebuah catatan kecil menyebut kemiripannya.
-- **I stopped thinking**: di larik terakhir ombak mendatar, titiknya berhenti, dan penghitung detik membeku; kembali ke atas menghidupkannya lagi.
-- **Bacaan dan tema**: tercatat di riwayat situs utama, penanda baca per bahasa, `#baca-3` untuk bait keempat, ukuran huruf, gerak tenang, tema terang/gelap yang mengikuti situs, dan pratinjau `?preview=1` yang tidak menulis riwayat.
+- **Mulai** menjalankan stopwatch dan membuka bait pertama. Setiap **Putaran** mencatat berapa lama pembaca berpikir di satu bait lalu membuka bait berikutnya. Seperti aplikasi Jam, putaran terbaru di atas, yang tercepat hijau dan terlama merah; bait lama bisa dibuka lagi. Jarum detiknya satu titik kecil, *that tiny speck*.
+- **Jam Dunia**: setelah *the coast of answers and longing*, sebuah kota bertambah: *Pantai Jawaban dan Kerinduan*, zona waktu tidak diketahui. **Alarm**: tidak ada alarm.
+- **Timer**: saat *Trillions of seconds* terbuka, timer *1 triliun detik* mulai berjalan bersama stopwatch (±31.689 tahun). Pembaca boleh mengisi tahun lahirnya untuk melihat detiknya sendiri; disimpan hanya di perangkatnya.
+- **"I am you."**: saat *I encountered an entity* terbuka, muncul **stopwatch lain di dekatmu**, *Entitas*, dengan waktu dan daftar putaran yang sama persis dengan milik pembaca. Di bait berikutnya ia hanyut menjauh (*Putaran 1–5: sama persis dengan milikmu*) lalu hilang.
+- **I stopped thinking**: di bait terakhir, pembaca sendiri yang menekan **Berhenti**; waktunya membeku dan puisinya selesai. Menjeda di tengah puisi tidak menyelesaikannya; stopwatch yang ditinggalkan dijeda dan diingat.
+- Penanda `#baca-3` membuka bait keempat dengan putaran sebelumnya ditandai dilewati.
 
 ```bash
 python3 tests/seconds_smoke.py
