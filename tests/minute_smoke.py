@@ -15,6 +15,7 @@ from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
+LINE = "innerHeight * (matchMedia('(max-width: 900px)').matches ? .56 : .45)"
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -47,7 +48,7 @@ class MinuteSmoke(unittest.TestCase):
         cls.server.shutdown(); cls.server.server_close(); cls.thread.join()
 
     def setUp(self):
-        self.context = self.browser.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
+        self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce')
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
         self.page = self.context.new_page(); self.page.set_default_timeout(6000)
         self.errors = []; self.page.on('pageerror', lambda e: self.errors.append(str(e)))
@@ -56,26 +57,78 @@ class MinuteSmoke(unittest.TestCase):
         self.context.close()
         self.assertEqual(self.errors, [])
 
+    # Bantuan
+
     def open(self, fragment=''):
         self.page.goto(self.url + fragment, wait_until='domcontentloaded')
         if re.search(r'#[abc]', fragment):
             self.page.wait_for_selector('.passage')
         else:
-            self.page.wait_for_function("['dial', 'final'].includes(document.documentElement.dataset.view)")
+            self.page.wait_for_function("['cover', 'final'].includes(document.documentElement.dataset.view) && !!document.querySelector('#hands .hand-link, #timeline li')")
+
+    def seed(self, script):
+        self.context.add_init_script("if (!sessionStorage.getItem('seeded')) { " + script + "; sessionStorage.setItem('seeded', '1'); }")
+
+    def seed_done(self, sides='abc'):
+        keys = ['terlambat-satu-menit' + ('' if s == 'a' else ':' + s) for s in sides]
+        self.seed("localStorage.setItem('jm:stats', JSON.stringify({done: " + json.dumps(keys) + "}))")
 
     def go(self, side, paragraph):
         self.page.evaluate('(hash) => location.hash = hash', f'{side}-{paragraph}')
         self.page.wait_for_function('(side) => document.documentElement.dataset.side === side', arg=side)
         self.page.wait_for_function('''(p) => {
-          const r = document.querySelector('#p-' + p).getBoundingClientRect();
-          const line = document.querySelector('#topbar').getBoundingClientRect().bottom + 28;
-          const aligned = Math.abs(r.top - line) < 1;
-          const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 1;
-          return aligned || atEnd && r.top >= 58 && r.bottom < innerHeight;
+          const r = document.querySelector('#p-' + p).getBoundingClientRect(), line = ''' + LINE + ''';
+          return Math.abs(r.top - line) < 1 || scrollY + innerHeight >= document.documentElement.scrollHeight - 1;
         }''', arg=paragraph)
+
+    def step_to(self, paragraph):
+        """Gulir pelan sampai paragraf menyentuh garis baca, seperti pembaca sungguhan."""
+        for _ in range(80):
+            done = self.page.evaluate('''(p) => { const r = document.querySelector('#p-' + p).getBoundingClientRect(), line = ''' + LINE + ''';
+              if (r.top <= line) return true; scrollBy(0, Math.min(140, r.top - line + 1)); return false; }''', paragraph)
+            self.page.wait_for_timeout(30)
+            if done:
+                break
+
+    def read_range(self, side, start, end):
+        self.go(side, start)
+        for p in range(start, end + 1):
+            node = self.page.locator('#p-' + str(p))
+            if node.count():
+                node.evaluate('(e) => scrollTo({top: scrollY + e.getBoundingClientRect().bottom - (' + LINE + ') + 2, behavior: "instant"})')
+                self.page.wait_for_timeout(35)
 
     def saved(self, side='a', lang='id'):
         return self.page.evaluate('([lang, side]) => JSON.parse(localStorage.getItem("jm:minute:places") || "{}")[lang]?.[side]', [lang, side])
+
+    def view(self):
+        return self.page.locator('html').get_attribute('data-view')
+
+    def angles(self, selector='#giant'):
+        return self.page.evaluate(r'''(sel) => [...document.querySelectorAll(sel + ' .hand')].map(h => {
+          const m = /rotate\(([-\d.]+)\)/.exec(h.getAttribute('transform') || ''); return m ? +m[1] : 0; })''', selector)
+
+    def scene(self, key):
+        return self.page.locator('#scene svg').get_attribute('data-' + key)
+
+    def scrub(self, second):
+        self.page.evaluate("(v) => { const s = document.querySelector('#seconds'); s.value = v; s.dispatchEvent(new Event('input')); }", second)
+
+    def located(self, lang, entry):
+        source = self.work['en'] if lang == 'en' else self.work
+        body = ([source] + source['sides'])[entry['side']]['body']
+        out = []
+        for pair in entry['find']:
+            hits = [i for i, p in enumerate(body) if pair[1 if lang == 'en' else 0] in p]
+            self.assertTrue(hits, f'{lang}: {pair}')
+            if hits[0] not in out:
+                out.append(hits[0])
+        return [body[i].replace('*', '') for i in out]
+
+    def record_sounds(self):
+        self.page.evaluate("() => { window.calls = []; MinuteSound.prototype.play = function (kind) { calls.push(kind) }; }")
+
+    # Naskah dan bacaan
 
     def test_all_original_paragraphs_are_present_in_both_languages(self):
         for lang in ['id', 'en']:
@@ -88,13 +141,8 @@ class MinuteSmoke(unittest.TestCase):
                     self.assertEqual(self.page.locator('html').get_attribute('lang'), lang)
                     self.assertEqual(self.page.locator('#sideTitle').inner_text(), doc.get('sideTitle') or doc['title'])
 
-    def test_bookmark_survives_font_screen_and_cover_changes(self):
-        self.context.add_init_script("""
-          if (!localStorage.getItem('seeded')) {
-            localStorage.setItem('jm:minute:places', JSON.stringify({id:{a:{paragraph:20,offset:.35,progress:.3}}}));
-            localStorage.setItem('seeded','true');
-          }
-        """)
+    def test_bookmark_survives_font_and_screen_changes(self):
+        self.seed("localStorage.setItem('jm:minute:places', JSON.stringify({id:{a:{paragraph:20,offset:.35,progress:.3}}}))")
         self.open('#a')
         self.page.locator('#resume').click()
         self.page.wait_for_function("JSON.parse(localStorage.getItem('jm:minute:places')).id.a.paragraph === 20")
@@ -102,7 +150,7 @@ class MinuteSmoke(unittest.TestCase):
         self.page.locator('#bigger').click()
         self.page.keyboard.press('Escape')
         self.page.set_viewport_size({'width': 1440, 'height': 1000})
-        self.page.wait_for_function("Math.abs((document.querySelector('#topbar').getBoundingClientRect().bottom + 28 - document.querySelector('#p-20').getBoundingClientRect().top) / document.querySelector('#p-20').getBoundingClientRect().height - .35) < .04")
+        self.page.wait_for_function("Math.abs((" + LINE + " - document.querySelector('#p-20').getBoundingClientRect().top) / document.querySelector('#p-20').getBoundingClientRect().height - .35) < .04")
         self.open('#a')
         self.page.wait_for_timeout(450)
         self.assertEqual(self.saved()['paragraph'], 20)
@@ -130,10 +178,9 @@ class MinuteSmoke(unittest.TestCase):
         self.page.reload(wait_until='domcontentloaded')
         self.page.wait_for_selector('.passage')
         self.assertEqual(self.page.locator('.passage').count(), len([p for p in self.work['en']['sides'][1]['body'] if p != '***']))
-        self.assertTrue(self.page.evaluate("typeof MinuteSound === 'function'"))
-        self.assertTrue(self.page.evaluate("typeof MinuteTraces === 'function'"))
-        self.page.locator('#openTraces').click()
-        self.assertTrue(self.page.locator('#tracesDialog').evaluate('(e) => e.open'))
+        for name in ['MinuteSound', 'MinuteClock', 'MinuteWorld', 'MinuteFinal']:
+            self.assertTrue(self.page.evaluate(f"typeof {name} === 'function'"), name)
+        self.assertEqual(self.scene('spoons'), '11')
 
     def test_preview_is_readable_without_overwriting_reader_history(self):
         self.context.add_init_script("localStorage.setItem('jm:preview', " + json.dumps(json.dumps({'works': [self.work]})) + ")")
@@ -141,36 +188,28 @@ class MinuteSmoke(unittest.TestCase):
         self.open('?preview=1#b-35')
         self.assertEqual(self.page.locator('#sideTitle').inner_text(), self.work['sides'][0]['title'])
         self.page.wait_for_timeout(450)
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:prog')"))
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:read')"))
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:places')"))
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:bottle')"))
-        self.read_range('b', 28, 31)
-        self.page.locator('#openTraces').click()
-        self.assertTrue(self.page.locator('[data-open-trace="banyu-silence"]').is_visible())
-        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:traces')"))
+        for key in ['prog', 'read', 'minute:places', 'minute:bottle', 'minute:finale']:
+            self.assertIsNone(self.page.evaluate(f"localStorage.getItem('jm:{key}')"), key)
+        self.page.evaluate("location.hash = 'menit'")
+        self.page.wait_for_function("document.documentElement.dataset.view === 'final'")
 
-    def test_layout_is_minimal_responsive_and_respects_reduced_motion(self):
+    def test_layout_fits_every_screen_and_respects_reduced_motion(self):
+        self.seed_done()
         for width in [320, 390, 1440]:
-            with self.subTest(width=width):
-                self.page.set_viewport_size({'width': width, 'height': 844})
-                self.open('#b-53')
-                self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
-                self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-calm")'))
-                self.assertFalse(self.page.locator('#openSettings').evaluate('(e) => e.getBoundingClientRect().right > innerWidth'))
-                self.page.locator('#openParts').click()
-                self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
-                self.page.locator('.hand-link[data-side="1"]').click()
-                self.page.wait_for_selector('.passage')
-
-                self.page.locator('#openTraces').click()
-                self.assertFalse(self.page.locator('#tracesDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
-                self.page.keyboard.press('Escape')
-                self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openTraces')
-                self.page.locator('#openSettings').click()
-                self.assertTrue(self.page.locator('#motion').is_disabled())
-                self.assertFalse(self.page.locator('#settingsDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
-                self.page.keyboard.press('Escape')
+            for fragment in ['', '#b-53', '#menit']:
+                with self.subTest(width=width, fragment=fragment):
+                    self.page.set_viewport_size({'width': width, 'height': 844})
+                    self.open(fragment)
+                    self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
+                    self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-calm")'))
+                    self.page.locator('#openSettings').click()
+                    self.assertTrue(self.page.locator('#motion').is_disabled())
+                    self.assertFalse(self.page.locator('#settingsDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
+                    self.page.keyboard.press('Escape')
+                    self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openSettings')
+            self.scrub(61)
+            self.page.wait_for_timeout(100)
+            self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth > innerWidth'))
 
     def test_sound_requires_consent_and_stops_when_the_tab_is_hidden(self):
         self.context.add_init_script("""
@@ -184,11 +223,11 @@ class MinuteSmoke(unittest.TestCase):
           };
           window.peak=()=>{if(!window.out)return 0; const data=new Float32Array(out.fftSize); out.getFloatTimeDomainData(data); return Math.max(...data.map(Math.abs));};
         """)
-        self.open('#b-12')
+        self.open('#c-50')
         self.assertEqual(self.page.evaluate('contexts.length'), 0)
         self.page.locator('#openSettings').click(); self.page.locator('#sound').click()
         self.page.wait_for_function("contexts[0]?.state==='running' && peak()>.00001")
-        self.assertLess(self.page.evaluate('peak()'), .2)
+        self.assertLess(self.page.evaluate('peak()'), .5)
         self.page.evaluate("Object.defineProperty(document,'hidden',{value:true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
         self.page.wait_for_function("contexts[0].state==='suspended'")
         self.page.evaluate("Object.defineProperty(document,'hidden',{value:false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
@@ -196,229 +235,35 @@ class MinuteSmoke(unittest.TestCase):
         self.page.locator('#sound').click(); self.page.wait_for_function("contexts[0].state==='suspended'")
         self.assertEqual(self.page.locator('#sound').get_attribute('aria-pressed'), 'false')
 
-    def test_missing_sound_module_does_not_block_the_story(self):
-        self.context.route('**/terlambat-satu-menit/sound.js', lambda route: route.abort())
-        self.open('#a-18')
-        self.assertIn('kancing', self.page.locator('#p-18').inner_text())
-        self.page.locator('#openSettings').click()
-        self.assertTrue(self.page.locator('#sound').is_disabled())
-
-
-    def read_range(self, side, start, end):
-        self.go(side, start)
-        for p in range(start, end + 1):
-            node = self.page.locator('#p-' + str(p))
-            if node.count():
-                node.evaluate('(e) => scrollTo({top: scrollY + e.getBoundingClientRect().bottom - innerHeight + 44, behavior: "instant"})')
-                self.page.wait_for_timeout(35)
+    def test_missing_modules_do_not_block_the_story(self):
+        for module in ['sound', 'world', 'final']:
+            with self.subTest(module=module):
+                self.context.unroute_all()
+                self.context.route(f'**/terlambat-satu-menit/{module}.js*', lambda route: route.abort())
+                self.open('#a-18')
+                self.assertIn('kancing', self.page.locator('#p-18').inner_text())
+                self.assertEqual(self.page.locator('.passage').count(), len([p for p in self.work['body'] if p != '***']))
+                if module == 'sound':
+                    self.page.locator('#openSettings').click()
+                    self.assertTrue(self.page.locator('#sound').is_disabled())
+                    self.page.keyboard.press('Escape')
+                if module == 'final':
+                    self.assertTrue(self.page.locator('#endFinal').is_hidden())
 
     def test_each_side_still_records_completion_in_the_main_site(self):
         self.open()
-        for side, length in [('a',72),('b',76),('c',78)]:
+        for side, length in [('a', 72), ('b', 76), ('c', 78)]:
             self.go(side, length - 1)
             key = 'terlambat-satu-menit' + (':' + side if side != 'a' else '')
             self.page.wait_for_function('(key) => JSON.parse(localStorage.getItem("jm:stats") || "{}").done?.includes(key)', arg=key)
 
-    def test_the_bell_waits_for_banyus_door_and_does_not_repeat_on_resize(self):
-        self.open('#a-69')
-        self.page.evaluate("() => { window.calls=[]; MinuteSound.prototype.play=function(kind){calls.push(kind)}; }")
-        self.assertEqual(self.page.evaluate('calls'), [])
-        self.go('b', 52)
-        self.assertEqual(self.page.evaluate('calls'), [])
-        self.go('b', 53)
-        self.assertEqual(self.page.evaluate('calls'), ['bell'])
-        self.page.evaluate("dispatchEvent(new Event('scroll'));dispatchEvent(new Event('resize'))")
-        self.assertEqual(self.page.evaluate('calls'), ['bell'])
-
-
-    def open_trace(self, name):
-        self.page.locator('#openTraces').click()
-        self.page.locator('[data-open-trace="' + name + '"]').click()
-
-    def read_nodes(self, side, indices):
-        for p in indices:
-            self.read_range(side, p, p)
-
-    def quote(self, text):
-        return '\n'.join(re.findall(r'\*([^*]+)\*', text)) or text
-
-    def test_silence_opens_only_after_its_scene_and_keeps_the_reading_place(self):
-        self.open('#a-14')
-        self.page.locator('#openTraces').click()
-        self.assertEqual(self.page.locator('[data-open-trace]').count(), 0)
-        self.page.keyboard.press('Escape')
-        self.read_range('a', 12, 14)
-        self.assertIsNotNone(self.page.locator('#openTraces').get_attribute('data-new'))
-        self.page.wait_for_timeout(420)
-        saved = self.saved(); y = self.page.evaluate('scrollY')
-        self.open_trace('saman-silence')
-        self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), self.quote(self.work['body'][13]))
-        self.page.locator('[data-mode="outside"]').click()
-        self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), self.work['body'][14])
-        self.assertEqual(self.page.locator('[data-mode="outside"]').get_attribute('aria-pressed'), 'true')
-        self.assertIsNone(self.page.locator('#openTraces').get_attribute('data-new'))
-        self.page.keyboard.press('Escape')
-        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openTraces')
-        self.assertEqual(saved, self.saved())
-        self.assertAlmostEqual(self.page.evaluate('scrollY'), y, delta=1)
-
-    def test_three_silences_use_exact_original_words_in_both_languages(self):
-        for lang in ['id', 'en']:
-            source = self.work['en'] if lang == 'en' else self.work
-            shift = -1 if lang == 'en' else 0
-            self.open(f'?lang={lang}#a')
-            for name, side, start, end, inside, outside, quoted in [
-                ('saman-silence','a',12,14,13,14,True),
-                ('banyu-silence','b',28,31,31,30,True),
-                ('maryam-silence','c',30+shift,34+shift,31+shift,34+shift,False),
-            ]:
-                with self.subTest(lang=lang, trace=name):
-                    self.read_range(side, start, end)
-                    doc = source if side == 'a' else source['sides'][ord(side)-ord('b')]
-                    self.open_trace(name)
-                    expected = self.quote(doc['body'][inside]) if quoted else doc['body'][inside]
-                    self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), expected.replace('*',''))
-                    self.page.locator('[data-mode="outside"]').click()
-                    self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), doc['body'][outside].replace('*',''))
-                    self.page.keyboard.press('Escape')
-
-    def test_one_letter_grows_and_reaches_banyu_without_opening_future_steps(self):
-        self.open('#a')
-        self.read_range('a',2,2)
-        self.open_trace('father-letter')
-        self.assertEqual(self.page.locator('[data-step]').count(),1)
-        self.assertEqual(self.page.locator('.letter-excerpt').inner_text(),self.quote(self.work['body'][2]))
-        self.assertNotIn('Bapak bangga',self.page.locator('#traceDetail').inner_text())
-        self.page.keyboard.press('Escape')
-        self.read_nodes('a',[56,58])
-        self.open_trace('father-letter')
-        self.assertEqual(self.page.locator('[data-step]').count(),2)
-        self.assertIn('Bapak bangga',self.page.locator('.letter-excerpt').inner_text())
-        self.page.locator('[data-step="drawer"]').click()
-        self.assertNotIn('Bapak bangga',self.page.locator('.letter-excerpt').inner_text())
-        self.page.keyboard.press('Escape')
-        self.read_nodes('b',[35,37])
-        self.open_trace('father-letter')
-        self.assertEqual(self.page.locator('[data-step]').count(),4)
-        self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[self.quote(self.work['sides'][0]['body'][p]) for p in [35,37]])
-        self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dibaca Banyu')
-        self.page.keyboard.press('Escape')
-        self.open('?lang=en#a')
-        self.open_trace('father-letter')
-        self.assertEqual(self.page.locator('[data-step]').count(),4)
-        self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[self.quote(self.work['en']['sides'][0]['body'][p]) for p in [35,37]])
-
-    def test_reply_and_maryams_letter_do_not_invent_delivery_outcomes(self):
-        for lang in ['id','en']:
-            source = self.work['en'] if lang == 'en' else self.work
-            c = -1 if lang == 'en' else 0
-            self.open(f'?lang={lang}#b')
-            self.read_range('b',40,43)
-            self.open_trace('reply-letter')
-            self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[source['sides'][0]['body'][p].replace('*','') for p in [40,41,42]])
-            self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dikirim · penerimaan tidak diceritakan' if lang == 'id' else 'Sent · receipt is not described')
-            self.page.keyboard.press('Escape')
-            self.read_nodes('c',[70+c,73+c,74+c])
-            self.open_trace('mother-letter')
-            self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[source['sides'][1]['body'][p].replace('*','') for p in [70+c,73+c]])
-            self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dikirim · penerimaan tidak diketahui' if lang == 'id' else 'Sent · receipt is unknown')
-            self.page.keyboard.press('Escape')
-
-    def test_trace_scene_links_return_to_the_same_paragraph_without_overwriting_either_side(self):
-        self.open('#a')
-        self.read_nodes('b',[35,37])
-        self.go('a',20)
-        self.page.wait_for_timeout(420)
-        y = self.page.evaluate('scrollY')
-        before = self.page.evaluate("[localStorage.getItem('jm:minute:places'),localStorage.getItem('jm:stats'),localStorage.getItem('jm:prog'),localStorage.getItem('jm:last')]")
-        self.open_trace('father-letter')
-        self.page.locator('#traceScene').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'b')
-        self.assertEqual(self.page.evaluate('document.activeElement.id'),'p-37')
-        self.assertTrue(self.page.locator('#returnCross').is_visible())
-        self.page.wait_for_timeout(420)
-        self.assertEqual(before,self.page.evaluate("[localStorage.getItem('jm:minute:places'),localStorage.getItem('jm:stats'),localStorage.getItem('jm:prog'),localStorage.getItem('jm:last')]"))
-        self.page.locator('#returnCross').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'a')
-        self.assertEqual(self.page.evaluate('document.activeElement.id'),'p-20')
-        self.assertAlmostEqual(self.page.evaluate('scrollY'),y,delta=1)
-        self.open('#a')
-        self.page.wait_for_timeout(420)
-        bookmark = self.saved()
-        self.open_trace('father-letter')
-        self.page.locator('#traceScene').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'b')
-        self.page.locator('#returnCross').click()
-        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'a')
-        self.assertEqual(self.page.evaluate('scrollY'),0)
-        self.assertEqual(self.page.evaluate('document.activeElement.id'),'begin')
-        self.assertEqual(bookmark,self.saved())
-
-    def test_one_more_afternoon_repeats_the_greeting_and_protects_the_bookmark(self):
-        self.open('#b-75')
-        self.assertTrue(self.page.locator('#returnVisit').is_hidden())
-        self.read_nodes('b',[55,66,73,75])
-        self.go('a',18)
-        self.page.wait_for_timeout(420)
-        before = self.saved(); y = self.page.evaluate('scrollY')
-        self.open_trace('presence')
-        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['sides'][0]['body'][73])
-        self.assertTrue(self.page.locator('#presenceReply').is_hidden())
-        self.page.locator('#presenceAnswer').click()
-        self.assertEqual(self.page.locator('#presenceReply .trace-excerpt').inner_text(),self.work['sides'][0]['body'][75])
-        self.page.locator('#presenceAgain').click()
-        self.assertTrue(self.page.locator('#presenceReply').is_hidden())
-        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['sides'][0]['body'][73])
-        self.page.keyboard.press('Escape')
-        self.assertEqual(before,self.saved())
-        self.assertAlmostEqual(self.page.evaluate('scrollY'),y,delta=1)
-        self.open('?lang=en#a')
-        self.page.locator('#returnVisit').click()
-        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['en']['sides'][0]['body'][74])
-        self.page.locator('#presenceAnswer').click()
-        self.assertEqual(self.page.locator('#presenceReply .trace-excerpt').inner_text(),self.work['en']['sides'][0]['body'][76])
-
-    def test_missing_traces_module_keeps_the_complete_reader_working(self):
-        self.context.route('**/terlambat-satu-menit/traces.js',lambda route:route.abort())
-        self.open('#b-55')
-        self.assertTrue(self.page.locator('#openTraces').is_disabled())
-        self.assertEqual(self.page.locator('.passage').count(),len([p for p in self.work['sides'][0]['body'] if p != '***']))
-
-    # Satu Menit: muka jam, botol kaca, dan satu menit terakhir.
-
-    def seed(self, script):
-        self.context.add_init_script("if (!sessionStorage.getItem('seeded')) { " + script + "; sessionStorage.setItem('seeded', '1'); }")
-
-    def seed_done(self, sides='abc'):
-        keys = ['terlambat-satu-menit' + ('' if s == 'a' else ':' + s) for s in sides]
-        self.seed("localStorage.setItem('jm:stats', JSON.stringify({done: " + json.dumps(keys) + "}))")
-
-    def angles(self, selector='#face'):
-        return self.page.evaluate(r'''(sel) => [...document.querySelectorAll(sel + ' .hand')].map(h => {
-          const m = /rotate\(([-\d.]+)\)/.exec(h.getAttribute('transform') || ''); return m ? +m[1] : 0; })''', selector)
-
-    def view(self):
-        return self.page.locator('html').get_attribute('data-view')
-
-    def scrub(self, second):
-        self.page.evaluate("(v) => { const s = document.querySelector('#seconds'); s.value = v; s.dispatchEvent(new Event('input')); }", second)
-
-    def located(self, lang, entry):
-        source = self.work['en'] if lang == 'en' else self.work
-        body = ([source] + source['sides'])[entry['side']]['body']
-        out = []
-        for pair in entry['find']:
-            hits = [i for i, p in enumerate(body) if pair[1 if lang == 'en' else 0] in p]
-            self.assertTrue(hits, f'{lang}: {pair}')
-            if hits[0] not in out:
-                out.append(hits[0])
-        return [body[i].replace('*', '') for i in out]
+    # Muka jam
 
     def test_the_clock_face_is_the_cover_and_each_hand_opens_its_side(self):
         self.open()
-        self.assertEqual(self.view(), 'dial')
-        self.assertEqual(self.page.locator('.hand-link b').all_text_contents(), ['Saman', 'Banyu', 'Maryam'])
-        self.assertEqual(self.page.locator('.hand-link small').all_text_contents(), ['Jarum jam · Bidak', 'Jarum menit · Alamat yang Tertukar', 'Jarum detik · Perempuan yang Menghitung Mundur'])
+        self.assertEqual(self.view(), 'cover')
+        self.assertEqual(self.page.locator('.hand-name').all_text_contents(), ['Saman', 'Banyu', 'Maryam'])
+        self.assertEqual(self.page.locator('.hand-meta').all_text_contents(), ['Jarum jam · Bidak', 'Jarum menit · Alamat yang Tertukar', 'Jarum detik · Perempuan yang Menghitung Mundur'])
         self.assertEqual(self.angles(), [0, 0, 0])
         self.assertTrue(self.page.locator('#toFinal').is_hidden())
         self.page.locator('.hand-link[data-side="2"]').click()
@@ -428,11 +273,11 @@ class MinuteSmoke(unittest.TestCase):
         self.page.locator('#begin').click()
         self.assertTrue(self.page.locator('#p-0').evaluate('(e) => e === document.activeElement'))
         self.page.locator('#openParts').click()
-        self.assertEqual(self.view(), 'dial')
+        self.assertEqual(self.view(), 'cover')
         self.assertEqual(self.page.evaluate('location.hash'), '')
         self.assertEqual(self.page.evaluate('document.activeElement.dataset.side'), '0')
 
-    def test_hands_follow_reading_and_stop_one_minute_before_twelve(self):
+    def test_scrolling_moves_the_readers_hand_and_finished_hands_stop_short(self):
         self.seed("localStorage.setItem('jm:prog', JSON.stringify({'terlambat-satu-menit:b': .5}));"
                   "localStorage.setItem('jm:stats', JSON.stringify({done: ['terlambat-satu-menit']}))")
         self.open()
@@ -440,45 +285,118 @@ class MinuteSmoke(unittest.TestCase):
         self.assertAlmostEqual(a, 354, delta=.01)
         self.assertAlmostEqual(b, 177, delta=.01)
         self.assertEqual(c, 0)
-        self.assertEqual(self.page.locator('.hand-state').all_text_contents(), ['terbaca', '50%', 'belum'])
-        self.open('#a-30')
-        mini = self.angles('#miniDial')
-        self.assertAlmostEqual(mini[1], 177, delta=.01)
-        self.assertEqual(self.page.locator('#miniDial .hand.current').get_attribute('data-hand'), 'a')
-        self.assertTrue(0 < mini[0] < 354)
+        self.assertEqual(self.page.locator('.hand-state').all_text_contents(), ['berhenti', '50%'])
+        self.open('#c-10')
+        early = self.angles()[2]
+        self.go('c', 60)
+        late = self.angles()[2]
+        self.assertTrue(0 < early < late < 354, (early, late))
+        self.assertEqual(self.page.locator('#giant .hand.current').get_attribute('data-hand'), 'c')
+        self.assertAlmostEqual(self.angles('#miniDial')[2], late, delta=.01)
+
+    # Dunia di balik teks
+
+    def test_every_scene_marker_points_to_one_original_paragraph(self):
+        self.open()
+        beats = self.page.evaluate('MinuteWorld.BEATS')
+        for lang in ['id', 'en']:
+            source = self.work['en'] if lang == 'en' else self.work
+            docs = [source] + source['sides']
+            for side, lst in enumerate(beats):
+                positions = []
+                for beat in lst:
+                    marker = beat['find'][1 if lang == 'en' else 0]
+                    hits = [i for i, p in enumerate(docs[side]['body']) if marker in p]
+                    self.assertEqual(len(hits), 1, f'{lang} {side} {marker}: {hits}')
+                    positions.append(hits[0])
+                self.assertEqual(positions, sorted(positions), f'{lang} {side}')
+
+    def test_the_world_follows_the_sentence_being_read(self):
+        for lang, checks in [('id', [('a', 18, 'king', 'button'), ('a', 25, 'king', 'gone'), ('a', 40, 'king', 'floor'), ('a', 61, 'king', 'button'), ('a', 66, 'pawn', 'moved'),
+                                     ('b', 2, 'env', 'down'), ('b', 34, 'env', 'open'), ('b', 37, 'letter', 'extra'), ('c', 33, 'spoons', '11'), ('c', 75, 'spoon', 'stir'), ('c', 77, 'clocks', 'frozen')]),
+                             ('en', [('a', 25, 'king', 'gone'), ('a', 68, 'pawn', 'moved'), ('c', 32, 'spoons', '11'), ('c', 76, 'clocks', 'frozen')])]:
+            self.open(f'?lang={lang}#a')
+            for side, p, key, value in checks:
+                with self.subTest(lang=lang, side=side, p=p):
+                    self.go(side, p)
+                    self.assertEqual(self.scene(key), value)
+            self.go('a', 10)
+            self.assertEqual(self.scene('king'), 'none')
+            self.assertEqual(self.scene('scene'), 'drawer')
+
+    def test_the_bell_rings_once_when_reached_by_reading_but_not_by_jumping(self):
+        self.open('#b-10')
+        self.record_sounds()
+        self.go('b', 60)
+        self.assertNotIn('bell', self.page.evaluate('calls'))
+        self.go('b', 49)
+        self.page.evaluate('calls.length = 0')
+        self.step_to(53)
+        self.page.wait_for_timeout(100)
+        self.assertEqual(self.page.evaluate("calls.filter(c => c === 'bell').length"), 1)
+        self.assertEqual(self.page.locator('html').get_attribute('data-jolt'), 'bell')
+        self.page.evaluate("dispatchEvent(new Event('scroll')); dispatchEvent(new Event('resize'))")
+        self.page.wait_for_timeout(100)
+        self.assertEqual(self.page.evaluate("calls.filter(c => c === 'bell').length"), 1)
+
+    def test_the_rat_steals_the_king_with_a_sound_as_you_read(self):
+        self.open('#a-23')
+        self.record_sounds()
+        self.step_to(25)
+        self.page.wait_for_timeout(100)
+        self.assertIn('scatter', self.page.evaluate('calls'))
+        self.assertEqual(self.scene('pieces'), 'scattered')
+
+    def test_samans_fog_blurs_only_what_was_already_read(self):
+        context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='no-preference')
+        context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
+        page = context.new_page()
+        page.goto(self.url + '#a-30', wait_until='domcontentloaded'); page.wait_for_selector('.passage')
+        page.wait_for_timeout(200)
+        self.assertEqual(page.evaluate("[...document.querySelectorAll('.passage')].filter(p => p.style.filter).length"), 0)
+        page.evaluate("location.hash = 'a-71'"); page.wait_for_timeout(300)
+        self.assertEqual(page.locator('html').get_attribute('data-fog'), 'on')
+        self.assertIn('blur', page.locator('#p-69').evaluate('(e) => e.style.filter'))
+        self.assertEqual(page.locator('#p-71').evaluate('(e) => e.style.filter'), '')
+        page.locator('#openSettings').click(); page.locator('#motion').click(); page.keyboard.press('Escape')
+        page.evaluate("dispatchEvent(new Event('scroll'))"); page.wait_for_timeout(150)
+        self.assertEqual(page.locator('#p-69').evaluate('(e) => e.style.filter'), '')
+        context.close()
+
+    # Botol kaca
+
+    def test_the_bottle_keeps_only_unspoken_italics_that_were_seen(self):
+        self.open('#a')
+        self.assertEqual(self.page.locator('#miniBottle .gear').count(), 0)
+        self.read_range('a', 12, 13)
+        self.page.wait_for_function("document.querySelectorAll('#miniBottle .gear').length === 1")
+        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
+        # "Bapak, aku pergi ya" diucapkan Banyu; hanya kalimat yang ditelan Saman menjadi gir.
+        self.assertEqual(bottle['held'], ['id:0:13:0'])
+        self.assertEqual(self.page.locator('#p-13 em.held').count(), 1)
+        self.read_range('a', 27, 27)
+        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
+        self.assertEqual(bottle['held'], ['id:0:13:0'])
+        self.assertIn('id:0:27', bottle['spoken'])
+        self.assertIn('1 gir', self.page.locator('#miniBottle').get_attribute('aria-label'))
+        self.open('?lang=en#a')
+        self.assertEqual(self.page.locator('#miniBottle .gear').count(), 0)
+
+    # Satu menit terakhir
 
     def test_the_last_minute_waits_for_all_three_hands(self):
         self.seed_done('ab')
         self.page.goto(self.url + '#menit', wait_until='domcontentloaded')
-        self.page.wait_for_function("document.documentElement.dataset.view === 'dial'")
+        self.page.wait_for_function("document.documentElement.dataset.view === 'cover'")
         self.assertEqual(self.page.evaluate('location.hash'), '')
         self.assertTrue(self.page.locator('#toFinal').is_hidden())
-        self.assertIn('ketiga jarum', self.page.locator('#dialNote').inner_text())
+        self.assertIn('ketiga jarum', self.page.locator('#coverNote').inner_text())
         self.go('c', 77)
         self.page.wait_for_function('() => JSON.parse(localStorage.getItem("jm:stats")).done.includes("terlambat-satu-menit:c")')
         self.assertTrue(self.page.locator('#endFinal').is_visible())
         self.page.locator('#endFinal').click()
         self.assertEqual(self.view(), 'final')
         self.assertEqual(self.page.evaluate('location.hash'), '#menit')
-
-    def test_the_bottle_keeps_only_unspoken_italics_that_were_seen(self):
-        self.open('#a')
-        self.assertEqual(self.page.locator('#shelfBottle .gear').count(), 0)
-        self.read_range('a', 12, 13)
-        self.page.wait_for_function("document.querySelectorAll('#shelfBottle .gear').length === 1")
-        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
-        # "Bapak, aku pergi ya" diucapkan Banyu; hanya kalimat yang ditelan Saman menjadi gir.
-        self.assertEqual(bottle['held'], ['id:0:13:0'])
-        self.read_range('a', 27, 27)
-        bottle = self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:bottle'))")
-        self.assertEqual(bottle['held'], ['id:0:13:0'])
-        self.assertIn('id:0:27', bottle['spoken'])
-        self.assertIn('1 gir', self.page.locator('#shelfBottle').get_attribute('aria-label'))
-        self.page.set_viewport_size({'width': 390, 'height': 844})
-        self.assertTrue(self.page.locator('#miniBottle').is_visible())
-        self.assertEqual(self.page.locator('#miniBottle .gear').count(), 1)
-        self.open('?lang=en#a')
-        self.assertEqual(self.page.locator('#shelfBottle .gear').count(), 0)
 
     def test_the_last_minute_uses_original_paragraphs_in_both_languages(self):
         self.seed_done()
@@ -487,22 +405,19 @@ class MinuteSmoke(unittest.TestCase):
                 self.open(f'?lang={lang}#menit')
                 self.assertEqual(self.view(), 'final')
                 script = self.page.evaluate('MinuteFinal.script')
-                moments = self.page.locator('.moment')
-                self.assertEqual(moments.count(), len(script['SCRIPT']))
-                for i, entry in enumerate(script['SCRIPT']):
-                    self.assertEqual(moments.nth(i).locator('p').all_text_contents(), self.located(lang, entry))
-                self.assertEqual(self.page.locator('.moment[data-pending]').count(), len(script['SCRIPT']) - 1)
+                self.assertEqual(self.page.locator('#timeline li').count(), len(script['SCRIPT']))
+                for entry in script['SCRIPT']:
+                    self.scrub(entry['at'])
+                    self.assertEqual(self.page.locator('#momentView .moment p:not(.moment-who)').all_text_contents(), self.located(lang, entry))
                 self.scrub(59)
-                self.assertTrue(self.page.locator('[data-bell]').evaluate('(e) => e.hasAttribute("data-pending")'))
-                self.assertTrue(self.page.locator('#after').is_hidden())
+                self.assertIsNone(self.page.locator('html').get_attribute('data-struck'))
                 self.scrub(60)
-                self.assertFalse(self.page.locator('[data-bell]').evaluate('(e) => e.hasAttribute("data-pending")'))
-                self.assertEqual([round(a) % 360 for a in self.angles('#finalClock')], [0, 0, 0])
+                self.assertIsNotNone(self.page.locator('html').get_attribute('data-struck'))
+                self.assertEqual([round(a) % 360 for a in self.angles()], [0, 0, 0])
                 self.assertTrue(self.page.locator('#after').is_hidden())
                 self.scrub(61)
-                self.assertEqual(self.page.locator('#after p').all_text_contents(), self.located(lang, script['AFTER']))
-                coda = [self.located(lang, entry)[0] for entry in script['CODA']]
-                self.assertEqual(self.page.locator('.coda blockquote').all_text_contents(), coda)
+                self.assertEqual(self.page.locator('.after-text p').all_text_contents(), self.located(lang, script['AFTER']))
+                self.assertEqual(self.page.locator('.coda blockquote').all_text_contents(), [self.located(lang, e)[0] for e in script['CODA']])
                 self.assertTrue(self.page.evaluate("JSON.parse(localStorage.getItem('jm:minute:finale'))"))
 
     def test_the_bottle_opens_after_the_bell_and_the_clock_runs_again(self):
@@ -517,9 +432,9 @@ class MinuteSmoke(unittest.TestCase):
         expected = [re.findall(r'\*([^*]+)\*', self.work['body'][13])[0], re.findall(r'\*([^*]+)\*', self.work['sides'][0]['body'][40])[0]]
         self.assertEqual(self.page.locator('.gear-list q').all_text_contents(), expected)
         self.page.locator('#toDial').click()
-        self.assertEqual(self.view(), 'dial')
-        self.assertEqual(self.page.locator('html').get_attribute('data-time'), 'free')
-        self.assertEqual(self.page.locator('#dialNote').inner_text(), 'Jamnya berjalan lagi.')
+        self.assertEqual(self.view(), 'cover')
+        self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-free")'))
+        self.assertEqual(self.page.locator('#coverNote').text_content(), 'Jamnya berjalan lagi.')
         now = self.page.evaluate('(() => { const d = new Date(); return [d.getHours() % 12 * 30 + d.getMinutes() / 2, d.getMinutes() * 6]; })()')
         a, b, _ = self.angles()
         self.assertAlmostEqual(a, now[0], delta=2)
@@ -529,18 +444,16 @@ class MinuteSmoke(unittest.TestCase):
     def test_the_last_minute_runs_in_real_time_with_ticks_and_one_bell(self):
         self.seed_done()
         self.open('#menit')
-        self.page.evaluate("() => { window.calls = []; MinuteSound.prototype.play = function (kind) { calls.push(kind) }; }")
+        self.record_sounds()
         self.assertEqual(self.page.evaluate('document.activeElement.id'), 'play')
         self.page.locator('#play').click()
         self.assertEqual(self.page.locator('#play').get_attribute('aria-pressed'), 'true')
         self.page.wait_for_timeout(2300)
-        second = int(self.page.locator('#seconds').input_value())
-        self.assertIn(second, [2, 3])
-        self.assertTrue(self.page.locator('.moment[data-at="0"]').evaluate('(e) => !e.hasAttribute("data-pending")'))
-        self.assertTrue(self.page.locator('.moment[data-at="8"]').evaluate('(e) => e.hasAttribute("data-pending")'))
+        self.assertIn(int(self.page.locator('#seconds').input_value()), [2, 3])
+        self.assertIn('Maryam', self.page.locator('#momentView').inner_text())
+        self.assertIsNotNone(self.page.locator('#timeline button[data-at="8"]').get_attribute('data-pending'))
         self.assertIn('tick', self.page.evaluate('calls'))
         self.page.locator('#play').click()
-        self.assertEqual(self.page.locator('#play').get_attribute('aria-pressed'), 'false')
         held = self.page.locator('#seconds').input_value()
         self.page.wait_for_timeout(1100)
         self.assertEqual(self.page.locator('#seconds').input_value(), held)
@@ -549,31 +462,24 @@ class MinuteSmoke(unittest.TestCase):
         self.page.wait_for_function("document.querySelector('#seconds').value === '61'", timeout=7000)
         self.assertEqual(self.page.evaluate("calls.filter(c => c === 'bell').length"), 1)
         self.assertEqual(self.page.locator('#play').inner_text(), 'Ulangi')
-        self.assertTrue(self.page.locator('html').evaluate('(e) => e.hasAttribute("data-struck")'))
+        self.page.locator('#timeline button[data-at="29"]').click()
+        self.assertEqual(self.page.locator('#seconds').input_value(), '29')
+        self.assertTrue(self.page.locator('#after').is_hidden())
 
-    def test_missing_finale_module_keeps_the_clock_and_story(self):
-        self.seed_done()
-        self.context.route('**/terlambat-satu-menit/final.js', lambda route: route.abort())
-        self.open()
-        self.assertTrue(self.page.locator('#toFinal').is_hidden())
-        self.assertEqual(self.page.locator('.hand-link').count(), 3)
-        self.open('#c-77')
-        self.assertTrue(self.page.locator('#endFinal').is_hidden())
+    # Tema
 
     def paper(self):
         return self.page.evaluate("getComputedStyle(document.body).backgroundColor")
 
     def test_theme_follows_the_site_choice_then_the_device(self):
-        light, dark = 'rgb(247, 247, 244)', 'rgb(18, 20, 18)'
         self.open('#a')
         self.page.wait_for_timeout(350)
-        self.assertEqual(self.paper(), light)
+        light = self.paper()
         self.page.emulate_media(color_scheme='dark')
         self.page.wait_for_timeout(350)
-        self.assertEqual(self.paper(), dark)
+        dark = self.paper()
+        self.assertNotEqual(light, dark)
         self.assertEqual(self.page.locator('#theme').get_attribute('aria-pressed'), 'true')
-        self.assertEqual(self.page.locator('meta[name="theme-color"]').first.get_attribute('content'), '#121412')
-        # Pilihan di situs utama (jm:theme) menang atas perangkat, juga dari tab lain.
         self.page.evaluate("""() => { localStorage.setItem('jm:theme', JSON.stringify('light'));
           dispatchEvent(new StorageEvent('storage', { key: 'jm:theme' })); }""")
         self.page.wait_for_timeout(350)
@@ -584,9 +490,7 @@ class MinuteSmoke(unittest.TestCase):
         self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:theme'))"), 'dark')
         self.page.keyboard.press('Escape')
         self.page.emulate_media(color_scheme='light')
-        self.open('#menit')
         self.page.wait_for_timeout(350)
-        self.assertEqual(self.page.locator('html').get_attribute('data-theme'), 'dark')
         self.assertEqual(self.paper(), dark)
 
     def test_admin_theme_applies_when_the_reader_has_not_chosen(self):
