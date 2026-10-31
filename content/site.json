@@ -6,7 +6,7 @@
   "email": "juanmaulana29@gmail.com",
   "avatar": "content/media/avatar.jpg?v=mvu9mudu",
   "readerName": "pembaca",
-  "accent": "#1662FF",
+  "accent": "#111214",
   "theme": "auto",
   "backdrop": "auto",
   "defaultView": "putar",
@@ -32,7 +32,7 @@
       "id": "puisi",
       "label": "Puisi",
       "tag": "PUISI",
-      "ink": "#D2338A",
+      "ink": "#0f060b",
       "red": true,
       "en": "Poetry"
     },
