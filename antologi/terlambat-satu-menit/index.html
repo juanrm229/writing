@@ -17,7 +17,7 @@
   <div class="topbar-inner">
     <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
     <button class="contacts-toggle" id="openParts" type="button" aria-haspopup="dialog" aria-controls="partsDialog"><span id="contactsLabel">Kontak</span><span class="current-voice" id="partLabel">Saman</span><span aria-hidden="true">⌄</span></button>
-    <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+    <div class="topbar-actions"><button class="icon traces-toggle" id="openTraces" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" disabled>Jejak</button><button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></div>
   </div>
   <div class="cross-strip" id="crossStrip" hidden><button id="returnCross" type="button">← Kembali ke Banyu</button><span id="crossNote">Dari sisi lain</span></div>
   <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
@@ -36,7 +36,7 @@
     <header class="intro" id="intro">
       <p class="eyebrow" id="workTitle">Terlambat Satu Menit</p>
       <h1 id="sideTitle">Bidak</h1><p class="byline" id="voice">Pak Saman</p>
-      <div class="entry"><button class="begin" id="begin" type="button">Mulai membaca <span aria-hidden="true">→</span></button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari tempat terakhir</button></div>
+      <div class="entry"><button class="begin" id="begin" type="button">Mulai membaca <span aria-hidden="true">→</span></button><button class="resume" id="resume" type="button" hidden>Lanjutkan dari tempat terakhir</button><button class="resume" id="returnVisit" type="button" aria-haspopup="dialog" aria-controls="tracesDialog" hidden>Satu sore lagi</button></div>
       <p class="entry-note" id="entryNote">Tiga nama. Satu keluarga.</p>
     </header>
     <div id="story"><p class="loading">Membuka riwayat…</p></div>
@@ -55,8 +55,13 @@
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body"><div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div><div class="setting-row"><span id="soundLabel">Bunyi cerita</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div><p class="dialog-note" id="soundNote" role="status">Bunyi hanya menyala jika kamu memilihnya.</p><label class="volume-label" for="volume"><span id="volumeLabel">Volume</span><output id="volumeValue" for="volume">25%</output></label><input id="volume" type="range" min="0" max="100" value="25"><div class="setting-row"><span id="motionLabel">Transisi nama</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div><div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div></div>
 </dialog>
+<dialog class="traces-dialog" id="tracesDialog" aria-labelledby="tracesTitle">
+  <header class="dialog-head"><div><p class="eyebrow" id="tracesKicker">Terakhir dikenali</p><h2 id="tracesTitle">Jejak</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="traces-body"><button class="trace-back" id="traceBack" type="button" hidden>← Semua jejak</button><div id="tracesIndex"></div><section id="traceDetail" hidden></section></div>
+</dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="sound.js"></script>
+<script src="traces.js"></script>
 <script src="minute.js"></script>
 </body>
 </html>

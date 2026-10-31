@@ -50,8 +50,8 @@
   const known = new Set(PREVIEW ? [] : array(store.get('minute:recognition', [])));
   const witnessed = new Set(PREVIEW ? [] : array(store.get('minute:crossings', [])));
   let sideIndex = 0, paragraphs = [], weights = new Map(), totalWords = 0, currentParagraph = -1, latestPlace = null;
-  let saveTimer = 0, raf = 0, activeContact = null, contactSignature = '', lastCue = '', crossing = null;
-  const stage = $('#stage'), dialogs = [$('#partsDialog'), $('#settingsDialog'), $('#contactDialog')];
+  let saveTimer = 0, raf = 0, activeContact = null, contactSignature = '', lastCue = '', crossing = null, traces = null, traceOrigin = null;
+  const stage = $('#stage'), dialogs = [$('#partsDialog'), $('#settingsDialog'), $('#contactDialog'), $('#tracesDialog')];
   const line = () => mobile.matches ? stage.getBoundingClientRect().bottom + 18 : $('#topbar').getBoundingClientRect().bottom + 28;
 
   // Indeks ID/EN berbeda. Identitas dan ketukan tetap menunjuk kalimat asli.
@@ -199,6 +199,7 @@
     if (dialogs.some(d => d.open)) return;
     const place = capture(); currentParagraph = place ? place.paragraph : -1;
     updateContact(currentParagraph); witness(); updateCrossings(); updateSound(currentParagraph);
+    traces?.witness(sideIndex, line(), !!crossing); traces?.refresh(!!crossing);
     const progress = place?.progress || 0; $('#readingLine').style.setProperty('--progress', progress); $('#readingLine').setAttribute('aria-valuenow', Math.round(progress * 100));
     if (place && !crossing) { latestPlace = place; clearTimeout(saveTimer); saveTimer = setTimeout(persist, 350); }
   };
@@ -225,7 +226,7 @@
     $('#story').innerHTML = doc.body.map((p, i) => {
       const text = p.trim() === '***' ? '<div class="break" role="separator"></div>' : `<p class="passage" id="p-${i}" data-p="${i}">${inline(p)}</p>`;
       const link = side === 'a' ? null : pairs.find(pair => pair[side][1] === i);
-      return text + (link ? `<div class="crossing" data-crossing="${link.id}" hidden><a href="#${side === 'b' ? 'c' : 'b'}-${link[(side === 'b' ? 'c' : 'b') + 'Anchor']}" data-pair="${link.id}">${t('Lihat dari seberang', 'See the other side')}<span aria-hidden="true">↔</span></a></div>` : '');
+      return text + (traces?.hint(sideIndex, i) || '') + (link ? `<div class="crossing" data-crossing="${link.id}" hidden><a href="#${side === 'b' ? 'c' : 'b'}-${link[(side === 'b' ? 'c' : 'b') + 'Anchor']}" data-pair="${link.id}">${t('Lihat dari seberang', 'See the other side')}<span aria-hidden="true">↔</span></a></div>` : '');
     }).join('');
     paragraphs = [...document.querySelectorAll('.passage')]; totalWords = 0; weights = new Map();
     paragraphs.forEach(p => { const words = count(doc.body[+p.dataset.p]); weights.set(p, { before: totalWords, words }); totalWords += words; });
@@ -254,15 +255,22 @@
     e.preventDefault(); const pair = pairs.find(pair => pair.id === e.currentTarget.dataset.pair);
     if (!pair || !ready(pair) || crossing) return;
     const place = capture(); if (!place) return;
-    clearTimeout(saveTimer); latestPlace = place; persist();
-    const origin = { side: sideIndex, place, hash: location.hash }, target = oppositeTarget(pair);
-    setCrossing(origin); history.replaceState(null, '', '#' + LETTERS[target.side] + '-' + target.paragraph);
-    renderSide(target.side, false); goTo(target.paragraph, place.offset);
+    const target = oppositeTarget(pair);
+    visitScene(target.side, target.paragraph, null, place.offset);
+  }
+  function visitScene(side, paragraph, source = null, offset = 0, note = t('Dari sisi lain', 'From the other side')) {
+    const place = capture();
+    clearTimeout(saveTimer); if (!crossing && !source && place) { latestPlace = place; persist(); }
+    const origin = crossing || source || { side: sideIndex, place, hash: location.hash };
+    setCrossing(origin); $('#crossNote').textContent = note;
+    history.replaceState(null, '', '#' + LETTERS[side] + '-' + paragraph);
+    renderSide(side, false); goTo(paragraph, offset);
   }
   function returnFromCrossing() {
     if (!crossing) return;
     const origin = crossing; clearTimeout(saveTimer); setCrossing(null);
-    history.replaceState(null, '', origin.hash); renderSide(origin.side, false); goTo(origin.place.paragraph, origin.place.offset);
+    history.replaceState(null, '', origin.hash); renderSide(origin.side, false);
+    if (origin.place) goTo(origin.place.paragraph, origin.place.offset); else $('#begin').focus({ preventScroll: true });
   }
   $('#opposite').textContent = t('Lihat dari seberang ↔', 'See the other side ↔'); $('#opposite').onclick = openOpposite;
   $('#returnCross').onclick = returnFromCrossing; $('#openContact').onclick = openContact;
@@ -314,6 +322,13 @@
   });
   addEventListener('pagehide', () => { clearTimeout(saveTimer); persist(); sound.dispose(); });
   document.addEventListener('visibilitychange', () => { sound.setPaused(document.hidden); if (document.hidden) persist(); else schedule(); });
+  if (typeof window.MinuteTraces === 'function') traces = new window.MinuteTraces({
+    docs, t, inline, read: () => PREVIEW ? [] : array(store.get('minute:traces', [])),
+    write: value => { if (!PREVIEW) store.set('minute:traces', value); },
+    onOpen: () => { clearTimeout(saveTimer); const place = capture(); if (place && !crossing) latestPlace = place; persist(); traceOrigin = { side: sideIndex, place, hash: location.hash }; },
+    onJump: (side, paragraph) => visitScene(side, paragraph, traceOrigin, 0, t('Jejak cerita', 'Story trace'))
+  });
+  else { $('#openTraces').textContent = t('Jejak', 'Traces'); $('#openTraces').title = t('Jejak belum tersedia. Cerita tetap bisa dibaca.', 'Traces are unavailable. You can keep reading.'); }
   followHash();
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

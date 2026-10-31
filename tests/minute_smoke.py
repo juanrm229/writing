@@ -6,6 +6,7 @@ No authentication, remote writes, or external assets are needed.
 import functools
 import http.server
 import json
+import re
 from pathlib import Path
 import threading
 import unittest
@@ -126,6 +127,9 @@ class MinuteSmoke(unittest.TestCase):
         self.page.wait_for_selector('.passage')
         self.assertEqual(self.page.locator('.passage').count(), len([p for p in self.work['en']['sides'][1]['body'] if p != '***']))
         self.assertTrue(self.page.evaluate("typeof MinuteSound === 'function'"))
+        self.assertTrue(self.page.evaluate("typeof MinuteTraces === 'function'"))
+        self.page.locator('#openTraces').click()
+        self.assertTrue(self.page.locator('#tracesDialog').evaluate('(e) => e.open'))
 
     def test_preview_is_readable_without_overwriting_reader_history(self):
         self.context.add_init_script("localStorage.setItem('jm:preview', " + json.dumps(json.dumps({'works': [self.work]})) + ")")
@@ -138,6 +142,10 @@ class MinuteSmoke(unittest.TestCase):
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:places')"))
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:recognition')"))
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:crossings')"))
+        self.read_range('b', 28, 31)
+        self.page.locator('#openTraces').click()
+        self.assertTrue(self.page.locator('[data-open-trace="banyu-silence"]').is_visible())
+        self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:minute:traces')"))
 
     def test_layout_is_minimal_responsive_and_respects_reduced_motion(self):
         for width in [320, 390, 1440]:
@@ -149,6 +157,11 @@ class MinuteSmoke(unittest.TestCase):
                 self.page.locator('#openParts').click()
                 self.page.keyboard.press('Escape')
                 self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openParts')
+
+                self.page.locator('#openTraces').click()
+                self.assertFalse(self.page.locator('#tracesDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
+                self.page.keyboard.press('Escape')
+                self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openTraces')
                 self.page.locator('#openSettings').click()
                 self.assertTrue(self.page.locator('#motion').is_disabled())
                 self.assertFalse(self.page.locator('#settingsDialog').evaluate('(e) => e.scrollWidth > e.clientWidth'))
@@ -335,6 +348,161 @@ class MinuteSmoke(unittest.TestCase):
         self.assertEqual(self.page.evaluate('calls'), ['bell'])
         self.page.evaluate("dispatchEvent(new Event('scroll'));dispatchEvent(new Event('resize'))")
         self.assertEqual(self.page.evaluate('calls'), ['bell'])
+
+
+    def open_trace(self, name):
+        self.page.locator('#openTraces').click()
+        self.page.locator('[data-open-trace="' + name + '"]').click()
+
+    def read_nodes(self, side, indices):
+        for p in indices:
+            self.read_range(side, p, p)
+
+    def quote(self, text):
+        return '\n'.join(re.findall(r'\*([^*]+)\*', text)) or text
+
+    def test_silence_opens_only_after_its_scene_and_keeps_the_reading_place(self):
+        self.open('#a-14')
+        self.page.locator('#openTraces').click()
+        self.assertEqual(self.page.locator('[data-open-trace]').count(), 0)
+        self.page.keyboard.press('Escape')
+        self.read_range('a', 12, 14)
+        self.assertIsNotNone(self.page.locator('#openTraces').get_attribute('data-new'))
+        self.page.wait_for_timeout(420)
+        saved = self.saved(); y = self.page.evaluate('scrollY')
+        self.open_trace('saman-silence')
+        self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), self.quote(self.work['body'][13]))
+        self.page.locator('[data-mode="outside"]').click()
+        self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), self.work['body'][14])
+        self.assertEqual(self.page.locator('[data-mode="outside"]').get_attribute('aria-pressed'), 'true')
+        self.assertIsNone(self.page.locator('#openTraces').get_attribute('data-new'))
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'openTraces')
+        self.assertEqual(saved, self.saved())
+        self.assertAlmostEqual(self.page.evaluate('scrollY'), y, delta=1)
+
+    def test_three_silences_use_exact_original_words_in_both_languages(self):
+        for lang in ['id', 'en']:
+            source = self.work['en'] if lang == 'en' else self.work
+            shift = -1 if lang == 'en' else 0
+            self.open(f'?lang={lang}#a')
+            for name, side, start, end, inside, outside, quoted in [
+                ('saman-silence','a',12,14,13,14,True),
+                ('banyu-silence','b',28,31,31,30,True),
+                ('maryam-silence','c',30+shift,34+shift,31+shift,34+shift,False),
+            ]:
+                with self.subTest(lang=lang, trace=name):
+                    self.read_range(side, start, end)
+                    doc = source if side == 'a' else source['sides'][ord(side)-ord('b')]
+                    self.open_trace(name)
+                    expected = self.quote(doc['body'][inside]) if quoted else doc['body'][inside]
+                    self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), expected.replace('*',''))
+                    self.page.locator('[data-mode="outside"]').click()
+                    self.assertEqual(self.page.locator('.trace-excerpt').inner_text(), doc['body'][outside].replace('*',''))
+                    self.page.keyboard.press('Escape')
+
+    def test_one_letter_grows_and_reaches_banyu_without_opening_future_steps(self):
+        self.open('#a')
+        self.read_range('a',2,2)
+        self.open_trace('father-letter')
+        self.assertEqual(self.page.locator('[data-step]').count(),1)
+        self.assertEqual(self.page.locator('.letter-excerpt').inner_text(),self.quote(self.work['body'][2]))
+        self.assertNotIn('Bapak bangga',self.page.locator('#traceDetail').inner_text())
+        self.page.keyboard.press('Escape')
+        self.read_nodes('a',[56,58])
+        self.open_trace('father-letter')
+        self.assertEqual(self.page.locator('[data-step]').count(),2)
+        self.assertIn('Bapak bangga',self.page.locator('.letter-excerpt').inner_text())
+        self.page.locator('[data-step="drawer"]').click()
+        self.assertNotIn('Bapak bangga',self.page.locator('.letter-excerpt').inner_text())
+        self.page.keyboard.press('Escape')
+        self.read_nodes('b',[35,37])
+        self.open_trace('father-letter')
+        self.assertEqual(self.page.locator('[data-step]').count(),4)
+        self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[self.quote(self.work['sides'][0]['body'][p]) for p in [35,37]])
+        self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dibaca Banyu')
+        self.page.keyboard.press('Escape')
+        self.open('?lang=en#a')
+        self.open_trace('father-letter')
+        self.assertEqual(self.page.locator('[data-step]').count(),4)
+        self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[self.quote(self.work['en']['sides'][0]['body'][p]) for p in [35,37]])
+
+    def test_reply_and_maryams_letter_do_not_invent_delivery_outcomes(self):
+        for lang in ['id','en']:
+            source = self.work['en'] if lang == 'en' else self.work
+            c = -1 if lang == 'en' else 0
+            self.open(f'?lang={lang}#b')
+            self.read_range('b',40,43)
+            self.open_trace('reply-letter')
+            self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[source['sides'][0]['body'][p].replace('*','') for p in [40,41,42]])
+            self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dikirim · penerimaan tidak diceritakan' if lang == 'id' else 'Sent · receipt is not described')
+            self.page.keyboard.press('Escape')
+            self.read_nodes('c',[70+c,73+c,74+c])
+            self.open_trace('mother-letter')
+            self.assertEqual(self.page.locator('.letter-excerpt p').all_text_contents(),[source['sides'][1]['body'][p].replace('*','') for p in [70+c,73+c]])
+            self.assertEqual(self.page.locator('.trace-status').inner_text(),'Dikirim · penerimaan tidak diketahui' if lang == 'id' else 'Sent · receipt is unknown')
+            self.page.keyboard.press('Escape')
+
+    def test_trace_scene_links_return_to_the_same_paragraph_without_overwriting_either_side(self):
+        self.open('#a')
+        self.read_nodes('b',[35,37])
+        self.go('a',20)
+        self.page.wait_for_timeout(420)
+        y = self.page.evaluate('scrollY')
+        before = self.page.evaluate("[localStorage.getItem('jm:minute:places'),localStorage.getItem('jm:stats'),localStorage.getItem('jm:prog'),localStorage.getItem('jm:last')]")
+        self.open_trace('father-letter')
+        self.page.locator('#traceScene').click()
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'b')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'p-37')
+        self.assertTrue(self.page.locator('#returnCross').is_visible())
+        self.page.wait_for_timeout(420)
+        self.assertEqual(before,self.page.evaluate("[localStorage.getItem('jm:minute:places'),localStorage.getItem('jm:stats'),localStorage.getItem('jm:prog'),localStorage.getItem('jm:last')]"))
+        self.page.locator('#returnCross').click()
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'a')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'p-20')
+        self.assertAlmostEqual(self.page.evaluate('scrollY'),y,delta=1)
+        self.open('#a')
+        self.page.wait_for_timeout(420)
+        bookmark = self.saved()
+        self.open_trace('father-letter')
+        self.page.locator('#traceScene').click()
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'b')
+        self.page.locator('#returnCross').click()
+        self.assertEqual(self.page.locator('html').get_attribute('data-side'),'a')
+        self.assertEqual(self.page.evaluate('scrollY'),0)
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'begin')
+        self.assertEqual(bookmark,self.saved())
+
+    def test_one_more_afternoon_repeats_the_greeting_and_protects_the_bookmark(self):
+        self.open('#b-75')
+        self.assertTrue(self.page.locator('#returnVisit').is_hidden())
+        self.read_nodes('b',[55,66,73,75])
+        self.go('a',18)
+        self.page.wait_for_timeout(420)
+        before = self.saved(); y = self.page.evaluate('scrollY')
+        self.open_trace('presence')
+        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['sides'][0]['body'][73])
+        self.assertTrue(self.page.locator('#presenceReply').is_hidden())
+        self.page.locator('#presenceAnswer').click()
+        self.assertEqual(self.page.locator('#presenceReply .trace-excerpt').inner_text(),self.work['sides'][0]['body'][75])
+        self.page.locator('#presenceAgain').click()
+        self.assertTrue(self.page.locator('#presenceReply').is_hidden())
+        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['sides'][0]['body'][73])
+        self.page.keyboard.press('Escape')
+        self.assertEqual(before,self.saved())
+        self.assertAlmostEqual(self.page.evaluate('scrollY'),y,delta=1)
+        self.open('?lang=en#a')
+        self.page.locator('#returnVisit').click()
+        self.assertEqual(self.page.locator('.presence-greeting').inner_text(),self.work['en']['sides'][0]['body'][74])
+        self.page.locator('#presenceAnswer').click()
+        self.assertEqual(self.page.locator('#presenceReply .trace-excerpt').inner_text(),self.work['en']['sides'][0]['body'][76])
+
+    def test_missing_traces_module_keeps_the_complete_reader_working(self):
+        self.context.route('**/terlambat-satu-menit/traces.js',lambda route:route.abort())
+        self.open('#b-55')
+        self.assertEqual(self.page.locator('#contactName').inner_text(),'Mas')
+        self.assertTrue(self.page.locator('#openTraces').is_disabled())
+        self.assertEqual(self.page.locator('.passage').count(),len([p for p in self.work['sides'][0]['body'] if p != '***']))
 
 
 if __name__ == '__main__':

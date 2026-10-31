@@ -110,3 +110,42 @@ html[data-calm] *, html[data-calm] *::before, html[data-calm] *::after { animati
   .opposite { bottom: 2px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Jejak tetap menjadi lapisan pilihan di luar naskah. */
+.topbar-actions { display: flex; align-items: center; gap: 2px; }
+.traces-toggle { font: 400 10px var(--ui); }
+.trace-slot { min-height: 52px; margin: -8px 0 24px; }
+.trace-hint { display: inline-flex; align-items: center; gap: 20px; min-height: 44px; border: 0; padding: 6px 0; background: none; color: var(--accent); font-size: 10px; text-align: left; }
+.trace-hint:disabled { visibility: hidden; }
+.traces-body { padding: 0 24px 26px; }
+.trace-note, .trace-empty { margin: 0 0 24px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.trace-empty { padding: 24px 0; border-top: 1px solid var(--line); }
+.trace-group { margin: 26px 0 0; }
+.trace-group h3 { font: 400 10px var(--ui); letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+.trace-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 76px; border: 0; border-bottom: 1px solid var(--line); padding: 14px 0; text-align: left; color: var(--ink); background: none; }
+.trace-row b { display: block; font: 400 22px var(--serif); }
+.trace-row small { display: block; font: 400 10px var(--ui); color: var(--muted); margin-top: 7px; }
+.trace-row > span:last-child { color: var(--accent); }
+.trace-back { min-height: 40px; border: 0; padding: 4px 0; margin: -8px 0 20px; background: none; color: var(--accent); font-size: 11px; }
+.trace-owner { margin: 0 0 22px; font-size: 11px; color: var(--muted); }
+.trace-choice, .letter-steps { display: flex; gap: 6px 20px; border-bottom: 1px solid var(--line); margin: 0 0 26px; flex-wrap: wrap; }
+.trace-choice button, .letter-steps button { border: 0; border-bottom: 1px solid transparent; padding: 10px 0; min-height: 44px; background: none; color: var(--muted); font-size: 11px; }
+.trace-choice button[aria-pressed="true"], .letter-steps button[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.trace-excerpt { font: 400 calc(var(--size) + 3px)/1.65 var(--serif); overflow-wrap: anywhere; }
+.trace-excerpt p { margin: 0 0 24px; }
+.letter-excerpt { padding: 10px 0; }
+.trace-status { font-size: 10px; color: var(--muted); line-height: 1.8; margin: 10px 0 24px; }
+.trace-source { padding-top: 20px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted); margin: 22px 0 0; }
+.trace-source-link { min-height: 44px; border: 0; padding: 8px 0; background: none; color: var(--accent); font-size: 11px; }
+.trace-speaker { margin: 12px 0 10px; color: var(--muted); font-size: 10px; }
+.presence-greeting { font-size: calc(var(--size) + 8px); }
+.presence-answer { min-height: 48px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--accent); text-align: left; font: italic 400 20px/1.6 var(--serif); }
+@media (max-width: 360px) {
+  .topbar-inner { gap: 4px; padding-inline: 12px; }
+  .contacts-toggle { gap: 7px; padding-inline: 4px; }
+  .current-voice { padding-left: 7px; }
+  .traces-body { padding-inline: 20px; }
+  .trace-excerpt { font-size: calc(var(--size) + 2px); }
+}
+.traces-toggle { position: relative; }
+.traces-toggle[data-new]::after { content: ''; position: absolute; top: 7px; right: 1px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
