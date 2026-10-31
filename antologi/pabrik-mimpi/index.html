@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="id" data-view="home">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pabrik Mimpi · Quiet Margins</title>
+<meta name="description" content="Shift Malam. Pabrik Mimpi dibaca dari stasiun paling ujung.">
+<meta name="theme-color" content="#0f0f14">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="mimpi.css?v=1">
+</head>
+<body>
+<header class="topbar" id="topbar">
+  <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
+  <button class="brand" id="toHome" type="button"><span class="chimney" id="chimney" aria-hidden="true"><i></i><i></i><i></i></span><span id="brandName">Shift Malam</span></button>
+  <span class="station" id="station" aria-live="polite"></span>
+  <button class="pocket-button" id="openPocket" type="button" aria-haspopup="dialog" aria-controls="pocketDialog"><span class="capsule-icon" aria-hidden="true"></span><span id="pocketCount">0</span></button>
+  <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
+</header>
+
+<main class="home" id="home" aria-labelledby="homeTitle">
+  <p class="eyebrow" id="workTitle">Pabrik Mimpi</p>
+  <h1 id="homeTitle">Shift Malam</h1>
+  <p class="home-note" id="homeNote"></p>
+  <section class="punch-card" id="punchCard" aria-labelledby="cardTitle">
+    <header><span class="eyebrow" id="cardTitle">Kartu absen</span><span class="mono" id="cardNumber">No. 0040</span></header>
+    <dl>
+      <div><dt id="cardNameLabel">Nama</dt><dd id="cardName">Pembaca</dd></div>
+      <div><dt id="cardStationLabel">Stasiun</dt><dd id="cardStation">Paling ujung</dd></div>
+      <div><dt id="cardInLabel">Masuk</dt><dd class="mono slot" id="cardIn">--:--</dd></div>
+      <div><dt id="cardOutLabel">Keluar</dt><dd class="mono slot" id="cardOut">--:--</dd></div>
+    </dl>
+  </section>
+  <div class="actions"><button class="primary" id="clockIn" type="button">Absen masuk</button><button class="secondary" id="resume" type="button" hidden>Lanjutkan shift</button></div>
+  <p class="received-note" id="receivedNote" hidden></p>
+</main>
+
+<main class="gift" id="gift" hidden aria-labelledby="giftTitle"></main>
+
+<main class="floor" id="floor" hidden>
+  <header class="floor-head">
+    <p class="eyebrow" id="floorKicker">Pabrik Mimpi</p>
+    <h1 id="sideTitle">Pabrik Mimpi</h1>
+    <p class="hint" id="capsuleHint">Pilih sebuah kalimat untuk mengemasnya menjadi kapsul.</p>
+  </header>
+  <ol class="belt" id="story"><li class="loading">Menyalakan ban berjalan…</li></ol>
+  <section class="end-shift" id="endShift" hidden aria-labelledby="gateTitle"></section>
+</main>
+
+<button class="pack" id="pack" type="button" hidden>Kemas jadi kapsul</button>
+
+<dialog class="pocket-dialog" id="pocketDialog" aria-labelledby="pocketTitle">
+  <header class="dialog-head"><div><p class="eyebrow" id="pocketKicker">Saku</p><h2 id="pocketTitle">Kapsul</h2></div><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="pocket-body" id="pocketBody"></div>
+</dialog>
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="icon" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="soundLabel">Bunyi pabrik</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div>
+    <p class="dialog-note" id="soundNote">Bunyi hanya menyala jika kamu memilihnya.</p>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="shift.js?v=1"></script>
+<script src="mimpi.js?v=1"></script>
+</body>
+</html>
