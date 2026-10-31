@@ -130,20 +130,19 @@ Pemeriksaan menjalankan server sementara sendiri, memakai profil browser terpisa
 
 ### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
 
-Pengalaman baca minimalis untuk *Terlambat Satu Menit / One Minute Too Late*: satu ilustrasi meja yang menetap di samping teks (di atas teks pada ponsel), dengan benda yang berubah mengikuti naskah. Ketiga sisi dan terjemahannya tetap diambil utuh dari `content/works.json`.
+**Terakhir Dikenali** membaca tiga sisi *Terlambat Satu Menit / One Minute Too Late* melalui buku kontak minimalis. Seluruh prosa dan terjemahan tetap dimuat utuh dari `content/works.json`, tanpa ilustrasi atau foto.
 
-- **Kancing**: bisa diletakkan di petak raja saat mulai membaca; kemudian hilang, kembali, dan memperoleh arti baru sesuai adegan.
-- **Ambang yang sama**: akhir Saman menampilkan pintu dari dalam dengan lonceng yang tertahan. Perjalanan Banyu kembali ke ambang yang sama dari luar; lonceng baru dilepas ketika Banyu membuka pintu. Sesudah adegan itu ditemukan, pembaca bisa membalik sudut pandang ilustrasinya.
-- **Toko jam**: satu geometri SVG dipakai kembali untuk ingatan Banyu dan Maryam. Rak, jam yang miring, retak dinding, ransel, dan bungkusan bekal tetap berada pada tempat yang sama; hubungan mereka mengikuti pengungkapan dalam naskah tanpa penjelasan tambahan.
-- **Benda**: sentuh benda yang sedang ditandai atau gunakan tombol keterangannya untuk membuka petikan yang sudah dicapai. Surat hanya menampilkan kalimat asli yang sudah muncul, termasuk tambahan yang terbuka pada waktunya.
-- **Satu sore lagi**: setelah ketiga sisi selesai, pembaca bisa duduk kembali di meja. Satu kunjungan meninggalkan satu jahitan tambahan, sementara sapaan Saman tetap sama. Penutup ini tidak menimpa penanda baca.
-- **Bacaan**: posisi disimpan per bahasa dan sisi, mengikuti paragraf saat ukuran huruf atau layar berubah. Tautan `#a`, `#b`, `#c` memilih sisi; `#b-53` menunjuk paragraf pada bahasa yang dipilih. Tautan lama seperti `#baca-terlambat-satu-menit:b` dari situs utama ikut diteruskan. Pratinjau admin memakai `?preview=1` dan tidak menulis riwayat pembaca.
-- **Bunyi dan gerak**: lonceng, detak, sendok, dan sentuhan dibuat dengan Web Audio setelah dipilih pembaca. Bunyi berhenti saat tab tidak aktif. Pengaturan kurangi animasi dihormati. Service worker menyimpan halaman dan modulnya untuk pembacaan offline setelah pemuatan pertama.
+- **Kontak**: buka Saman, Banyu, atau Maryam untuk membaca dari sisinya. Kartu di samping bacaan (di atas teks pada ponsel) selalu menyebut siapa yang sedang mengingat. Nama dan hubungan mengikuti adegan, bukan pengetahuan pembaca.
+- **Pengenalan**: ketika Banyu pulang, kartu dalam ingatan Saman berubah dari `Banyu · Anak` menjadi `Mas · Pelanggan` tepat pada sapaan di toko. Ketika kunjungan harian mulai diceritakan, namanya tetap `Mas`, dengan hubungan `Datang setiap sore`. Dalam ingatan Maryam, anak di toko tetap `Anak perantau`; dalam ingatan Banyu, perempuan itu tetap `Perempuan pemilik toko jam`.
+- **Riwayat nama**: ketuk kartu untuk melihat sebutan bagi orang itu yang sudah ditemui dari sudut pandang yang sama. Setiap sebutan menaut kembali ke adegannya. Riwayat ini milik pembaca, bukan ingatan tambahan untuk tokoh.
+- **Lihat dari seberang**: dua pasangan adegan toko jam (pertemuan dan kepergian) terbuka setelah ujung setiap paragraf terkait pada kedua sisi benar-benar terlihat. Melompati bagian tidak membukanya. Tautan membawa pembaca ke peristiwa yang sama dari sudut pandang lain; tombol kembali mengembalikan paragraf dan letak semula. Kunjungan ke seberang tidak menimpa penanda baca, progres, atau riwayat pemutaran kedua sisi.
+- **Bacaan**: penanda lama tetap digunakan per bahasa dan sisi. Ukuran huruf dan perubahan layar menjaga posisi di dalam paragraf. Tautan `#a`, `#b`, `#c`, dan `#b-55` serta tautan dari situs utama tetap berlaku. Pratinjau `?preview=1` tidak menulis riwayat pembaca.
+- **Bunyi dan gerak**: bunyi opsional memakai Web Audio, berhenti saat tab tersembunyi, dan tidak memerlukan aset eksternal. Transisi nama menghormati pengaturan kurangi animasi. Service worker menyimpan halaman dan modulnya untuk pembacaan offline.
 
-Ketukan adegan berada di `BEATS` dalam `minute.js`. Versi ID/EN memiliki tabel terpisah karena beberapa paragraf terjemahan digabung atau dipecah. Jika naskah dipindah, periksa ketukan dan rujukan petikan untuk kedua bahasa. Ilustrasi ada di HTML/CSS; pengalaman ini tidak memerlukan paket atau proses build tambahan.
+Pemetaan kontak `states` dan pasangan adegan `pairs` berada dalam `minute.js`. Rujukan ID/EN dibedakan karena pembagian paragraf terjemahan berbeda; periksa keduanya jika naskah dipindah. Tidak ada paket atau proses build tambahan.
 
 ```bash
 python3 tests/minute_smoke.py
 ```
 
-Pemeriksaan meliputi keutuhan seluruh paragraf dalam dua bahasa, urutan benda dan ambang, pengenalan toko jam, surat tanpa bocoran, posisi baca, jahitan lintas kunjungan, tautan situs utama, pratinjau, suara, akses keyboard, layar ponsel/desktop, dan pembacaan offline.
+Pemeriksaan mencakup keutuhan naskah dua bahasa, perubahan nama tepat pada kalimatnya, sudut pandang kontak, riwayat tanpa bocoran, penguncian pertemuan, perjalanan ke seberang dan kembali, penanda lama, tautan situs utama, pratinjau, suara, keyboard, layar ponsel/desktop, dan pembacaan offline.

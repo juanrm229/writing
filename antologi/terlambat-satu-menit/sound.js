@@ -1,4 +1,4 @@
-/* Bunyi benda menunggu pilihan pembaca. Tidak ada berkas audio eksternal. */
+/* Bunyi cerita menunggu pilihan pembaca. Tidak ada berkas audio eksternal. */
 (() => {
   'use strict';
   class MinuteSound {
