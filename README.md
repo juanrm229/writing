@@ -130,26 +130,22 @@ Pemeriksaan menjalankan server sementara sendiri, memakai profil browser terpisa
 
 ### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
 
-**Satu Menit** membaca tiga sisi *Terlambat Satu Menit / One Minute Too Late* sambil menggulir waktu. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`; dunia di layar hanya bergerak, tidak menambah kalimat cerita. Ketiga sisi berakhir di bunyi lonceng, dan semuanya dibangun menuju menit itu.
+**Lacak Surat** membaca tiga sisi *Terlambat Satu Menit / One Minute Too Late* sebagai halaman lacak kiriman pos. Tanpa gambar: hanya antarmuka yang dikenal semua orang. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`; label status, lokasi, dan cap waktu adalah antarmuka, bukan kalimat cerita.
 
-- **Muka jam**: sampul berupa jam besar. Saman jarum jam, Banyu jarum menit, Maryam jarum detik. Ketiganya mulai bersama di angka dua belas. Jarum detik Maryam bergetar seperti jarum yang macet.
-- **Menggulir = waktu berjalan**: saat membaca, jam yang sama berpindah ke belakang panggung dan jarum orang yang sedang dibaca berputar mengikuti kemajuan baca. Sisi yang tamat berhenti di 354°, satu menit sebelum dua belas. Jam kecil di bilah atas kembali ke muka jam.
-- **Panggung yang mengikuti kalimat** (`world.js`): satu SVG yang berubah tepat pada paragrafnya.
-  - *Saman*: laci berisi amplop, papan catur isometrik dengan raja dari kancing. Tikus menyerakkan bidak dan mengambil kancing; malam perang meredupkan lampu; perangkap menutup dan terbuka; surat jatuh ke kotak pos; pion maju satu petak; siluet muncul di jendela; kabut turun; lonceng gemetar tetapi tidak berbunyi.
-  - *Banyu*: amplop menghadap ke bawah dengan cap pos yang bermunculan; rak jam mati dan bungkus daun pisang; garis lurus dan garis melengkung Pak Galih; dua kursi yang tinggal satu; surat dibuka, empat kalimat lalu tambahan di bawahnya; balasan terbang; kereta; jam saku; pintu dan **lonceng yang berbunyi**.
-  - *Maryam*: dua belas sendok yang tinggal sebelas; hari-hari berhitung; dinding jam yang berdetak, botol gir; lonceng pintu; gir terakhir; sendok ke-12 mengaduk teh; semua jam berhenti.
-- **Ingatan yang berkabut**: setelah kabut turun di sisi Saman, kalimat yang sudah lewat perlahan mengabur. Mode tenang mematikannya.
-- **Lonceng**: saat dicapai dengan membaca (bukan melompat), layar berkilat, jam besar tersentak, dan lonceng berbunyi sekali.
-- **Botol kaca**: kalimat bercetak miring yang tidak diucapkan menjadi gir yang jatuh ke botol di bilah atas; kalimat dalam tanda petik dihitung diam-diam. Disimpan per bahasa.
-- **Satu menit terakhir** (`#menit`): terbuka setelah ketiga sisi tamat. Jam besar menjalankan menit itu dalam waktu sebenarnya; sembilan paragraf asli muncul satu per satu pada detiknya, dengan garis waktu yang bisa diketuk dan penggeser. Di 1:00 ketiga jarum bertemu dan lonceng berbunyi; di 1:01 muncul *satu menit setelah jam berhenti*, lalu botol dibuka dan sapaan *Besok datang lagi* menutupnya. Setelah itu muka jam menjadi jam sungguhan.
-- **Bunyi** (opsional, Web Audio tanpa berkas): detak, hujan, kereta, ratusan jam di toko Maryam yang bergeser ke telinga kanan setelah ia tuli sebelah, sunyi saat jam berhenti, serta lonceng, gir, sendok, perangkap, dan cap pos.
-- **Tema**: terang atau gelap mengikuti situs utama (`jm:theme`, juga dari tab lain), lalu tema panel admin, lalu perangkat. Tiap sisi punya cahaya sendiri: lampu kuning Saman, biru malam Banyu, tembaga Maryam.
-- **Bacaan**: penanda per bahasa dan sisi, ukuran huruf, tautan `#a`, `#b`, `#c`, `#b-55`, `#menit`, dan tautan dari situs utama tetap berlaku. Pratinjau `?preview=1` tidak menulis riwayat. Di ponsel, panggung menjadi jendela di atas teks yang menyempit saat membaca.
+- **Lacak Kiriman**: kunjungan pertama mengetik nomor resi `SMN 0052 ID` sendiri, lalu menunggu pembaca menekan **Lacak**. Hasilnya tiga kiriman: surat Saman (Bidak), surat yang sama setelah dialihkan (Alamat yang Tertukar), dan kiriman Maryam `MRY 0012 ID`. Kartu menampilkan status terakhir yang sudah dibaca dan waktu pemindaian.
+- **Setiap paragraf adalah satu catatan pemindaian.** Waktunya adalah jam pembaca sendiri saat ujung paragraf melewati garis baca. Catatan yang belum dibaca bertanda `··:··`. Bilah status di atas teks mengikuti kalimat yang sedang dibaca: status, tahapan (mis. Ditulis → Disimpan → Dikirim → Dalam perjalanan), dan pemindaian terakhir.
+- **Status pada kalimatnya**: *Disimpan di laci · tidak dikirim*, manifest **52 kiriman tertahan di pengirim**, *Catatan ditemukan · disembunyikan*, *Penerima pindah*, *Diserahkan ke kotak pos*; tumpukan *Dialihkan ke alamat baru* sebelum *Diterima · hari yang salah, kota yang salah*; *Dibuka*, *Balasan dikirim · penerimaan tidak tercatat*; *12 sendok tinggal 11*, *Tertahan · tidak pernah sampai*, *Disimpan: 1 menit · dalam botol*, *Dikirim ke alamat usang · status tidak diketahui*.
+- **Ingatan Saman**: setelah *hari-hari berlalu*, cap waktunya menjadi `--:--` dan tanggalnya tidak terbaca.
+- **Jam Maryam berhenti**: setelah paragraf terakhirnya terbaca, seluruh riwayatnya membeku pada menit yang sama.
+- **Bukti penerimaan**: di sisi Banyu, setelah *satu menit setelah jam berhenti*, muncul kartu dengan *Ditujukan kepada: Banyu*, **Diterima oleh: Mas**, tanda tangan kosong, *Jam berhenti* dan *Tiba* yang dihitung dari jam pembaca, dan *Keterlambatan: 1 menit*.
+- **Besok**: setelah *Besok aku datang lagi*, estimasi tiba selalu besok (tanggal sungguhan). Setiap hari lain pembaca kembali ke riwayat Banyu, tercatat satu baris *Datang lagi*.
+- **Ringkasan pengiriman** (`#ringkasan`): terbuka setelah ketiga riwayat tamat; status akhir setiap kiriman, jumlah catatan yang dipindai pembaca, sapaan penutup dari naskah, dan estimasi besok.
+- **Bacaan dan tema**: penanda per bahasa dan sisi, ukuran huruf, tautan `#a`, `#b`, `#c`, `#b-55`, `#ringkasan` dan tautan situs utama tetap berlaku. Terang/gelap mengikuti situs (`jm:theme`), lalu tema admin, lalu perangkat. Bunyi pemindai, cap pos, dan lonceng opsional. Pratinjau `?preview=1` tidak menulis riwayat.
 
-Modul: `world.js` (panggung dan daftar ketukan `BEATS`), `clock.js` (jam dan botol), `final.js` (menit terakhir, `SCRIPT`), `sound.js`, dan `minute.js` (pembaca). Ketukan dan menit terakhir menunjuk paragraf asli lewat penanda teks ID/EN, jadi perubahan pembagian paragraf tidak menggeser adegan; tes memastikan setiap penanda menunjuk tepat satu paragraf dan urutannya benar. Jika `world.js`, `final.js`, atau `sound.js` gagal dimuat, cerita tetap terbaca utuh.
+Modul: `track.js` (nomor resi, tahapan, dan daftar status per sisi dengan penanda teks ID/EN), `sound.js`, dan `minute.js`. Jika `track.js` gagal dimuat, riwayat tetap terbaca tanpa status. Tes memastikan setiap penanda menunjuk tepat satu paragraf dalam urutan yang benar.
 
 ```bash
 python3 tests/minute_smoke.py
 ```
 
-Pemeriksaan mencakup keutuhan naskah dua bahasa, penanda baca, tautan situs utama, bahasa dan offline, pratinjau, tata letak 320–1440 px, gerak tenang, bunyi, kegagalan modul, muka jam dan sudut jarum, setiap penanda adegan, keadaan panggung per paragraf (ID/EN), lonceng yang hanya berbunyi saat dibaca, tikus dan bidak, kabut ingatan, botol, kunci dan isi menit terakhir, waktu sebenarnya, jam yang berjalan lagi, serta tema.
+Pemeriksaan mencakup keutuhan naskah dua bahasa, penanda baca, tautan situs utama, bahasa dan offline, pratinjau, tata letak 320–1440 px, gerak tenang, bunyi, kegagalan modul, pencarian resi, setiap penanda status, cap waktu dari jam pembaca, status per kalimat (ID/EN), kabut Saman, jam Maryam yang membeku, bukti penerimaan, estimasi besok dan kunjungan ulang, ringkasan, serta tema.

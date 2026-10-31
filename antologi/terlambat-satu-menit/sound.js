@@ -1,4 +1,4 @@
-/* Bunyi cerita: hanya menyala jika pembaca memilihnya. Semua disintesis dengan Web Audio, tanpa berkas. */
+/* Bunyi: bip pemindai, cap pos, dan lonceng. Hanya menyala jika pembaca memilihnya; disintesis dengan Web Audio. */
 (() => {
   'use strict';
   class MinuteSound {
@@ -103,6 +103,8 @@
       else if (kind === 'stamp') { this.tone(90, .25, .16, 0, 'triangle'); this.burst(900, .14, .08, 'lowpass'); }
       else if (kind === 'scatter') [0, .07, .13, .22, .3].forEach(at => this.tone(500 + Math.random() * 400, .1, .07, at, 'triangle'));
       else if (kind === 'fly') this.burst(3000, .08, .5, 'bandpass');
+      else if (kind === 'scan') { this.tone(1760, .07, .07, 0, 'square'); this.tone(2637, .05, .09, .08, 'square'); }
+      else if (kind === 'status') { this.tone(988, .09, .18); this.tone(1319, .07, .26, .1); }
     }
     dispose() {
       ++this.epoch; this.enabled = false; clearInterval(this.timer); this.timer = 0;
