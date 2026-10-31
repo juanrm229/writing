@@ -114,6 +114,10 @@ class MimpiSmoke(unittest.TestCase):
             for key in ['reply', 'invite']:
                 self.assertEqual(len(self.index(k['QUOTES'][key][li], lang)), 1)
             self.assertTrue(self.index(k['QUOTES']['postpone'][li], lang))
+            self.assertEqual(len(self.index(k['QUOTES']['gate'][li][0], lang)), 1)
+            stand = [self.index(m[li], lang) for m in k['STAND'].values()]
+            self.assertTrue(all(len(h) == 1 for h in stand), stand)
+            self.assertEqual(stand, sorted(stand))
 
     def test_main_site_opens_the_calendar_and_completion_needs_the_reply(self):
         self.page.goto(self.root + '#baca-pabrik-mimpi', wait_until='domcontentloaded')
@@ -205,6 +209,69 @@ class MimpiSmoke(unittest.TestCase):
         self.read_until(13)
         self.page.wait_for_timeout(100)
         self.assertIn('Malam terakhir sebelum libur', self.page.locator('#toast').inner_text())
+
+    # Ponsel dan pengembangan
+
+    def test_phone_has_a_drawer_and_a_week_strip(self):
+        self.page.set_viewport_size({'width': 390, 'height': 844})
+        self.open('#baca-17')
+        self.assertTrue(self.page.locator('#sidebar').evaluate('(e) => e.inert'))
+        self.assertEqual(self.page.locator('#week span').count(), 7)
+        self.assertEqual(self.page.locator('#week .on b').inner_text(), '30')
+        self.page.locator('#menu').click()
+        self.assertEqual(self.page.locator('#menu').get_attribute('aria-expanded'), 'true')
+        self.assertFalse(self.page.locator('#sidebar').evaluate('(e) => e.inert'))
+        self.assertIn('Desember 1985', self.page.locator('#miniTitle').inner_text())
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.locator('#menu').get_attribute('aria-expanded'), 'false')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'), 'menu')
+        # Tanggal yang sama tidak diulang di atas acara berikutnya.
+        self.assertEqual(self.page.locator('[data-event="station"] .date-line').count(), 0)
+        self.assertEqual(self.page.locator('[data-event="shift"] .date-line').count(), 1)
+
+    def test_year_view_shows_forty_years_and_jumps(self):
+        self.open('#baca-8')
+        self.page.locator('#monthButton').click()
+        self.assertEqual(self.page.locator('#yearsGrid .yr').count(), 41)
+        self.assertEqual(self.page.locator('#yearsGrid [data-year="2024"] .dec').get_attribute('class'), 'dec s-planned')
+        self.page.locator('#yearsGrid [data-year="2000"]').click()
+        self.assertFalse(self.page.locator('#yearsDialog').evaluate('(d) => d.open'))
+        self.assertEqual(self.page.locator('#years').input_value(), '2000')
+        self.assertIn('2000', self.page.locator('#rcDate').inner_text())
+        self.go(43)
+        self.page.locator('#viewChip').click()
+        self.assertEqual(self.page.locator('#yearsGrid [data-year="2024"] .dec').get_attribute('class'), 'dec s-cancel')
+        self.assertEqual(self.page.locator('#yearsGrid [data-year="1999"] .dec').get_attribute('class'), 'dec s-moved')
+        self.assertIn('40', self.page.locator('#yearsStats').inner_text())
+
+    def test_the_task_cannot_be_ticked_and_the_card_can_be_swiped(self):
+        self.open('#baca-17')
+        self.page.locator('#rcTask').click()
+        self.assertTrue(self.page.locator('#rcGate').inner_text().startswith('Sebab gerbang akan mendeteksinya'))
+        self.assertIn(self.page.locator('#rcGate').inner_text().rstrip('.'), self.body()[15])
+        self.page.wait_for_function("document.querySelector('#years').value === '1986'")
+        card = self.page.locator('#reschedCard').bounding_box()
+        y = card['y'] + 20
+        self.page.mouse.move(card['x'] + 30, y); self.page.mouse.down(); self.page.mouse.move(card['x'] + 140, y, steps=6); self.page.mouse.up()
+        self.assertEqual(self.page.locator('#years').input_value(), '1987')
+        self.assertIn('3×', self.page.locator('#rcLog').inner_text())
+
+    def test_the_room_stands_with_the_story(self):
+        self.seed("localStorage.setItem('jm:mimpi:rsvp', JSON.stringify('hadir'))")
+        for lang in ['id', 'en']:
+            with self.subTest(lang=lang):
+                self.open(('?lang=en' if lang == 'en' else '') + '#baca-52')
+                hall = self.page.locator('#hall')
+                self.assertEqual(hall.get_attribute('data-state'), 'dark')
+                self.go(57)
+                self.assertEqual(hall.get_attribute('data-state'), 'first')
+                self.assertEqual(self.page.locator('#hall .seats i.up').count(), 1)
+                self.go(58)
+                self.assertEqual(hall.get_attribute('data-state'), 'clap')
+                self.go(61)
+                self.assertEqual(hall.get_attribute('data-state'), 'all')
+                self.assertEqual(self.page.locator('#hall .seats i.up').count(), 96)
+                self.assertEqual(self.page.locator('#hallStatus').inner_text(), 'Seluruh ruangan berdiri' if lang == 'id' else 'The whole room is standing')
 
     # Umum
 
