@@ -14,14 +14,35 @@
   const SLUG = 'interlude';
   const EN = (new URLSearchParams(location.search).get('lang') || store.get('lang', 'id')) === 'en';
   const t = (id, en) => (EN ? en : id);
+  const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  let calm = motionQuery.matches || store.get('il:calm', false);
+  document.documentElement.toggleAttribute('data-calm', calm);
   document.documentElement.lang = t('id', 'en');
   document.documentElement.classList.add('js');
 
   let work;
   try { work = (await (await fetch('../../content/works.json', { cache: 'no-cache' })).json()).find(w => w.slug === SLUG); } catch (e) { /* luring */ }
   const story = $('#story');
-  if (!work) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')}</p>`; document.documentElement.classList.remove('js'); return; }
+  if (!work || !Array.isArray(work.chapters) || !work.chapters.length) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Go back')}</a></p>`; document.documentElement.classList.remove('js'); $('#readerTools').hidden = true; $('#openArchive').hidden = true; $('.reading-start').hidden = true; return; }
   const chapters = (EN && work.en?.chapters) || work.chapters;
+  const wordCount = text => (text.match(/\S+/g) || []).length;
+  const minutes = c => Math.max(1, Math.ceil(wordCount(c.body.join(' ')) / 180));
+  $('#readingMeta').textContent = t(`${chapters.length} percakapan · ±${chapters.reduce((n, c) => n + minutes(c), 0)} menit`, `${chapters.length} conversations · about ${chapters.reduce((n, c) => n + minutes(c), 0)} min`);
+  $('#begin').textContent = t('Mulai membaca', 'Start reading');
+  $('#readingNote').textContent = t('Posisi bacamu diingat di perangkat ini.', 'Your place is remembered on this device.');
+  $('#pct').setAttribute('aria-label', t('Kemajuan membaca', 'Reading progress'));
+  $('#chaptersTitle').textContent = t('Daftar percakapan', 'Conversations');
+  $('#chapterList').setAttribute('aria-label', t('Bab', 'Chapters'));
+  $('#closeChapters').setAttribute('aria-label', t('Tutup', 'Close'));
+  $('#readerTools').setAttribute('aria-label', t('Pengaturan bacaan', 'Reading settings'));
+  $('#previousChapter').setAttribute('aria-label', t('Bab sebelumnya', 'Previous chapter'));
+  $('#nextChapter').setAttribute('aria-label', t('Bab berikutnya', 'Next chapter'));
+  $('#smaller').setAttribute('aria-label', t('Perkecil huruf', 'Decrease text size'));
+  $('#bigger').setAttribute('aria-label', t('Perbesar huruf', 'Increase text size'));
+  $('#archiveKick').textContent = t('Interlude · Arsip', 'Interlude · Archive');
+  $('#archiveTitle').textContent = t('Yang tertinggal', 'What remains');
+  $('#archiveNote').textContent = t('Draf, foto, dan catatan yang sudah kamu temui tinggal di sini. Tersimpan di perangkat ini.', 'Drafts, photos, and notes you have encountered stay here. Saved on this device.');
+  $('#closeArchive').setAttribute('aria-label', t('Tutup arsip', 'Close archive'));
 
   $('#kick').textContent = t('Temusai · Bagian I', 'Temusai · Part I');
   $('#sub').textContent = t('Tiga suara di antara dua kota. Dialog muncul sebagai pesan, keterangan di antaranya, dan lokasi di setiap perpindahan.', 'Three voices between two cities. Dialogue arrives as messages, with the telling in between and a location at every move.');
@@ -97,6 +118,27 @@
   const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   const voiceOf = s => (/^(arka|nara|sinta)\b/i.exec(s.trim()) || [])[1]?.toLowerCase() || '';
   const DRAFT = [6, 9]; // bab 7 dan 10: halaman buku tulis Arka
+  // Arsip merujuk naskah yang sama; tidak merekonstruksi kata-kata yang dihapus.
+  const archiveKind = { unsent: t('Tak terkirim', 'Unsent'), photo: t('Foto', 'Photo'), notebook: t('Buku tulis', 'Notebook'), note: t('Catatan pribadi', 'Private note') };
+  const entryAt = (kind, key, owner, title) => {
+    const [chapter, paragraph] = key.split(',').map(Number);
+    return { id: kind + '-' + key.replace(',', '-'), kind, chapter, paragraph, owner, title };
+  };
+  const chapterTitle = i => chapters[i]?.title.replace(/^.*?\s+[—–-]\s+/, '') || '';
+  const archiveEntries = [
+    ...Object.entries(DEL).map(([key, d]) => ({ ...entryAt('unsent', key, d.who, d.text || (d.ghost ? t('Tiga baris, satu tersisa', 'Three lines, one left') : t('Percakapan yang ditutup', 'The conversation left closed'))), draft: d })),
+    ...Object.entries(PHOTO).map(([key, [owner, title]]) => entryAt('photo', key, owner, title)),
+    ...DRAFT.map(i => entryAt('notebook', `${i},0`, 'Arka', chapterTitle(i))),
+    ...[2, 8].map(i => entryAt('note', `${i},0`, 'Sinta', chapterTitle(i)))
+  ].filter(e => typeof chapters[e.chapter]?.body?.[e.paragraph] === 'string')
+    .sort((a, b) => a.chapter - b.chapter || a.paragraph - b.paragraph);
+  const storedArchive = store.get('il:archive', []);
+  const collected = new Set(Array.isArray(storedArchive) ? storedArchive.filter(id => archiveEntries.some(e => e.id === id)) : []);
+  const archivePoints = new Map();
+  archiveEntries.forEach(e => {
+    const key = `${e.chapter},${e.paragraph}`;
+    archivePoints.set(key, [...(archivePoints.get(key) || []), e]);
+  });
   const NAMES = ['Arka', 'Nara', 'Sinta', 'Tegar'];
   const FIRST_ME = /\b(kataku|tanyaku|jawabku|ujarku|sahutku|tambahku|lanjutku|ulangku|aku (?:berkata|bertanya|menjawab|mengatakan|menyahut))\b|\bI (?:said|asked|answered|replied|told)\b|\bsaid I\b/i;
   const FIRST_YOU = /\b(katanya|tanyanya|jawabnya|ujarnya|sahutnya|tambahnya|lanjutnya|ia (?:berkata|bertanya|menjawab|mengatakan))\b|\b(?:she|he) (?:said|asked|answered|replied)\b/i;
@@ -122,9 +164,10 @@
     if (draft) html += `<p class="loc"><span>${t('Kamu membaca sebagai Nara', 'You are reading as Nara')}</span></p>`;
     if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`;
     c.body.forEach((p, k) => {
+      html += `<div class="passage" id="p-${i}-${k}" data-ch="${i}" data-p="${k}">`;
       while (bi < B.length && B[bi][0] * 1000 + B[bi][1] <= i * 1000 + k) { const d = B[bi][2]; if (d.pl != null) pl = d.pl; if (d.who != null) who = d.who; bi++; }
       ST.forEach(([a, b, s]) => { if (a === i && b === k) html += `<i class="stm" data-st="${s}"></i>`; });
-      if (p.startsWith('### ')) { pov = voiceOf(p.slice(4)); last = null; html += `<h3 data-v="${pov}">${esc(p.slice(4))}</h3>`; shown = ''; if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`; return; }
+      if (p.startsWith('### ')) { pov = voiceOf(p.slice(4)); last = null; html += `<h3 data-v="${pov}">${esc(p.slice(4))}</h3>`; shown = ''; if (pov === 'sinta') html += `<div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>${t('Catatan pribadi Sinta', 'Sinta\u2019s private notes')}</b><small>${t('Pintunya tidak bisa ditutup rapat.', 'The door never quite closes.')}</small></span></div>`; html += '</div>'; return; }
       if (DAY[i + ',' + k]) html += `<p class="day"><span>${esc(DAY[i + ',' + k])}</span></p>`;
       if (pl && pl !== shown) { shown = pl; last = null; html += `<p class="loc" data-pl="${pl}"><span>${PIN}${esc(PL[pl][EN ? 1 : 0])}</span></p>`; }
       const first = pov === 'arka' || pov === 'sinta';
@@ -161,16 +204,22 @@
       if (ph) { html += `<div class="msg you photo" data-who="${ph[0]}"><span class="nm" style="--nc:var(--${ph[0].toLowerCase()})">${ph[0]} · ${t('foto', 'photo')}</span><div class="ph" style="--pc:var(--${ph[0].toLowerCase()})"><i></i><span>${esc(ph[1])}</span></div></div>`; last = 'you'; lastName = ph[0]; }
       if (cl) html += `<p class="loc call ${cl[0]}"><span>${TEL}${cl[0] === 'in' ? t('Panggilan masuk · ', 'Incoming call · ') + cl[1] : cl[0] === 'out' ? t('Memanggil ', 'Calling ') + cl[1] + '…' : t('Panggilan berakhir', 'Call ended')}</span></p>`;
       if (/sembilan puluh, kamu sepuluh|ninety to give/i.test(p)) html += `<div class="split"><button class="split-bar" type="button" aria-label="${t('Balik', 'Flip')}"><span class="split-a" style="flex-grow:90">90</span><span class="split-n" style="flex-grow:10">10</span></button><small>${t('Ketuk untuk membalik', 'Tap to flip')}</small></div>`;
+      (archivePoints.get(`${i},${k}`) || []).forEach(e => { html += `<span class="archive-point" data-archive="${e.id}" aria-hidden="true"></span>`; });
+      html += '</div>';
     });
     html += `${draft ? `<p class="draft-f">${t('Dari buku tulis Arka · tidak pernah dikirim', 'From Arka\u2019s notebook · never sent')}</p>` : ''}</section>`;
   });
   // daftar percakapan: setiap bab satu utas, seperti layar depan aplikasi chat
-  const seen = store.get('il:seen', -1), firstPl = i => { const b = B.find(x => x[0] === i && x[2].pl); return b ? PL[b[2].pl][EN ? 1 : 0] : ''; };
-  $('.top').insertAdjacentHTML('afterend', `<ol class="inbox">${chapters.map((c, i) => {
+  const oldSeen = store.get('il:seen', -1), visited = store.get('il:visited', null);
+  const seen = new Set(Array.isArray(visited) ? visited : chapters.map((_, i) => i).filter(i => i <= oldSeen));
+  const firstPl = i => { const b = B.find(x => x[0] === i && x[2].pl); return b ? PL[b[2].pl][EN ? 1 : 0] : ''; };
+  const chapterLinks = `<ol class="inbox">${chapters.map((c, i) => {
     const v = voiceOf(c.title), [, nm, ti] = /^(.*?)\s+[—–-]\s+(.*)$/.exec(c.title) || [, t('Bertiga', 'All three'), c.title];
     const prev = c.body.find(p => !p.startsWith('###')) || '';
-    return `<li><a href="#bab-${i + 1}" data-go="${i}" style="--c:var(--${v || 'muted'})"><i class="av">${v ? v[0].toUpperCase() : '3'}</i><span class="ib-t"><b>${esc(nm || '')}</b><small>${esc(ti)}</small><em>${esc(prev.replace(/[“”*]/g, '').slice(0, 90))}</em></span><span class="ib-m">${i + 1}${i > seen ? '<u></u>' : ''}<small>${esc(firstPl(i).split(' · ')[0])}</small></span></a></li>`;
-  }).join('')}</ol>`);
+    return `<li><a href="#bab-${i + 1}" data-go="${i}" style="--c:var(--${v || 'muted'})"><i class="av" aria-hidden="true">${v ? v[0].toUpperCase() : '3'}</i><span class="ib-t"><b>${esc(nm || '')}</b><small>${esc(ti)}</small><em>${esc(prev.replace(/[“”*]/g, '').slice(0, 90))}</em></span><span class="ib-m"><span>${i + 1} · <span class="chapter-time">${minutes(c)} ${t('mnt', 'min')}</span></span>${!seen.has(i) ? `<span class="unread" aria-label="${t('Belum dibuka', 'Not opened')}"></span>` : ''}<small>${esc(firstPl(i).split(' · ')[0])}</small></span></a></li>`;
+  }).join('')}</ol>`;
+  $('.reading-start').insertAdjacentHTML('afterend', `<details class="chapter-preview"><summary>${t('Lihat 12 percakapan', 'Explore 12 conversations').replace('12', chapters.length)}</summary>${chapterLinks}</details>`);
+  $('#chapterList').innerHTML = chapterLinks;
   story.innerHTML = html + `<p class="end-l">${t('Cukup dekat untuk dibaca berdua.', 'Close enough for two to read.')}</p>`;
   $('#after').hidden = false;
 
@@ -184,20 +233,119 @@
     });
   });
 
-  // kepala percakapan: siapa yang bercerita, dan di mana
-  const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')], hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
-  let headKey = '', saveT = 0, maxCh = store.get('il:seen', -1);
-  $('.h-t').addEventListener('click', () => scrollTo({ top: $('.inbox').offsetTop - 70, behavior: calm ? 'auto' : 'smooth' }));
+  // Simpan paragraf dan posisi di dalamnya, bukan tinggi seluruh halaman.
+  const sections = [...document.querySelectorAll('.ch')];
+  const passages = [...document.querySelectorAll('.passage')];
+  const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')];
+  const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct');
+  const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), resume = $('#resume');
+  const renderArchive = () => {
+    const entries = archiveEntries.filter(e => collected.has(e.id));
+    const count = $('#archiveCount'); count.textContent = entries.length; count.hidden = !entries.length;
+    $('#openArchive').setAttribute('aria-label', t(`Buka arsip Interlude, ${entries.length} fragmen`, `Open Interlude archive, ${entries.length} fragments`));
+    $('#openArchive').title = t('Arsip Interlude', 'Interlude archive');
+    $('#archiveList').innerHTML = entries.length ? entries.map(e => {
+      const color = NAMES.includes(e.owner) ? e.owner.toLowerCase() : 'muted';
+      let object = '';
+      if (e.kind === 'photo') object = `<div class="ph" style="--pc:var(--${color})" aria-hidden="true"><i></i><span>${esc(e.title)}</span></div>`;
+      if (e.draft?.ghost) object = `<div class="archive-ghost" aria-hidden="true"><i></i><i></i><i></i></div><p class="archive-caption">${t('Tiga baris ditulis. Dua dihapus.', 'Three lines written. Two erased.')}</p>`;
+      else if (e.draft?.text) object = `<blockquote>${esc(e.draft.text)}</blockquote><p class="archive-caption">${t('Dihapus sebelum dikirim.', 'Erased before it was sent.')}</p>`;
+      else if (e.draft) object = `<p class="archive-caption">${t('Percakapan dibuka, lalu ditutup tanpa mengetik.', 'A conversation opened, then closed without typing.')}</p>`;
+      return `<details class="archive-entry" data-entry="${e.id}" style="--c:var(--${color})"><summary><small>${archiveKind[e.kind]} · ${esc(e.owner)} · ${t('Bab', 'Chapter')} ${e.chapter + 1}</small><strong>${esc(e.title)}</strong></summary><div class="archive-body">${object}<p class="archive-excerpt">${inline(chapters[e.chapter].body[e.paragraph])}</p><a class="archive-return" data-source="p-${e.chapter}-${e.paragraph}" href="#p-${e.chapter}-${e.paragraph}">${t('Kembali ke adegan', 'Return to the scene')} →</a></div></details>`;
+    }).join('') : `<div class="archive-empty"><p>${t('Belum ada yang tertinggal.', 'Nothing has stayed here yet.')}</p><small>${t('Teruskan membaca. Yang kamu temui akan tersimpan di sini.', 'Keep reading. What you encounter will be saved here.')}</small></div>`;
+  };
+  const points = [...document.querySelectorAll('.archive-point')];
+  const collectVisible = ci => {
+    if (ci < 0 || document.hidden) return;
+    let changed = false;
+    points.forEach(el => {
+      if (collected.has(el.dataset.archive) || +el.closest('.passage').dataset.ch !== ci) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < 60 || rect.top > innerHeight * .88) return;
+      collected.add(el.dataset.archive); changed = true;
+    });
+    if (changed) {
+      store.set('il:archive', [...collected]); renderArchive();
+      $('#archiveAnnouncement').textContent = t(`Arsip Interlude: ${collected.size} fragmen tersimpan.`, `Interlude archive: ${collected.size} fragments saved.`);
+    }
+  };
+  renderArchive();
+  const saved = store.get('il:place', null), legacyProgress = store.get('prog', {})[SLUG];
+  const savedPassage = saved && Number.isInteger(saved.chapter) && Number.isInteger(saved.paragraph)
+    ? document.getElementById(`p-${saved.chapter}-${saved.paragraph}`) : null;
+  const weights = new Map();
+  let totalWords = 0;
+  passages.forEach(el => {
+    const words = wordCount(chapters[+el.dataset.ch].body[+el.dataset.p]);
+    weights.set(el, { before: totalWords, words }); totalWords += words;
+  });
+  let headKey = '', saveT = 0, currentChapter = -1, latestPlace = null;
+  let typing = 0, effectEpoch = 0, compBusy = false;
+  const effectTimers = new Set();
+  const comp = $('#comp'), compT = $('#compT'), compW = $('#compW');
+  const later = (fn, ms) => {
+    const id = setTimeout(() => { effectTimers.delete(id); fn(); }, ms);
+    effectTimers.add(id);
+  };
+  const cancelEffects = () => {
+    effectEpoch++; effectTimers.forEach(clearTimeout); effectTimers.clear(); typing = 0; compBusy = false;
+    comp.hidden = true; compT.textContent = ''; headKey = '';
+    document.querySelectorAll('.typing').forEach(el => el.classList.remove('typing'));
+    document.querySelectorAll('.photo.in').forEach(el => el.classList.add('sharp'));
+    document.querySelectorAll('.lock.in').forEach(el => el.classList.add('open'));
+  };
+  // Paragraf berurutan: cari posisi baca tanpa mengukur seluruh novel setiap guliran.
+  const atLine = (elements, line) => {
+    let lo = 0, hi = elements.length - 1, found = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (elements[mid].getBoundingClientRect().top <= line) { found = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    return found;
+  };
+  const capturePlace = () => {
+    const ci = atLine(sections, 110);
+    if (ci < 0) return null; // Sampul tidak menghapus posisi baca sebelumnya.
+    let el = passages[Math.max(0, atLine(passages, 94))];
+    if (+el.dataset.ch !== ci) el = sections[ci].querySelector('.passage');
+    const rect = el.getBoundingClientRect(), offset = clamp((94 - rect.top) / Math.max(1, rect.height), 0, 1);
+    const w = weights.get(el);
+    const finished = ci === chapters.length - 1 && scrollY + innerHeight >= document.documentElement.scrollHeight - 12;
+    return { chapter: ci, paragraph: +el.dataset.p, offset, progress: finished ? 1 : (w.before + offset * w.words) / Math.max(1, totalWords) };
+  };
+  const persistPlace = () => {
+    if (!latestPlace) return;
+    store.set('il:place', latestPlace);
+    store.set('prog', { ...store.get('prog', {}), [SLUG]: +latestPlace.progress.toFixed(4) });
+    if (latestPlace.progress === 1) {
+      const st = store.get('stats', {}); st.done = st.done || [];
+      if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); }
+    }
+  };
   const frame = () => {
-    let v = '', loc = '', stt = '', ci = -1;
+    if (dialog.open || archiveDialog.open) return;
+    const ci = atLine(sections, 110);
+    collectVisible(ci);
+    if (ci !== currentChapter) {
+      cancelEffects(); currentChapter = ci;
+      $('#chapterToggle').textContent = ci < 0 ? t('Bab', 'Chapters') : t(`Bab ${ci + 1}/${chapters.length}`, `Ch. ${ci + 1}/${chapters.length}`);
+      $('#previousChapter').disabled = ci <= 0;
+      $('#nextChapter').disabled = ci === chapters.length - 1;
+      document.querySelectorAll('.inbox [data-go]').forEach(a => {
+        if (+a.dataset.go === ci) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (ci >= 0 && !seen.has(ci)) {
+        seen.add(ci); store.set('il:visited', [...seen]);
+        document.querySelectorAll(`.inbox [data-go="${ci}"] .unread`).forEach(el => el.remove());
+      }
+    }
+    let v = '', loc = '', stt = '';
     for (const m of marks) {
       const top = m.getBoundingClientRect().top;
-      if (m.dataset.st) { if (top < innerHeight * .6) stt = m.dataset.st; continue; } // status berubah saat kalimatnya terbaca
-      if (top > 90) continue;
-      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; ci = +m.dataset.i; } else if (m.tagName === 'H3') { v = m.dataset.v; } else loc = m.dataset.pl;
+      if (m.dataset.st) { if (top < innerHeight * .6) stt = m.dataset.st; continue; }
+      if (top > 110) continue;
+      if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; } else if (m.tagName === 'H3') v = m.dataset.v; else loc = m.dataset.pl;
     }
-    const cur = marks.filter(m => m.classList.contains('ch') && m.getBoundingClientRect().top < innerHeight * .5).length - 1;
-    if (cur > maxCh) { maxCh = cur; store.set('il:seen', cur); const u = document.querySelector(`[data-go="${cur}"] u`); if (u) u.remove(); }
     const other = v === 'arka' ? 'Nara' : v === 'nara' ? 'Arka' : '', draft = DRAFT.includes(ci);
     const status = draft ? t('menulis untukmu', 'writing to you') : stt === 'both' ? t('online · membaca menu yang sama', 'online · reading the same menu') : stt && other ? `${other} · ${stt === 'on' ? 'online' : stt === 'back' ? t('di kota yang sama', 'in the same city') : t('terakhir dilihat di kota lain', 'last seen in another city')}` : '';
     const key = v + '|' + loc + '|' + status;
@@ -209,65 +357,163 @@
       hLoc.textContent = draft ? status : [loc ? PL[loc][EN ? 1 : 0] : (v ? '' : t('Arka, Nara, Sinta', 'Arka, Nara, Sinta')), status].filter(Boolean).join(' · ');
       hLoc.classList.toggle('on', !draft && (stt === 'on' || stt === 'both') && !!other);
     }
-    const f = clamp(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight), 0, 1);
-    pct.textContent = Math.round(f * 100) + '%'; $('#chatH').style.setProperty('--p', f);
-    clearTimeout(saveT);
-    saveT = setTimeout(() => {
-      const pr = store.get('prog', {}); pr[SLUG] = +f.toFixed(3); store.set('prog', pr);
-      if (f > .97) { const st = store.get('stats', {}); st.done = st.done || []; if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); } }
-    }, 400);
+    const place = capturePlace(), f = place ? place.progress : 0;
+    pct.textContent = Math.round(f * 100) + '%'; pct.setAttribute('aria-valuenow', Math.round(f * 100)); $('#chatH').style.setProperty('--p', f);
+    if (place) {
+      latestPlace = place; clearTimeout(saveT); saveT = setTimeout(persistPlace, 400);
+    }
   };
   let raf = 0;
-  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); }); }, { passive: true });
-  addEventListener('resize', frame);
+  const scheduleFrame = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); }); };
+  addEventListener('scroll', scheduleFrame, { passive: true });
+  addEventListener('resize', () => {
+    if (latestPlace && currentChapter >= 0 && !dialog.open && !archiveDialog.open) {
+      goTo(document.getElementById(`p-${latestPlace.chapter}-${latestPlace.paragraph}`), latestPlace.offset, false, false);
+    } else scheduleFrame();
+  });
+  addEventListener('pagehide', persistPlace);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { persistPlace(); cancelEffects(); } else frame();
+  });
+
+  const goTo = (el, offset = 0, changeHash = true, focus = true) => {
+    if (!el) return;
+    if (dialog.open) dialog.close();
+    if (archiveDialog.open) archiveDialog.close();
+    cancelEffects();
+    scrollTo({ top: scrollY + el.getBoundingClientRect().top - 94 + offset * el.getBoundingClientRect().height, behavior: 'instant' });
+    if (changeHash) history.replaceState(null, '', '#' + el.id);
+    if (focus) { el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }); }
+    frame();
+  };
+  $('#begin').onclick = () => goTo(sections[0]);
+  $('#previousChapter').onclick = () => goTo(sections[Math.max(0, currentChapter - 1)]);
+  $('#nextChapter').onclick = () => goTo(sections[Math.min(chapters.length - 1, currentChapter + 1)]);
+  document.querySelectorAll('.inbox [data-go]').forEach(a => a.addEventListener('click', e => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); goTo(sections[+a.dataset.go]);
+  }));
+  const openChapters = () => {
+    dialog.showModal();
+    const current = dialog.querySelector('[aria-current]');
+    if (current) { current.focus({ preventScroll: true }); current.scrollIntoView({ block: 'nearest' }); }
+  };
+  [$('#openChapters'), $('#chapterToggle')].forEach(b => {
+    b.setAttribute('aria-label', t('Daftar percakapan', 'Conversations')); b.onclick = openChapters;
+  });
+  $('#closeChapters').onclick = () => dialog.close();
+  $('#openArchive').onclick = () => {
+    persistPlace(); cancelEffects(); renderArchive(); archiveDialog.showModal();
+  };
+  $('#closeArchive').onclick = () => archiveDialog.close();
+  $('#archiveList').addEventListener('click', e => {
+    const a = e.target.closest('[data-source]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); goTo(document.getElementById(a.dataset.source));
+  });
+  [dialog, archiveDialog].forEach(d => {
+    d.addEventListener('close', scheduleFrame);
+    d.addEventListener('click', e => {
+      const r = d.getBoundingClientRect();
+      if (e.target === d && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) d.close();
+    });
+  });
+  const followHash = () => {
+    if (!/^#(?:bab-\d+|p-\d+-\d+)$/.test(location.hash)) return;
+    goTo(document.getElementById(location.hash.slice(1)), 0, false);
+  };
+  addEventListener('hashchange', followHash);
 
   const rd = store.get('rd', {});
   let size = clamp(+rd.size || 17, 14, 24);
-  const setSize = d => { const y = scrollY / document.documentElement.scrollHeight; size = clamp(size + d, 14, 24); document.documentElement.style.setProperty('--size', size + 'px'); store.set('rd', { ...store.get('rd', {}), size }); if (d) scrollTo(0, y * document.documentElement.scrollHeight); };
+  const setSize = d => {
+    const place = d ? capturePlace() : null;
+    size = clamp(size + d, 14, 24); document.documentElement.style.setProperty('--size', size + 'px');
+    store.set('rd', { ...store.get('rd', {}), size });
+    $('#smaller').disabled = size === 14; $('#bigger').disabled = size === 24;
+    if (place) goTo(document.getElementById(`p-${place.chapter}-${place.paragraph}`), place.offset, false, false);
+  };
   $('#smaller').onclick = () => setSize(-1); $('#bigger').onclick = () => setSize(1); setSize(0);
 
   const r = store.get('read', []); if (!r.includes(SLUG)) store.set('read', [...r, SLUG]);
   const st = store.get('stats', {}); st.plays = st.plays || {}; st.plays[SLUG] = (st.plays[SLUG] || 0) + 1; store.set('stats', st);
-  const saved = store.get('prog', {})[SLUG];
-  if (saved > .02 && saved < .97) {
-    const b = $('#resume'); b.hidden = false; b.textContent = t(`Lanjutkan dari ${Math.round(saved * 100)}%`, `Continue from ${Math.round(saved * 100)}%`);
-    b.onclick = () => { scrollTo({ top: saved * (document.documentElement.scrollHeight - innerHeight), behavior: 'smooth' }); b.hidden = true; };
-    setTimeout(() => { b.hidden = true; }, 9000);
+  if (savedPassage || legacyProgress > .02 && legacyProgress < .97) {
+    resume.hidden = false; $('.reading-start').classList.add('has-resume');
+    resume.textContent = savedPassage ? t(`Lanjutkan · Bab ${saved.chapter + 1}`, `Continue · Chapter ${saved.chapter + 1}`) : t(`Lanjutkan dari ${Math.round(legacyProgress * 100)}%`, `Continue from ${Math.round(legacyProgress * 100)}%`);
+    resume.onclick = () => {
+      if (savedPassage) goTo(savedPassage, clamp(+saved.offset || 0, 0, 1));
+      else { cancelEffects(); scrollTo(0, legacyProgress * (document.documentElement.scrollHeight - innerHeight)); frame(); }
+    };
   }
   [$('#back'), $('#back2')].forEach(a => a.addEventListener('click', e => {
+    persistPlace();
     if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) { e.preventDefault(); history.back(); }
   }));
-  // pesan muncul saat digulir sampai
-  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let typing = 0;
+
+  const calmButton = $('#calm');
+  const syncCalm = () => {
+    calm = motionQuery.matches || store.get('il:calm', false);
+    document.documentElement.toggleAttribute('data-calm', calm);
+    calmButton.textContent = t('Baca tenang', 'Quiet reading');
+    calmButton.setAttribute('aria-pressed', calm); calmButton.disabled = motionQuery.matches;
+    calmButton.title = motionQuery.matches ? t('Mengikuti pengaturan kurangi animasi perangkatmu', 'Following your device’s reduced motion setting') : t('Baca tanpa animasi, jeda mengetik, atau getaran', 'Read without animations, typing pauses, or vibration');
+    cancelEffects(); frame();
+  };
+  calmButton.onclick = () => { store.set('il:calm', !calm); syncCalm(); };
+  motionQuery.addEventListener('change', syncCalm);
   let buzz = store.get('il:buzz', true);
-  const bz = $('#buzz'); if ('vibrate' in navigator) { bz.hidden = false; bz.setAttribute('aria-pressed', buzz); bz.onclick = () => { buzz = !buzz; store.set('il:buzz', buzz); bz.setAttribute('aria-pressed', buzz); }; }
-  // kotak ketik: kalimat yang diketik lalu dihapus
-  const comp = $('#comp'), compT = $('#compT'), compW = $('#compW'), wait = ms => new Promise(r => setTimeout(r, ms));
-  let compBusy = false;
+  const bz = $('#buzz');
+  if ('vibrate' in navigator) {
+    bz.hidden = false; bz.setAttribute('aria-label', t('Getar', 'Vibration')); bz.setAttribute('aria-pressed', buzz);
+    bz.onclick = () => { buzz = !buzz; store.set('il:buzz', buzz); bz.setAttribute('aria-pressed', buzz); };
+  }
+  // Hentikan efek saat berpindah bab atau meninggalkan halaman.
+  const pause = async (ms, epoch) => {
+    await new Promise(resolve => setTimeout(resolve, ms));
+    return epoch === effectEpoch && !calm && !document.hidden;
+  };
   const erase = async d => {
-    if (compBusy || calm) return; compBusy = true;
-    compW.textContent = d.who; comp.hidden = false; compT.innerHTML = ''; await wait(400);
-    if (+d.ghost) { // layar lelaki itu hanya terpantul: tiga baris, dua dihapus
-      for (let n = 0; n < +d.ghost; n++) { compT.insertAdjacentHTML('beforeend', `<i class="gl" style="width:${[78, 92, 64][n]}%"></i>`); await wait(500); }
-      await wait(800); const ls = compT.querySelectorAll('.gl'); for (let n = ls.length - 1; n >= +d.keep; n--) { ls[n].remove(); await wait(450); }
-    } else if (d.text) {
-      for (const ch of d.text) { compT.textContent += ch; await wait(55); } await wait(900);
-      while (compT.textContent) { compT.textContent = compT.textContent.slice(0, -1); await wait(28); }
-    } else await wait(1800); // percakapan dibuka, lalu ditutup tanpa mengetik
-    await wait(500); comp.hidden = true; compBusy = false;
+    if (compBusy || calm || document.hidden) return;
+    compBusy = true; const epoch = effectEpoch;
+    try {
+      compW.textContent = d.who; comp.hidden = false; compT.textContent = '';
+      if (!await pause(400, epoch)) return;
+      if (+d.ghost) {
+        for (let n = 0; n < +d.ghost; n++) {
+          compT.insertAdjacentHTML('beforeend', `<i class="gl" style="width:${[78, 92, 64][n]}%"></i>`);
+          if (!await pause(500, epoch)) return;
+        }
+        if (!await pause(800, epoch)) return;
+        const ls = compT.querySelectorAll('.gl');
+        for (let n = ls.length - 1; n >= +d.keep; n--) { ls[n].remove(); if (!await pause(450, epoch)) return; }
+      } else if (d.text) {
+        for (const ch of d.text) { compT.textContent += ch; if (!await pause(55, epoch)) return; }
+        if (!await pause(900, epoch)) return;
+        while (compT.textContent) { compT.textContent = compT.textContent.slice(0, -1); if (!await pause(28, epoch)) return; }
+      } else if (!await pause(1800, epoch)) return;
+      await pause(500, epoch);
+    } finally {
+      if (epoch === effectEpoch) { comp.hidden = true; compBusy = false; }
+    }
   };
   const show = el => {
     el.classList.add('in');
-    if (el.classList.contains('del')) return erase(el.dataset);
-    if (el.classList.contains('photo')) setTimeout(() => el.classList.add('sharp'), 700);
-    if (el.classList.contains('lock')) return setTimeout(() => el.classList.add('open'), 900);
+    const rect = el.getBoundingClientRect();
+    const active = !dialog.open && !archiveDialog.open && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
+    if (el.classList.contains('del')) return active ? erase(el.dataset) : undefined;
+    if (el.classList.contains('photo')) { if (calm) el.classList.add('sharp'); else later(() => el.classList.add('sharp'), 700); }
+    if (el.classList.contains('lock')) { if (calm) el.classList.add('open'); else later(() => el.classList.add('open'), 900); return; }
+    if (calm || document.hidden || !active) return;
     if (buzz && el.classList.contains('sms') && el.classList.contains('you')) try { navigator.vibrate?.([18, 60, 18]); } catch (e) { /* tidak didukung */ }
-    if (calm || !el.classList.contains('you') || el.classList.contains('note') || scrollY < 200) return;
+    if (!el.classList.contains('you') || el.classList.contains('note') || scrollY < 200) return;
     el.classList.add('typing'); typing++; hLoc.textContent = (el.dataset.who ? el.dataset.who + ' ' : '') + t('sedang mengetik…', 'is typing…');
-    setTimeout(() => { el.classList.remove('typing'); if (!--typing) { headKey = ''; frame(); } }, 520 + Math.min(900, el.textContent.length * 9));
+    later(() => { el.classList.remove('typing'); if (!--typing) { headKey = ''; frame(); } }, 520 + Math.min(900, el.textContent.length * 9));
   };
-  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' }) : null;
-  document.querySelectorAll('.msg, .nar, .del, .lock').forEach(el => io ? io.observe(el) : el.classList.add('in'));
-  frame();
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -12% 0px' }) : null;
+  document.querySelectorAll('.msg, .nar, .del, .lock').forEach(el => {
+    if (io) io.observe(el); else { el.classList.add('in'); if (el.classList.contains('photo')) el.classList.add('sharp'); if (el.classList.contains('lock')) el.classList.add('open'); }
+  });
+  syncCalm(); followHash(); frame();
 })();

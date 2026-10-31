@@ -19,21 +19,42 @@
 <header class="chat-h" id="chatH">
   <a class="ch-back" href="../../#putar" id="back" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
   <span class="av" id="hAv" aria-hidden="true">I</span>
-  <span class="h-t"><b id="hName">Interlude</b><small id="hLoc"></small></span>
-  <span class="bar-p" id="pct" aria-hidden="true">0%</span>
+  <button class="h-t" id="openChapters" type="button" aria-haspopup="dialog" aria-controls="chapterDialog" aria-label="Daftar percakapan"><b id="hName">Interlude</b><small id="hLoc"></small></button>
+  <span class="bar-p" id="pct" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</span>
+  <button class="archive-toggle" id="openArchive" type="button" aria-haspopup="dialog" aria-controls="archiveDialog" aria-label="Buka arsip Interlude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 4h18v5H3zM9 13h6"/></svg><span id="archiveCount" hidden aria-hidden="true">0</span></button>
 </header>
 <main class="read" id="read" tabindex="-1">
   <header class="top">
     <p class="kick" id="kick">Temusai · Bagian I</p>
     <h1>Interlude</h1>
     <p class="sub" id="sub"></p>
+    <p class="reading-meta" id="readingMeta"></p>
   </header>
-  <button class="resume" id="resume" type="button" hidden></button>
+  <div class="reading-start">
+    <button class="resume" id="resume" type="button" hidden></button>
+    <button class="begin" id="begin" type="button">Mulai membaca</button>
+    <p class="reading-note" id="readingNote">Posisi bacamu diingat di perangkat ini.</p>
+  </div>
   <div class="story" id="story"><p class="loading">…</p></div>
   <footer class="after" id="after" hidden><a class="after-back" href="../../#putar" id="back2"></a></footer>
 </main>
+<dialog class="chapter-dialog" id="chapterDialog" aria-labelledby="chaptersTitle">
+  <header class="dialog-h"><div><p class="kick">Interlude · Temusai</p><h2 id="chaptersTitle">Daftar percakapan</h2></div><button id="closeChapters" type="button" aria-label="Tutup">×</button></header>
+  <nav id="chapterList" aria-label="Bab"></nav>
+</dialog>
+<dialog class="chapter-dialog archive-dialog" id="archiveDialog" aria-labelledby="archiveTitle" aria-describedby="archiveNote">
+  <header class="dialog-h"><div><p class="kick" id="archiveKick">Interlude · Arsip</p><h2 id="archiveTitle">Yang tertinggal</h2></div><button id="closeArchive" type="button" aria-label="Tutup arsip">×</button></header>
+  <p class="archive-note" id="archiveNote">Draf, foto, dan catatan yang sudah kamu temui tinggal di sini. Tersimpan di perangkat ini.</p>
+  <div class="archive-list" id="archiveList"></div>
+</dialog>
+<p class="sr-only" id="archiveAnnouncement" role="status" aria-live="polite" aria-atomic="true"></p>
 <div class="comp" id="comp" hidden aria-hidden="true"><small id="compW"></small><span class="comp-t" id="compT"></span><i class="caret"></i></div>
-<nav class="sz" aria-label="Ukuran huruf">
+<nav class="sz" id="readerTools" aria-label="Pengaturan bacaan">
+  <button id="previousChapter" type="button" aria-label="Bab sebelumnya" disabled>←</button>
+  <button id="chapterToggle" type="button" aria-haspopup="dialog" aria-controls="chapterDialog">Bab</button>
+  <button id="nextChapter" type="button" aria-label="Bab berikutnya">→</button>
+  <span class="tool-divider" aria-hidden="true"></span>
+  <button id="calm" type="button" aria-pressed="false">Baca tenang</button>
   <button id="buzz" type="button" hidden aria-pressed="true" aria-label="Getar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/></svg></button>
   <button id="smaller" type="button" aria-label="A−"><span class="aa">A</span>−</button>
   <button id="bigger" type="button" aria-label="A+"><span class="aa">A</span>+</button>

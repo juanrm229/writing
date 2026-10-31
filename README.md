@@ -112,3 +112,15 @@ Pembuka antologi Temusai (album `temusai`, sampul layar gelap dengan dua titik, 
 - **Foto**: foto yang dikirim di cerita tampil sebagai pesan foto yang mula-mula kabur lalu jelas, seperti dipulihkan (`PHOTO`).
 - **Panggilan & hari**: panggilan masuk/keluar/berakhir dan pemisah hari ("September", "Bulan kesembilan", "Kamis") (`CALL`, `DAY`).
 - **Berdua**: di kalimat terakhir, kepala layar menjadi "Arka & Nara · online · membaca menu yang sama".
+- **Mulai dan lanjutkan**: sampul menampilkan durasi baca, tombol mulai, dan tombol lanjut yang tetap tersedia. Posisi disimpan per paragraf, termasuk letak di dalam paragraf, sehingga mengganti ukuran huruf atau melanjutkan di layar berbeda tetap menuju bagian yang sama. Membuka sampul tidak menimpa posisi sebelumnya. Penanda persentase lama tetap bisa digunakan untuk melanjutkan.
+- **Navigasi bab**: ketuk kepala percakapan atau tombol **Bab** di bilah bawah untuk membuka daftar bab; daftar bisa ditutup dengan `Esc`. Bab aktif ditandai, bab yang sudah dibuka diingat satu per satu, dan tombol **← / →** berpindah bab. Tautan `#bab-7` membuka bab ketujuh; `#p-6-44` membuka paragraf ke-45 di bab ketujuh (indeks paragraf dimulai dari nol). Tautan situs utama seperti `#baca-interlude~7` ikut meneruskan nomor bab ke mode Interlude.
+- **Baca tenang**: tombol ini mematikan animasi, jeda mengetik, dan getaran. Pilihannya diingat; pengaturan *kurangi animasi* perangkat juga dihormati. Efek yang masih berjalan dihentikan saat berpindah bab atau meninggalkan tab. Indikator mengetik tidak mengubah tinggi pesan.
+- **Arsip — Yang tertinggal**: ikon arsip di kepala layar mengumpulkan draf yang dihapus, foto yang disebut dalam cerita, dan petikan buku Arka serta catatan Sinta. Fragmen baru terbuka ketika ujung paragraf terkait terlihat saat membaca bab itu; melompati bab tidak membuka fragmen yang terlewati. Arsip menyimpan identitas fragmen di perangkat, mengambil isi dari naskah dalam bahasa yang dipilih, dan menyediakan **Kembali ke adegan**. Membuka atau menutup arsip tetap menjaga posisi baca. Kata-kata yang tidak diketahui dari draf terhapus tetap digambarkan sebagai baris samar, dan foto memakai ilustrasi abstrak yang sudah ada di pengalaman cerita.
+
+Pemeriksaan browser untuk Interlude memakai Python Playwright dan Chromium di `/usr/bin/chromium` (tersedia di lingkungan cloud):
+
+```bash
+python3 tests/interlude_smoke.py
+```
+
+Pemeriksaan menjalankan server sementara sendiri, memakai profil browser terpisah, dan mencakup bahasa Inggris, tautan bab, navigasi keyboard dialog, pemulihan posisi baca, ukuran huruf, pembatalan efek, mode tenang, serta tata letak ponsel dan desktop. Arsip diperiksa untuk pembukaan fragmen sesuai adegan, pencegahan bocoran dari bab yang dilompati, penyimpanan lintas kunjungan dan bahasa, serta tautan kembali ke adegan. Penerbitan dan autentikasi GitHub tidak dijalankan.
