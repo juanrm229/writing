@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trillions of Seconds · Quiet Margins</title>
+<meta name="description" content="Satu titik kecil di laut malam, bisikan ombak, detik yang terus berjalan, dan sebuah entitas yang melintas dengan jalur yang persis sama.">
+<meta property="og:title" content="Trillions of Seconds">
+<meta property="og:description" content="I am that tiny speck, adrift within the chaos of the cosmos.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#070a12">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="seconds.css?v=1">
+</head>
+<body>
+<canvas class="sea" id="sea" aria-hidden="true"></canvas>
+
+<header class="bar" id="bar">
+  <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+  <p class="counter" id="counter" aria-live="off"><span class="mono" id="elapsed">00:00:00</span><small id="counterLabel">berpikir</small></p>
+  <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
+</header>
+
+<main class="poem" id="poem">
+  <header class="cover" id="cover">
+    <p class="kicker" id="kicker">Puisi</p>
+    <h1 id="title">Trillions of Seconds</h1>
+    <p class="byline" id="byline"></p>
+    <p class="lost" id="lost" hidden></p>
+    <p class="hint" id="coverHint">Kamu adalah titik kecil itu. Geser ke kiri dan kanan untuk berenang, gulir untuk hanyut.</p>
+    <button class="secondary" id="resume" type="button" hidden>Lanjutkan</button>
+  </header>
+  <div id="stanzas"><p class="loading">…</p></div>
+</main>
+
+<p class="steer" id="steer" aria-hidden="true"></p>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="seconds.js?v=1"></script>
+</body>
+</html>

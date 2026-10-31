@@ -192,4 +192,19 @@ Puisi pertama yang punya pengalaman baca sendiri: pembaca duduk di kamar, mengha
 python3 tests/moon_smoke.py
 ```
 
+### Trillions of Seconds (antologi/trillions-of-seconds/)
+
+Pembaca adalah titik kecil di laut malam yang digambar langsung di layar: garis pucat di laut gelap, atau garis tinta di atas kertas kalau tema terang. Larik-lariknya dimuat utuh dari `content/works.json` dan melayang di atas ombak.
+
+- **Titik yang disetir**: geser ke kiri dan kanan (jari, tetikus, atau panah keyboard) untuk berenang; jejaknya hanyut ke belakang.
+- **Bisikan ombak**: di bait pertama ombak membawa kata-kata dari puisinya sendiri (*surrender*, *hope*, *curses*) menuju titik itu, memudar sebelum sampai, dan hilang setelah *But no, I never pay them mind*. Pantai jawaban dan kerinduan muncul di kejauhan dan tidak pernah tercapai; saat *God might steer my current toward you*, arusnya melengkung ke arah pembaca.
+- **Detik**: bilah atas menghitung detik yang lewat untuk berpikir sejak puisi dibuka. Di bait *Trillions of seconds* pembaca boleh mengisi tahun lahirnya (hanya disimpan di perangkatnya) untuk melihat detik hidupnya sendiri: satu triliun detik adalah ±31.689 tahun.
+- **"I am you."**: jalur titik pembaca direkam sejak awal. Saat *I encountered an entity just like me* terbaca, sebuah titik lain melintas dan memutar ulang jalur itu dengan kecepatan aslinya, sehingga jejaknya persis jejak pembaca sendiri. Setelah *he drifted past*, sebuah catatan kecil menyebut kemiripannya.
+- **I stopped thinking**: di larik terakhir ombak mendatar, titiknya berhenti, dan penghitung detik membeku; kembali ke atas menghidupkannya lagi.
+- **Bacaan dan tema**: tercatat di riwayat situs utama, penanda baca per bahasa, `#baca-3` untuk bait keempat, ukuran huruf, gerak tenang, tema terang/gelap yang mengikuti situs, dan pratinjau `?preview=1` yang tidak menulis riwayat.
+
+```bash
+python3 tests/seconds_smoke.py
+```
+
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.
