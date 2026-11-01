@@ -1,7 +1,6 @@
 {
   "title": "Quiet Margins",
   "description": "Meja tulis Juan: cerita yang bisa dibaca dari lebih dari satu sisi, dalam bahasa Indonesia dan Inggris.",
-  "url": "https://quietmargins.site",
   "author": "Juan",
   "handle": "Quiet Margins",
   "email": "juanmaulana29@gmail.com",
@@ -78,6 +77,7 @@
       "en": "Novel"
     }
   ],
+  "url": "https://quietmargins.site",
   "profile": {
     "city": "Balikpapan",
     "tagline": "Quiet Margins",
@@ -118,5 +118,9 @@
       "tagline": "Quiet Margins",
       "bio": "I’m Juan, writing from Balikpapan. I read slowly, take the occasional long bike ride, and tend to think about conversations well after everyone has gone home.\n\nMy stories often begin with something small: a question over coffee, a chair someone left empty, the ease of sitting beside someone without having to say much. Sometimes I follow these things further than I intended.\n\nI’m interested in how we make meaning, how we misunderstand one another, and how knowing someone can change what we thought we knew about ourselves.\n\nThis is where I leave some of those thoughts. A few have become stories. I’m still figuring out the others."
     }
+  },
+  "music": {
+    "src": "content/media/musik.mp3?v=mvxcskst",
+    "title": "Quiet Things"
   }
 }
