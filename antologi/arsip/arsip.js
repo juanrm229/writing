@@ -261,7 +261,7 @@
     if (!current) { const first = DOCS.find(d => !isDone(d.slug)) || DOCS[0]; G.want(`[data-file="${first.slug}"]`, first.no + ' · ' + first.short); return; }
     if (current === LAST.slug && !A.ruang) G.want('#knock', t('Ada pintu di akhir berkas', 'There is a door at the end')); else G.want(null);
   };
-  G.mount({ slug: 'arsip', title: t('Arsip catatan', 'The notes archive'), helpInto: '#topRight',
+  G.mount({ slug: 'arsip', work: () => (current && current !== 'ruang' ? current : ''), title: t('Arsip catatan', 'The notes archive'), helpInto: '#topRight',
     lede: t('Catatan-catatan Juan dibaca sebagai berkas arsip.', 'Juan’s notes are read as archive files.'),
     steps: [t('Pilih berkas dari laci. Nomornya mengikuti urutan malam itu.', 'Choose a file from the drawer. The numbers follow the order of that night.'), t('Pertanyaan ditandai P1, P2, dan seterusnya. Di indeks, statusnya berubah menjadi terjawab setelah kamu membaca jawabannya.', 'Questions are marked P1, P2 and so on. In the index they turn answered once you have read the answer.'), t('Rujukan silang membawamu ke kata yang sama di berkas lain.', 'Cross-references take you to the same word in another file.'), t('Di akhir berkas terakhir ada pintu.', 'At the end of the last file there is a door.')] });
 

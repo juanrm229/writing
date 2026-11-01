@@ -684,7 +684,7 @@
     if (io) io.observe(el); else { el.classList.add('in'); if (el.classList.contains('photo')) el.classList.add('sharp'); if (el.classList.contains('lock')) el.classList.add('open'); }
   });
   if (G) {
-    G.mount({ slug: SLUG, title: 'Interlude', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#begin',
+    G.mount({ slug: SLUG, work: () => SLUG + (currentChapter > 0 ? '~' + (currentChapter + 1) : ''), title: 'Interlude', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#begin',
       lede: t('Arka, Nara, dan Sinta: dibaca seperti percakapan.', 'Arka, Nara and Sinta, read as a conversation.'),
       steps: [t('Gulir untuk membaca. Pesan muncul satu per satu, seperti obrolan yang sedang berlangsung.', 'Scroll to read. Messages arrive one by one, like a conversation as it happens.'),
         t('Ketuk nama di kepala obrolan untuk melihat dua belas percakapan dan melompat ke salah satunya.', 'Tap the name at the top to see all the conversations and jump to one.'),

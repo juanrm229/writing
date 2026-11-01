@@ -1654,3 +1654,29 @@ button.pf-now-c:hover { transform: translateY(-3px); }
 .kc-sieve .sv-n:empty { display: none; }
 .kc-filters .kc-sieve { margin-left: auto; }
 .kc-filters .kc-sieve.on { background: #fff; color: #000; }
+
+/* ---------- Mode baca: interaktif atau biasa ---------- */
+/* badge untuk tulisan yang punya pengalaman interaktif */
+.ix { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 1px 7px 1px 5px; border-radius: 999px; background: color-mix(in srgb, var(--navy) 13%, transparent); color: var(--navy); font: 600 10.5px/1.5 var(--f-ui); font-style: normal; letter-spacing: .01em; text-transform: none; vertical-align: 2px; white-space: nowrap; }
+.ix svg { width: 10px; height: 10px; fill: currentColor; flex: none; }
+.tk-list .ix { margin-left: 6px; }
+.rd-meta .ix { margin-left: 0; vertical-align: 0; color: var(--rfg); background: color-mix(in srgb, var(--rfg) 8%, transparent); }
+/* saklar mode di layar pilih piringan, di samping Catatan sampul */
+.pk-chips { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: -6px; }
+.pk-chips .pk-liner { margin-top: 0; }
+.pk-mode { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px 0 9px; border: 0; border-radius: 14px; background: var(--t-card); box-shadow: inset 0 0 0 1px var(--t-line); color: var(--t-ink); font: 500 12.5px var(--f-ui); cursor: pointer; transition: background-color .25s, color .25s; }
+.pk-mode svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.pk-mode[aria-pressed="true"] { background: var(--navy-soft, #E5ECF8); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--navy) 30%, transparent); color: var(--navy); }
+.pk-mode[aria-pressed="true"] svg { fill: currentColor; stroke: none; }
+@container (max-height: 340px) { .pk-chips .pk-liner { display: none; } }
+/* kartu di pembaca biasa: tulisan ini juga punya versi interaktif */
+.ix-card { display: grid; grid-template-columns: 38px minmax(0, 1fr) 18px; align-items: center; gap: 12px; margin: -16px 0 30px; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, var(--rfg) 5%, transparent); color: inherit; text-decoration: none; font-family: var(--f-ui); transition: background-color .25s, transform .35s var(--spring); }
+.ix-card:hover { background: color-mix(in srgb, var(--rfg) 9%, transparent); }
+.ix-card:active { transform: scale(.98); }
+.ix-ico { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--rfg); color: var(--rbg); }
+.ix-ico svg { width: 16px; height: 16px; fill: currentColor; }
+.ix-t { display: grid; gap: 1px; min-width: 0; }
+.ix-t small { color: var(--rmut); font-size: 12px; }
+.ix-t b { font-weight: 600; font-size: 14.5px; }
+.ix-go { width: 18px; height: 18px; fill: none; stroke: var(--rmut); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ix-card + .rd-sides { margin-top: -12px; }

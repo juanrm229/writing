@@ -518,7 +518,7 @@
   addEventListener('pagehide', () => { clearTimeout(saveTimer); persist(); sound.dispose(); });
   document.addEventListener('visibilitychange', () => { sound.setPaused(document.hidden); if (document.hidden) persist(); else schedule(); });
   if (G) {
-    G.mount({ slug: SLUG, title: 'Terlambat Satu Menit', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#trackButton',
+    G.mount({ slug: SLUG, work: () => SLUG + (view === 'detail' && sideIndex > 0 ? ':' + LETTERS[sideIndex] : ''), title: 'Terlambat Satu Menit', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#trackButton',
       lede: t('Dibaca di halaman lacak kiriman.', 'Read on a parcel-tracking page.'),
       steps: [t('Nomor resi sudah terisi. Tekan Lacak untuk melihat kiriman-kirimannya.', 'The tracking number is already filled in. Press Track to see the shipments.'),
         t('Setiap kiriman adalah satu sisi cerita. Riwayatnya terbuka baris demi baris saat kamu menggulir.', 'Each shipment is one side of the story. Its history opens line by line as you scroll.'),
