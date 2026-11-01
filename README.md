@@ -90,6 +90,13 @@ Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `B` balik sisi, `F` 
 
 Di admin (Tampilan → *Musik latar*) unggah satu lagu (MP3 atau M4A, maksimal 15 MB) dan beri judulnya, lalu Simpan. Lagunya disimpan di `content/media/` dan diputar berulang dengan volume pelan di situs utama. Karena peramban tidak mengizinkan suara sebelum pembaca menyentuh halaman, musik mulai pada sentuhan pertama. Tombol ♪ di bilah atas mematikan atau menyalakannya, dan pilihan pembaca diingat. Saat tulisan dibacakan atau *Suasana* dinyalakan, musiknya mengecil sendiri. *Hapus* mematikan musik untuk semua pembaca. Pastikan kamu punya hak memakai lagunya.
 
+## Kalau situs tidak berubah setelah merge
+
+Setiap merge ke `main` memicu GitHub Pages memasang ulang situs (tab **Actions** → *pages build and deployment*), biasanya satu sampai dua menit.
+
+- **Pemasangan gagal dengan pesan "in progress deployment".** Pemasangan sebelumnya masih tercatat berjalan, jadi yang baru ditolak; isinya tidak bermasalah. Buka run yang gagal lalu pilih **Re-run all jobs**. Kalau run ulang itu macet di antrean, satu perubahan kecil berikutnya di `main` akan memicu pemasangan baru yang membawa semua perubahan sebelumnya.
+- **Pemasangan berhasil tapi ponsel masih menampilkan yang lama.** Service worker (`sw.js`) menyimpan salinan situs untuk dibaca tanpa sinyal. Versi baru diambil saat situs dibuka lagi; tutup tab atau aplikasinya lalu buka kembali. Setiap perubahan kode menaikkan `VERSION` di `sw.js` supaya salinan lama diganti.
+
 ## Aplikasi (PWA)
 
 Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sinyal.
