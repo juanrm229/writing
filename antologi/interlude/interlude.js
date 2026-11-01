@@ -13,7 +13,9 @@
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
-  const SLUG = 'interlude';
+  const SLUG = 'interlude', G = window.JMGuide;
+  // tepi bawah kepala obrolan (bilah bingkai + kepala percakapan), dipakai untuk menentukan bab yang sedang dibaca
+  const HEAD = () => document.getElementById('chatH').getBoundingClientRect().bottom, LINE = () => HEAD() + 34;
   const EN = (new URLSearchParams(location.search).get('lang') || store.get('lang', 'id')) === 'en';
   const t = (id, en) => (EN ? en : id);
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
@@ -51,7 +53,6 @@
   $('#sub').textContent = t('Tiga suara di antara dua kota. Dialog muncul sebagai pesan, keterangan di antaranya, dan lokasi di setiap perpindahan.', 'Three voices between two cities. Dialogue arrives as messages, with the telling in between and a location at every move.');
   $('.top').insertAdjacentHTML('beforeend', `<p class="cast">${['arka', 'nara', 'sinta'].map(v => `<span style="--c:var(--${v})"><i>${v[0].toUpperCase()}</i>${v[0].toUpperCase() + v.slice(1)}</span>`).join('')}</p>`);
   $('#back').setAttribute('aria-label', t('Kembali ke meja tulis', 'Back to the desk'));
-  $('#back2').textContent = t('Kembali ke meja tulis', 'Back to the desk');
 
   const PL = {
     baru: ['Ruang praktik Sinta · tempat baru', 'Sinta’s office · the new one'], lama: ['Ruang praktik Sinta · di atas apotek', 'Sinta’s office · above the pharmacy'],
@@ -266,7 +267,7 @@
   const marks = [...document.querySelectorAll('.ch, .ch h3, .loc[data-pl], .stm')];
   const hAv = $('#hAv'), hName = $('#hName'), hLoc = $('#hLoc'), pct = $('#pct'), headerTyping = $('#headerTyping');
   const dialog = $('#chapterDialog'), archiveDialog = $('#archiveDialog'), photoViewer = $('#photoViewer'), atmosphereDialog = $('#atmosphereDialog'), memoriesDialog = $('#memoriesDialog'), resume = $('#resume');
-  const dialogs = [dialog, archiveDialog, photoViewer, atmosphereDialog, memoriesDialog];
+  const dialogs = [dialog, archiveDialog, photoViewer, atmosphereDialog, memoriesDialog, $('#settingsDialog')];
   let memoriesUnlocked = false, memoryIndex = 0;
   $('#memoriesTitle').textContent = t('Dua Ingatan', 'Two Memories');
   $('#memoriesKick').textContent = t('Interlude · Sesudah halaman terakhir', 'Interlude · After the last page');
@@ -361,7 +362,7 @@
     points.forEach(el => {
       if (collected.has(el.dataset.archive) || +el.closest('.passage').dataset.ch !== ci) return;
       const rect = el.getBoundingClientRect();
-      if (rect.top < 60 || rect.top > innerHeight * .88) return;
+      if (rect.top < HEAD() || rect.top > innerHeight * .88) return;
       collected.add(el.dataset.archive); changed = true;
     });
     if (changed) {
@@ -407,11 +408,11 @@
     return found;
   };
   const capturePlace = () => {
-    const ci = atLine(sections, 110);
+    const ci = atLine(sections, HEAD() + 50);
     if (ci < 0) return null; // Sampul tidak menghapus posisi baca sebelumnya.
-    let el = passages[Math.max(0, atLine(passages, 94))];
+    let el = passages[Math.max(0, atLine(passages, LINE()))];
     if (+el.dataset.ch !== ci) el = sections[ci].querySelector('.passage');
-    const rect = el.getBoundingClientRect(), offset = clamp((94 - rect.top) / Math.max(1, rect.height), 0, 1);
+    const rect = el.getBoundingClientRect(), offset = clamp((LINE() - rect.top) / Math.max(1, rect.height), 0, 1);
     const w = weights.get(el);
     const finished = ci === chapters.length - 1 && scrollY + innerHeight >= document.documentElement.scrollHeight - 12;
     return { chapter: ci, paragraph: +el.dataset.p, offset, progress: finished ? 1 : (w.before + offset * w.words) / Math.max(1, totalWords) };
@@ -428,13 +429,14 @@
   };
   const frame = () => {
     if (dialogs.some(d => d.open)) return;
-    const ci = atLine(sections, 110);
+    const ci = atLine(sections, HEAD() + 50);
     collectVisible(ci);
     if (ci !== currentChapter) {
       cancelEffects(); currentChapter = ci;
       $('#chapterToggle').textContent = ci < 0 ? t('Bab', 'Chapters') : t(`Bab ${ci + 1}/${chapters.length}`, `Ch. ${ci + 1}/${chapters.length}`);
       $('#previousChapter').disabled = ci <= 0;
       $('#nextChapter').disabled = ci === chapters.length - 1;
+      if (G) { $('#stepChip').hidden = ci < 0; if (ci >= 0) G.step(ci + 1, chapters.length, t('Bab', 'Chapter')); }
       document.querySelectorAll('.inbox [data-go]').forEach(a => {
         if (+a.dataset.go === ci) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
       });
@@ -447,7 +449,7 @@
     for (const m of marks) {
       const top = m.getBoundingClientRect().top;
       if (m.dataset.st) { if (top < innerHeight * .6) stt = m.dataset.st; continue; }
-      if (top > 110) continue;
+      if (top > HEAD() + 50) continue;
       if (m.classList.contains('ch')) { v = m.dataset.v; loc = ''; } else if (m.tagName === 'H3') v = m.dataset.v; else loc = m.dataset.pl;
     }
     const other = v === 'arka' ? 'Nara' : v === 'nara' ? 'Arka' : '', draft = DRAFT.includes(ci);
@@ -493,7 +495,7 @@
     if (!el) return;
     dialogs.forEach(d => { if (d.open) d.close(); });
     cancelEffects();
-    scrollTo({ top: scrollY + el.getBoundingClientRect().top - 94 + offset * el.getBoundingClientRect().height, behavior: 'instant' });
+    scrollTo({ top: scrollY + el.getBoundingClientRect().top - LINE() + offset * el.getBoundingClientRect().height, behavior: 'instant' });
     if (changeHash) history.replaceState(null, '', '#' + el.id);
     if (focus) { el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }); }
     frame();
@@ -604,7 +606,7 @@
       else { cancelEffects(); scrollTo(0, legacyProgress * (document.documentElement.scrollHeight - innerHeight)); frame(); }
     };
   }
-  [$('#back'), $('#back2')].forEach(a => a.addEventListener('click', e => {
+  [$('#back')].forEach(a => a.addEventListener('click', e => {
     persistPlace();
     if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) { e.preventDefault(); history.back(); }
   }));
@@ -658,7 +660,7 @@
   const show = el => {
     el.classList.add('in');
     const rect = el.getBoundingClientRect();
-    const active = !dialogs.some(d => d.open) && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > 60 && rect.top < innerHeight * .88;
+    const active = !dialogs.some(d => d.open) && +el.closest('.ch').dataset.i === currentChapter && rect.bottom > HEAD() && rect.top < innerHeight * .88;
     if (el.classList.contains('del')) return active ? erase(el.dataset) : undefined;
     if (el.classList.contains('photo')) { if (calm) el.classList.add('sharp'); else later(() => el.classList.add('sharp'), 700); }
     if (el.classList.contains('lock')) { if (calm) el.classList.add('open'); else later(() => el.classList.add('open'), 900); return; }
@@ -681,5 +683,15 @@
   document.querySelectorAll('.msg, .nar, .del, .lock').forEach(el => {
     if (io) io.observe(el); else { el.classList.add('in'); if (el.classList.contains('photo')) el.classList.add('sharp'); if (el.classList.contains('lock')) el.classList.add('open'); }
   });
+  if (G) {
+    G.mount({ slug: SLUG, title: 'Interlude', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#begin',
+      lede: t('Arka, Nara, dan Sinta: dibaca seperti percakapan.', 'Arka, Nara and Sinta, read as a conversation.'),
+      steps: [t('Gulir untuk membaca. Pesan muncul satu per satu, seperti obrolan yang sedang berlangsung.', 'Scroll to read. Messages arrive one by one, like a conversation as it happens.'),
+        t('Ketuk nama di kepala obrolan untuk melihat dua belas percakapan dan melompat ke salah satunya.', 'Tap the name at the top to see all the conversations and jump to one.'),
+        t('Bilah bawah: bab sebelumnya dan berikutnya, serta Baca tenang tanpa animasi.', 'The bottom bar: previous and next chapter, and Calm reading without animation.'),
+        t('Foto, draf, dan catatan yang kamu temui tersimpan di arsip. Aa untuk ukuran huruf dan tampilan.', 'Photos, drafts and notes you find stay in the archive. Aa for text size and appearance.')] });
+    G.settings();
+    $('#afterNext').innerHTML = G.next(SLUG);
+  }
   syncCalm(); followHash(); frame();
 })();

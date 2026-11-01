@@ -49,6 +49,8 @@ class MimpiSmoke(unittest.TestCase):
 
     def setUp(self):
         self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce')
+        # kartu "Cara membaca" sudah pernah ditutup
+        self.context.add_init_script("try { localStorage.setItem('jm:guide:pabrik-mimpi', '1') } catch (e) {}")
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
         self.page = self.context.new_page(); self.page.set_default_timeout(8000)
         self.errors = []; self.page.on('pageerror', lambda e: self.errors.append(str(e)))

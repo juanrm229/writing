@@ -1,7 +1,7 @@
 /* Lacak Surat · Terlambat Satu Menit
    Halaman lacak kiriman tanpa gambar. Tema mengikuti situs (data-theme), lalu perangkat. */
 :root {
-  --ui: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; --serif: 'Newsreader', 'Iowan Old Style', Georgia, serif; --size: 19px;
+  --ui: var(--qm-ui); --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; --serif: var(--qm-read); --size: 19px;
   --bg: #f4f3ef; --card: #ffffff; --ink: #19191b; --muted: #6e6d72; --faint: #a3a2a6; --line: #e3e1db; --soft: #efede7;
   --pending: #6e6d72; --pending-bg: #ecebe6; --held: #a1650f; --held-bg: #fbf0dc; --transit: #2559c7; --transit-bg: #e5edfd;
   --done: #1f7a4b; --done-bg: #e0f3e8; --lost: #b8371f; --lost-bg: #fbe5df; --accent: #19191b; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px -16px rgba(0,0,0,.18);
@@ -32,10 +32,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .eyebrow { margin: 0; font: 500 11px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 
 /* Bilah atas */
-.topbar { position: sticky; top: 0; z-index: 20; height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); background: var(--bg); border-bottom: 1px solid var(--line); }
+.topbar { position: sticky; top: 0; z-index: 20; height: 60px; display: flex; align-items: center; gap: 8px; padding: 0 max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
 .icon { width: 40px; height: 40px; flex: none; border: 0; display: inline-grid; place-items: center; background: transparent; border-radius: 10px; text-decoration: none; color: var(--ink); font: 300 26px var(--ui); }
-.back { font-size: 32px; }
-.settings-icon { font: 400 16px var(--serif); }
 .icon:hover { background: var(--soft); }
 .brand { display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 4px 8px; border: 0; background: none; font: 600 14px var(--ui); letter-spacing: -.01em; }
 .brand-mark { width: 18px; height: 13px; border: 1.6px solid currentColor; border-radius: 2px; background: linear-gradient(to bottom right, transparent 47%, currentColor 48% 52%, transparent 53%) top / 100% 70% no-repeat, linear-gradient(to bottom left, transparent 47%, currentColor 48% 52%, transparent 53%) top / 100% 70% no-repeat; }
@@ -312,3 +310,13 @@ html[data-calm] *, html[data-calm] *::before, html[data-calm] *::after { animati
 }
 
 @media (max-width: 1100px) and (min-width: 641px) { .status-bar .last-scan { display: none; } .status-bar { grid-template-columns: auto 1fr auto auto; } }
+
+/* ---------- bingkai situs ---------- */
+.ship-head .jm-step { margin: 0 0 14px; }
+.summary-next { margin-top: 26px; }
+@media (max-width: 420px) { .topbar .brand { padding: 4px 2px; } .topbar .brand #brandName { display: none; } }
+@media (min-width: 900px) {
+  .topbar { background-color: var(--bd-b); background-image: var(--qm-sky); background-attachment: fixed; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; padding: 0 20px; }
+  .home, .detail, .summary { margin: 4px auto 40px; min-height: calc(100vh - 104px); padding: 0 28px 160px; border-radius: 28px; background: var(--bg); box-shadow: var(--qm-shadow); }
+  .reading-line { left: calc(50% - 366px); bottom: 0; width: calc(var(--progress, 0) * 732px); border-radius: 2px; }
+}

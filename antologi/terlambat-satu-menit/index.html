@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id" data-view="home">
+<html lang="id" data-view="home" class="qm-sky-wide">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -24,14 +24,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
-<link rel="stylesheet" href="minute.css?v=32">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=1">
+<link rel="stylesheet" href="minute.css?v=33">
 </head>
 <body>
 <header class="topbar" id="topbar">
-  <a class="icon back" href="../../#putar" id="back" aria-label="Kembali ke meja tulis">‹</a>
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
   <button class="brand" id="toHome" type="button"><span class="brand-mark" aria-hidden="true"></span><span id="brandName">Lacak Kiriman</span></button>
   <span class="top-resi" id="topResi" aria-hidden="true"></span>
-  <button class="icon settings-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
   <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
 </header>
 
@@ -55,6 +57,7 @@
 
 <main class="detail" id="detail" hidden>
   <header class="ship-head" id="shipHead">
+    <span id="stepChip" hidden></span>
     <p class="eyebrow" id="detailKicker">Riwayat pengiriman</p>
     <p class="resi-big" id="resiBig"></p>
     <dl class="route" id="route"></dl>
@@ -97,8 +100,9 @@
   <div class="contents-body" id="contentsBody" aria-live="polite"></div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
-<script src="sound.js?v=32"></script>
-<script src="track.js?v=32"></script>
-<script src="minute.js?v=32"></script>
+<script src="../panduan.js?v=2"></script>
+<script src="sound.js?v=33"></script>
+<script src="track.js?v=33"></script>
+<script src="minute.js?v=33"></script>
 </body>
 </html>

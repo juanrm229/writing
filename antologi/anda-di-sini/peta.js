@@ -23,7 +23,7 @@
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/~~(.+?)~~/g, '<s>$1</s>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   const fold = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const plain = s => String(s).replace(/\*\*|~~|\*/g, '');
-  const SLUG = 'anda-di-sini';
+  const SLUG = 'anda-di-sini', G = window.JMGuide;
   const read = $('#read'), story = $('#story');
   const toast = (msg, ms = 2600) => { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); };
 
@@ -191,6 +191,7 @@
   NOTE_INFO.filter(n => /di tempat|di dermaga/i.test(n.stamp)).forEach(n => { if (n.lastP != null) flow[n.lastP].html = flow[n.lastP].html.replace(/^<p>/, '<p class="caret">'); });
   story.innerHTML = flow.map((f, i) => f.html.replace(/^<(\w+)/, `<$1 data-i="${i}"`)).join('');
   const els = $$('[data-i]', story);
+  const PARTS = flow.map((f, i) => f.text.startsWith('## ') ? i : -1).filter(i => i >= 0);
   $('#after').hidden = false;
 
   /* ======================================================================
@@ -716,7 +717,7 @@
     const chip = $('#navChip'); let ins = -1;
     if ((state.route === 'garuda' || state.route === 'sekar') && state.span < 6000) for (let k = i; k >= 0 && k > i - 40; k--) if (INSTR[k] >= 0) { ins = k; break; }
     chip.hidden = ins < 0 || state.dot < .5;
-    if (!chip.hidden) { const txt = flow[ins].text.replace(/\*/g, ''); if (chip.dataset.t !== txt) { chip.dataset.t = txt; chip.className = 'nav-chip' + (/tiba/i.test(txt) ? ' arrive' : ''); chip.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON_TURN[turnOf(txt)]}</svg>${esc(txt)}`; } chip.style.left = FX + 'px'; chip.style.top = (mobile ? 12 : 24) + 'px'; }
+    if (!chip.hidden) { const txt = flow[ins].text.replace(/\*/g, ''); if (chip.dataset.t !== txt) { chip.dataset.t = txt; chip.className = 'nav-chip' + (/tiba/i.test(txt) ? ' arrive' : ''); chip.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON_TURN[turnOf(txt)]}</svg>${esc(txt)}`; } chip.style.left = FX + 'px'; chip.style.top = (mobile ? 62 : 72) + 'px'; }
   }
   function lockScreen() {
     const l = $('#lock'); l.classList.add('on'); clearTimeout(lockT);
@@ -764,6 +765,7 @@
   function onScroll() {
     const max = read.scrollHeight - read.clientHeight, f = max > 0 ? read.scrollTop / max : 0;
     $('#pct').textContent = Math.round(f * 100) + '%';
+    partStep();
     clearTimeout(saveT);
     saveT = setTimeout(() => {
       const pr = store.get('prog', {}); pr[SLUG] = +f.toFixed(3); store.set('prog', pr);
@@ -1059,7 +1061,27 @@
     if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) { e.preventDefault(); history.back(); }
   }));
 
+  /* ---------- bingkai situs: panduan, penanda bagian, dan tulisan berikutnya ---------- */
+  if (G) {
+    G.mount({ slug: SLUG, title: 'Anda di Sini', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#read',
+      lede: 'Catatan-catatan dari Saujana, dibaca di atas petanya.',
+      steps: ['Gulir saja. Teksnya dibaca utuh dan berurutan; peta di belakangnya mengikuti posisi bacamu.',
+        'Sesekali cerita membuka sebuah aplikasi: lingkaran akurasi, garis kapur, layar ponsel. Boleh dicoba, boleh dilewati.',
+        'Notifikasi, jam, dan baterai yang muncul adalah bagian dari cerita.',
+        'Aa untuk ukuran huruf dan tampilan. Dengarkan di bawah untuk membacakan cerita sambil petanya berjalan.'] });
+    G.settings();
+    $('#afterNext').innerHTML = G.next(SLUG);
+  }
+  function partStep() {
+    if (!G) return;
+    const i = position()[0], n = PARTS.filter(k => k <= i).length, chip = $('#stepChip');
+    if (!n) { chip.hidden = true; return; }
+    if (chip.dataset.n !== String(n)) { chip.dataset.n = n; G.step(n, PARTS.length, 'Bagian'); }
+    chip.hidden = false;
+  }
+
   resize();
   raf = requestAnimationFrame(loop);
   if (location.hash === '#akhir') read.scrollTop = read.scrollHeight;
+  partStep();
 })();

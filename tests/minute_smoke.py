@@ -50,6 +50,8 @@ class MinuteSmoke(unittest.TestCase):
 
     def setUp(self):
         self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce')
+        # kartu "Cara membaca" sudah pernah ditutup
+        self.context.add_init_script("try { localStorage.setItem('jm:guide:terlambat-satu-menit', '1') } catch (e) {}")
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
         self.page = self.context.new_page(); self.page.set_default_timeout(6000)
         self.errors = []; self.page.on('pageerror', lambda e: self.errors.append(str(e)))
@@ -210,6 +212,7 @@ class MinuteSmoke(unittest.TestCase):
                 self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce', service_workers='block')
                 self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
                 self.context.route(f'**/terlambat-satu-menit/{module}.js*', lambda route: route.abort())
+                self.context.add_init_script("try { localStorage.setItem('jm:guide:terlambat-satu-menit', '1') } catch (e) {}")
                 self.page = self.context.new_page(); self.page.on('pageerror', lambda e: self.errors.append(str(e)))
                 self.open('#a-18')
                 self.assertIn('kancing', self.page.locator('#p-18').inner_text())

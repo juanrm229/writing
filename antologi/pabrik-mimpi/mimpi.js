@@ -16,20 +16,20 @@
   const count = s => (plain(s).match(/\S+/g) || []).length;
   const qs = new URLSearchParams(location.search), EN = (qs.get('lang') || store.get('lang', 'id')) === 'en';
   const LANG = EN ? 'en' : 'id', L = EN ? 1 : 0, t = (id, en) => EN ? en : id, pick = v => Array.isArray(v) ? v[L] : v;
-  const SLUG = 'pabrik-mimpi', PREVIEW = qs.has('preview'), root = document.documentElement, motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const G = window.JMGuide, SLUG = 'pabrik-mimpi', PREVIEW = qs.has('preview'), root = document.documentElement, motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const K = window.MimpiKalender || { CALENDARS: {}, EVENTS: [], PHOTOS: [], QUOTES: {}, FIRST_YEAR: 1985, LAST_YEAR: 2024 };
   root.lang = LANG;
   const LOCALE = EN ? 'en-GB' : 'id-ID';
   const labels = {
-    sideBackLabel: ['Meja tulis', 'Writing desk'], appName: ['Kalender', 'Calendar'], calsLabel: ['Kalender saya', 'My calendars'], ownerName: ['Pak Wangsa', 'Mr. Wangsa'],
-    ownerNote: ['Perajin mimpi · stasiun paling ujung', 'Dream crafter · the end station'], todayLabel: ['Hari ini', 'Today'], viewChip: ['Jadwal', 'Schedule'], coverBackLabel: ['Meja tulis', 'Writing desk'],
+    appName: ['Kalender', 'Calendar'], calsLabel: ['Kalender saya', 'My calendars'], ownerName: ['Pak Wangsa', 'Mr. Wangsa'],
+    ownerNote: ['Perajin mimpi · stasiun paling ujung', 'Dream crafter · the end station'], todayLabel: ['Hari ini', 'Today'], viewChip: ['Jadwal', 'Schedule'],
     sideYears: ['Tampilan tahun · 1985–2025', 'Year view · 1985–2025'], yearsKicker: ['Tampilan tahun', 'Year view'],
     coverKicker: ['Kalender Pak Wangsa', "Mr. Wangsa's calendar"], coverNote: ['Empat puluh tahun shift malam. Satu acara yang selalu dijadwalkan ulang.', 'Forty years of night shifts. One event that was always rescheduled.'],
     resume: ['Lanjutkan', 'Continue'], settingsTitle: ['Pengaturan baca', 'Reading settings'], sizeLabel: ['Ukuran huruf', 'Text size'], motionLabel: ['Gerak', 'Motion'],
     themeLabel: ['Tampilan', 'Appearance'], languageLabel: ['Bahasa', 'Language'], lightboxTitle: ['Lampiran', 'Attachment']
   };
   Object.entries(labels).forEach(([id, v]) => { $('#' + id).textContent = t(...v); });
-  [['menu', t('Buka menu kalender', 'Open the calendar menu')], ['coverBack', t('Kembali ke meja tulis', 'Back to the writing desk')], ['today', t('Hari ini', 'Today')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, l]) => $('#' + id).setAttribute('aria-label', l));
+  [['menu', t('Buka menu kalender', 'Open the calendar menu')], ['today', t('Hari ini', 'Today')], ['openSettings', t('Pengaturan baca', 'Reading settings')], ['readingLine', t('Kemajuan membaca', 'Reading progress')], ['smaller', t('Perkecil huruf', 'Decrease text size')], ['bigger', t('Perbesar huruf', 'Increase text size')]].forEach(([id, l]) => $('#' + id).setAttribute('aria-label', l));
   document.querySelectorAll('[data-close]').forEach(b => { b.setAttribute('aria-label', t('Tutup', 'Close')); b.onclick = () => b.closest('dialog').close(); });
 
   // Tema mengikuti situs.
@@ -165,7 +165,7 @@
       html += `<section class="day" data-event="${e.id}" data-date="${e.date}"${lock}>${dateLine}<div class="date-col"><span class="dow">${esc(fmt(date, { weekday: 'short' }))}</span><span class="dnum">${date.getDate()}</span><span class="mon">${esc(fmt(date, { month: 'short', year: 'numeric' }))}</span></div><article class="event${e.invite ? ' invite' : ''}${e.live ? ' live' : ''}" style="--c:${calColor(e.cal)}">${eventHead(e)}<div class="desc">${inner}</div>${hall}</article></section>`;
     });
     const now = new Date();
-    html += `<section class="day closing" id="closing"${rsvp !== 'hadir' ? ' hidden' : ''}><p class="date-line"><b>${t('Hari ini', 'Today')}</b> ${esc(dayLong(now))}</p><div class="date-col"><span class="dow">${esc(fmt(now, { weekday: 'short' }))}</span><span class="dnum">${now.getDate()}</span><span class="mon">${esc(fmt(now, { month: 'short', year: 'numeric' }))}</span></div><article class="event" style="--c:${calColor('pribadi')}"><header class="event-head"><span class="badge today-badge">${t('Hari ini', 'Today')}</span><h3>${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</h3><p class="task done"><span class="box" aria-hidden="true"></span>${t('Terjadi · dengan mata terbuka', 'Happened · with open eyes')}</p><p class="meta">${t('Tidak dijadwalkan ulang lagi.', 'Never rescheduled again.')}</p></header><div class="end-links"><a class="secondary small" href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button class="secondary small" id="readAgain" type="button">${t('Kembali ke 1985', 'Back to 1985')}</button></div></article></section>`;
+    html += `<section class="day closing" id="closing"${rsvp !== 'hadir' ? ' hidden' : ''}><p class="date-line"><b>${t('Hari ini', 'Today')}</b> ${esc(dayLong(now))}</p><div class="date-col"><span class="dow">${esc(fmt(now, { weekday: 'short' }))}</span><span class="dnum">${now.getDate()}</span><span class="mon">${esc(fmt(now, { month: 'short', year: 'numeric' }))}</span></div><article class="event" style="--c:${calColor('pribadi')}"><header class="event-head"><span class="badge today-badge">${t('Hari ini', 'Today')}</span><h3>${t('Malam terakhir sebelum libur', 'The last night before the holiday')}</h3><p class="task done"><span class="box" aria-hidden="true"></span>${t('Terjadi · dengan mata terbuka', 'Happened · with open eyes')}</p><p class="meta">${t('Tidak dijadwalkan ulang lagi.', 'Never rescheduled again.')}</p></header><div class="end-links"><button class="secondary small" id="readAgain" type="button">${t('Kembali ke 1985', 'Back to 1985')}</button></div></article>${G ? `<div class="closing-next">${G.next(SLUG)}</div>` : ''}</section>`;
     $('#story').innerHTML = html;
   };
   build();
@@ -345,7 +345,7 @@
   $('#todayNum').textContent = String(new Date().getDate());
 
   // Membaca
-  let paragraphs = [], weights = new Map(), total = 0, current = -1, latest = null, saveTimer = 0, raf = 0, lastEvent = null, sharedShown = false;
+  let paragraphs = [], weights = new Map(), total = 0, current = -1, latest = null, saveTimer = 0, raf = 0, lastEvent = null, stepShown = null, sharedShown = false;
   const measure = () => {
     paragraphs = [...document.querySelectorAll('.passage')].filter(p => !p.closest('[hidden]')); total = 0; weights = new Map();
     paragraphs.forEach(p => { const w = count(body[+p.dataset.p]); weights.set(p, { before: total, words: w }); total += w; });
@@ -376,6 +376,7 @@
     root.toggleAttribute('data-reading', !!e);
     if (e) {
       const date = D(e.date); $('#monthTitle').textContent = e.empty ? '2025' : monthTitle(date); renderMini(date);
+      if (G && stepShown !== e) { stepShown = e; $('#stepChip').hidden = false; G.step(EVENTS.indexOf(e) + 1, EVENTS.length, t('Acara', 'Event')); }
       if (e !== lastEvent) {
         if (lastEvent && e.p > lastEvent.p && EVENTS.indexOf(e) - EVENTS.indexOf(lastEvent) === 1 && TOASTS[e.id]) toast(e.id, TOASTS[e.id].join(' · '));
         lastEvent = e;
@@ -417,6 +418,12 @@
     const read = array(store.get('read', [])); if (!read.includes(SLUG)) store.set('read', [...read, SLUG]);
     const stats = object(store.get('stats', {})); stats.plays = object(stats.plays); stats.plays[SLUG] = (+stats.plays[SLUG] || 0) + 1; store.set('stats', stats);
   }
+  if (G) G.mount({ slug: SLUG, title: 'Pabrik Mimpi', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#begin',
+    lede: t('Dibaca di kalender Pak Wangsa.', "Read in Mr. Wangsa's calendar."),
+    steps: [t('Ceritanya ada di dalam acara-acara kalender. Gulir dari 1985 ke bawah; bulan di atas mengikuti bacaanmu.', 'The story lives inside calendar events. Scroll down from 1985; the month at the top follows your reading.'),
+      t('Satu acara terus dijadwalkan ulang. Riwayatnya bisa kamu buka, tahun demi tahun.', 'One event keeps being rescheduled. You can open its history, year by year.'),
+      t('Ketuk judul bulan atau Tampilan tahun untuk melihat empat puluh tahun sekaligus.', 'Tap the month title or Year view to see forty years at once.'),
+      t('Menjelang akhir ada undangan dari Lila. Jawabanmu menentukan halaman terakhir.', "Near the end there is an invitation from Lila. Your answer decides the last page.")] });
   renderMini(D(EVENTS[0]?.date || '1985-02-04')); renderCover(); follow(); root.dataset.loaded = '';
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

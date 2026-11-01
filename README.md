@@ -235,14 +235,31 @@ Puisi ini dibaca di **aplikasi Rumah** (rumah pintar), tanpa ilustrasi: ringkasa
 python3 tests/room_smoke.py
 ```
 
-### Panduan bersama untuk puisi dan arsip (antologi/panduan.js, antologi/panduan.css)
+### Bingkai bersama (antologi/bingkai.css, antologi/panduan.js)
 
-Ketiga puisi dan arsip catatan memakai panduan yang sama supaya alurnya tidak membingungkan:
+Isi setiap pengalaman boleh berbeda (peta, obrolan, halaman lacak, kalender, arsip, aplikasi Rumah, Jam, layar kunci), tapi bagian yang milik situs sama di kedelapannya:
+
+- **Satu tombol keluar**: pil **‹ Meja tulis** di kiri atas, sama persis dengan pil di pembaca situs utama (tinggi 38, kartu kaca, bayangan yang sama). Dalam bahasa Inggris: *Writing desk*.
+- **Tombol kanan atas**: **Aa** (pengaturan baca) dan **?** (cara membaca), bundar, di tempat yang sama.
+- **Dialog pengaturan baca** dengan tampilan yang sama: ukuran huruf, tampilan terang/gelap, dan pengaturan khusus pengalaman itu (gerak, bahasa, bunyi).
+- **Token situs**: huruf antarmuka sistem (seperti situs utama), huruf baca Newsreader, warna aksen biru situs, dan langit yang sama (`data-backdrop`: fajar, siang, senja, kabut, malam; ikut jam atau pilihan pembaca). Di layar lebar, aplikasinya tampil sebagai jendela di atas langit itu.
+- **Huruf baca** yang dipilih di situs utama (`jm:rd.font`: Literata, Georgia, sistem, Instrument, Geist) ikut dipakai untuk teks cerita. Pilihan **kertas** dari situs utama sengaja tidak diterapkan: setiap pengalaman punya permukaan dunianya sendiri (layar ponsel, kertas lacak, kalender), dan kertas krem di atasnya akan merusak ilusi itu.
+- **Tema** mengikuti situs: pilihan pembaca (`jm:theme`), lalu pengaturan admin, lalu perangkat. Interlude kini punya tema terang, dan warna bilah browser (`theme-color`) di Anda di Sini dan Interlude mengikuti tema yang aktif.
+
+### Panduan bersama (antologi/panduan.js, antologi/panduan.css)
+
+Kedelapan pengalaman memakai panduan yang sama supaya alurnya tidak membingungkan:
 
 - **Cara membaca**: saat pertama kali dibuka, satu kartu menjelaskan langkah-langkahnya dalam tiga atau empat kalimat; tombol **?** di bilah atas membukanya lagi.
-- **Penanda langkah**: *Bait 3 dari 7* dengan titik-titik kecil.
+- **Penanda langkah**: *Bait 3 dari 7* dengan titik-titik kecil (Anda di Sini: *Bagian*, Interlude: *Bab*, Terlambat Satu Menit: *Kiriman*, Pabrik Mimpi: *Acara*).
 - **Dorongan saat diam**: kalau pembaca tidak melakukan apa-apa beberapa detik, tombol yang ditunggu berdenyut; kalau tombolnya di luar layar, muncul tombol **↓** yang membawanya ke sana.
-- **Malam yang sama**: semua tulisan ini ditulis pada malam 19 Juli 2026 (Thought Log 01.57, 02.02, 02.06; The Room 02.13; Trillions of Seconds 02.17; The Moon Behind My Eyes 02.43). Di akhir setiap tulisan ada kartu ke tulisan berikutnya malam itu.
+- **Malam yang sama**: semua tulisan ini ditulis pada malam 19 Juli 2026 (Thought Log 01.57, 02.02, 02.06; The Room 02.13; Trillions of Seconds 02.17; The Moon Behind My Eyes 02.43). Di akhir setiap tulisan ada kartu ke tulisan berikutnya malam itu; di pengalaman lain, kartunya menunjuk pengalaman berikutnya menurut tanggal (dari `content/works.json`, jadi selalu ikut daftar terbaru).
+
+Cek bingkai di kedelapan pengalaman (tombol keluar, tombol kanan atas, dialog, tema, huruf baca, kartu berikutnya):
+
+```bash
+python3 tests/bingkai_smoke.py
+```
 
 ### Arsip catatan (antologi/arsip/)
 
