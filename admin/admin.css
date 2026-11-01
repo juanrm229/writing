@@ -439,3 +439,14 @@ a { color: inherit; }
 .pr-chip.on small { color: inherit; opacity: .7; }
 .pr-chip:active { transform: scale(.95); }
 @media (max-width: 520px) { .pr-row { grid-template-columns: minmax(0, 1fr) 30px; } .pr-row input:first-child { grid-column: 1 / -1; } }
+
+/* catatan margin */
+.mg-list { display: grid; gap: 10px; }
+.mg-row { position: relative; display: grid; gap: 6px; padding: 10px 10px 10px 14px; border-radius: 14px; background: var(--chip-2); box-shadow: inset 2px 0 0 #4F7BFF; }
+.mg-row select { width: calc(100% - 34px); height: 34px; padding: 0 8px; border: 0; border-radius: 10px; background: var(--card); font-size: 13px; }
+.details .mg-row textarea { background: var(--card); }
+.mg-del { position: absolute; right: 8px; top: 10px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+.mg-del:hover { background: var(--card); color: var(--danger); }
+.mg-add { justify-self: start; border: 0; background: none; color: var(--navy); font-size: 13px; cursor: pointer; padding: 2px 0; }
+.mg-add:disabled { opacity: .4; cursor: default; }
+.mg-none { margin: 0; }

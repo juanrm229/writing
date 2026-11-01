@@ -308,5 +308,14 @@ window.JM_EN = {
   'Tidak bisa menyalin otomatis.': "Couldn’t copy automatically.",
   'Semua': "All",
   'Belum diputar': "Not played",
-  'Selesai': "Finished"
+  'Selesai': "Finished",
+  // titipan dan catatan margin
+  'Titipkan': "Leave it",
+  'Titipan': "Left for you",
+  'Titipkan kalimat ini untuk seseorang': "Leave this line for someone",
+  'Pesanmu di margin (boleh kosong)': "Your note in the margin (optional)",
+  'Aku teringat kamu waktu membaca ini.': "This made me think of you.",
+  'Namamu (boleh kosong)': "Your name (optional)",
+  'Pesannya ikut di dalam tautan, tidak disimpan di mana pun.': "The note travels inside the link and isn’t stored anywhere.",
+  'Kirim tautan': "Send link"
 };
