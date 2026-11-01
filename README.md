@@ -94,7 +94,7 @@ Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sin
 - **iPhone dan iPad:** buka di Safari, ketuk **Bagikan**, lalu **Tambahkan ke Layar Utama**. Chip *Pasang aplikasi* menampilkan petunjuk ini.
 - **Offline:** `sw.js` menyimpan salinan halaman, kode, dan konten. Saat ada sinyal, tulisan terbaru selalu diambil dari jaringan. Saat tidak ada, salinan terakhir yang dipakai.
 - **Nama aplikasi** mengikuti *Judul situs* di admin (sekarang **Quiet Margins**), baik nama lengkap maupun nama di bawah ikon. `manifest.webmanifest` diperbarui otomatis saat kamu menyimpan.
-- **Ikon**: selembar halaman dengan margin yang lapang dan satu titik biru di margin, di atas langit senja situs. Semua ukuran di `assets/icons/` (512, 192, 180 untuk iPhone, maskable untuk Android, favicon 64) dibuat ulang dengan `node tools/ikon.js`; ubah warna atau bentuknya di skrip itu.
+- **Ikon**: selembar halaman gelap sendirian di langit malam situs. Ada garis margin biru tipis, tiga baris tulisan yang memudar lalu berhenti, dan satu cahaya kecil yang tertinggal di margin. Semua ukuran di `assets/icons/` (512, 192, 180 untuk iPhone, maskable untuk Android, favicon 64) dibuat ulang dengan `node tools/ikon.js`; ubah warna atau bentuknya di skrip itu.
 
 ## Menjalankan di komputer
 
