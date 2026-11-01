@@ -22,6 +22,7 @@
   const plain = s => String(s).replace(/\*/g, '');
   const EN = (qs.get('lang') || store.get('lang', 'id')) === 'en', LANG = EN ? 'en' : 'id', t = (id, en) => EN ? en : id;
   const LOCALE = EN ? 'en-GB' : 'id-ID';
+  const G = window.JMGuide || { mount() {}, step() {}, want() {}, next: () => '' };
   const SLUG = 'the-moon-behind-my-eyes', root = document.documentElement, motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   root.lang = LANG;
 
@@ -137,7 +138,7 @@
   glass.addEventListener('pointerup', () => { last = null; });
 
   // Pusat kontrol
-  const openCC = () => { $('#cc').hidden = false; $('#bright').focus(); };
+  const openCC = () => { $('#cc').hidden = false; $('#bright').focus(); guide(); };
   const closeCC = () => { $('#cc').hidden = true; $('#openCC').focus(); render(); };
   $('#openCC').onclick = openCC; $('#ccClose').onclick = closeCC;
   $('#cc').addEventListener('click', e => { if (e.target === $('#cc')) closeCC(); });
@@ -218,6 +219,7 @@
       if (S.pings > 1) html += `<p class="stack-more">${t(`+${S.pings - 1} notifikasi lagi dari Langit`, `+${S.pings - 1} more from Sky`)}</p>`;
     }
     for (let s = S.shown - 1; s >= 0; s--) html += noteCard(s, s === S.shown - 1 && !S.done, fresh);
+    if (S.done) html += `<li>${G.next(SLUG)}</li>`;
     if (lostNote) html += `<li class="note lost" id="lost"><p>${esc(lostNote)}</p></li>`;
     $('#feed').innerHTML = html;
     $$('.snooze').forEach(b => { b.onclick = snooze; });
@@ -235,6 +237,17 @@
     lockBtn.classList.toggle('cue', ready() && !S.done); lockBtn.setAttribute('aria-disabled', String(!ready()));
     applyGlass(); setBright(S.bright); renderWidgets(); renderLive(); renderFeed(fresh); renderAod(); renderHint();
     if (fresh) glass.scrollTo({ top: 0, behavior: calm() ? 'instant' : 'smooth' });
+    guide();
+  }
+  // panduan: posisi bait dan langkah yang ditunggu
+  function guide() {
+    $('#stepChip').hidden = false; G.step(S.done ? stanzas.length : S.shown, stanzas.length);
+    if (S.done) G.want(null);
+    else if (S.clarity < 1) G.want('#hint', t('Usap layarnya', 'Wipe the screen'));
+    else if (S.shown < 2) G.want(null);
+    else if (S.shown === 2) G.want('.snooze', t('Ingatkan lagi', 'Remind me again'));
+    else if (S.shown === 3) G.want($('#cc').hidden ? '#openCC' : '#bright', t('Pusat kontrol', 'Control Centre'));
+    else G.want('#lockBtn', t('Tahan tombol kunci', 'Hold the lock button'));
   }
   setInterval(tick, 250);
 
@@ -270,6 +283,9 @@
     const stats = object(store.get('stats', {})); stats.plays = object(stats.plays); stats.plays[SLUG] = (+stats.plays[SLUG] || 0) + 1; store.set('stats', stats);
     store.set('last', { key: SLUG, at: Date.now() });
   }
+  G.mount({ slug: SLUG, title, helpInto: '#topRight', stepInto: '#stepChip',
+    lede: t('Puisi ini dibaca di layar kunci ponsel.', 'This poem is read on a phone lock screen.'),
+    steps: [t('Layarnya buram: usap kacanya sampai jelas.', 'The screen is blurred: wipe the glass clear.'), t('Tunggu bulannya terbit. Kalau pengingat datang terus, tunda saja.', 'Wait for the moon to rise. When reminders keep coming, snooze them.'), t('Buka pusat kontrol ☾ dan turunkan kecerahan: itu tirainya.', 'Open Control Centre ☾ and lower the brightness: those are the curtains.'), t('Tahan tombol kunci untuk memejam. Bait terakhir ada di layar yang gelap.', 'Hold the lock button to close your eyes. The last stanzas are on the dark screen.')] });
   render(); follow(); tick(); root.dataset.loaded = '';
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

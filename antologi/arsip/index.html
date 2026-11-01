@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arsip · Quiet Margins</title>
+<meta name="description" content="Arsip catatan Juan: tiga thought log yang ditulis dalam sembilan menit pada malam 19 Juli 2026.">
+<meta property="og:title" content="Arsip catatan">
+<meta property="og:description" content="Tiga berkas, satu malam, dan satu ruang kosong yang sudah ada.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#f3f1ec">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="arsip.css?v=1">
+</head>
+<body>
+<header class="top">
+  <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+  <button class="crumb" id="toDrawer" type="button" hidden>‹ <span id="drawerLabel">Laci</span></button>
+  <p class="app-title"><b id="appTitle">Arsip</b> <span id="appSub">Catatan</span></p>
+  <span class="top-right" id="topRight"><button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+  <span class="reading-line" id="readingLine" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
+</header>
+
+<div class="layout">
+  <nav class="drawer" id="drawer" aria-labelledby="drawerTitle">
+    <p class="kicker" id="kicker">Arsip · Juan</p>
+    <h1 class="drawer-title" id="drawerTitle">Catatan malam 19 Juli 2026</h1>
+    <p class="drawer-note" id="drawerNote"></p>
+    <h2 class="label" id="filesLabel">Berkas</h2>
+    <ol class="files" id="files"></ol>
+    <h2 class="label" id="nightLabel">Malam yang sama</h2>
+    <ol class="night" id="night"></ol>
+  </nav>
+
+  <main class="doc-wrap" id="docWrap">
+    <article class="doc" id="doc" aria-live="polite"></article>
+  </main>
+
+  <aside class="index" id="index" aria-labelledby="indexTitle">
+    <h2 class="sr-only" id="indexTitle">Indeks berkas</h2>
+    <section class="panel"><h3 class="label" id="qLabel">Pertanyaan dalam berkas</h3><ol class="questions" id="questions"></ol></section>
+    <section class="panel"><h3 class="label" id="xLabel">Rujukan silang</h3><div class="xrefs" id="xrefs"></div></section>
+    <section class="panel"><h3 class="label" id="logLabel">Riwayat akses</h3><ol class="access" id="access"></ol></section>
+  </aside>
+</div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../panduan.js?v=1"></script>
+<script src="arsip.js?v=1"></script>
+</body>
+</html>

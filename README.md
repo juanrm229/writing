@@ -223,4 +223,27 @@ Puisi ini dibaca di **aplikasi Rumah** (rumah pintar), tanpa ilustrasi: ringkasa
 python3 tests/room_smoke.py
 ```
 
+### Panduan bersama untuk puisi dan arsip (antologi/panduan.js, antologi/panduan.css)
+
+Ketiga puisi dan arsip catatan memakai panduan yang sama supaya alurnya tidak membingungkan:
+
+- **Cara membaca**: saat pertama kali dibuka, satu kartu menjelaskan langkah-langkahnya dalam tiga atau empat kalimat; tombol **?** di bilah atas membukanya lagi.
+- **Penanda langkah**: *Bait 3 dari 7* dengan titik-titik kecil.
+- **Dorongan saat diam**: kalau pembaca tidak melakukan apa-apa beberapa detik, tombol yang ditunggu berdenyut; kalau tombolnya di luar layar, muncul tombol **↓** yang membawanya ke sana.
+- **Malam yang sama**: semua tulisan ini ditulis pada malam 19 Juli 2026 (Thought Log 01.57, 02.02, 02.06; The Room 02.13; Trillions of Seconds 02.17; The Moon Behind My Eyes 02.43). Di akhir setiap tulisan ada kartu ke tulisan berikutnya malam itu.
+
+### Arsip catatan (antologi/arsip/)
+
+Semua tulisan berjenis *catatan* (Thought Log) dibaca di **aplikasi arsip**, tanpa ilustrasi. Satu halaman dipakai bersama; `works.json` menunjuk berkasnya lewat `#` (misalnya `antologi/arsip/index.html#thought-log-002-the-dissonant-shell`), dan situs utama meneruskan alamat itu.
+
+- **Laci**: berkas-berkas urut menurut nomornya (001, 002, 003) dengan jam, jumlah paragraf, jumlah pertanyaan, dan statusnya (belum dibuka, dibaca sekian persen, selesai dibaca), catatan bahwa ketiganya ditulis dalam sembilan menit, dan garis waktu *Malam yang sama* yang menautkan ketiga puisi.
+- **Lembar dokumen**: kepala arsip (nomor, tanggal dan jam, panjang, bahasa, pertanyaan), paragraf bernomor ¶, dan cap *Selesai dibaca* setelah sampai di akhir.
+- **Indeks**: setiap kalimat tanya ditandai P1, P2, …; di indeks statusnya *terbuka* sampai paragraf sesudahnya dibaca, lalu *terjawab*. **Rujukan silang** membuka kata khas yang sama di berkas lain dan menandainya. **Riwayat akses** mencatat kapan berkas dibuka, di bawah baris *Diarsipkan · 19 Juli 2026 · Juan*.
+- **Pintu**: berkas terakhir berakhir dengan *Just knock on the door.* Mengetuk tiga kali membuka **Berkas 004 · Ruangmu**, lembar kosong untuk pembaca sendiri yang hanya tersimpan di perangkatnya.
+- Di layar lebar: laci, dokumen, dan indeks berdampingan; di ponsel: laci lalu dokumen, dengan indeks di dalam dokumen.
+
+```bash
+python3 tests/arsip_smoke.py
+```
+
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.

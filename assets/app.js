@@ -942,7 +942,9 @@
     const ex = bySlug(slug)?.experience;
     if (ex) {
       const fragment = slug === 'interlude' && ch > 1 ? '#bab-' + ch : slug === 'terlambat-satu-menit' ? '#' + side : '';
-      location.replace(new URL(String(ex) + location.search + fragment, location.href.split('#')[0]).href); return;
+      // pengalaman yang dipakai bersama beberapa tulisan (mis. arsip catatan) menunjuk tulisannya lewat #
+      const [exPath, exHash] = String(ex).split('#');
+      location.replace(new URL(exPath + location.search + (exHash ? '#' + exHash : fragment), location.href.split('#')[0]).href); return;
     }
     const w = docOf(slug, side, ch) || docOf(slug);
     if (!w) return;

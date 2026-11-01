@@ -24,6 +24,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 html[data-scrolled] .top-title, html[data-started] .top-title { opacity: 1; }
 .top-title.poem { font: italic 400 17px var(--serif); }
 html[data-started] .poem-head { display: none; }
+.top-right { justify-self: end; display: inline-flex; gap: 6px; --jm-accent: var(--orange); }
+.jm-help { color: var(--orange); background: none; }
+.mid { display: grid; justify-items: center; gap: 8px; min-width: 0; }
+@media (max-width: 380px) { .mid .jm-step i { display: none; } .mid .jm-step { padding: 5px 9px; } }
+:root { --jm-card: var(--bg); --jm-ink: var(--ink); --jm-accent: var(--orange); --jm-chip: var(--card); }
 .icon { justify-self: end; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--orange); font: 400 17px var(--serif); }
 .tab { padding: 0 18px; }
 .large { margin: 4px 0 14px; font: 700 34px/1.1 var(--ui); letter-spacing: -.02em; }

@@ -22,6 +22,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .back { justify-self: start; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border-radius: 999px; color: var(--ink); text-decoration: none; font-size: 14px; background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .outer-title { margin: 0; color: var(--muted); font-size: 13px; }
 .outer-title i { font-family: var(--serif); }
+.top-right { justify-self: end; display: inline-flex; gap: 6px; }
+.outer-mid { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+:root { --jm-card: var(--page); --jm-ink: var(--ink); --jm-accent: var(--accent); --jm-chip: var(--glass); }
+.feed .jm-next { margin: 0; }
 .icon { justify-self: end; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); font: 400 17px var(--serif); }
 
 /* Ponsel */
@@ -128,7 +132,7 @@ dialog::backdrop { background: rgba(0,0,0,.45); backdrop-filter: blur(3px); }
 .setting-button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 4px; }
 .setting-button:disabled { opacity: .4; }
 
-@media (max-width: 699px) { .outer-title { visibility: hidden; } }
+@media (max-width: 699px) { .outer-title { display: none; } }
 /* Layar lebar: ponsel di tengah meja */
 @media (min-width: 700px) {
   .outer { position: static; height: 56px; }
