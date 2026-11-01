@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Room · Quiet Margins</title>
+<meta name="description" content="Dibaca di aplikasi Rumah: satu kamar tanpa pintu, kuas yang berhenti merespons, dinding yang jebol, dan satu paku.">
+<meta property="og:title" content="The Room">
+<meta property="og:description" content="I am a room of four walls, stripped of a door.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#f2f2f7">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="room.css?v=1">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+    <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+  </header>
+  <main class="home">
+    <p class="kicker" id="kicker">Puisi · Juan</p>
+    <h1 class="room-title"><span id="homeName">Rumah</span> <span class="room-name" id="roomName">Kamar</span></h1>
+    <p class="poem-title" id="title">The Room</p>
+    <ul class="summary" id="summary" aria-label="Ringkasan kamar"></ul>
+    <p class="lost" id="lost" hidden></p>
+    <section class="now" id="now" aria-live="polite"></section>
+    <section class="invite" id="invite" hidden aria-live="polite"></section>
+    <h2 class="section" id="accLabel">Aksesori</h2>
+    <div class="tiles" id="tiles"></div>
+    <h2 class="section" id="historyLabel">Riwayat</h2>
+    <ol class="history" id="history"></ol>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="room.js?v=1"></script>
+</body>
+</html>

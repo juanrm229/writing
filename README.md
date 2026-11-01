@@ -208,4 +208,19 @@ Puisi ini dibaca di **aplikasi Jam**, di tab *Stopwatch*. Larik dimuat utuh dari
 python3 tests/seconds_smoke.py
 ```
 
+### The Room (antologi/the-room/)
+
+Puisi ini dibaca di **aplikasi Rumah** (rumah pintar), tanpa ilustrasi: ringkasan kamar, kartu aksesori, sensor, adegan, notifikasi, dan riwayat. Kamarnya satu, *Kamar*, dan pintunya *tidak ditemukan*. Setiap bait tampil sebagai peristiwa terbaru di atas; bait sebelumnya tersimpan di *Riwayat*. Setiap tindakan pembaca pada sebuah kartu membuka bait berikutnya, dan kartu yang menunggu disentuh berdenyut. Larik dimuat utuh dari `content/works.json`; tampilannya mengikuti tema situs.
+
+- *Pintu* tidak bisa dibuka, *Barang* (214 benda, 97% penuh) tidak bisa dirapikan karena tidak ada tangan. **Tambah aksesori** menemukan *Kuas*.
+- **Cat · hari ke-n**: warnanya makin pekat setiap hari; di 70% muncul *Kuas kecil* yang belum pernah menggambar. *Gambar* hanya menjawab *Takut*; ia dipindahkan ke **pojok terjauh** dan tinggal di sana sampai akhir.
+- Kuas berhenti mengecat; adegan **Rapikan perabot** gagal, 6 perabot rusak. **Cat lagi · warna lembut** dijawab **Tidak Ada Respons**, lalu kuasnya dilepaskan.
+- Penggeser **Dorong semua ke satu sisi** menaikkan beban *Dinding Timur* sampai jebol; yang tersisa hanya buku kecil dan meja. Suhu turun terus dan tidak bisa dinaikkan; cat dinding kusam dan mengelupas.
+- Notifikasi *Palu & Paku ingin masuk*: **Izinkan**, lalu **Tutup lubang** dengan satu paku. Suhunya naik lagi tapi tidak lagi 27°. Palu bisa membuat perabot, tapi **tidak mendukung pengecatan**; *Paku* terikat pada Palu dan tidak bisa dilepas.
+- Penanda `#baca-7` membuka bait kedelapan dengan tindakan sebelumnya dianggap sudah dilakukan; *Mulai lagi* di akhir.
+
+```bash
+python3 tests/room_smoke.py
+```
+
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.
