@@ -22,6 +22,7 @@
   const plain = s => String(s).replace(/\*/g, '');
   const EN = (qs.get('lang') || store.get('lang', 'id')) === 'en', LANG = EN ? 'en' : 'id', t = (id, en) => EN ? en : id;
   const LOCALE = EN ? 'en-GB' : 'id-ID', num = n => Math.round(n).toLocaleString(LOCALE);
+  const G = window.JMGuide || { mount() {}, step() {}, want() {}, next: () => '' };
   const SLUG = 'trillions-of-seconds', root = document.documentElement, motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   root.lang = LANG;
 
@@ -221,7 +222,10 @@
     $('#topTitle').textContent = tab === 'stopwatch' && S.shown ? title : TITLES[tab]; $('#topTitle').classList.toggle('poem', tab === 'stopwatch' && S.shown > 0);
     renderLaps(); renderEntity(); drawDial(elapsed()); $('#digital').textContent = fmt(elapsed());
     const end = $('#end'); end.hidden = !S.finished;
-    end.innerHTML = S.finished ? `<p>${t('Selesai.', 'The end.')}</p><a href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button type="button" id="again">${t('Atur ulang dan baca lagi', 'Reset and read again')}</button>` : '';
+    end.innerHTML = S.finished ? `<p>${t('Selesai.', 'The end.')}</p><a href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button type="button" id="again">${t('Atur ulang dan baca lagi', 'Reset and read again')}</button>${G.next(SLUG)}` : '';
+    // panduan: posisi bait dan tombol yang ditunggu
+    $('#stepChip').hidden = !S.shown || S.finished; if (S.shown) G.step(S.shown, TOTAL);
+    G.want(S.finished ? null : !S.shown ? '#startBtn' : running ? (last ? '#startBtn' : '#lapBtn') : '#startBtn', S.finished ? '' : !S.shown ? t('Mulai', 'Start') : running ? (last ? t('Berhenti', 'Stop') : t('Putaran', 'Lap')) : t('Lanjut', 'Resume'));
     $('#again')?.addEventListener('click', reset);
   };
   const frame = () => {
@@ -294,6 +298,9 @@
     const stats = object(store.get('stats', {})); stats.plays = object(stats.plays); stats.plays[SLUG] = (+stats.plays[SLUG] || 0) + 1; store.set('stats', stats);
     store.set('last', { key: SLUG, at: Date.now() });
   }
+  G.mount({ slug: SLUG, title, helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#startBtn',
+    lede: t('Puisi ini dibaca di aplikasi Jam, dengan stopwatch.', 'This poem is read in the Clock app, with a stopwatch.'),
+    steps: [t('Tekan Mulai: bait pertama terbuka dan waktunya berjalan.', 'Press Start: the first stanza opens and time begins.'), t('Setiap Putaran membuka bait berikutnya dan mencatat berapa lama kamu memikirkannya.', 'Each Lap opens the next stanza and records how long you thought about it.'), t('Perhatikan tab di bawah: ada yang bertambah di Jam Dunia dan Timer.', 'Watch the tabs below: something appears in World Clock and Timers.'), t('Di bait terakhir, tekan Berhenti.', 'On the last stanza, press Stop.')] });
   render(); frame(); follow(); root.dataset.loaded = '';
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

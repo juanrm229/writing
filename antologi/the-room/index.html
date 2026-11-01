@@ -14,18 +14,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
-<link rel="stylesheet" href="room.css?v=1">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="room.css?v=2">
 </head>
 <body>
 <div class="app" id="app">
   <header class="top">
     <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
-    <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+    <span class="top-right" id="topRight"><button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
   </header>
   <main class="home">
     <p class="kicker" id="kicker">Puisi · Juan</p>
     <h1 class="room-title"><span id="homeName">Rumah</span> <span class="room-name" id="roomName">Kamar</span></h1>
     <p class="poem-title" id="title">The Room</p>
+    <p class="step-row"><span id="stepChip" hidden></span></p>
     <ul class="summary" id="summary" aria-label="Ringkasan kamar"></ul>
     <p class="lost" id="lost" hidden></p>
     <section class="now" id="now" aria-live="polite"></section>
@@ -48,6 +50,7 @@
   </div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
-<script src="room.js?v=1"></script>
+<script src="../panduan.js?v=1"></script>
+<script src="room.js?v=2"></script>
 </body>
 </html>

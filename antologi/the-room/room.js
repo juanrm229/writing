@@ -21,6 +21,7 @@
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   const EN = (qs.get('lang') || store.get('lang', 'id')) === 'en', LANG = EN ? 'en' : 'id', t = (id, en) => EN ? en : id;
   const LOCALE = EN ? 'en-GB' : 'id-ID', dec = n => n.toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const G = window.JMGuide || { mount() {}, step() {}, want() {}, next: () => '' };
   const SLUG = 'the-room', root = document.documentElement, motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   root.lang = LANG;
 
@@ -241,7 +242,7 @@
   const when = i => { const at = S.at[i]; return at ? new Date(at).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false }) : ''; };
   const renderNow = fresh => {
     const i = S.shown - 1, [a, b, k] = ev(i), next = NEXT[i]?.[0];
-    $('#now').innerHTML = `<p class="event"><span class="ev-ico">${icon(k)}</span><b>${esc(a)}</b> · ${esc(b)}<span class="when">${when(i)}</span></p><p class="text${fresh ? ' fresh' : ''}" id="p-${i}">${inline(body[i])}</p>${next && !S.done ? `<p class="next">${esc(next)}</p>` : ''}${S.done ? `<div class="end"><a href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button type="button" id="again">${t('Mulai lagi', 'Start again')}</button></div>` : ''}`;
+    $('#now').innerHTML = `<p class="event"><span class="ev-ico">${icon(k)}</span><b>${esc(a)}</b> · ${esc(b)}<span class="when">${when(i)}</span></p><p class="text${fresh ? ' fresh' : ''}" id="p-${i}">${inline(body[i])}</p>${next && !S.done ? `<p class="next">${esc(next)}</p>` : ''}${S.done ? `<div class="end"><a href="../../#putar">${t('Kembali ke meja tulis', 'Back to the writing desk')}</a><button type="button" id="again">${t('Mulai lagi', 'Start again')}</button></div>${G.next(SLUG)}` : ''}`;
     $('#again')?.addEventListener('click', () => { S = blank(); save(); render(true); });
   };
   const renderInvite = () => {
@@ -259,6 +260,14 @@
   function render(fresh) {
     renderSummary(); renderNow(fresh); renderInvite(); renderTiles(); renderHistory();
     if (fresh && S.shown > 1) $('#now').scrollIntoView({ block: 'start', behavior: calm() ? 'instant' : 'smooth' });
+    guide();
+  }
+  // panduan: posisi bait dan tombol yang ditunggu (ditunjuk kalau di luar layar)
+  function guide() {
+    $('#stepChip').hidden = false; G.step(S.shown, TOTAL);
+    const s = S.shown - 1;
+    const sel = S.done ? null : ["[data-act='add']", "[data-act='paint']", "[data-act='corner']", "[data-act='scene']", "[data-act='soft']", S.brush === 'noresp' ? "[data-act='letgo']" : '#push', "[data-act='warm']", "[data-act='look']", "[data-inv='allow']", "[data-act='seal']", "[data-act='paintWall']"][s];
+    G.want(sel || null, NEXT[s]?.[0] || '');
   }
   // suhu dan cat yang mengelupas berubah sendiri
   setInterval(() => {
@@ -299,6 +308,9 @@
     const stats = object(store.get('stats', {})); stats.plays = object(stats.plays); stats.plays[SLUG] = (+stats.plays[SLUG] || 0) + 1; store.set('stats', stats);
     store.set('last', { key: SLUG, at: Date.now() });
   }
+  G.mount({ slug: SLUG, title, helpInto: '#topRight', stepInto: '#stepChip',
+    lede: t('Puisi ini dibaca di aplikasi Rumah: satu kamar, tanpa pintu.', 'This poem is read in the Home app: one room, no door.'),
+    steps: [t('Baca peristiwa terbaru di atas.', 'Read the latest event at the top.'), t('Kartu aksesori yang berdenyut sedang menunggu. Sentuh tombolnya untuk membuka bait berikutnya.', 'The pulsing accessory card is waiting. Tap its button to open the next stanza.'), t('Kalau kartunya di bawah layar, ikuti tombol ↓ yang muncul.', 'If the card is below the screen, follow the ↓ button that appears.'), t('Bait yang sudah lewat tersimpan di Riwayat.', 'Past stanzas are kept in History.')] });
   render(); follow(); root.dataset.loaded = '';
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

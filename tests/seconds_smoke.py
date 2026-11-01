@@ -49,6 +49,8 @@ class SecondsSmoke(unittest.TestCase):
     def setUp(self, motion='reduce'):
         self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion=motion, service_workers='block')
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
+        # kartu "Cara membaca" sudah pernah ditutup, kecuali di tes panduan
+        self.context.add_init_script("try { localStorage.setItem('jm:guide:trillions-of-seconds', '1') } catch (e) {}")
         self.page = self.context.new_page(); self.page.set_default_timeout(8000)
         self.errors = []; self.page.on('pageerror', lambda e: self.errors.append(str(e)))
 
@@ -222,6 +224,26 @@ class SecondsSmoke(unittest.TestCase):
         self.page.wait_for_timeout(300)
         for key in ['prog', 'read', 'last', 'stats', 'seconds:watch', 'seconds:born']:
             self.assertIsNone(self.page.evaluate(f"localStorage.getItem('jm:{key}')"), key)
+
+    def test_first_visit_shows_how_to_read(self):
+        # konteks baru tanpa penanda "sudah dilihat"
+        self.context.close()
+        self.context = self.browser.new_context(viewport={'width': 1280, 'height': 860}, reduced_motion='reduce', service_workers='block')
+        self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
+        self.page = self.context.new_page(); self.page.set_default_timeout(8000)
+        self.page.on('pageerror', lambda e: self.errors.append(str(e)))
+        self.open()
+        sheet = self.page.locator('.jm-sheet')
+        self.assertTrue(sheet.is_visible())
+        self.assertGreaterEqual(self.page.locator('.jm-sheet li').count(), 3)
+        self.page.keyboard.press('Escape')
+        self.assertEqual(sheet.count(), 0)
+        self.page.reload(); self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
+        self.assertEqual(self.page.locator('.jm-sheet').count(), 0)
+        self.page.locator('.jm-help').click()
+        self.assertTrue(self.page.locator('.jm-sheet').is_visible())
+        self.page.locator('.jm-go').click()
+        self.assertTrue(self.page.locator('#stepChip').count() == 1)
 
     def test_theme_follows_the_site_choice(self):
         self.open()

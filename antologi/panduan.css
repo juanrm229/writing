@@ -1,0 +1,29 @@
+/* Panduan bersama untuk pengalaman-pengalaman berbasis aplikasi (puisi dan arsip):
+   kartu "Cara membaca", penanda langkah, dorongan saat diam, dan tautan ke tulisan berikutnya malam itu. */
+.jm-help { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--jm-chip, rgba(127,127,135,.18)); color: inherit; font: 600 16px system-ui, sans-serif; cursor: pointer; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.jm-step { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: 999px; background: var(--jm-chip, rgba(127,127,135,.18)); font: 500 12.5px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.jm-step i { display: inline-flex; gap: 3px; }
+.jm-step i b { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .25; }
+.jm-step i b.on { opacity: 1; }
+.jm-sheet { position: fixed; z-index: 90; inset: 0; display: grid; align-items: end; justify-items: center; padding: 12px; background: rgba(0,0,0,.42); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: jm-fade .25s ease; }
+.jm-card { width: min(440px, 100%); max-height: 88dvh; overflow: auto; padding: 20px 20px 16px; border-radius: 24px; background: var(--jm-card, #fff); color: var(--jm-ink, #111); box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); animation: jm-rise .4s cubic-bezier(.3,1.2,.5,1); font: 15px/1.45 system-ui, sans-serif; }
+@media (min-width: 700px) { .jm-sheet { align-items: center; } }
+.jm-card .jm-kicker { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.jm-card h2 { margin: 4px 0 4px; font: 600 21px/1.2 system-ui, sans-serif; }
+.jm-card .jm-lede { margin: 0 0 14px; opacity: .75; }
+.jm-card ol { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 10px; counter-reset: jm; }
+.jm-card li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; counter-increment: jm; }
+.jm-card li::before { content: counter(jm); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--jm-accent, #2f6fe4); color: #fff; font-weight: 600; font-size: 13px; }
+.jm-card .jm-go { width: 100%; min-height: 46px; border: 0; border-radius: 14px; background: var(--jm-accent, #2f6fe4); color: #fff; font: 600 16px system-ui, sans-serif; cursor: pointer; }
+.jm-card .jm-note { margin: 10px 0 0; text-align: center; font-size: 12.5px; opacity: .6; }
+.jm-nudge { animation: jm-nudge 1.4s ease-in-out infinite !important; }
+@keyframes jm-nudge { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--jm-accent, #2f6fe4) 0%, transparent); } 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--jm-accent, #2f6fe4) 35%, transparent); } }
+.jm-point { position: fixed; z-index: 80; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); translate: -50% 0; display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--jm-accent, #2f6fe4); color: #fff; font: 600 14px system-ui, sans-serif; box-shadow: 0 14px 30px -12px rgba(0,0,0,.5); cursor: pointer; animation: jm-rise .35s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jm-next { display: grid; gap: 2px; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: var(--jm-chip, rgba(127,127,135,.16)); color: inherit; text-decoration: none; font: 14px/1.4 system-ui, sans-serif; }
+.jm-next small { opacity: .65; font-size: 12px; }
+.jm-next b { font-weight: 600; }
+.jm-next span { opacity: .75; }
+@keyframes jm-fade { from { opacity: 0; } }
+@keyframes jm-rise { from { opacity: 0; transform: translateY(14px); } }
+html[data-calm] .jm-sheet, html[data-calm] .jm-card, html[data-calm] .jm-point, html[data-calm] .jm-nudge { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .jm-sheet, .jm-card, .jm-point, .jm-nudge { animation: none !important; } }
