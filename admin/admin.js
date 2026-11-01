@@ -225,7 +225,7 @@
   // nama dan deskripsi aplikasi saat dipasang di layar utama ikut pengaturan situs
   function manifestOf(site) {
     return JSON.stringify({
-      name: site.title || 'Meja Tulis', short_name: (site.author || site.title || 'Tulis').slice(0, 12),
+      name: site.title || 'Quiet Margins', short_name: site.title || 'Quiet Margins',
       description: site.description || '', lang: 'id', start_url: './', scope: './', display: 'standalone', orientation: 'any',
       background_color: '#ECE8F0', theme_color: '#C6D1EE',
       icons: [
