@@ -5,7 +5,7 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v42';
+const VERSION = 'v43';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
@@ -17,7 +17,7 @@ const SHELL_FILES = [
   'antologi/the-moon-behind-my-eyes/', 'antologi/the-moon-behind-my-eyes/index.html', 'antologi/the-moon-behind-my-eyes/moon.css', 'antologi/the-moon-behind-my-eyes/moon.js',
   'antologi/trillions-of-seconds/', 'antologi/trillions-of-seconds/index.html', 'antologi/trillions-of-seconds/seconds.css', 'antologi/trillions-of-seconds/seconds.js',
   'antologi/the-room/', 'antologi/the-room/index.html', 'antologi/the-room/room.css', 'antologi/the-room/room.js',
-  'antologi/arsip/', 'antologi/arsip/index.html', 'antologi/arsip/arsip.css', 'antologi/arsip/arsip.js', 'antologi/panduan.css', 'antologi/panduan.js',
+  'antologi/arsip/', 'antologi/arsip/index.html', 'antologi/arsip/arsip.css', 'antologi/arsip/arsip.js', 'antologi/panduan.css', 'antologi/panduan.js', 'assets/bagikan.js', '404.html',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
 
@@ -69,6 +69,8 @@ self.addEventListener('fetch', e => {
   if (path.startsWith('admin/')) return;
   if (url.searchParams.has('preview') || url.searchParams.has('tata')) return;
 
+  // musik dan suara: biarkan peramban mengambilnya langsung (permintaan rentang tidak bisa disimpan)
+  if (/\.(mp3|m4a|aac|ogg|oga|opus|wav|flac|webm)$/i.test(path)) return;
   if (/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(path)) { e.respondWith(cacheFirst(req)); return; }
   // konten diminta dengan cache: 'no-cache'; simpan tanpa query supaya bisa dipakai offline
   if (path.startsWith('content/')) { e.respondWith(networkFirst(req, url.origin + url.pathname)); return; }

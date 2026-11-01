@@ -305,6 +305,7 @@
         <label class="row-f" for="sAuthor"><span>Nama penulis</span><input id="sAuthor" data-k="author"></label>
         <label class="row-f" for="sHandle"><span>Nama pendek</span><input id="sHandle" data-k="handle" placeholder="juan/menulis"></label>
         <label class="row-f" for="sReader"><span>Sapaan untuk pembaca</span><input id="sReader" data-k="readerName" placeholder="pembaca"></label>
+        <label class="row-f" for="sUrl"><span>Alamat situs<small>Untuk kartu bagikan dan mesin pencari.</small></span><input id="sUrl" data-k="url" type="url" placeholder="https://quietmargins.site"></label>
         <label class="row-f" for="sEmail"><span>Email (opsional)</span><input id="sEmail" data-k="email" type="email" placeholder="kamu@contoh.com"></label>
         <label class="row-f col" for="sDesc"><span>Deskripsi singkat</span><textarea id="sDesc" data-k="description" rows="2"></textarea></label>
         <label class="row-f" for="sLang"><span>Bahasa awal pembaca<small>Pembaca tetap bisa berganti lewat tombol ID/EN di situs.</small></span><select id="sLang" data-k="defaultLang"><option value="">Bahasa Indonesia</option><option value="en">English</option></select></label>
@@ -320,6 +321,16 @@
             <button type="button" class="btn-ghost sm" id="avDel">Hapus</button>
           </div>
         </div>
+        <div class="row-f">
+          <span>Musik latar<small>Satu lagu, diputar berulang dan pelan. MP3 atau M4A, maksimal 15 MB. Pastikan kamu boleh memakainya.</small></span>
+          <div class="avatar-edit music-edit">
+            <span class="music-name" id="muName">Belum ada</span>
+            <label class="btn-ghost sm" for="muIn">Unggah</label>
+            <input id="muIn" type="file" accept="audio/mpeg,audio/mp4,audio/aac,audio/ogg,.mp3,.m4a,.aac,.ogg" hidden>
+            <button type="button" class="btn-ghost sm" id="muDel">Hapus</button>
+          </div>
+        </div>
+        <label class="row-f" for="muTitle"><span>Judul lagu<small>Muncul saat pembaca menyalakan musik.</small></span><input id="muTitle" placeholder="misalnya: Hujan di Jendela"></label>
       </div>
 
       <h2 class="set-h">Warna &amp; suasana</h2>
@@ -375,6 +386,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="../assets/gh.js"></script>
+<script src="../assets/bagikan.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

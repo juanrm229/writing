@@ -256,6 +256,7 @@ a { color: inherit; }
 .swatches label { position: relative; width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(#FF5DA2, #FFB547, #64D88B, #5AB0FF, #9B6BFF, #FF5DA2); cursor: pointer; }
 .swatches label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0; }
 .avatar-edit { display: flex; align-items: center; gap: 8px; }
+.music-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--soft); font-size: 13px; }
 .av { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 40% 35%, #FFD3E3, #F3A9C6); flex: none; }
 .av img { width: 100%; height: 100%; object-fit: cover; }
 .fonts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }

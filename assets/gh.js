@@ -115,6 +115,26 @@
       }
     },
     put(path, text, message) { return GH.putRaw(path, enc(text), message); },
+    // Banyak berkas dalam satu commit. files: [{ path, content }] ditulis, remove: [path] dihapus.
+    // Kalau tidak ada yang berubah, tidak ada commit yang dibuat.
+    async commitFiles(files, remove, message) {
+      const c = GH.cfg(), rp = repoPath(), br = encodeURIComponent(c.branch);
+      const ref = await req(`${rp}/git/ref/heads/${br}`);
+      const head = await req(`${rp}/git/commits/${ref.object.sha}`);
+      const tree = await req(`${rp}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: head.tree.sha, tree: [
+        ...files.map(f => ({ path: f.path, mode: '100644', type: 'blob', content: f.content })),
+        ...(remove || []).map(path => ({ path, mode: '100644', type: 'blob', sha: null }))
+      ] }) });
+      if (tree.sha === head.tree.sha) return null;
+      const commit = await req(`${rp}/git/commits`, { method: 'POST', body: JSON.stringify({ message, tree: tree.sha, parents: [ref.object.sha] }) });
+      await req(`${rp}/git/refs/heads/${br}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
+      return commit;
+    },
+    async list(path) {
+      const c = GH.cfg();
+      try { return await req(`${repoPath()}/contents/${path}?ref=${encodeURIComponent(c.branch)}`); }
+      catch (e) { if (e.status === 404) return []; throw e; }
+    },
     putJSON(path, obj, message) { return GH.put(path, JSON.stringify(obj, null, 2) + '\n', message); },
 
     async commits(path, n = 20) {
