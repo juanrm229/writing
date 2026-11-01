@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halaman tidak ditemukan · Quiet Margins</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/assets/icons/favicon.png">
+<script>
+  // Tautan bagikan /baca/<alamat>/ yang halamannya belum dibuat tetap diteruskan ke tulisannya.
+  (function () {
+    var m = location.pathname.match(/\/baca\/([\w-]+)\/?$/);
+    if (m) location.replace('/' + location.search + '#baca-' + m[1] + location.hash.slice(1));
+    try { var t = JSON.parse(localStorage.getItem('jm:theme')); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  })();
+</script>
+<style>
+  :root { color-scheme: light; --bg: #f2f1ec; --ink: #141416; --muted: #77756f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg: #0e0f11; --ink: #f2f1ec; --muted: #9a9993; } }
+  :root[data-theme="dark"] { color-scheme: dark; --bg: #0e0f11; --ink: #f2f1ec; --muted: #9a9993; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
+  body { min-height: 100svh; display: grid; place-items: center; padding: 24px; font: 16px/1.5 system-ui, sans-serif; text-align: center; }
+  .code { margin: 0; font: 600 13px ui-monospace, Menlo, monospace; letter-spacing: .12em; color: var(--muted); }
+  h1 { margin: 10px 0 8px; font: 400 clamp(30px, 6vw, 44px)/1.1 Georgia, serif; }
+  p { margin: 0 0 22px; color: var(--muted); }
+  a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px; background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <p class="code">404</p>
+  <h1>Halaman ini ada di margin yang terlalu sunyi.</h1>
+  <p>Alamatnya tidak ditemukan. Mungkin tulisannya sudah dipindahkan. <span lang="en">(Page not found.)</span></p>
+  <a href="/">Kembali ke meja tulis</a>
+</main>
+</body>
+</html>

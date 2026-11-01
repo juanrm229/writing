@@ -74,6 +74,18 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 
 Pintasan: `⌘K` atau `/` cari, `←` `→` pindah tulisan, `B` balik sisi, `F` fokus, `Esc` kembali.
 
+## Domain, bagikan, dan mesin pencari
+
+- **Domain**: situs ini tayang di `https://quietmargins.site` (file `CNAME`, DNS di Hostinger ke GitHub Pages). Alamat lama `juanrm229.github.io/writing` diteruskan otomatis. *Alamat situs* di admin (Tampilan) dipakai untuk semua tautan resmi.
+- **Halaman bagikan**: setiap tulisan punya halaman kecil di `/baca/<alamat>/` (misalnya `quietmargins.site/baca/pabrik-mimpi/`) berisi judul, kutipan, dan gambar kartu untuk pratinjau tautan di WhatsApp, Telegram, X, Facebook, dan mesin pencari; halaman itu langsung meneruskan pembaca ke tulisannya (`#:b` untuk Sisi B, `#~2` untuk bab 2). Tombol bagikan di pembaca dan kartu kutipan memakai tautan ini. Kalau halamannya belum ada, `404.html` tetap meneruskan `/baca/<alamat>/` ke tulisannya.
+- **Gambar kartu** (`assets/og/`): 1200×630, murni tipografi dengan huruf situs: `cover.png` untuk situs, dan satu per tulisan dengan jenis, judul, kutipan, dan garis warna jenisnya.
+- **Diperbarui otomatis**: setiap kali tulisan atau tampilan disimpan di admin, halaman bagikan dan `sitemap.xml` ikut diperbarui dalam satu commit (tulisan yang dihapus atau dijadikan draf halamannya ikut dihapus). Gambar kartu untuk tulisan baru dibuat dengan `node tools/bagikan.js` (perlu Playwright); sampai saat itu tulisan baru memakai `cover.png`. `node tools/bagikan.js --tanpa-gambar` hanya membuat ulang halaman dan sitemap. Templatnya ada di `assets/bagikan.js`, dipakai bersama oleh admin dan skrip.
+- **Metadata**: setiap halaman punya `canonical`, Open Graph, kartu X (`summary_large_image`), dan data terstruktur (WebSite, Person, CreativeWork). `robots.txt` menunjuk ke sitemap dan menutup `/admin/`.
+
+## Musik latar
+
+Di admin (Tampilan → *Musik latar*) unggah satu lagu (MP3 atau M4A, maksimal 15 MB) dan beri judulnya, lalu Simpan. Lagunya disimpan di `content/media/` dan diputar berulang dengan volume pelan di situs utama. Karena peramban tidak mengizinkan suara sebelum pembaca menyentuh halaman, musik mulai pada sentuhan pertama. Tombol ♪ di bilah atas mematikan atau menyalakannya, dan pilihan pembaca diingat. Saat tulisan dibacakan atau *Suasana* dinyalakan, musiknya mengecil sendiri. *Hapus* mematikan musik untuk semua pembaca. Pastikan kamu punya hak memakai lagunya.
+
 ## Aplikasi (PWA)
 
 Situs ini bisa dipasang di layar utama ponsel atau komputer dan dibaca tanpa sinyal.
@@ -244,6 +256,12 @@ Semua tulisan berjenis *catatan* (Thought Log) dibaca di **aplikasi arsip**, tan
 
 ```bash
 python3 tests/arsip_smoke.py
+```
+
+Halaman bagikan, metadata, 404, dan musik:
+
+```bash
+python3 tests/share_smoke.py
 ```
 
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.

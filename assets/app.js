@@ -229,6 +229,8 @@
   const bySlug = slug => all().find(w => w.slug === slug);
   const docOf = (slug, side = 'a', ch = 1) => { const w = bySlug(slug); if (!w) return null; if (w.CH) return w.CH[clamp(+ch || 1, 1, w.CH.length) - 1]; return w.S.find(d => d.side === side) || null; };
   const hrefOf = d => '#baca-' + d.slug + (d.side !== 'a' ? ':' + d.side : '') + (d.ch > 1 ? '~' + d.ch : '');
+  // tautan bagikan: halaman /baca/<alamat>/ membawa judul, kutipan, dan gambar kartu untuk pratinjau tautan
+  const shareLink = d => { const u = new URL('baca/' + d.slug + '/', location.href.split('#')[0].split('?')[0]); if (OTHER) u.searchParams.set('lang', LANG); u.hash = (d.side && d.side !== 'a' ? ':' + d.side : '') + (d.ch > 1 ? '~' + d.ch : ''); return u.href; };
   const SL = d => (d?.side || 'a').toUpperCase();
   const sideWord = d => (LANG === 'en' ? 'Side ' : 'Sisi ') + SL(d);
   const multi = w => !!(w && w.S && w.S.length > 1);
@@ -1941,7 +1943,7 @@
   $('#quoteShare').addEventListener('click', async () => {
     const b = await quoteBlob(); if (!b) return;
     const file = new File([b], `kutipan-${current.slug}.png`, { type: 'image/png' });
-    const link = location.href.split('#')[0] + '#baca-' + current.slug;
+    const link = shareLink(current);
     try {
       if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: current.title, text: `“${qText}” — ${SITE.author}\n${link}` });
       else { saveBlob(b, file.name); toast('Perangkat ini belum bisa berbagi gambar langsung, jadi kartunya diunduh.'); }
@@ -1951,7 +1953,7 @@
     try { await navigator.clipboard.writeText(`“${qText}”\n— ${SITE.author}, ${current.title}`); toast('Kutipan disalin.'); } catch (e) { toast('Tidak bisa menyalin otomatis.'); }
   });
   $('#rdShare').addEventListener('click', async () => {
-    const url = location.href.split('#')[0] + '#baca-' + current.slug;
+    const url = shareLink(current);
     try {
       if (navigator.share) await navigator.share({ title: current.title, text: `${current.title} — ${SITE.author}`, url });
       else { await navigator.clipboard.writeText(url); toast('Tautan tulisan disalin.'); }
@@ -2037,6 +2039,50 @@
     // pengatur waktu tidur meredupkan suasana di menit terakhir
     function volume(v) { if (master && ac) master.gain.setTargetAtTime(.55 * clamp(v, 0, 1), ac.currentTime, .6); }
     return { set, volume, get kind() { return kind; } };
+  })();
+
+  /* ======================================================================
+     MUSIK LATAR: satu lagu yang diunggah dari admin, diputar berulang dan pelan.
+     Peramban hanya mengizinkan suara setelah sentuhan pertama; pembaca bisa mematikannya
+     lewat tombol ♪, dan pilihan itu diingat. Suaranya mengecil saat tulisan dibacakan
+     atau suasana dinyalakan.
+     ====================================================================== */
+  (() => {
+    const src = SITE.music && String(SITE.music.src || '').trim(), btn = $('#musicToggle');
+    if (!src || !btn) return;
+    const title = String(SITE.music.title || '').trim(), name = title || t('Musik latar', 'Background music');
+    const audio = new Audio(); audio.loop = true; audio.preload = 'none'; audio.src = src; audio.volume = 0;
+    let want = store.get('music', true) !== false, target = 0, started = false;
+    btn.hidden = false;
+    const sync = () => {
+      const on = want && !audio.paused;
+      btn.setAttribute('aria-pressed', String(on)); btn.classList.toggle('on', on);
+      btn.setAttribute('aria-label', (on ? t('Matikan musik: ', 'Turn off music: ') : t('Putar musik: ', 'Play music: ')) + name);
+      btn.title = name;
+    };
+    const level = () => (speaking || (Amb.kind && Amb.kind !== 'hening') ? .07 : .3);
+    const play = () => { target = level(); audio.play().then(() => { started = true; sync(); }).catch(() => { sync(); }); };
+    // satu putaran halus: suara naik dan turun pelan, lalu berhenti kalau dimatikan
+    setInterval(() => {
+      if (audio.paused) return;
+      if (want) target = level();
+      audio.volume = Math.abs(audio.volume - target) < .01 ? target : audio.volume + (target - audio.volume) * .12;
+      if (!want && audio.volume <= .01) { audio.pause(); sync(); }
+    }, 80);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = want && !audio.paused; want = !on; store.set('music', want);
+      if (want) play(); else target = 0;
+      sync(); toast(want ? t('♪ ', '♪ ') + name : t('Musik dimatikan.', 'Music off.'));
+    });
+    const first = e => {
+      if (e.target.closest && e.target.closest('#musicToggle')) return;
+      removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true);
+      if (want && !started) play();
+    };
+    addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
+    audio.addEventListener('pause', sync); audio.addEventListener('play', sync);
+    sync();
   })();
   $('#ambience').addEventListener('click', e => { const b = e.target.closest('[data-amb]'); if (b) Amb.set(b.dataset.amb); });
   if (!SITE.features.ambience) $('#ambWrap').hidden = true;

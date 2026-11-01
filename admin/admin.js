@@ -194,6 +194,16 @@
       S.works.forEach(w => { delete w._new; });
       S.albums.forEach(a => { delete a._autoId; });
       try { localStorage.removeItem(backupKey()); } catch (e) { /* */ }
+      // halaman bagikan dan sitemap ikut diperbarui, dalam satu commit; kalau gagal, tulisan tetap tersimpan
+      if ((worksChanged || siteChanged) && window.JMShare) {
+        try {
+          const [og, baca] = await Promise.all([GH.list('assets/og'), GH.list('baca')]);
+          const images = new Set((Array.isArray(og) ? og : []).map(f => f.name));
+          const existing = (Array.isArray(baca) ? baca : []).filter(f => f.type === 'dir').map(f => f.name);
+          const { write, remove } = JMShare.files(S.site, clean(S.works), images, existing);
+          await GH.commitFiles(write, remove, 'Perbarui halaman bagikan dan sitemap');
+        } catch (err) { toast('Tulisan tersimpan, tapi halaman bagikan belum diperbarui: ' + (err.message || err), true); }
+      }
       setStatus('clean', 'Tersimpan · situs diperbarui ±1 menit');
       btn.classList.remove('busy'); btn.classList.add('done'); btn.querySelector('.sb-label').textContent = 'Tersimpan';
       setTimeout(() => { btn.classList.remove('done'); btn.querySelector('.sb-label').textContent = 'Simpan'; }, 1800);
@@ -802,7 +812,7 @@
     });
     $('#sFonts').innerHTML = FONTS.map(f => `<button type="button" role="radio" data-v="${f.id}" aria-checked="${s.readerFont === f.id}"><b style="font-family:${f.css}">Aa</b><small>${f.name}</small></button>`).join('');
     $$('[data-f]', $('#setCol')).forEach(b => b.setAttribute('aria-checked', String(!!s.features[b.dataset.f])));
-    renderAvatar(); renderCats(); fillEn($('#setCol'));
+    renderAvatar(); renderMusic(); renderCats(); fillEn($('#setCol'));
     requestAnimationFrame(fitPreview);
   }
   // terjemahan Inggris situs dan profil: site.en.title, site.en.profile.bio, …; isian kosong dibuang
@@ -862,6 +872,30 @@
     } catch (err) { toast(err.message || 'Foto gagal diunggah.', true); }
   });
   $('#avDel').addEventListener('click', () => { S.site.avatar = ''; S.avatarData = null; renderAvatar(); changed(); });
+
+  // musik latar: satu berkas suara di content/media, diputar berulang di situs
+  function renderMusic() {
+    const m = S.site.music || {};
+    $('#muName').textContent = m.src ? String(m.src).split('/').pop().split('?')[0] : 'Belum ada';
+    $('#muDel').hidden = !m.src; $('#muTitle').value = m.title || ''; $('#muTitle').disabled = !m.src;
+  }
+  $('#muIn').addEventListener('change', async e => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    if (!/^audio\//.test(file.type) && !/\.(mp3|m4a|aac|ogg)$/i.test(file.name)) { toast('Pilih berkas suara (MP3 atau M4A).', true); return; }
+    if (file.size > 15 * 1024 * 1024) { toast('Berkasnya lebih dari 15 MB. Coba kecilkan dulu, misalnya MP3 128 kbps.', true); return; }
+    try {
+      toast('Mengunggah musik…');
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+      const ext = (file.name.match(/\.(mp3|m4a|aac|ogg)$/i)?.[1] || 'mp3').toLowerCase();
+      await GH.putRaw(`content/media/musik.${ext}`, b64, 'Perbarui musik latar');
+      S.site.music = { src: `content/media/musik.${ext}?v=${Date.now().toString(36)}`, title: (S.site.music && S.site.music.title) || file.name.replace(/\.[^.]+$/, '') };
+      renderMusic(); changed();
+      toast('Musik terunggah. Tekan Simpan supaya situs memakainya.');
+    } catch (err) { toast(err.message || 'Musik gagal diunggah.', true); }
+  });
+  $('#muDel').addEventListener('click', () => { delete S.site.music; renderMusic(); changed(); });
+  $('#muTitle').addEventListener('input', e => { if (!S.site.music) return; S.site.music = { ...S.site.music, title: e.target.value }; changed(); });
 
   function renderCats() {
     const used = new Set(S.works.map(w => w.cat));
