@@ -84,6 +84,30 @@ class ModeSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('#rdIx').is_hidden())
         self.assertEqual(self.page.locator('#rdMeta .ix').count(), 0)
 
+    def test_plain_reader_formats_markdown_blocks(self):
+        self.context.add_init_script("localStorage.setItem('jm:mode', JSON.stringify('biasa'))")
+        self.reader('anda-di-sini')
+        self.page.wait_for_function("document.getElementById('rdBody').innerText.length > 200")
+        body = self.page.locator('#rdBody')
+        counts = self.page.evaluate("""() => ({ h2: document.querySelectorAll('#rdBody .rd-h2').length, h3: document.querySelectorAll('#rdBody .rd-h3').length,
+          date: document.querySelectorAll('#rdBody .rd-dateline').length, table: document.querySelectorAll('#rdBody .rd-table td').length,
+          list: document.querySelectorAll('#rdBody .rd-list').length,
+          raw: [...document.querySelectorAll('#rdBody > *')].filter(e => /^(#|\\||- |\\d+\\. )/.test(e.textContent.trim())).length,
+          straight: (document.getElementById('rdBody').textContent.match(/"/g) || []).length,
+          blocks: document.getElementById('rdBody').children.length })""")
+        works = json.loads((ROOT / 'content/works.json').read_text())
+        n = len(next(w for w in works if w['slug'] == 'anda-di-sini')['body'])
+        self.assertEqual(counts['blocks'], n)  # one element per paragraph: voice, search and position stay aligned
+        self.assertEqual(counts['h2'], 6)
+        self.assertEqual(counts['h3'], 11)
+        self.assertGreaterEqual(counts['date'], 10)
+        self.assertGreater(counts['table'], 20)
+        self.assertEqual(counts['list'], 4)
+        self.assertEqual(counts['raw'], 0)
+        self.assertEqual(counts['straight'], 0)
+        # on a phone the table becomes cards and never scrolls sideways
+        self.assertFalse(self.page.evaluate("(() => { const t = document.querySelector('#rdBody .rd-table'); return t.scrollWidth > t.clientWidth + 1; })()"))
+
     def test_picker_switch_is_remembered(self):
         self.page.goto(self.root + '#pilih-the-room', wait_until='domcontentloaded')
         self.page.goto(self.root + '#pilih', wait_until='domcontentloaded')

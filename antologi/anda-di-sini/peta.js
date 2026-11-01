@@ -20,7 +20,9 @@
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/~~(.+?)~~/g, '<s>$1</s>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
+  // kutip lurus menjadi kutip tipografis untuk tampilan; naskahnya tetap
+  const smart = s => String(s).replace(/(^|[\s([{—–-])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s([{—–-])'/g, '$1‘').replace(/'/g, '’');
+  const inline = s => esc(smart(s)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/~~(.+?)~~/g, '<s>$1</s>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   const fold = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const plain = s => String(s).replace(/\*\*|~~|\*/g, '');
   const SLUG = 'anda-di-sini', G = window.JMGuide;
