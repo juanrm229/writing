@@ -621,9 +621,13 @@ output.bump { animation: bump .35s var(--spring); }
 
 /* kartu kutipan */
 .quote-pop {
-  position: fixed; z-index: 60; translate: -50% calc(-100% - 10px); padding: 9px 14px; border: 0; border-radius: 18px;
-  background: #0E0F11; color: #fff; font: 500 13px var(--f-ui); cursor: pointer; box-shadow: 0 14px 30px -12px rgb(0 0 0 / .55); animation: selIn .35s var(--spring);
+  position: fixed; z-index: 60; translate: -50% calc(-100% - 10px); display: flex; gap: 2px; padding: 4px; border-radius: 20px;
+  background: #0E0F11; color: #fff; box-shadow: 0 14px 30px -12px rgb(0 0 0 / .55); animation: selIn .35s var(--spring);
 }
+.quote-pop button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 16px; background: none; color: inherit; font: 500 13px var(--f-ui); cursor: pointer; white-space: nowrap; }
+.quote-pop button:hover { background: rgb(255 255 255 / .12); }
+.quote-pop button + button { box-shadow: inset 1px 0 0 rgb(255 255 255 / .14); border-radius: 0 16px 16px 0; }
+.quote-pop svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .qmodal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgb(10 12 20 / .35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: fade .25s; }
 @keyframes fade { from { opacity: 0; } }
 .qcard { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; max-height: 100%; overflow: auto; padding: 20px; border-radius: 30px; background: var(--card); box-shadow: 0 40px 80px -30px rgb(0 0 0 / .5); animation: palIn .5s var(--spring); }
@@ -1680,3 +1684,28 @@ button.pf-now-c:hover { transform: translateY(-3px); }
 .ix-t b { font-weight: 600; font-size: 14.5px; }
 .ix-go { width: 18px; height: 18px; fill: none; stroke: var(--rmut); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ix-card + .rd-sides { margin-top: -12px; }
+
+/* ---------- Catatan margin penulis: titik biru di tepi paragraf ---------- */
+.rd-body .has-mg { position: relative; }
+.mg-dot { position: absolute; left: -30px; top: .25em; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mg-dot-i { width: 9px; height: 9px; border-radius: 50%; background: #4F7BFF; box-shadow: 0 0 0 4px color-mix(in srgb, #4F7BFF 18%, transparent), 0 0 14px 2px color-mix(in srgb, #4F7BFF 45%, transparent); transition: transform .35s var(--spring); }
+.mg-dot:hover .mg-dot-i, .mg-dot[aria-expanded="true"] .mg-dot-i { transform: scale(1.35); }
+.mg-note, .gift-m { display: block; margin: 12px 0 4px; padding: 10px 0 10px 14px; border-left: 2px solid #4F7BFF; font: italic 400 .86em/1.55 var(--r-font, var(--f-read)); color: var(--rmut); animation: mgIn .45s var(--ease-out, ease) both; }
+.mg-note small, .gift-m small { display: block; margin-bottom: 3px; font: 600 11px var(--f-ui); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: #4F7BFF; }
+.mg-note span, .gift-m span { display: block; color: var(--rfg); }
+@keyframes mgIn { from { opacity: 0; transform: translateY(-4px); } }
+@media (max-width: 860px) { .mg-dot { left: -24px; width: 22px; height: 22px; } .mg-dot-i { width: 8px; height: 8px; } }
+/* titipan: paragraf yang dititipkan dan kalimatnya */
+.rd-body .gift-p { position: relative; }
+.rd-body .gift-p::before { content: ''; position: absolute; left: -16px; top: .3em; bottom: .3em; width: 2px; border-radius: 1px; background: #4F7BFF; }
+.gift-m { border-left: 0; padding-left: 0; }
+::highlight(titipan) { background-color: color-mix(in srgb, #4F7BFF 26%, transparent); color: inherit; }
+/* lembar titipan */
+.gift-card { width: min(440px, 100%); display: grid; gap: 12px; padding: 22px; border-radius: 28px; background: var(--card); color: var(--ink); box-shadow: 0 40px 80px -30px rgb(0 0 0 / .5); font-family: var(--f-ui); animation: palIn .5s var(--spring); }
+.gift-k { margin: 0; color: #4F7BFF; font: 600 11.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; }
+.gift-h { margin: -6px 0 0; font: 500 20px/1.25 var(--f-ui); letter-spacing: -.01em; }
+.gift-q { margin: 0; padding: 4px 0 4px 14px; border-left: 2px solid #4F7BFF; font: italic 400 17px/1.5 var(--f-read); max-height: 9.5em; overflow: auto; }
+.gift-l { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.gift-l textarea, .gift-l input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--chip-2); color: var(--ink); font: 15px/1.45 var(--f-ui); resize: vertical; }
+.gift-note { margin: 0; color: var(--muted); font-size: 12px; }
+.gift-act { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }

@@ -502,7 +502,7 @@
   function setSide(i) {
     const w = cur(); if (!w) return;
     if (isCh(w)) { if (i === S.ch) return; S.ch = i; } else { const l = LETTERS[i]; if (l === S.side) return; S.side = l; }
-    flipCard(); fillEditor(); pushPreview(true);
+    flipCard(); fillEditor(); renderMargins(); pushPreview(true);
   }
   $('#edSide').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) setSide(+b.dataset.i); });
   $('#edAdd').addEventListener('click', () => {
@@ -657,7 +657,42 @@
     $$('.d-en').forEach(el => { el.hidden = !en; el.textContent = `Kamu sedang menyunting terjemahan ${LN[S.lang]}. Ringkasan, baris favorit, dan cerita di balik tulisan di bawah ini juga versi terjemahannya.`; });
     $$('#dLang [data-v]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === orig(w))));
     $('#delConfirm').hidden = true; $('#delBtn').hidden = false;
+    renderMargins();
   }
+  /* ---------- catatan margin ----------
+     Disimpan di karya (atau di terjemahannya) sebagai margins: [{ at, note }]. "at" adalah awal paragrafnya,
+     jadi catatan tetap menempel walau paragraf lain ditambah atau dihapus. */
+  const mgKey = p => plain(String(p || '')).replace(/\s+/g, ' ').trim().slice(0, 60);
+  const mgParas = () => { const o = slot(cur()); return ((o && o.body) || []).map(mgKey).filter(x => /[\p{L}\p{N}]/u.test(x)); };
+  const mgAll = (make) => { const L = layer(cur(), make); if (make && !Array.isArray(L.margins)) L.margins = []; return L.margins || []; };
+  function renderMargins() {
+    const w = cur(); if (!w) return;
+    const paras = mgParas(), list = mgAll(false);
+    const here = list.map((m, i) => ({ m, i, p: paras.findIndex(x => x && String(m.at || '').trim() && x.includes(String(m.at).trim().slice(0, 40))) })).filter(x => x.p >= 0 || !String(x.m.at || '').trim());
+    $('#mgList').innerHTML = here.map(({ m, i, p }) => `<div class="mg-row" data-mi="${i}">
+      <select data-mf="at" aria-label="Paragraf">${paras.map((x, k) => `<option value="${k}"${k === p ? ' selected' : ''}>¶${k + 1} · ${esc(x.slice(0, 48))}${x.length > 48 ? '…' : ''}</option>`).join('')}</select>
+      <textarea data-mf="note" rows="2" placeholder="Catatan di margin paragraf ini">${esc(m.note || '')}</textarea>
+      <button type="button" class="mg-del" data-mf="del" aria-label="Hapus catatan ini">×</button></div>`).join('') || '<p class="hint mg-none">Belum ada catatan di sisi ini.</p>';
+    $('#mgAdd').disabled = !paras.length;
+  }
+  $('#mgAdd').addEventListener('click', () => {
+    const paras = mgParas(); if (!paras.length) { toast('Tulis isinya dulu.'); return; }
+    mgAll(true).push({ at: paras[0], note: '' }); renderMargins(); changed();
+    $('#mgList .mg-row:last-child textarea')?.focus();
+  });
+  const mgEdit = e => {
+    const row = e.target.closest('.mg-row'); if (!row) return;
+    const w = cur(), list = mgAll(true), m = list[+row.dataset.mi]; if (!m) return;
+    const f = e.target.dataset.mf;
+    if (f === 'del') { list.splice(+row.dataset.mi, 1); if (!list.length) delete layer(w, true).margins; tidy(w); renderMargins(); changed(); pushPreview(true); return; }
+    if (f === 'at') m.at = mgParas()[+e.target.value] || m.at;
+    if (f === 'note') m.note = e.target.value;
+    changed(); if (e.type === 'change') pushPreview(true);
+  };
+  $('#mgList').addEventListener('input', mgEdit);
+  $('#mgList').addEventListener('change', mgEdit);
+  $('#mgList').addEventListener('click', e => { if (e.target.dataset.mf === 'del') mgEdit(e); });
+
   const flip = (btn, key, invert) => { const w = cur(); const on = btn.getAttribute('aria-checked') !== 'true'; btn.setAttribute('aria-checked', String(on)); w[key] = invert ? !on : on; };
   $('#dPub').addEventListener('click', e => { flip(e.currentTarget, 'draft', true); renderDetails(); renderCount(); changed(); });
   $('#dCat').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; const w = cur(); w.cat = b.dataset.v; fitShape(w); fillEditor(); renderDetails(); renderList(); changed(); });

@@ -148,6 +148,8 @@
     o.sides = extra.map((x, i) => { const y = (t.sides || (t.sideB ? [t.sideB] : []))[i] || {}; return { ...x, ...filled({ title: y.title, pov: y.pov }), body: hasText(y.body) ? y.body : x.body, lost: !hasText(y.body) && lostAs }; });
     o.chapters = (Array.isArray(w.chapters) ? w.chapters : []).map((c, i) => { const y = (t.chapters || [])[i] || {}; return { ...c, ...filled({ title: y.title }), body: hasText(y.body) ? y.body : c.body, lost: hasText(c.body) && !hasText(y.body) && lostAs }; });
     o.liner = { ...(w.liner || {}), ...filled(t.liner) };
+    // catatan margin: yang ditulis di versi asli, ditambah yang ditulis di terjemahannya; masing-masing menempel pada kalimat di paragrafnya
+    o.margins = [...(Array.isArray(w.margins) ? w.margins : []), ...(away && Array.isArray(t.margins) ? t.margins : [])].filter(m => m && String(m.at || '').trim() && String(m.note || '').trim());
     const en = w[wl === 'en' ? 'id' : 'en'] || {};
     o.bilingual = hasText(en.body) || (en.sides || en.sideB ? [...(en.sides || []), en.sideB] : []).some(x => hasText(x?.body)) || (en.chapters || []).some(c => hasText(c?.body));
     return o;
@@ -887,7 +889,31 @@
     body.className = 'rd-body' + (focusMode ? ' focus' : '') + (reveal && !reduced ? ' reveal' : '');
     body.lang = w.lost || LANG;
     body.innerHTML = w.body.map((p, i) => isBreak(p) ? SCENE : `<p${w.form === 'puisi' ? ' class="stanza"' : ''} style="--k:${Math.min(i, 10)}">${mark(p)}</p>`).join('');
+    margins(w);
   }
+  /* ---------- CATATAN MARGIN: catatan kecil penulis di tepi paragraf, tampil sebagai titik biru ---------- */
+  const MG_DOT = '<span class="mg-dot-i" aria-hidden="true"></span>';
+  function margins(w) {
+    const list = (w.A || w).margins || []; if (!list.length) return;
+    const paras = [...body.children];
+    list.forEach((m, n) => {
+      const at = fold(plain(m.at)).replace(/\s+/g, ' ').trim(); if (at.length < 4) return;
+      const p = paras.find(el => !el.classList.contains('scene') && fold(el.textContent).replace(/\s+/g, ' ').includes(at)); if (!p || p.querySelector('.mg-dot')) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'mg-dot'; b.dataset.mg = n;
+      b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-label', t('Catatan margin dari ', 'A margin note from ') + SITE.author);
+      b.innerHTML = MG_DOT; p.classList.add('has-mg'); p.prepend(b);
+    });
+  }
+  body.addEventListener('click', e => {
+    const b = e.target.closest('.mg-dot'); if (!b) return;
+    // catatannya terbuka di dalam paragrafnya sendiri, supaya urutan paragraf (suara, pencarian, posisi baca) tidak bergeser
+    const p = b.parentElement, open = p.querySelector('.mg-note');
+    if (open) { open.remove(); b.setAttribute('aria-expanded', 'false'); return; }
+    const m = ((current.A || current).margins || [])[+b.dataset.mg]; if (!m) return;
+    const note = document.createElement('span'); note.className = 'mg-note'; note.setAttribute('role', 'note');
+    note.innerHTML = `<small>${t('Di margin', 'In the margin')} · ${esc(SITE.author)}</small><span>${rich(LANG === 'en' && m.en ? m.en : m.note)}</span>`;
+    p.append(note); b.setAttribute('aria-expanded', 'true');
+  });
   function markText(t, q) {
     const p = plain(t), lt = fold(p), lq = fold(q);
     let out = '', i = 0, k;
@@ -958,10 +984,10 @@
     const [exPath, exHash] = String(ex).split('#');
     return new URL(exPath + location.search + (exHash ? '#' + exHash : fragment), location.href.split('#')[0]).href;
   }
-  function showReader(slug, side = 'a', ch = 1) {
+  function showReader(slug, side = 'a', ch = 1, opts = {}) {
     // karya dengan pengalaman baca sendiri (mis. Anda di Sini) dibuka di halamannya; entri #baca diganti supaya tombol kembali tidak memantul
     const ex = bySlug(slug)?.experience;
-    if (ex && wantsIx(slug)) { location.replace(exURL(slug, side, ch)); return; }
+    if (ex && wantsIx(slug) && !opts.plain) { location.replace(exURL(slug, side, ch)); return; }
     const w = docOf(slug, side, ch) || docOf(slug);
     if (!w) return;
     stopSpeech(false); closeFind(); stopReplay(false); hideQuotePop();
@@ -1708,13 +1734,15 @@
   function route() {
     const raw = location.hash.slice(1);
     if (raw.startsWith('racikan?')) { const id = receiveMix(raw.slice(8)); vt(() => { if (id) { $('.pill [data-go="album"]').hidden = false; showAlbum(id); } else setView(startView()); }); return; }
-    const h = decodeURIComponent(raw);
+    const full = decodeURIComponent(raw), bang = full.indexOf('!');
+    // titipan ikut di belakang tanda seru: #baca-slug:b!<isi>
+    const h = bang >= 0 ? full.slice(0, bang) : full, gift = bang >= 0 ? full.slice(bang + 1) : '';
     // #baca-slug, #baca-slug:c (sisi C), #baca-slug~3 (bab 3)
     const m = h.match(/^baca-([\w-]+?)(?::([b-p]))?(?:~(\d+))?$/);
     const mSide = m ? (m[2] || 'a') : 'a', mCh = m ? +(m[3] || 1) : 1;
     if (m && bySlug(m[1]) && view === 'baca' && current?.slug === m[1] && current.side !== mSide && docOf(m[1], mSide)) { flipReader(m[1], mSide); return; }
     vt(() => {
-      if (m && bySlug(m[1])) { const d = docOf(m[1], mSide, mCh) || docOf(m[1]); showReader(d.slug, d.side, d.ch); return; }
+      if (m && bySlug(m[1])) { const d = docOf(m[1], mSide, mCh) || docOf(m[1]); showReader(d.slug, d.side, d.ch, { plain: !!gift }); if (gift) showGift(gift); return; }
       const am = h.match(/^album(?:-([\w-]+))?$/);
       if (am) { showAlbum(am[1] && albumOf(am[1]) ? am[1] : null); return; }
       const pk = h.match(/^pilih(?:-([\w-]+?)(?::([b-p]))?(?:~(\d+))?)?$/);
@@ -1889,13 +1917,15 @@
      KARTU KUTIPAN & BERBAGI
      ====================================================================== */
   const qpop = $('#quotePop');
-  let qText = '';
+  let qText = '', qPara = -1;
   function hideQuotePop() { qpop.hidden = true; }
   function checkSelection() {
     const sel = getSelection();
     const t = sel && sel.toString().trim().replace(/\s+/g, ' ');
     if (!t || t.length < 8 || t.length > 360 || !body.contains(sel.anchorNode) || RP.token) { hideQuotePop(); return; }
     qText = t;
+    const el = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+    qPara = [...body.children].indexOf(el?.closest('.rd-body > *'));
     const r = sel.getRangeAt(0).getBoundingClientRect();
     qpop.style.left = clamp(r.left + r.width / 2, 110, innerWidth - 110) + 'px';
     qpop.style.top = clamp(r.top, 70, innerHeight - 20) + 'px';
@@ -1906,7 +1936,69 @@
   document.addEventListener('selectionchange', () => { if (view === 'baca' && matchMedia('(pointer: coarse)').matches) checkSelection(); });
   scroller.addEventListener('scroll', hideQuotePop, { passive: true });
   qpop.addEventListener('mousedown', e => e.preventDefault());
-  qpop.addEventListener('click', () => { hideQuotePop(); openQuote(qText); });
+  qpop.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    hideQuotePop();
+    if (b.id === 'qpGift') openGift(); else openQuote(qText);
+  });
+
+  /* ---------- TITIPAN: satu kalimat dan satu pesan untuk seseorang, dibawa di dalam tautan ----------
+     Tidak ada server: isinya dikemas di belakang tanda seru pada tautan bagikan (baca/<alamat>/#:b!<isi>),
+     lalu dibuka di pembaca biasa, tepat di paragrafnya, dengan pesannya di margin. */
+  const b64u = str => btoa(String.fromCharCode(...new TextEncoder().encode(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const unb64u = code => new TextDecoder().decode(Uint8Array.from(atob(code.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
+  const packGift = g => b64u(JSON.stringify(g));
+  const unpackGift = code => { try { const g = JSON.parse(unb64u(code)); return g && typeof g === 'object' ? g : null; } catch (e) { return null; } };
+  const giftLink = (d, g) => { const u = new URL(shareLink(d)); u.hash = u.hash.replace(/^#/, '') + '!' + packGift(g); return u.href; };
+  function openGift() {
+    if (!current || !qText) return;
+    $('#giftQuote').textContent = qText;
+    $('#giftFrom').value = store.get('titip:from', '') || '';
+    $('#giftModal').hidden = false;
+    $('#giftMsg').focus();
+  }
+  const closeGift = () => { $('#giftModal').hidden = true; };
+  $('#giftClose').addEventListener('click', closeGift);
+  $('#giftModal').addEventListener('click', e => { if (e.target.id === 'giftModal') closeGift(); });
+  $('#giftModal').addEventListener('keydown', e => { if (e.key === 'Escape') closeGift(); });
+  $('#giftSend').addEventListener('click', async () => {
+    const from = $('#giftFrom').value.trim().slice(0, 40), msg = $('#giftMsg').value.trim().slice(0, 240);
+    if (from) store.set('titip:from', from);
+    const g = { p: qPara, q: qText.slice(0, 360) }; if (msg) g.m = msg; if (from) g.f = from;
+    const url = giftLink(current, g), text = from ? t(`${from} menitipkan satu kalimat untukmu.`, `${from} left a line for you.`) : t('Ada satu kalimat yang dititipkan untukmu.', 'Someone left a line for you.');
+    closeGift();
+    try {
+      if (navigator.share) await navigator.share({ title: current.title, text, url });
+      else { await navigator.clipboard.writeText(url); toast(t('Tautan titipan disalin. Kirimkan ke dia.', 'Link copied. Send it to them.')); }
+    } catch (e) { if (e.name !== 'AbortError') { try { await navigator.clipboard.writeText(url); toast(t('Tautan titipan disalin. Kirimkan ke dia.', 'Link copied. Send it to them.')); } catch (_) { toast(t('Tautan: ', 'Link: ') + url); } } }
+  });
+  // membuka titipan: paragrafnya disorot, kalimatnya ditandai, pesannya di margin
+  function showGift(code) {
+    const g = unpackGift(code); if (!g || !current) return;
+    const paras = [...body.children], norm = x => fold(String(x || '')).replace(/\s+/g, ' ').trim(), q = norm(g.q);
+    const has = el => el && !el.classList.contains('scene') && (!q || norm(el.textContent).includes(q.slice(0, 80)));
+    const p = has(paras[g.p]) ? paras[g.p] : paras.find(has); if (!p) return;
+    $$('.gift-p', body).forEach(x => { x.classList.remove('gift-p'); x.querySelector('.gift-m')?.remove(); });
+    p.classList.add('gift-p');
+    // kalimatnya ditandai lewat sorotan peramban (tanpa mengubah teks); kalau belum didukung, cukup paragrafnya
+    try {
+      if (window.Highlight && CSS.highlights && g.q) {
+        const nodes = [], tw = document.createTreeWalker(p, NodeFilter.SHOW_TEXT); let all = '';
+        for (let n = tw.nextNode(); n; n = tw.nextNode()) { if (n.parentElement.closest('.mg-dot, .mg-note')) continue; nodes.push([n, all.length]); all += n.nodeValue; }
+        const i = all.replace(/\s/g, ' ').indexOf(String(g.q).replace(/\s+/g, ' ').trim().slice(0, 360));
+        if (i >= 0) {
+          const end = i + String(g.q).replace(/\s+/g, ' ').trim().length, at = k => { const f = [...nodes].reverse().find(([, o]) => o <= k); return [f[0], Math.min(k - f[1], f[0].nodeValue.length)]; };
+          const r = document.createRange(); r.setStart(...at(i)); r.setEnd(...at(end));
+          CSS.highlights.set('titipan', new Highlight(r));
+        }
+      }
+    } catch (e) { /* sorotan tidak didukung */ }
+    const note = document.createElement('span'); note.className = 'gift-m'; note.setAttribute('role', 'note');
+    note.innerHTML = `<small>${g.f ? t('Dititipkan oleh ', 'Left for you by ') + esc(String(g.f).slice(0, 40)) : t('Dititipkan untukmu', 'Left for you')}</small>${g.m ? `<span>${esc(String(g.m).slice(0, 240))}</span>` : ''}`;
+    p.append(note);
+    setTimeout(() => scrollToPara(p), 450);
+    toast(g.f ? t(`${String(g.f).slice(0, 40)} menitipkan satu kalimat untukmu.`, `${String(g.f).slice(0, 40)} left a line for you.`) : t('Ada satu kalimat yang dititipkan untukmu.', 'Someone left a line for you.'));
+  }
 
   const QSW = [
     { id: 'kertas', bg: '#FAF8F4', fg: '#1D1D1F', sub: '#7A7670' },
