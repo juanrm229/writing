@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Moon Behind My Eyes · Quiet Margins</title>
+<meta name="description" content="Dibaca di layar kunci: kaca yang diusap, bulan yang terus tertunda, tirai di pusat kontrol, dan layar yang dimatikan.">
+<meta property="og:title" content="The Moon Behind My Eyes">
+<meta property="og:description" content="I kept the glass perfectly clean, believing that clarity would make it easier for the light to find me.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#000000">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<link rel="stylesheet" href="moon.css?v=3">
+</head>
+<body>
+<header class="outer">
+  <a class="back" href="../../#putar" id="back">‹ <span id="backLabel">Meja tulis</span></a>
+  <p class="outer-title"><span id="kicker">Puisi · Juan</span> · <i id="title">The Moon Behind My Eyes</i></p>
+  <button class="icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button>
+</header>
+
+<div class="phone" id="phone">
+  <div class="screen" id="screen">
+    <div class="glass" id="glass">
+      <p class="status"><span id="statusLeft">Juan</span><span class="status-right"><span id="focusChip" hidden>☾ <span id="focusChipLabel">Tidur</span></span><span id="battery">68%</span></span></p>
+      <div class="lock">
+        <svg class="padlock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+        <p class="date" id="date"></p>
+        <p class="clock" id="clock" aria-live="off">00.00</p>
+      </div>
+      <div class="widgets" id="widgets">
+        <div class="widget" id="wMoon"><small id="wMoonLabel">Bulan</small><b id="wMoonValue">—</b><span id="wMoonSub"></span></div>
+        <div class="widget" id="wStars"><small id="wStarsLabel">Bintang</small><b id="wStarsValue">—</b><span id="wStarsSub"></span></div>
+        <div class="widget" id="wRise"><small id="wRiseLabel">Terbit</small><b id="wRiseValue">—</b><span id="wRiseSub"></span></div>
+      </div>
+      <section class="live" id="live" hidden aria-live="polite"></section>
+      <ol class="feed" id="feed" aria-live="polite"></ol>
+    </div>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <div class="bottom">
+      <button class="round" id="openCC" type="button" aria-label="Buka pusat kontrol" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5Z"/></svg></button>
+      <button class="round lockbtn" id="lockBtn" type="button" aria-describedby="hint"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span class="ring" aria-hidden="true"></span></button>
+    </div>
+
+    <div class="cc" id="cc" hidden role="dialog" aria-modal="true" aria-labelledby="ccTitle">
+      <h2 class="sr-only" id="ccTitle">Pusat Kontrol</h2>
+      <div class="cc-grid">
+        <label class="cc-tile bright" for="bright"><span id="brightLabel">Kecerahan · tirai</span><input type="range" id="bright" min="0" max="100" value="100"><b id="brightValue">100%</b></label>
+        <button class="cc-tile focus" id="focusBtn" type="button" aria-pressed="false"><span class="moon-ico" aria-hidden="true">☾</span><span><b id="focusLabel">Fokus</b><small id="focusState">Mati</small></span></button>
+      </div>
+      <button class="cc-close" id="ccClose" type="button">Tutup</button>
+    </div>
+
+    <div class="aod" id="aod" aria-live="polite">
+      <p class="aod-clock" id="aodClock"></p>
+      <p class="aod-moon" id="aodMoon"></p>
+      <div class="aod-lines" id="aodLines"></div>
+    </div>
+  </div>
+</div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+    <div class="setting-row"><span id="languageLabel">Bahasa</span><button class="setting-button" id="language" type="button">English</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="moon.js?v=3"></script>
+</body>
+</html>

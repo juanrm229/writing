@@ -5,7 +5,7 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v36';
+const VERSION = 'v40';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
@@ -14,6 +14,8 @@ const SHELL_FILES = [
   'antologi/anda-di-sini/', 'antologi/anda-di-sini/index.html', 'antologi/anda-di-sini/peta.css', 'antologi/anda-di-sini/peta.js', 'antologi/interlude/', 'antologi/interlude/index.html', 'antologi/interlude/interlude.css', 'antologi/interlude/ambience.js', 'antologi/interlude/interlude.js',
   'antologi/terlambat-satu-menit/', 'antologi/terlambat-satu-menit/index.html', 'antologi/terlambat-satu-menit/minute.css', 'antologi/terlambat-satu-menit/minute.js', 'antologi/terlambat-satu-menit/sound.js', 'antologi/terlambat-satu-menit/track.js',
   'antologi/pabrik-mimpi/', 'antologi/pabrik-mimpi/index.html', 'antologi/pabrik-mimpi/mimpi.css', 'antologi/pabrik-mimpi/mimpi.js', 'antologi/pabrik-mimpi/kalender.js',
+  'antologi/the-moon-behind-my-eyes/', 'antologi/the-moon-behind-my-eyes/index.html', 'antologi/the-moon-behind-my-eyes/moon.css', 'antologi/the-moon-behind-my-eyes/moon.js',
+  'antologi/trillions-of-seconds/', 'antologi/trillions-of-seconds/index.html', 'antologi/trillions-of-seconds/seconds.css', 'antologi/trillions-of-seconds/seconds.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];
 
