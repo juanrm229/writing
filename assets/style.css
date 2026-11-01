@@ -1709,3 +1709,33 @@ button.pf-now-c:hover { transform: translateY(-3px); }
 .gift-l textarea, .gift-l input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--chip-2); color: var(--ink); font: 15px/1.45 var(--f-ui); resize: vertical; }
 .gift-note { margin: 0; color: var(--muted); font-size: 12px; }
 .gift-act { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+
+/* ---------- Naskah ber-Markdown di pembaca: judul bagian, judul catatan, keterangan, daftar, kutipan, tabel ---------- */
+.rd-body .rd-h { font-family: var(--r-font); color: var(--rfg); text-wrap: balance; hyphens: manual; }
+.rd-body .rd-h2 { margin: 2.6em 0 1.1em; font-size: 1.32em; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; }
+.rd-body .rd-h2:first-child { margin-top: .2em; }
+.rd-body .rd-h3 { margin: 2.2em 0 .25em; font: 600 .78em/1.3 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--rmut); }
+.rd-body .rd-h2 + .rd-h3 { margin-top: .4em; }
+.rd-body .rd-dateline { margin: 0 0 1.4em; font-size: .86em; font-style: italic; color: var(--rmut); }
+.rd-body .rd-list { padding-left: 1.3em; }
+.rd-body .rd-list li { margin: 0 0 .45em; padding-left: .2em; }
+.rd-body .rd-list li::marker { color: var(--rmut); font-family: var(--f-ui); font-size: .85em; }
+.rd-body .rd-quote { margin-left: 0; padding-left: 1em; border-left: 2px solid color-mix(in srgb, var(--rfg) 22%, transparent); color: color-mix(in srgb, var(--rfg) 82%, transparent); font-style: italic; }
+.rd-body .rd-table { overflow-x: auto; margin: 1.4em 0 1.6em; border-radius: 14px; background: color-mix(in srgb, var(--rfg) 4%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rfg) 10%, transparent); -webkit-overflow-scrolling: touch; }
+.rd-body .rd-table table { width: 100%; min-width: 520px; border-collapse: collapse; font: 13.5px/1.45 var(--f-ui); text-align: left; hyphens: manual; }
+.rd-body .rd-table th { padding: 10px 12px; font-weight: 600; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--rmut); border-bottom: 1px solid color-mix(in srgb, var(--rfg) 12%, transparent); white-space: nowrap; }
+.rd-body .rd-table td { padding: 9px 12px; vertical-align: top; border-top: 1px solid color-mix(in srgb, var(--rfg) 7%, transparent); }
+.rd-body .rd-table tr:first-child td { border-top: 0; }
+.rd-body .rd-table td:first-child, .rd-body .rd-table th:first-child { width: 1%; white-space: nowrap; color: var(--rmut); font-variant-numeric: tabular-nums; }
+.rd-body .rd-table:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+/* di layar sempit, setiap baris tabel menjadi satu kartu kecil: nomor di kiri, isian bertumpuk dengan labelnya */
+@media (max-width: 600px) {
+  .rd-body .rd-table { overflow: visible; background: none; box-shadow: none; border-radius: 0; }
+  .rd-body .rd-table table, .rd-body .rd-table tbody { display: block; min-width: 0; }
+  .rd-body .rd-table thead { display: none; }
+  .rd-body .rd-table tr { display: grid; grid-template-columns: 2em minmax(0, 1fr); column-gap: 10px; margin: 0 0 8px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--rfg) 4%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rfg) 8%, transparent); }
+  .rd-body .rd-table td { display: block; grid-column: 2; padding: 0; border: 0; }
+  .rd-body .rd-table td:first-child { grid-column: 1; grid-row: 1 / span 12; width: auto; padding-top: 1px; font: 600 16px var(--f-ui); }
+  .rd-body .rd-table td[data-l]:not(:first-child)::before { content: attr(data-l); display: block; margin-top: 6px; font: 600 10.5px/1.4 var(--f-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--rmut); }
+  .rd-body .rd-table td[data-l]:nth-child(2)::before { margin-top: 0; }
+}

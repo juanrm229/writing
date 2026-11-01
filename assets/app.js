@@ -16,7 +16,12 @@
     set(k, v) { try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const plain = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(\S(?:.*?\S)?)\*/g, '$1');
+  // teks polos dari satu blok: tanda Markdown (judul, daftar, kutipan, tabel, tebal, miring) dibuang
+  const plain = s => String(s)
+    .replace(/^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)*\|?[ \t]*$/gm, '')
+    .replace(/^[ \t]*#{1,6}[ \t]+/gm, '').replace(/^[ \t]*>[ \t]?/gm, '').replace(/^[ \t]*(?:[-*]|\d+\.)[ \t]+/gm, '')
+    .replace(/^[ \t]*\|[ \t]*|[ \t]*\|[ \t]*$/gm, '').replace(/[ \t]*\|[ \t]*/g, ' · ')
+    .replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(\S(?:.*?\S)?)\*/g, '$1');
   const rich = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -888,7 +893,7 @@
     const mark = t => (q ? markText(t, q) : rich(t));
     body.className = 'rd-body' + (focusMode ? ' focus' : '') + (reveal && !reduced ? ' reveal' : '');
     body.lang = w.lost || LANG;
-    body.innerHTML = w.body.map((p, i) => isBreak(p) ? SCENE : `<p${w.form === 'puisi' ? ' class="stanza"' : ''} style="--k:${Math.min(i, 10)}">${mark(p)}</p>`).join('');
+    body.innerHTML = w.body.map((p, i) => isBreak(p) ? SCENE : block(p, i, w, mark)).join('');
     margins(w);
   }
   /* ---------- CATATAN MARGIN: catatan kecil penulis di tepi paragraf, tampil sebagai titik biru ---------- */
@@ -897,8 +902,8 @@
     const list = (w.A || w).margins || []; if (!list.length) return;
     const paras = [...body.children];
     list.forEach((m, n) => {
-      const at = fold(plain(m.at)).replace(/\s+/g, ' ').trim(); if (at.length < 4) return;
-      const p = paras.find(el => !el.classList.contains('scene') && fold(el.textContent).replace(/\s+/g, ' ').includes(at)); if (!p || p.querySelector('.mg-dot')) return;
+      const at = fold(qn(plain(m.at))).replace(/\s+/g, ' ').trim(); if (at.length < 4) return;
+      const p = paras.find(el => !el.classList.contains('scene') && fold(qn(el.textContent)).replace(/\s+/g, ' ').includes(at)); if (!p || p.querySelector('.mg-dot')) return;
       const b = document.createElement('button'); b.type = 'button'; b.className = 'mg-dot'; b.dataset.mg = n;
       b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-label', t('Catatan margin dari ', 'A margin note from ') + SITE.author);
       b.innerHTML = MG_DOT; p.classList.add('has-mg'); p.prepend(b);
@@ -914,6 +919,39 @@
     note.innerHTML = `<small>${t('Di margin', 'In the margin')} · ${esc(SITE.author)}</small><span>${rich(LANG === 'en' && m.en ? m.en : m.note)}</span>`;
     p.append(note); b.setAttribute('aria-expanded', 'true');
   });
+  /* Satu paragraf naskah menjadi satu elemen (urutan elemen = urutan paragraf, dipakai suara, cari, dan posisi baca).
+     Naskah boleh memakai Markdown sederhana: ## judul bagian, ### judul catatan, baris miring sebagai keterangan
+     tepat di bawah judul, daftar (- atau 1.), kutipan (>), dan tabel (| a | b |). */
+  const MD_LIST = /^[ \t]*(?:[-*]|\d+\.)[ \t]+/;
+  // tanda kutip lurus menjadi kutip tipografis, hanya untuk tampilan (naskahnya tetap)
+  const smart = x => String(x).replace(/(^|[\s([{—–-])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s([{—–-])'/g, '$1‘').replace(/'/g, '’');
+  // untuk mencocokkan teks di layar dengan naskah: kutip apa pun dianggap sama
+  const qn = x => String(x).replace(/[“”„]/g, '"').replace(/[‘’]/g, "'");
+  function block(p, i, w, mark0) {
+    const mark = x => mark0(smart(x));
+    const k = ` style="--k:${Math.min(i, 10)}"`, src = String(p).trim(), prev = String(w.body[i - 1] || '').trim();
+    if (w.form === 'puisi') return `<p class="stanza"${k}>${mark(p)}</p>`;
+    const h = src.match(/^(#{1,6})[ \t]+(.+)$/s);
+    if (h) return h[1].length <= 2 ? `<h2 class="rd-h rd-h2"${k}>${mark(h[2])}</h2>` : `<h3 class="rd-h rd-h3"${k}>${mark(h[2])}</h3>`;
+    // baris miring tepat di bawah judul: keterangan waktu atau tempat
+    if (/^#{1,6}[ \t]/.test(prev) && /^\*[^*\n](?:[^*\n]*[^*\n])?\*$/.test(src)) return `<p class="rd-dateline"${k}>${mark(src.slice(1, -1))}</p>`;
+    const lines = src.split('\n').map(x => x.trim()).filter(Boolean);
+    if (lines.length && lines.every(l => l.startsWith('|'))) {
+      const cells = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const rows = lines.filter(l => !/^\|?[\s:|-]+\|?$/.test(l) || !/-{3,}/.test(l)).map(cells);
+      const head = lines.length > 1 && /-{3,}/.test(lines[1]) ? rows.shift() : null;
+      const lab = j => (head && head[j] ? ` data-l="${esc(plain(head[j]))}"` : '');
+      return `<div class="rd-table"${k} role="region" tabindex="0" aria-label="${t('Tabel', 'Table')}"><table>${head ? `<thead><tr>${head.map(c => `<th scope="col">${mark(c)}</th>`).join('')}</tr></thead>` : ''}<tbody>${rows.map(r => `<tr>${r.map((c, j) => `<td${lab(j)}>${mark(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    if (MD_LIST.test(lines[0] || '')) {
+      const ordered = /^\d+\./.test(lines[0]), items = [];
+      lines.forEach(l => { if (MD_LIST.test(l)) items.push(l.replace(MD_LIST, '')); else if (items.length) items[items.length - 1] += ' ' + l; });
+      const tag = ordered ? 'ol' : 'ul', start = ordered ? +lines[0].match(/^\s*(\d+)/)[1] : 1;
+      return `<${tag} class="rd-list"${k}${ordered && start > 1 ? ` start="${start}"` : ''}>${items.map(x => `<li>${mark(x)}</li>`).join('')}</${tag}>`;
+    }
+    if (lines.every(l => l.startsWith('>'))) return `<blockquote class="rd-quote"${k}>${mark(lines.map(l => l.replace(/^>[ \t]?/, '')).join(' '))}</blockquote>`;
+    return `<p${k}>${mark(p)}</p>`;
+  }
   function markText(t, q) {
     const p = plain(t), lt = fold(p), lq = fold(q);
     let out = '', i = 0, k;
@@ -1975,7 +2013,7 @@
   // membuka titipan: paragrafnya disorot, kalimatnya ditandai, pesannya di margin
   function showGift(code) {
     const g = unpackGift(code); if (!g || !current) return;
-    const paras = [...body.children], norm = x => fold(String(x || '')).replace(/\s+/g, ' ').trim(), q = norm(g.q);
+    const paras = [...body.children], norm = x => fold(qn(String(x || ''))).replace(/\s+/g, ' ').trim(), q = norm(g.q);
     const has = el => el && !el.classList.contains('scene') && (!q || norm(el.textContent).includes(q.slice(0, 80)));
     const p = has(paras[g.p]) ? paras[g.p] : paras.find(has); if (!p) return;
     $$('.gift-p', body).forEach(x => { x.classList.remove('gift-p'); x.querySelector('.gift-m')?.remove(); });
@@ -1985,7 +2023,7 @@
       if (window.Highlight && CSS.highlights && g.q) {
         const nodes = [], tw = document.createTreeWalker(p, NodeFilter.SHOW_TEXT); let all = '';
         for (let n = tw.nextNode(); n; n = tw.nextNode()) { if (n.parentElement.closest('.mg-dot, .mg-note')) continue; nodes.push([n, all.length]); all += n.nodeValue; }
-        const i = all.replace(/\s/g, ' ').indexOf(String(g.q).replace(/\s+/g, ' ').trim().slice(0, 360));
+        const i = qn(all).replace(/\s/g, ' ').indexOf(qn(g.q).replace(/\s+/g, ' ').trim().slice(0, 360));
         if (i >= 0) {
           const end = i + String(g.q).replace(/\s+/g, ' ').trim().length, at = k => { const f = [...nodes].reverse().find(([, o]) => o <= k); return [f[0], Math.min(k - f[1], f[0].nodeValue.length)]; };
           const r = document.createRange(); r.setStart(...at(i)); r.setEnd(...at(end));
