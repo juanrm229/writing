@@ -228,6 +228,17 @@
   const all = () => WORKS;
   const bySlug = slug => all().find(w => w.slug === slug);
   const docOf = (slug, side = 'a', ch = 1) => { const w = bySlug(slug); if (!w) return null; if (w.CH) return w.CH[clamp(+ch || 1, 1, w.CH.length) - 1]; return w.S.find(d => d.side === side) || null; };
+  // Mode baca: tulisan yang punya pengalaman interaktif bisa dibuka di pengalamannya atau dibaca biasa.
+  // Pilihan pembaca diingat (jm:mode). "Baca biasa" dari dalam pengalaman hanya berlaku untuk tulisan itu, selama sesi ini.
+  const exOf = d => { const w = d && (d.A || bySlug(d.slug) || d); return (w && w.experience) || ''; };
+  const IX_WHERE = { 'anda-di-sini': ['di atas peta Saujana', 'on the map of Saujana'], interlude: ['sebagai percakapan', 'as a conversation'], 'terlambat-satu-menit': ['di halaman lacak kiriman', 'on a parcel-tracking page'], 'pabrik-mimpi': ['di kalender Pak Wangsa', "in Mr. Wangsa's calendar"], arsip: ['sebagai berkas arsip', 'as archive files'], 'the-room': ['di aplikasi Rumah', 'in a Home app'], 'trillions-of-seconds': ['di aplikasi Jam', 'in a Clock app'], 'the-moon-behind-my-eyes': ['di layar kunci', 'on a lock screen'] };
+  const ixWhere = d => { const dir = (exOf(d).match(/antologi\/([^/]+)/) || [])[1]; const v = IX_WHERE[dir]; return v ? t(v[0], v[1]) : t('dalam bentuk lain', 'in another form'); };
+  const IX_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c.6 4.4 2.6 6.9 7 8.5-4.4 1.6-6.4 4.1-7 8.5-.6-4.4-2.6-6.9-7-8.5 4.4-1.6 6.4-4.1 7-8.5z"/></svg>';
+  const ixTag = d => exOf(d) ? `<i class="ix">${IX_ICON}${t('Interaktif', 'Interactive')}</i>` : '';
+  let MODE = store.get('mode', 'interaktif') === 'biasa' ? 'biasa' : 'interaktif';
+  const plainOnce = () => { try { return JSON.parse(sessionStorage.getItem('jm:plain') || '[]'); } catch (e) { return []; } };
+  const setPlainOnce = (slug, on) => { try { const l = plainOnce().filter(x => x !== slug); if (on) l.push(slug); sessionStorage.setItem('jm:plain', JSON.stringify(l)); } catch (e) { /* */ } };
+  const wantsIx = slug => MODE === 'interaktif' && !plainOnce().includes(slug);
   const hrefOf = d => '#baca-' + d.slug + (d.side !== 'a' ? ':' + d.side : '') + (d.ch > 1 ? '~' + d.ch : '');
   // tautan bagikan: halaman /baca/<alamat>/ membawa judul, kutipan, dan gambar kartu untuk pratinjau tautan
   const shareLink = d => { const u = new URL('baca/' + d.slug + '/', location.href.split('#')[0].split('?')[0]); if (OTHER) u.searchParams.set('lang', LANG); u.hash = (d.side && d.side !== 'a' ? ':' + d.side : '') + (d.ch > 1 ? '~' + d.ch : ''); return u.href; };
@@ -601,7 +612,7 @@
     return out;
   }
   // lencana kecil di daftar: huruf sisi (B, C, …) atau nomor bab
-  const badge = d => (d?.ch > 1 || (d?.A?.CH && d.ch) ? `<i class="ab">${t('Bab', 'Ch.')} ${d.ch}</i>` : d && d.side && d.side !== 'a' ? `<i class="ab">${SL(d)}</i>` : '');
+  const badge = d => (d?.ch > 1 || (d?.A?.CH && d.ch) ? `<i class="ab">${t('Bab', 'Ch.')} ${d.ch}</i>` : d && d.side && d.side !== 'a' ? `<i class="ab">${SL(d)}</i>` : '') + ixTag(d);
   const sidesTag = d => (d?.A?.CH ? `${t('Bab', 'Chapter')} ${d.ch} · ` : multi(d?.A) ? sideWord(d) + ' · ' : '');
   function nowHTML() {
     const last = lastDoc(), L = store.get('last', null);
@@ -667,7 +678,7 @@
     const list = all().filter(w => pass(w) && (!svOn() || svMatch(w)));
     return `<div class="kc-filters" role="radiogroup" aria-label="${t('Saring koleksi', 'Filter collection')}">${K_FILTERS.filter(([k]) => k !== 'bab' || WORKS.some(w => w.CH)).map(([k, l]) => `<button type="button" role="radio" data-kf="${k}" aria-checked="${k === kFilter}">${l}</button>`).join('')}<button type="button" class="kc-sieve${svOn() ? ' on' : ''}" data-sieve>${SIEVE_ICON}<span>${svOn() ? esc(svSummary()) : t('Saring', 'Filter')}</span><b class="sv-n">${svOn() ? svWorks().length : ''}</b></button></div>
       <ul class="tk-list kc">${list.map((w, i) => `<li style="--k:${i}"><button type="button" data-pick="${w.key}">${mdisc(w)}
-        <span class="sg-t"><b>${esc(w.title)}</b><span>${esc(catOf(w.cat).label)} · ${w.CH ? `${w.CH.length} ${t('bab', 'chapters')} · ${w.minutes} ${t('mnt', 'min')}` : multi(w) ? `${countOf(w.S.length, 'sisi', 'side', 'sides')} · ${w.S.reduce((n, d) => n + d.minutes, 0)} ${t('mnt', 'min')}` : `${w.minutes} ${t('mnt', 'min')}`}</span></span>
+        <span class="sg-t"><b>${esc(w.title)}${ixTag(w)}</b><span>${esc(catOf(w.cat).label)} · ${w.CH ? `${w.CH.length} ${t('bab', 'chapters')} · ${w.minutes} ${t('mnt', 'min')}` : multi(w) ? `${countOf(w.S.length, 'sisi', 'side', 'sides')} · ${w.S.reduce((n, d) => n + d.minutes, 0)} ${t('mnt', 'min')}` : `${w.minutes} ${t('mnt', 'min')}`}</span></span>
         <span class="kc-ab">${workRings(w)}</span></button></li>`).join('') || `<li class="tk-none">${t('Tidak ada piringan di sini.', 'No records here.')}</li>`}</ul>`;
   }
 
@@ -939,15 +950,18 @@
       : t('Bagian ini belum tersedia dalam bahasa Indonesia, jadi ditampilkan dalam bahasa aslinya.', 'This part isn’t available in English yet, so it’s shown in the original Indonesian.');
   }
 
+  // alamat pengalaman interaktif untuk satu tulisan (bab Interlude dan sisi Terlambat ikut dibawa)
+  function exURL(slug, side = 'a', ch = 1) {
+    const ex = bySlug(slug)?.experience || '';
+    const fragment = slug === 'interlude' && ch > 1 ? '#bab-' + ch : slug === 'terlambat-satu-menit' ? '#' + side : '';
+    // pengalaman yang dipakai bersama beberapa tulisan (mis. arsip catatan) menunjuk tulisannya lewat #
+    const [exPath, exHash] = String(ex).split('#');
+    return new URL(exPath + location.search + (exHash ? '#' + exHash : fragment), location.href.split('#')[0]).href;
+  }
   function showReader(slug, side = 'a', ch = 1) {
     // karya dengan pengalaman baca sendiri (mis. Anda di Sini) dibuka di halamannya; entri #baca diganti supaya tombol kembali tidak memantul
     const ex = bySlug(slug)?.experience;
-    if (ex) {
-      const fragment = slug === 'interlude' && ch > 1 ? '#bab-' + ch : slug === 'terlambat-satu-menit' ? '#' + side : '';
-      // pengalaman yang dipakai bersama beberapa tulisan (mis. arsip catatan) menunjuk tulisannya lewat #
-      const [exPath, exHash] = String(ex).split('#');
-      location.replace(new URL(exPath + location.search + (exHash ? '#' + exHash : fragment), location.href.split('#')[0]).href); return;
-    }
+    if (ex && wantsIx(slug)) { location.replace(exURL(slug, side, ch)); return; }
     const w = docOf(slug, side, ch) || docOf(slug);
     if (!w) return;
     stopSpeech(false); closeFind(); stopReplay(false); hideQuotePop();
@@ -964,9 +978,17 @@
     $('#rdBackLabel').textContent = playing() ? (playing().shared || playing().daily ? t('Racikan', 'Mix') : 'Album') : { sapa: t('Sapa', 'Hello'), putar: t('Piringan', 'Records'), pilih: t('Piringan', 'Records'), album: 'Album', tentang: t('Profil', 'Profile') }[prevView] || t('Piringan', 'Records');
     $('#rdCrumb').textContent = `${catOf(w.cat).label} · ${w.A.title}${w.A.CH ? ' · ' + t('Bab', 'Ch.') + ' ' + w.ch : multi(w.A) ? ' · ' + sideWord(w) : ''}`;
     const al = playing(), inAlbum = al && al.tracks[PLAY.i]?.key === w.key;
-    $('#rdMeta').innerHTML = `${RADIO ? `<button type="button" class="radio-tag" data-radio-stop title="${t('Hentikan radio', 'Stop radio')}"><i aria-hidden="true"></i>Radio “${esc(bySlug(RADIO.seed).title)}”</button>` : ''}${viaQ ? `<span class="q-tag">${QICON}${t('dari antrean', 'from your queue')}</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${multi(w.A) ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span><span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} ${t('kata', 'words')} · ${w.minutes} ${t('menit', 'min')}</span>${w.draft ? `<span class="draft-tag">${t('draf', 'draft')}</span>` : ''}`;
+    $('#rdMeta').innerHTML = `${RADIO ? `<button type="button" class="radio-tag" data-radio-stop title="${t('Hentikan radio', 'Stop radio')}"><i aria-hidden="true"></i>Radio “${esc(bySlug(RADIO.seed).title)}”</button>` : ''}${viaQ ? `<span class="q-tag">${QICON}${t('dari antrean', 'from your queue')}</span>` : ''}${inAlbum ? `<a class="al-tag" href="#album-${esc(al.id)}">${mdisc(w)}${esc(al.title)} · ${PLAY.order.indexOf(PLAY.i) + 1}/${al.tracks.length}</a>` : ''}${multi(w.A) ? `<span class="side-tag">${esc(sideLine(w))}</span>` : ''}<span>${esc(catOf(w.cat).label)}</span>${ixTag(w)}<span>No. ${w.no}</span><span>${fmtLong(w.date)}</span><span>${num(w.words)} ${t('kata', 'words')} · ${w.minutes} ${t('menit', 'min')}</span>${w.draft ? `<span class="draft-tag">${t('draf', 'draft')}</span>` : ''}`;
     $('#rdTitle').textContent = w.title;
     renderHead(w);
+    // dibaca biasa padahal ada versi interaktifnya: satu kartu kecil untuk pindah
+    const ixc = $('#rdIx');
+    ixc.hidden = !exOf(w);
+    if (exOf(w)) {
+      ixc.href = exURL(w.slug, w.side, w.ch);
+      ixc.innerHTML = `<span class="ix-ico">${IX_ICON}</span><span class="ix-t"><small>${t('Versi interaktif', 'Interactive version')}</small><b>${esc(t('Baca ', 'Read it ') + ixWhere(w))}</b></span><svg class="ix-go" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
+      ixc.onclick = () => setPlainOnce(w.slug, false);
+    }
     renderBody('', true);
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
@@ -2166,13 +2188,13 @@
     $('#tsMatchH').textContent = fits ? t(`Cocok untuk ${PV.min} menit`, `Fits ${PV.min} minutes`) : t(`Paling dekat dengan ${PV.min} menit`, `Closest to ${PV.min} minutes`);
     const row = $('#tsMatch');
     row.innerHTML = `<span class="mini" aria-hidden="true"><i style="--lc:${catOf(w.cat).ink}"></i></span>
-      <span><b>${esc(w.title)}</b><small>${w.minutes} ${t('mnt', 'min')} · ${esc(catOf(w.cat).label)}${w.CH ? ' · ' + w.CH.length + t(' bab', ' chapters') : multi(w) ? ' · ' + w.S.length + t(' sisi', ' sides') : ''} · ${readSet.has(w.slug) ? t('sudah dibaca', 'read') : t('belum dibaca', 'unread')}</small></span>
+      <span><b>${esc(w.title)}${ixTag(w)}</b><small>${w.minutes} ${t('mnt', 'min')} · ${esc(catOf(w.cat).label)}${w.CH ? ' · ' + w.CH.length + t(' bab', ' chapters') : multi(w) ? ' · ' + w.S.length + t(' sisi', ' sides') : ''} · ${readSet.has(w.slug) ? t('sudah dibaca', 'read') : t('belum dibaca', 'unread')}</small></span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>`;
     row.setAttribute('aria-label', t(`Baca ${w.title}`, `Read ${w.title}`));
     row.classList.remove('swap'); void row.offsetWidth; row.classList.add('swap');
     $('#tsSumMin').textContent = String(PV.min).padStart(2, '0');
     $('#tsSumH').textContent = $('#tsMatchH').textContent;
-    $('#tsSumT').textContent = w.title;
+    $('#tsSumT').innerHTML = esc(w.title) + ixTag(w);
   }
   function nextDisc(dir = 1) {
     if (crateOrder.length < 2) return;
@@ -2476,6 +2498,7 @@
         : (d.pov ? sideLine(d) : t('Sisi A · cerita aslinya', 'Side A · the original'));
     scrub.classList.toggle('off', !d);
     syncQueueBtn();
+    paintMode(w);
     const go = $('#pkGo');
     go.disabled = !d;
     go.textContent = d ? t('Yang ini!', 'This one!') : t('Belum ada', 'Not yet');
@@ -2595,6 +2618,20 @@
     if (QUEUE.includes(d.key)) { QUEUE = QUEUE.filter(k => k !== d.key); saveQ(); toast('Dikeluarkan dari antrean.'); return; }
     enqueue([d]);
     const b = $('#pkQueue'); b.classList.remove('added'); void b.offsetWidth; b.classList.add('added');
+  });
+  // Interaktif atau baca biasa: hanya muncul untuk tulisan yang punya pengalaman, dan diingat untuk semuanya
+  function paintMode(w) {
+    const b = $('#pkMode'), on = MODE === 'interaktif'; b.hidden = !exOf(w); if (b.hidden) return;
+    b.setAttribute('aria-pressed', String(on));
+    b.innerHTML = on ? `${IX_ICON}${t('Interaktif', 'Interactive')}` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 10h14M5 14.5h14M5 19h8"/></svg>${t('Baca biasa', 'Plain text')}`;
+    b.setAttribute('aria-label', on ? t('Mode baca: interaktif. Ketuk untuk baca biasa', 'Reading mode: interactive. Tap for plain text') : t('Mode baca: biasa. Ketuk untuk interaktif', 'Reading mode: plain text. Tap for interactive'));
+    b.title = on ? t('Dibuka di pengalaman interaktifnya: ', 'Opens in its interactive version: ') + ixWhere(w) : t('Dibuka sebagai teks biasa', 'Opens as plain text');
+  }
+  $('#pkMode').addEventListener('click', () => {
+    MODE = MODE === 'interaktif' ? 'biasa' : 'interaktif'; store.set('mode', MODE);
+    if (MODE === 'interaktif') try { sessionStorage.removeItem('jm:plain'); } catch (e) { /* */ }
+    const w = bySlug(PK.slug); paintMode(w);
+    toast(MODE === 'interaktif' ? t('Tulisan interaktif dibuka di pengalamannya.', 'Interactive pieces open in their own experience.') : t('Semua tulisan dibuka sebagai teks biasa.', 'Every piece opens as plain text.'));
   });
   $('#pkGo').addEventListener('click', () => {
     const d = pkDoc(); if (!d) return;

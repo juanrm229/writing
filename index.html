@@ -178,7 +178,10 @@
         <div class="pk-stage">
           <div class="pk-disc" id="pkDisc" aria-live="polite"></div>
           <p class="pk-title" id="pkTitle"></p>
-          <button type="button" class="pk-liner" id="pkLiner"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg>Catatan sampul</button>
+          <div class="pk-chips">
+            <button type="button" class="pk-liner" id="pkLiner"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg>Catatan sampul</button>
+            <button type="button" class="pk-mode" id="pkMode" aria-pressed="true" hidden></button>
+          </div>
           <div class="pk-sides" role="tablist" aria-label="Sisi piringan">
             <button type="button" role="tab" data-side="a" aria-selected="true">Sisi A</button>
             <button type="button" role="tab" data-side="b" aria-selected="false">Sisi B</button>
@@ -249,6 +252,7 @@
                 <p class="rd-meta" id="rdMeta"></p>
                 <p class="rd-work" id="rdWork" hidden></p>
                 <h1 class="rd-title" id="rdTitle"></h1>
+                <a class="ix-card" id="rdIx" href="#" hidden></a>
                 <nav class="rd-sides" id="rdSides" hidden></nav>
                 <p class="rd-lost" id="rdLost" hidden></p>
                 <div class="rd-body" id="rdBody"></div>

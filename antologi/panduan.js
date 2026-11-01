@@ -118,11 +118,25 @@
   };
   new MutationObserver(() => { if (document.querySelector('[data-next-for]:not([data-filled])')) fillSoon(); }).observe(document.documentElement, { childList: true, subtree: true });
 
+  // Mode baca: dari dalam pengalaman, tulisan yang sama bisa dibaca sebagai teks biasa di situs utama.
+  // Pilihan ini hanya berlaku untuk tulisan itu selama sesi ini; pengaturan umumnya ada di layar pilih piringan.
+  const plainRow = work => {
+    const body = document.querySelector('#settingsDialog .settings-body'); if (!body || !work || body.querySelector('#plainLink')) return;
+    const at = () => (typeof work === 'function' ? work() : work) || '';
+    const row = document.createElement('div'); row.className = 'setting-row';
+    row.innerHTML = `<span>${esc(t('Mode baca', 'Reading mode'))}</span><a class="setting-button" id="plainLink" href="../../#putar">${esc(t('Baca biasa', 'Plain text'))}</a>`;
+    const a = row.querySelector('a');
+    const sync = () => { const w = at(); a.hidden = !w; a.href = `../../${location.search}#baca-${w}`; a.setAttribute('aria-label', t('Baca tulisan ini sebagai teks biasa', 'Read this piece as plain text')); };
+    a.addEventListener('click', () => { sync(); const slug = at().split(/[:~]/)[0]; try { const l = JSON.parse(sessionStorage.getItem('jm:plain') || '[]').filter(x => x !== slug); l.push(slug); sessionStorage.setItem('jm:plain', JSON.stringify(l)); } catch (_) {} });
+    document.getElementById('openSettings')?.addEventListener('click', sync);
+    body.append(row); sync();
+  };
   window.JMGuide = {
     // cfg: { slug, title, lede, steps, helpInto (selektor tempat tombol ?), stepInto (selektor penanda langkah), focusAfter }
     mount(c) {
       cfg = c;
       const into = c.helpInto && document.querySelector(c.helpInto); if (into) into.append(help());
+      plainRow(c.work === undefined ? c.slug : c.work);
       let seen = false; try { seen = localStorage.getItem(seenKey()) === '1'; } catch (_) {}
       if (!seen && !c.quiet) sheet();
     },
