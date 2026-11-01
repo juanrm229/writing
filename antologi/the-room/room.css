@@ -1,16 +1,16 @@
 /* The Room · aplikasi Rumah. Tanpa ilustrasi: kartu aksesori, sensor, adegan, dan riwayat. Tema mengikuti situs. */
 :root {
-  --ui: 'Geist', -apple-system, system-ui, sans-serif; --serif: 'Newsreader', 'Iowan Old Style', Georgia, serif; --size: 18px;
-  --bg: linear-gradient(180deg, #e9e4dc, #d9d3ca); --page: #e6e1d9; --ink: #121214; --muted: #77746e; --tile: rgba(255,255,255,.62); --tile-on: #ffffff; --line: rgba(0,0,0,.08);
+  --ui: var(--qm-ui); --serif: var(--qm-read); --size: 18px;
+  --bg: var(--qm-sky); --page: var(--bd-b); --ink: #121214; --muted: #77746e; --tile: rgba(255,255,255,.62); --tile-on: #ffffff; --line: rgba(0,0,0,.08);
   --accent: #f29d0c; --warn: #d4371e; --cold: #2f7fd8; --chip: rgba(255,255,255,.55);
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: linear-gradient(180deg, #1b1c22, #0d0d10); --page: #141418; --ink: #f2f2f5; --muted: #9a9aa2; --tile: rgba(58,58,64,.55); --tile-on: #f2f2f5; --line: rgba(255,255,255,.08); --accent: #ffb340; --warn: #ff6b55; --cold: #64a8ff; --chip: rgba(60,60,68,.55); color-scheme: dark; } }
-:root[data-theme="dark"] { --bg: linear-gradient(180deg, #1b1c22, #0d0d10); --page: #141418; --ink: #f2f2f5; --muted: #9a9aa2; --tile: rgba(58,58,64,.55); --tile-on: #f2f2f5; --line: rgba(255,255,255,.08); --accent: #ffb340; --warn: #ff6b55; --cold: #64a8ff; --chip: rgba(60,60,68,.55); color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: var(--qm-sky); --page: var(--bd-b); --ink: #f2f2f5; --muted: #9a9aa2; --tile: rgba(58,58,64,.55); --tile-on: #f2f2f5; --line: rgba(255,255,255,.08); --accent: #ffb340; --warn: #ff6b55; --cold: #64a8ff; --chip: rgba(60,60,68,.55); color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: var(--qm-sky); --page: var(--bd-b); --ink: #f2f2f5; --muted: #9a9aa2; --tile: rgba(58,58,64,.55); --tile-on: #f2f2f5; --line: rgba(255,255,255,.08); --accent: #ffb340; --warn: #ff6b55; --cold: #64a8ff; --chip: rgba(60,60,68,.55); color-scheme: dark; }
 * { box-sizing: border-box; }
 html { background: var(--page); }
 body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--bg); }
-body { margin: 0; min-height: 100svh; color: var(--ink); background: var(--page); font: 15px/1.45 var(--ui); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; min-height: 100svh; color: var(--ink); background: transparent; font: 15px/1.45 var(--ui); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -19,12 +19,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 .app { width: min(640px, 100%); margin: 0 auto; padding: 0 16px calc(40px + env(safe-area-inset-bottom)); }
 .top { position: sticky; top: 0; z-index: 10; height: 50px; display: flex; align-items: center; justify-content: space-between; padding-top: env(safe-area-inset-top); }
-.back { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; border-radius: 999px; background: var(--chip); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); color: var(--ink); text-decoration: none; white-space: nowrap; font-size: 14px; }
-.top-right { display: inline-flex; gap: 6px; }
 .step-row { margin: 0 0 10px; }
 :root { --jm-card: var(--page); --jm-ink: var(--ink); --jm-accent: var(--accent); --jm-chip: var(--chip); }
 .now .jm-next { margin-top: 12px; }
-.icon { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--chip); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); font: 400 17px var(--serif); }
 .kicker { margin: 4px 0 0; color: var(--muted); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
 .room-title { margin: 2px 0 0; font: 700 32px/1.1 var(--ui); letter-spacing: -.02em; }
 .room-name { color: var(--muted); font-weight: 600; }

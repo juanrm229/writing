@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="qm-theme-auto">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,8 +8,7 @@
 <meta property="og:title" content="Anda di Sini">
 <meta property="og:description" content="Konon, di sebuah kota bernama Saujana, ada peta yang tidak menunjukkan jalan pulang. Kalau kamu membukanya, ia tidak bertanya kamu mau ke mana. Ia bertanya kamu dari mana.">
 <meta property="og:type" content="article">
-<meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#17181B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="https://quietmargins.site/antologi/anda-di-sini/">
 <meta property="og:site_name" content="Quiet Margins">
 <meta property="og:url" content="https://quietmargins.site/antologi/anda-di-sini/">
@@ -24,7 +23,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
-<link rel="stylesheet" href="peta.css">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=1">
+<link rel="stylesheet" href="peta.css?v=2">
 <script>
   try {
     var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t));
@@ -32,6 +33,10 @@
 </script>
 </head>
 <body>
+<header class="qm-frame" id="frame">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
 
 <!-- peta Saujana: digambar ulang setiap kali posisi baca berubah -->
 <canvas class="map" id="map" aria-hidden="true"></canvas>
@@ -68,13 +73,11 @@
     <p class="after-t">Tapi cerita bisa.</p>
     <button class="after-btn" id="tell" type="button">Ceritakan pada seseorang</button>
     <p class="after-note">Yang dibagikan hanya legendanya, seperti orang asing di terminal itu.</p>
-    <a class="after-back" href="../../#putar">Kembali ke meja tulis</a>
+    <div class="after-next" id="afterNext"></div>
   </footer>
-  <nav class="bar" id="bar" aria-label="Pengaturan baca">
-    <a class="bar-b" href="../../#putar" aria-label="Kembali ke meja tulis" title="Kembali ke meja tulis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
-    <button class="bar-b" id="smaller" type="button" aria-label="Perkecil huruf" title="Perkecil huruf"><span class="aa">A</span>−</button>
-    <button class="bar-b" id="bigger" type="button" aria-label="Perbesar huruf" title="Perbesar huruf"><span class="aa">A</span>+</button>
+  <nav class="bar" id="bar" aria-label="Alat baca">
     <button class="bar-b wide" id="listen" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Dengarkan</span></button>
+    <span id="stepChip" hidden></span>
     <span class="bar-p" id="pct" aria-hidden="true">0%</span>
   </nav>
 </main>
@@ -83,6 +86,14 @@
 <button class="ghost-icon" id="ghostIcon" type="button" hidden aria-label="Aplikasi tanpa nama"><i></i></button>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="peta.js"></script>
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+  </div>
+</dialog>
+<script src="../panduan.js?v=2"></script>
+<script src="peta.js?v=2"></script>
 </body>
 </html>

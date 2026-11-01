@@ -19,6 +19,44 @@
   const withLang = href => { const [p, h] = href.split('#'); const keep = qs.get('lang') ? `?lang=${qs.get('lang')}` : ''; return `../${p}${keep}${h ? '#' + h : ''}`; };
   const time = s => EN ? s.replace('.', ':') : s;
 
+  // Bingkai: langit, huruf baca, tema, dan label tombol keluar yang sama dengan situs utama.
+  const root = document.documentElement;
+  const read = k => { try { return JSON.parse(localStorage.getItem('jm:' + k)); } catch (_) { return null; } };
+  const dark = () => { const v = root.getAttribute('data-theme'); return v ? v === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  const backdrop = () => {
+    const chosen = read('backdrop') || 'auto', h = new Date().getHours() + new Date().getMinutes() / 60;
+    const part = h < 4 ? 'malam' : h < 10.5 ? 'fajar' : h < 15 ? 'siang' : h < 18.5 ? 'senja' : 'malam';
+    root.setAttribute('data-backdrop', chosen === 'auto' ? (dark() ? 'malam' : part) : chosen);
+  };
+  // huruf yang dipilih pembaca di situs utama ikut dipakai untuk teks cerita
+  const FONTS = { literata: ['"Literata", Georgia, serif', 'Literata:ital,opsz,wght@0,7..72,400;1,7..72,400'], georgia: ['Georgia, "Times New Roman", serif'], sistem: ['-apple-system, BlinkMacSystemFont, "SF Pro Text", "Geist", system-ui, sans-serif'], instrument: ['"Instrument Serif", Georgia, serif', 'Instrument+Serif:ital@0;1'], geist: ['"Geist", system-ui, sans-serif', 'Geist:wght@400;500'] };
+  const readFont = () => {
+    const f = FONTS[(read('rd') || {}).font]; if (!f) return;
+    ['--qm-read', '--serif', '--f-read', '--f-text'].forEach(v => root.style.setProperty(v, f[0]));
+    if (f[1] && !document.querySelector(`link[data-qm-font="${f[1]}"]`)) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://fonts.googleapis.com/css2?family=${f[1]}&display=swap`; l.dataset.qmFont = f[1]; document.head.append(l); }
+  };
+  // tema untuk halaman yang belum mengurusnya sendiri (html.qm-theme-auto)
+  const theme = site => {
+    if (!root.classList.contains('qm-theme-auto')) return;
+    const chosen = read('theme');
+    if (chosen === 'dark' || chosen === 'light') root.setAttribute('data-theme', chosen);
+    else if (site === 'gelap' || site === 'terang') root.setAttribute('data-theme', site === 'gelap' ? 'dark' : 'light');
+    else root.removeAttribute('data-theme');
+    const bg = getComputedStyle(document.body || root).backgroundColor;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.removeAttribute('media'); m.content = bg; });
+    backdrop();
+  };
+  let siteTheme = null;
+  const labels = () => document.querySelectorAll('.qm-back').forEach(b => { const s = b.querySelector('[data-qm-label]'); if (s) s.textContent = t('Meja tulis', 'Writing desk'); b.setAttribute('aria-label', t('Kembali ke meja tulis', 'Back to the writing desk')); });
+  const frame = () => { backdrop(); readFont(); theme(siteTheme); labels(); dispatchEvent(new Event('qm-frame')); };
+  frame();
+  document.addEventListener('DOMContentLoaded', frame);
+  addEventListener('storage', e => { if (/^jm:(theme|backdrop|rd)$/.test(e.key || '')) frame(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', frame);
+  // halaman yang mengurus temanya sendiri mengganti data-theme belakangan: langit malam ikut menyusul
+  new MutationObserver(backdrop).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  if (root.classList.contains('qm-theme-auto') && !qs.has('preview')) fetch('../../content/site.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => { siteTheme = s?.theme || null; frame(); }).catch(() => {});
+
   let target = null, label = '', idleT = 0, point = null, cfg = {};
   const seenKey = () => 'jm:guide:' + cfg.slug;
   const sheet = () => {
@@ -56,6 +94,30 @@
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, e => { if (point && e.target === point) return; arm(); }, { passive: true }));
   addEventListener('scroll', () => { if (point) { const el = typeof target === 'string' ? document.querySelector(target) : target; if (el && !offscreen(el)) { point.remove(); point = null; } } }, { passive: true });
 
+  // daftar pengalaman, urut menurut tanggal dan jam tulisannya
+  let works = null;
+  const loadWorks = () => works || (works = (qs.get('preview') === '1' ? Promise.resolve(read('preview')?.works || []) : fetch('../../content/works.json', { cache: 'no-cache' }).then(r => r.json())).catch(() => []));
+  const nextHTML = (list, slug) => {
+    const i = list.findIndex(w => w.slug === slug); if (i < 0) return '';
+    const night = NIGHT.findIndex(n => n.slug === slug), nNext = night >= 0 ? NIGHT[night + 1] : null;
+    if (nNext) return `<small>${esc(t('Masih malam yang sama · ditulis ', 'Same night · written at ') + time(nNext.time))}</small><b>${esc(nNext.title)} →</b><span>${esc(t(nNext.kind[0], nNext.kind[1]))}</span>|${withLang(nNext.href)}`;
+    const after = list.slice(i + 1).find(w => !NIGHT.some(n => n.slug === w.slug) || w.slug === NIGHT[0].slug) || list.find(w => w.slug !== slug);
+    if (!after) return '';
+    const exp = String(after.experience).replace(/^antologi\//, ''), date = after.date ? new Date(after.date + 'T00:00:00').toLocaleDateString(EN ? 'en-GB' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const head = night >= 0 ? t(`Malam 19 Juli selesai di sini · ${time(NIGHT[night].time)}`, `The night of 19 July ends here · ${time(NIGHT[night].time)}`) : t('Pengalaman berikutnya', 'Next experience');
+    const ttl = (EN && after.en?.title) || after.title;
+    return `<small>${esc(head)}</small><b>${esc(ttl)} →</b><span>${esc(date)}</span>|${withLang(exp)}`;
+  };
+  let fillT = 0;
+  const fillSoon = () => { clearTimeout(fillT); fillT = setTimeout(fill, 0); };
+  const fill = async () => {
+    const els = [...document.querySelectorAll('[data-next-for]:not([data-filled])')]; if (!els.length) return;
+    const all = await loadWorks();
+    const list = (Array.isArray(all) ? all : []).filter(w => w && w.experience && !w.draft).sort((a, b) => `${a.date || ''} ${a.time || ''}`.localeCompare(`${b.date || ''} ${b.time || ''}`));
+    els.forEach(el => { const h = nextHTML(list, el.dataset.nextFor); if (!h) { el.hidden = true; return; } const k = h.lastIndexOf('|'); el.innerHTML = h.slice(0, k); el.href = h.slice(k + 1); el.dataset.filled = ''; });
+  };
+  new MutationObserver(() => { if (document.querySelector('[data-next-for]:not([data-filled])')) fillSoon(); }).observe(document.documentElement, { childList: true, subtree: true });
+
   window.JMGuide = {
     // cfg: { slug, title, lede, steps, helpInto (selektor tempat tombol ?), stepInto (selektor penanda langkah), focusAfter }
     mount(c) {
@@ -73,12 +135,27 @@
     },
     // Tombol berikutnya yang ditunggu; null kalau tidak ada.
     want(sel, text) { target = sel; label = text || ''; arm(); },
-    // Kartu tulisan berikutnya dari malam yang sama.
-    next(slug) {
-      const i = NIGHT.findIndex(n => n.slug === slug); if (i < 0) return '';
-      const n = NIGHT[i + 1];
-      if (!n) return `<a class="jm-next" href="${withLang(NIGHT[0].href)}"><small>${esc(t('Malam 19 Juli selesai di sini · ', 'The night of 19 July ends here · ') + time(NIGHT[i].time))}</small><b>${esc(t('Kembali ke awal malam itu', 'Back to the start of that night'))}</b><span>${esc(time(NIGHT[0].time))} · ${esc(NIGHT[0].title)}</span></a>`;
-      return `<a class="jm-next" href="${withLang(n.href)}"><small>${esc(t('Masih malam yang sama · ditulis ', 'Same night · written at ') + time(n.time))}</small><b>${esc(n.title)} →</b><span>${esc(t(n.kind[0], n.kind[1]))}</span></a>`;
+    // Kartu tulisan berikutnya: di malam 19 Juli mengikuti jamnya, selain itu pengalaman berikutnya menurut tanggal.
+    // Dikembalikan sebagai penanda, lalu diisi setelah daftar tulisan termuat.
+    next(slug) { fillSoon(); return `<a class="jm-next" data-next-for="${esc(slug)}" href="../../#putar"><small>${esc(t('Berikutnya', 'Next'))}</small><b>…</b></a>`; },
+    // Dialog pengaturan baca untuk halaman yang belum punya sendiri: buka/tutup dan tombol tampilan (terang/gelap).
+    settings({ open = '#openSettings', dialog = '#settingsDialog', theme: themeSel = '#theme' } = {}) {
+      const dlg = document.querySelector(dialog), btn = document.querySelector(open), tb = document.querySelector(themeSel);
+      if (!dlg || !btn) return;
+      btn.addEventListener('click', () => { dlg.showModal(); (dlg.querySelector('.setting-button') || dlg.querySelector('[data-close]'))?.focus(); });
+      dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.close(); });
+      dlg.addEventListener('close', () => btn.focus());
+      const paint = () => {
+        if (!tb) return; const d = dark();
+        tb.setAttribute('aria-pressed', String(d)); tb.textContent = d ? t('Gelap', 'Dark') : t('Terang', 'Light');
+        tb.setAttribute('aria-label', t('Tampilan: ', 'Appearance: ') + (d ? t('gelap. Ganti ke terang', 'dark. Switch to light') : t('terang. Ganti ke gelap', 'light. Switch to dark')));
+      };
+      tb?.addEventListener('click', () => { try { localStorage.setItem('jm:theme', JSON.stringify(dark() ? 'light' : 'dark')); } catch (_) {} frame(); });
+      addEventListener('qm-frame', paint);
+      const L = { settingsTitle: ['Pengaturan baca', 'Reading settings'], sizeLabel: ['Ukuran huruf', 'Text size'], themeLabel: ['Tampilan', 'Appearance'] };
+      Object.entries(L).forEach(([id, v]) => { const el = dlg.querySelector('#' + id); if (el) el.textContent = t(v[0], v[1]); });
+      btn.setAttribute('aria-label', t('Pengaturan baca', 'Reading settings'));
+      paint();
     },
     NIGHT
   };

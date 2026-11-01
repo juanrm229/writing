@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="qm-theme-auto qm-sky-wide">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -23,12 +23,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
-<link rel="stylesheet" href="interlude.css">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=1">
+<link rel="stylesheet" href="interlude.css?v=2">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
 <div class="scene-light" aria-hidden="true"></div>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
 <header class="chat-h" id="chatH">
-  <a class="ch-back" href="../../#putar" id="back" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></a>
   <span class="av" id="hAv" aria-hidden="true">I</span>
   <button class="h-t" id="openChapters" type="button" aria-haspopup="dialog" aria-controls="chapterDialog" aria-label="Daftar percakapan"><b id="hName">Interlude</b><span class="h-sub"><small id="hLoc"></small><span class="typing-dots" id="headerTyping" hidden aria-hidden="true"><i></i><i></i><i></i></span></span></button>
   <span class="bar-p" id="pct" role="progressbar" aria-label="Kemajuan membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</span>
@@ -49,7 +56,7 @@
     <p class="reading-note" id="readingNote">Posisi bacamu diingat di perangkat ini.</p>
   </div>
   <div class="story" id="story"><p class="loading">…</p></div>
-  <footer class="after" id="after" hidden><div class="memories-invitation" id="memoriesInvitation" hidden><p id="memoriesInvitationText">Kamu sudah mendengar keduanya. Ada beberapa hal yang bisa dibaca sekali lagi.</p><button class="memories-open" type="button" data-open-memories hidden aria-haspopup="dialog" aria-controls="memoriesDialog">Dua Ingatan</button></div><a class="after-back" href="../../#putar" id="back2"></a></footer>
+  <footer class="after" id="after" hidden><div class="memories-invitation" id="memoriesInvitation" hidden><p id="memoriesInvitationText">Kamu sudah mendengar keduanya. Ada beberapa hal yang bisa dibaca sekali lagi.</p><button class="memories-open" type="button" data-open-memories hidden aria-haspopup="dialog" aria-controls="memoriesDialog">Dua Ingatan</button></div><div class="after-next" id="afterNext"></div></footer>
 </main>
 <dialog class="chapter-dialog" id="chapterDialog" aria-labelledby="chaptersTitle">
   <header class="dialog-h"><div><p class="kick">Interlude · Temusai</p><h2 id="chaptersTitle">Daftar percakapan</h2></div><button id="closeChapters" type="button" aria-label="Tutup">×</button></header>
@@ -96,10 +103,16 @@
   <span class="tool-divider" aria-hidden="true"></span>
   <button id="calm" type="button" aria-pressed="false">Baca tenang</button>
   <button id="buzz" type="button" hidden aria-pressed="true" aria-label="Getar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/></svg></button>
-  <button id="smaller" type="button" aria-label="A−"><span class="aa">A</span>−</button>
-  <button id="bigger" type="button" aria-label="A+"><span class="aa">A</span>+</button>
 </nav>
-<script src="ambience.js"></script>
-<script src="interlude.js"></script>
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Gelap</button></div>
+  </div>
+</dialog>
+<script src="../panduan.js?v=2"></script>
+<script src="ambience.js?v=2"></script>
+<script src="interlude.js?v=2"></script>
 </body>
 </html>

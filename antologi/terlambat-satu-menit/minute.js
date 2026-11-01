@@ -16,7 +16,7 @@
   const count = s => (plain(s).match(/\S+/g) || []).length;
   const qs = new URLSearchParams(location.search), EN = (qs.get('lang') || store.get('lang', 'id')) === 'en';
   const LANG = EN ? 'en' : 'id', L = EN ? 1 : 0, t = (id, en) => EN ? en : id, pick = pair => Array.isArray(pair) ? pair[L] : pair;
-  const SLUG = 'terlambat-satu-menit', LETTERS = ['a', 'b', 'c', 'd'];
+  const SLUG = 'terlambat-satu-menit', LETTERS = ['a', 'b', 'c', 'd'], G = window.JMGuide;
   const PREVIEW = qs.has('preview'), motionQuery = matchMedia('(prefers-reduced-motion: reduce)'), root = document.documentElement;
   const TRACK = window.MinuteTrack || null;
   root.lang = LANG;
@@ -367,6 +367,7 @@
     clearInterval(typing); root.dataset.ready = '';
     view = 'detail'; setView('detail'); sideIndex = clamp(index, 0, N - 1); latestPlace = null; currentParagraph = -1; shownStatus = '';
     const doc = docs[sideIndex], side = LETTERS[sideIndex], s = sideData(sideIndex); root.dataset.side = side;
+    if (G) { $('#stepChip').hidden = false; G.step(Math.max(0, ORDER.indexOf(sideIndex)) + 1, ORDER.length, t('Kiriman', 'Shipment')); }
     if (sideIndex === 1 && done.has(keyOf(1))) recordVisit();
     $('#resiBig').textContent = s.resi; $('#route').innerHTML = route(sideIndex);
     $('#sideTitle').textContent = doc.title; $('#voice').textContent = doc.pov;
@@ -457,7 +458,7 @@
       <ol class="summary-rows">${rows}</ol>
       <section class="reader-log"><p class="eyebrow">${t('Pelacak', 'Tracker')}</p><p>${t('Kamu memindai ', 'You scanned ')}<b>${all.length}</b> ${t('catatan', 'entries')}${all.length ? `, ${t('dari', 'from')} <span class="mono">${clock(all[0])}</span> ${esc(day(all[0]))} ${t('sampai', 'to')} <span class="mono">${clock(all.at(-1))}</span> ${esc(day(all.at(-1)))}` : ''}.</p></section>
       <section class="coda">${coda}<p class="estimate-line"><span class="status-chip" data-tone="transit">${t('Estimasi tiba: besok', 'Estimated arrival: tomorrow')}</span><span class="mono">${esc(day(tomorrow.getTime()))}</span></p></section>
-      <button class="begin" type="button" id="trackAgain">${t('Lacak lagi', 'Track again')}</button>`;
+      <button class="begin" type="button" id="trackAgain">${t('Lacak lagi', 'Track again')}</button>${G ? `<div class="summary-next">${G.next(SLUG)}</div>` : ''}`;
     $('#trackAgain').onclick = toHome;
     scrollTo({ top: 0, behavior: 'instant' }); $('#summaryTitle').setAttribute('tabindex', '-1'); $('#summaryTitle').focus({ preventScroll: true });
   };
@@ -516,6 +517,14 @@
   });
   addEventListener('pagehide', () => { clearTimeout(saveTimer); persist(); sound.dispose(); });
   document.addEventListener('visibilitychange', () => { sound.setPaused(document.hidden); if (document.hidden) persist(); else schedule(); });
+  if (G) {
+    G.mount({ slug: SLUG, title: 'Terlambat Satu Menit', helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#trackButton',
+      lede: t('Dibaca di halaman lacak kiriman.', 'Read on a parcel-tracking page.'),
+      steps: [t('Nomor resi sudah terisi. Tekan Lacak untuk melihat kiriman-kirimannya.', 'The tracking number is already filled in. Press Track to see the shipments.'),
+        t('Setiap kiriman adalah satu sisi cerita. Riwayatnya terbuka baris demi baris saat kamu menggulir.', 'Each shipment is one side of the story. Its history opens line by line as you scroll.'),
+        t('Lihat isi untuk membaca dokumen di dalam kiriman. Urutan riwayat bisa dibalik.', 'View the contents to read the documents inside. The history order can be reversed.'),
+        t('Setelah semua kiriman dibaca, Ringkasan pengiriman terbuka.', 'Once every shipment has been read, the delivery summary opens.')] });
+  }
   followHash();
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

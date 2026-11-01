@@ -1,6 +1,6 @@
 /* Trillions of Seconds · aplikasi Jam. Tema mengikuti situs. */
 :root {
-  --ui: 'Geist', -apple-system, system-ui, sans-serif; --serif: 'Newsreader', 'Iowan Old Style', Georgia, serif; --size: 19px;
+  --ui: var(--qm-ui); --serif: var(--qm-read); --size: 19px;
   --bg: #ffffff; --bg-2: #f2f2f7; --ink: #111114; --muted: #8a8a8e; --line: #e3e3e8; --card: #f2f2f7;
   --orange: #ff9500; --green: #34c759; --green-bg: rgba(52,199,89,.16); --red: #ff3b30; --red-bg: rgba(255,59,48,.14); --gray-bg: #e5e5ea; --accent: #ff9500;
   color-scheme: light;
@@ -19,17 +19,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 .app { width: min(560px, 100%); margin: 0 auto; min-height: 100svh; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .top { position: sticky; top: 0; z-index: 10; height: 52px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: env(safe-area-inset-top) 8px 0 12px; background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
-.back { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; color: var(--orange); text-decoration: none; font-size: 16px; }
 .top-title { min-width: 0; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .3s; }
 html[data-scrolled] .top-title, html[data-started] .top-title { opacity: 1; }
 .top-title.poem { font: italic 400 17px var(--serif); }
 html[data-started] .poem-head { display: none; }
-.top-right { justify-self: end; display: inline-flex; gap: 6px; --jm-accent: var(--orange); }
-.jm-help { color: var(--orange); background: none; }
+.top-right { justify-self: end; }
 .mid { display: grid; justify-items: center; gap: 8px; min-width: 0; }
 @media (max-width: 380px) { .mid .jm-step i { display: none; } .mid .jm-step { padding: 5px 9px; } }
 :root { --jm-card: var(--bg); --jm-ink: var(--ink); --jm-accent: var(--orange); --jm-chip: var(--card); }
-.icon { justify-self: end; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--orange); font: 400 17px var(--serif); }
 .tab { padding: 0 18px; }
 .large { margin: 4px 0 14px; font: 700 34px/1.1 var(--ui); letter-spacing: -.02em; }
 .empty { margin: 30vh 0 0; text-align: center; color: var(--muted); font-size: 20px; }
@@ -136,6 +133,11 @@ dialog::backdrop { background: rgba(0,0,0,.45); backdrop-filter: blur(3px); }
 .setting-button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 4px; }
 .setting-button:disabled { opacity: .4; }
 
+@media (min-width: 900px) {
+  .app { margin: 22px auto; min-height: calc(100svh - 44px); border-radius: 30px; background: var(--bg); box-shadow: var(--qm-shadow), 0 0 0 1px var(--line); overflow: clip; padding-bottom: 90px; position: relative; }
+  .tabbar { left: 50%; right: auto; width: min(560px, 100%); translate: -50% 0; bottom: 22px; border-radius: 0 0 30px 30px; }
+  .top { border-radius: 30px 30px 0 0; }
+}
 @media (max-width: 360px) { .round { width: 74px; height: 74px; font-size: 15px; } .tab { padding: 0 14px; } }
 html[data-calm] *, html[data-calm] *::before, html[data-calm] *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

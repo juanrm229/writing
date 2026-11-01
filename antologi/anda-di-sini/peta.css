@@ -5,8 +5,8 @@
 :root {
   --paper: #FBFAF7; --ink: #1B1B1D; --muted: #7C7B78; --line: #E6E3DC; --chip: #F0EEE8;
   --blue: #1A73E8; --red: #D93A2B;
-  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Geist", system-ui, "Segoe UI", sans-serif;
-  --f-read: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --f-ui: var(--qm-ui);
+  --f-read: var(--qm-read);
   --f-hand: "Instrument Serif", Georgia, serif;
   --size: 19px;
   --band: 34vh;
@@ -146,7 +146,8 @@ button { font: inherit; color: inherit; }
 .after-btn { height: 48px; padding: 0 24px; border: 0; border-radius: 24px; background: var(--ink); color: var(--paper); font-weight: 500; cursor: pointer; transition: transform .35s var(--spring); }
 .after-btn:active { transform: scale(.95); }
 .after-note { color: var(--muted); font-size: 12.5px; margin: 14px auto 36px; max-width: 34ch; }
-.after-back { color: var(--ink); font-size: 14px; }
+.after-next { display: grid; justify-items: center; }
+.after-next .jm-next { text-align: left; }
 
 /* ---------- bilah kendali ---------- */
 .bar { position: sticky; bottom: 14px; z-index: 3; display: flex; align-items: center; gap: 4px; width: max-content; margin: -64px auto 14px; padding: 5px; border-radius: 26px; background: color-mix(in srgb, var(--paper) 86%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 0 0 1px var(--line), 0 12px 30px -16px rgb(0 0 0 / .4); font-family: var(--f-ui); }
@@ -160,7 +161,7 @@ button { font: inherit; color: inherit; }
 .resume { position: sticky; top: 50px; z-index: 3; display: block; margin: 10px auto 0; height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: var(--blue); color: #fff; font: 500 13.5px var(--f-ui); cursor: pointer; box-shadow: 0 10px 24px -12px rgb(26 115 232 / .7); }
 
 /* ---------- di atas peta ---------- */
-.hud { position: fixed; z-index: 1; right: 22px; top: 22px; display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: rgb(255 255 255 / .92); box-shadow: 0 10px 30px -14px rgb(0 0 0 / .35); font-family: var(--f-ui); color: #1B1B1D; }
+.hud { position: fixed; z-index: 1; right: 22px; top: 72px; display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: rgb(255 255 255 / .92); box-shadow: 0 10px 30px -14px rgb(0 0 0 / .35); font-family: var(--f-ui); color: #1B1B1D; }
 .hud span { display: grid; padding: 4px 12px; border-radius: 11px; }
 .hud span:last-child { background: #FDECEA; }
 .hud small { font-size: 11px; color: #777; }
@@ -230,7 +231,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- notifikasi: muncul saat kalimatnya terbaca ---------- */
 .notifs { position: fixed; z-index: 6; top: 76px; display: grid; gap: 8px; pointer-events: none; }
-.notifs.screen { top: max(14px, env(safe-area-inset-top, 0px)); }
+.notifs.screen { top: calc(max(12px, env(safe-area-inset-top, 0px)) + 48px); }
 .notif { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 14px 12px 12px; border-radius: 22px; background: color-mix(in srgb, var(--paper) 78%, transparent); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent), 0 18px 40px -18px rgb(0 0 0 / .45); font-family: var(--f-ui); color: var(--ink); pointer-events: auto; cursor: pointer; animation: nfIn .55s var(--spring); transition: opacity .35s, transform .45s var(--spring); touch-action: pan-x; }
 .notif.out { opacity: 0; transform: translateY(-18px) scale(.97); }
 @keyframes nfIn { from { opacity: 0; transform: translateY(-26px) scale(.96); } }
@@ -247,7 +248,7 @@ button { font: inherit; color: inherit; }
 .nf-ic.ghost { background: #fff; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
 .nf-ic.ghost::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2.5px #fff, 0 0 0 6px rgb(26 115 232 / .18); }
 .nf-more { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
-@media (max-width: 760px) { .notifs { top: calc(var(--band) + 74px); } .notifs.screen { top: max(10px, env(safe-area-inset-top, 0px)); } }
+@media (max-width: 760px) { .notifs { top: calc(var(--band) + 74px); } .notifs.screen { top: calc(max(12px, env(safe-area-inset-top, 0px)) + 46px); } }
 
 /* ================================================================
    INTERLUDE: satu alat kecil di jeda setiap bagian
@@ -314,3 +315,10 @@ button { font: inherit; color: inherit; }
 .ph-dots { position: absolute; left: 0; right: 0; bottom: 22px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
 .ph-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgb(255 255 255 / .45); }
 .ph-dots i.on { background: #fff; }
+
+/* ---------- bingkai situs ---------- */
+@media (min-width: 761px) {
+  .read { top: 64px; border-radius: 24px 24px 0 0; }
+}
+.bar .jm-step { box-shadow: none; background: var(--chip); }
+@media (max-width: 360px) { .bar:has(.jm-step:not([hidden])) .bar-p { display: none; } }

@@ -45,6 +45,8 @@ class InterludeSmoke(unittest.TestCase):
 
     def setUp(self):
         self.context = self.browser.new_context(viewport={'width': 390, 'height': 844})
+        # kartu "Cara membaca" sudah pernah ditutup
+        self.context.add_init_script("try { localStorage.setItem('jm:guide:interlude', '1') } catch (e) {}")
         # Font delivery is independent of the local reading/navigation workflow.
         self.context.route('https://fonts.googleapis.com/**', lambda route: route.abort())
         self.page = self.context.new_page()
@@ -110,11 +112,13 @@ class InterludeSmoke(unittest.TestCase):
         self.assertEqual(self.place()['paragraph'], 20)
         self.page.locator('#resume').click()
         self.page.wait_for_function("JSON.parse(localStorage.getItem('jm:il:place')).paragraph === 20 && document.querySelector('#chapterToggle').textContent === 'Bab 4/12'")
+        self.page.locator('#openSettings').click()
         self.page.locator('#bigger').click()
+        self.page.keyboard.press('Escape')
         self.page.wait_for_function("JSON.parse(localStorage.getItem('jm:rd')).size === 18")
         self.page.wait_for_function("Math.abs(JSON.parse(localStorage.getItem('jm:il:place')).offset - .35) < .03")
         self.page.set_viewport_size({'width': 900, 'height': 900})
-        self.page.wait_for_function("Math.abs((94 - document.querySelector('#p-3-20').getBoundingClientRect().top) / document.querySelector('#p-3-20').getBoundingClientRect().height - .35) < .03")
+        self.page.wait_for_function("Math.abs((document.querySelector('#chatH').getBoundingClientRect().bottom + 34 - document.querySelector('#p-3-20').getBoundingClientRect().top) / document.querySelector('#p-3-20').getBoundingClientRect().height - .35) < .03")
         # Return to the cover in a new document: do not overwrite the saved place with 0%.
         self.open()
         self.page.wait_for_timeout(550)
@@ -123,7 +127,7 @@ class InterludeSmoke(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.page.locator('#resume').click()
         self.page.wait_for_function("document.querySelector('#chapterToggle').textContent === 'Bab 4/12'")
-        offset = self.page.locator('#p-3-20').evaluate('(e) => (94 - e.getBoundingClientRect().top) / e.getBoundingClientRect().height')
+        offset = self.page.locator('#p-3-20').evaluate("(e) => (document.querySelector('#chatH').getBoundingClientRect().bottom + 34 - e.getBoundingClientRect().top) / e.getBoundingClientRect().height")
         self.assertAlmostEqual(offset, .35, delta=.03)
 
     def test_typing_does_not_reflow_and_stale_effects_are_cancelled(self):
@@ -205,7 +209,7 @@ class InterludeSmoke(unittest.TestCase):
         self.page.locator('.archive-return').click()
         self.assertFalse(self.page.locator('#archiveDialog').evaluate('(e) => e.open'))
         self.page.wait_for_function("document.querySelector('#chapterToggle').textContent === 'Ch. 8/12'")
-        self.assertAlmostEqual(self.page.locator('#p-7-95').evaluate('(e) => e.getBoundingClientRect().top'), 94, delta=1)
+        self.assertAlmostEqual(self.page.locator('#p-7-95').evaluate('(e) => e.getBoundingClientRect().top'), self.page.evaluate("document.querySelector('#chatH').getBoundingClientRect().bottom + 34"), delta=1)
 
     def test_archive_photos_and_notebooks_are_encountered_individually(self):
         self.page.emulate_media(reduced_motion='reduce')
@@ -369,7 +373,7 @@ class InterludeSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('#readerTools').is_visible())
 
     def test_reading_survives_a_missing_audio_module(self):
-        self.context.route('**/ambience.js', lambda route: route.abort())
+        self.context.route('**/ambience.js*', lambda route: route.abort())
         self.open('#p-0-0')
         self.assertGreater(len(self.page.locator('#p-0-0').inner_text()), 100)
         self.page.locator('#openAtmosphere').click()
@@ -408,7 +412,7 @@ class InterludeSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('#nextMemory').is_disabled())
         self.page.locator('[data-memory-voice="arka"] .memory-source').click()
         self.assertFalse(self.page.locator('#memoriesDialog').evaluate('(e) => e.open'))
-        self.assertAlmostEqual(self.page.locator('#p-11-24').evaluate('(e) => e.getBoundingClientRect().top'), 94, delta=1)
+        self.assertAlmostEqual(self.page.locator('#p-11-24').evaluate('(e) => e.getBoundingClientRect().top'), self.page.evaluate("document.querySelector('#chatH').getBoundingClientRect().bottom + 34"), delta=1)
         self.open('?lang=en')
         self.page.locator('.reading-start [data-open-memories]').click()
         self.assertEqual(self.page.locator('#memoriesTitle').inner_text(), 'Two Memories')
