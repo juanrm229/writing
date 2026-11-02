@@ -5,7 +5,7 @@
  * - Ikon, gambar, dan huruf: pakai salinan tersimpan dulu.
  * - Panel admin dan GitHub API tidak pernah disimpan.
  */
-const VERSION = 'v53';
+const VERSION = 'v54';
 const SHELL = 'jm-shell-' + VERSION;
 const RUNTIME = 'jm-runtime-' + VERSION;
 const SHELL_FILES = [
@@ -18,7 +18,7 @@ const SHELL_FILES = [
   'antologi/trillions-of-seconds/', 'antologi/trillions-of-seconds/index.html', 'antologi/trillions-of-seconds/seconds.css', 'antologi/trillions-of-seconds/seconds.js',
   'antologi/the-room/', 'antologi/the-room/index.html', 'antologi/the-room/room.css', 'antologi/the-room/room.js',
   'antologi/giliran/', 'antologi/giliran/index.html', 'antologi/giliran/giliran.css', 'antologi/giliran/giliran.js',
-  'antologi/usia-pulang/', 'antologi/usia-pulang/index.html', 'antologi/usia-pulang/usia.css', 'antologi/usia-pulang/usia.js', 'antologi/usia-pulang/benda.js', 'content/usia-pulang.json',
+  'antologi/usia-pulang/', 'antologi/usia-pulang/index.html', 'antologi/usia-pulang/usia.css', 'antologi/usia-pulang/usia.js', 'antologi/usia-pulang/benda.js', 'antologi/usia-pulang/suara.js', 'content/usia-pulang.json',
   'antologi/arsip/', 'antologi/arsip/index.html', 'antologi/arsip/arsip.css', 'antologi/arsip/arsip.js', 'antologi/panduan.css', 'antologi/panduan.js', 'antologi/bingkai.css', 'assets/bagikan.js', '404.html',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'
 ];

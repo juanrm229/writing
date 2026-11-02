@@ -159,9 +159,18 @@
     o.bilingual = hasText(en.body) || (en.sides || en.sideB ? [...(en.sides || []), en.sideB] : []).some(x => hasText(x?.body)) || (en.chapters || []).some(c => hasText(c?.body));
     return o;
   }
+  // Bukumu: novel bercabang yang sudah ditempuh pembaca di pengalaman interaktifnya dirakit menjadi bab-bab
+  // (antologi/usia-pulang menyimpannya di jm:usia:book). Mode baca biasa lalu membaca jalan pembaca sendiri.
+  function withBook(w) {
+    if (w.slug !== 'usia-pulang') return w;
+    const b = store.get('usia:book', null);
+    const chs = b && Array.isArray(b.chapters) ? b.chapters.filter(c => c && c.title && hasText(c.body)) : [];
+    return chs.length ? { ...w, chapters: chs.map(c => ({ title: String(c.title), body: c.body.map(String) })), book: true } : w;
+  }
   const WORKS = (Array.isArray(content.works) ? content.works : [])
     .filter(w => w && w.slug && w.title && (hasText(w.body) || (Array.isArray(w.chapters) && w.chapters.some(c => hasText(c.body)))) && (PREVIEW || !w.draft))
     .map(w => ({ form: 'prosa', time: '', excerpt: '', line: '', pov: '', ...localize(w) }))
+    .map(withBook)
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   [...WORKS].reverse().forEach((w, i) => { w.no = String(i + 1).padStart(2, '0'); });
 
@@ -238,7 +247,7 @@
   // Mode baca: tulisan yang punya pengalaman interaktif bisa dibuka di pengalamannya atau dibaca biasa.
   // Pilihan pembaca diingat (jm:mode). "Baca biasa" dari dalam pengalaman hanya berlaku untuk tulisan itu, selama sesi ini.
   const exOf = d => { const w = d && (d.A || bySlug(d.slug) || d); return (w && w.experience) || ''; };
-  const IX_WHERE = { 'anda-di-sini': ['di atas peta Saujana', 'on the map of Saujana'], interlude: ['sebagai percakapan', 'as a conversation'], 'terlambat-satu-menit': ['di halaman lacak kiriman', 'on a parcel-tracking page'], 'pabrik-mimpi': ['di kalender Pak Wangsa', "in Mr. Wangsa's calendar"], arsip: ['sebagai berkas arsip', 'as archive files'], 'the-room': ['di aplikasi Rumah', 'in a Home app'], 'trillions-of-seconds': ['di aplikasi Jam', 'in a Clock app'], 'the-moon-behind-my-eyes': ['di layar kunci', 'on a lock screen'] };
+  const IX_WHERE = { 'anda-di-sini': ['di atas peta Saujana', 'on the map of Saujana'], interlude: ['sebagai percakapan', 'as a conversation'], 'terlambat-satu-menit': ['di halaman lacak kiriman', 'on a parcel-tracking page'], 'pabrik-mimpi': ['di kalender Pak Wangsa', "in Mr. Wangsa's calendar"], arsip: ['sebagai berkas arsip', 'as archive files'], 'the-room': ['di aplikasi Rumah', 'in a Home app'], 'trillions-of-seconds': ['di aplikasi Jam', 'in a Clock app'], 'the-moon-behind-my-eyes': ['di layar kunci', 'on a lock screen'], giliran: ['di antara balon kata dan aplikasi', 'among speech balloons and apps'], 'usia-pulang': ['selama 168 jam yang kamu pilih', 'across 168 hours that you choose'] };
   const ixWhere = d => { const dir = (exOf(d).match(/antologi\/([^/]+)/) || [])[1]; const v = IX_WHERE[dir]; return v ? t(v[0], v[1]) : t('dalam bentuk lain', 'in another form'); };
   const IX_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c.6 4.4 2.6 6.9 7 8.5-4.4 1.6-6.4 4.1-7 8.5-.6-4.4-2.6-6.9-7-8.5 4.4-1.6 6.4-4.1 7-8.5z"/></svg>';
   const ixTag = d => exOf(d) ? `<i class="ix">${IX_ICON}${t('Interaktif', 'Interactive')}</i>` : '';

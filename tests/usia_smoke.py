@@ -530,6 +530,80 @@ class UsiaSmoke(unittest.TestCase):
         night.dispatch_event('click')
         page.wait_for_selector('.night', state='detached')
 
+    # ---------- stage two: your book, the reader's memory, the ending card, the harbour ----------
+    def test_your_book_in_the_plain_reader(self):
+        self.begin()
+        self.play(self.route_to(['H1C_1', 'H2A_4']))
+        run = self.run_state()
+        book = self.page.evaluate("JSON.parse(localStorage.getItem('jm:usia:book'))")
+        self.assertEqual(len(book['chapters']), 8)
+        self.assertEqual(book['chapters'][0]['title'], 'Senin, 9 November')
+        self.assertEqual(book['chapters'][-1]['title'], 'Senin, 16 November')
+        text = '\n'.join(p for c in book['chapters'] for p in c['body'])
+        # every node on the path is in the book, with the reader's own choices, and nothing else
+        for e in run['path']:
+            n = self.N[e['id']]
+            first = (n.get('body') or n.get('body_before')).split('\n\n')[0]
+            self.assertIn(first, text, e['id'])
+            if e.get('choice'):
+                self.assertIn(next(c['label'] for c in n['choices'] if c['id'] == e['choice']), text)
+        self.assertNotIn(self.N['H1A']['body'].split('\n\n')[0], text)
+        # the site's plain reader reads it as eight chapters
+        site = self.url.rsplit('antologi/', 1)[0]
+        self.page.evaluate("localStorage.setItem('jm:mode', JSON.stringify('biasa'))")
+        self.page.goto(site + '#baca-usia-pulang~2', wait_until='domcontentloaded')
+        self.page.wait_for_function("document.getElementById('rdBody') && document.getElementById('rdBody').innerText.length > 500")
+        body = self.page.locator('#rdBody').inner_text()
+        self.assertIn(self.N['C02']['body'].split('\n\n')[0][:60], body)
+        self.assertIn('Pilihanmu', body)
+
+    def test_the_reader_remembers_other_journeys(self):
+        self.begin()
+        self.play(lambda node, ids: ids[0])
+        first = self.run_state()
+        self.page.locator('#again').click()
+        self.page.wait_for_selector('.node[data-id="C01"] .n-seen')
+        self.assertIn('Laras tidak mengingatnya', self.page.locator('.node[data-id="C01"] .n-seen').inner_text())
+        mem = self.page.evaluate("JSON.parse(localStorage.getItem('jm:usia:memory'))")
+        self.assertEqual(mem['runs'], 1)
+        self.assertEqual(set(mem['nodes']), set(e['id'] for e in first['path']))
+        was = self.page.locator('.node[data-id="C01"] .opt:has(.o-was)')
+        self.assertEqual(was.count(), 1)
+        self.assertEqual(was.get_attribute('data-c'), first['path'][0]['choice'])
+        # the skip button goes to the choice
+        self.page.locator('.node[data-id="C01"] .n-skip').click()
+        self.page.wait_for_function("(() => { const r = document.querySelector('.node[data-id=C01] .choose').getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; })()")
+        # the cover counts journeys
+        self.page.reload(wait_until='domcontentloaded'); self.page.wait_for_selector('#begin')
+        self.assertIn('Perjalanan ke-2', self.page.locator('#cvLeft').inner_text())
+
+    def test_ending_card_image(self):
+        self.begin()
+        self.play(lambda node, ids: ids[0])
+        self.page.locator('#shareEnd').click()
+        self.page.wait_for_function("document.getElementById('shareImg').src.startsWith('blob:')", timeout=20000)
+        size = self.page.evaluate("new Promise(r => { const i = document.getElementById('shareImg'); const go = () => r([i.naturalWidth, i.naturalHeight]); i.complete ? go() : i.onload = go; })")
+        self.assertEqual(size, [1080, 1350])
+        save = self.page.locator('#shareSave')
+        self.assertTrue(save.get_attribute('download').startswith('usia-pulang-'))
+        self.assertTrue(save.get_attribute('href').startswith('blob:'))
+        self.page.keyboard.press('Escape')
+        self.assertFalse(self.page.locator('#shareDialog').is_visible())
+
+    def test_harbour_sound_is_off_until_turned_on(self):
+        self.open()
+        self.assertFalse(self.page.evaluate('window.UsiaSound.isOn()'))
+        self.page.locator('#openSettings').click()
+        btn = self.page.locator('#sound')
+        self.assertEqual(btn.get_attribute('aria-pressed'), 'false')
+        btn.click()
+        self.assertEqual(btn.get_attribute('aria-pressed'), 'true')
+        self.assertTrue(self.page.evaluate('window.UsiaSound.isOn()'))
+        self.assertEqual(self.page.evaluate("localStorage.getItem('jm:usia:sound')"), 'true')
+        btn.click()
+        self.assertFalse(self.page.evaluate('window.UsiaSound.isOn()'))
+        self.assertEqual(self.page.evaluate("localStorage.getItem('jm:usia:sound')"), 'false')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

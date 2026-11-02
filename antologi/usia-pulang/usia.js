@@ -15,7 +15,7 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const qs = new URLSearchParams(location.search);
   const PREVIEW = qs.get('preview') === '1';
-  const HISTORY = ['read', 'stats', 'last', 'prog', 'usia:run', 'usia:endings'];
+  const HISTORY = ['read', 'stats', 'last', 'prog', 'usia:run', 'usia:endings', 'usia:book', 'usia:memory'];
   const mem = {};
   const store = {
     get(k, d) { if (PREVIEW && HISTORY.includes(k)) return k in mem ? mem[k] : d; try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -100,7 +100,44 @@
   if (!run || run.v !== 1 || !Array.isArray(run.path)) run = null;
   let flags = new Set(), visited = [];
   let known = {};          // yang dibaca di sela: { Dian: [{ pid, day, text }] }
-  const save = () => { run.flags = [...flags]; run.visited = visited; store.set('usia:run', run); };
+  const save = () => { run.flags = [...flags]; run.visited = visited; store.set('usia:run', run); store.set('usia:book', { at: Date.now(), chapters: bookOf(run.path) }); };
+  // ingatan pembaca, bukan ingatan Laras: perjalanan yang ditinggalkan dicatat, lalu ditandai di perjalanan berikutnya
+  let MEM = store.get('usia:memory', null);
+  if (!MEM || typeof MEM !== 'object' || !MEM.nodes) MEM = { nodes: {}, choices: {}, runs: 0 };
+  function remember(r) {
+    if (!r || !Array.isArray(r.path) || r.path.length < 2) return;
+    r.path.forEach(e => { MEM.nodes[e.id] = (MEM.nodes[e.id] || 0) + 1; if (e.choice) MEM.choices[e.choice] = (MEM.choices[e.choice] || 0) + 1; });
+    MEM.runs = (MEM.runs || 0) + 1; store.set('usia:memory', MEM);
+  }
+  const SND = window.UsiaSound || null;
+
+  /* ---------- Bukumu: jalan yang ditempuh, dirakit menjadi bab per hari untuk mode baca biasa di situs ---------- */
+  function bookOf(path) {
+    const chs = [], vi = [];
+    let cur = null, d = 0;
+    path.forEach((e, i) => {
+      const n = N[e.id]; if (!n) return;
+      if (!vi.includes(e.id)) vi.push(e.id);
+      if (/^[CP]\d/.test(e.id)) d = +e.id.slice(1) - 1; else if (/^H/.test(e.id)) d = +e.id[1] - 1; else if (/^[ZE]/.test(e.id)) d = 7;
+      if (!cur || cur.day !== d) { cur = { day: d, title: `${DAYS[d]}, ${9 + d} November`, body: [] }; chs.push(cur); }
+      const who = whoOf(n), tm = n.kind === 'callback' ? { day: d, part: 'malam' } : timeOf(e.id);
+      const title = who ? shortTitle(n).replace(new RegExp(`^${who}:\\s*`), '') : shortTitle(n);
+      if (n.kind === 'perspective') cur.body.push(`### ${t('Sela', 'Interlude')} · ${who}: ${title}`, `*${t(`Laras tidak mengetahui apa yang ${who} pikirkan di sini.`, `Laras does not know what ${who} thinks here.`)}*`);
+      else if (n.kind === 'callback') { const c = causeOf(e.because || [], i, path); cur.body.push(`### ${title}`, `*${c ? t(`Gema dari ${DAYS[c.tm.day]} ${PART[c.tm.part]}, ketika kamu memilih: ${c.c.label}`, `An echo of ${DAYS[c.tm.day]} ${PART[c.tm.part]}, when you chose: ${c.c.label}`) : t('Gema', 'Echo')}*`); }
+      else cur.body.push(`## ${title}`, `*${DAYS[tm.day]} ${PART[tm.part]}*`);
+      let raw;
+      if (n.kind === 'perspective') { const v = (n.variants || []).find(x => (x.visited_all || []).every(id => vi.includes(id))); raw = [...paras(n.body_before), ...(v ? paras(v.body) : []), ...paras(n.body_after)]; }
+      else raw = paras(n.body);
+      cur.body.push(...raw);
+      if (e.choice) cur.body.push(`> ${t('Pilihanmu', 'Your choice')}: ${labelOf(e.id, e.choice)}`);
+    });
+    if (chs.length) {
+      chs[0].body.unshift(`*${t('Bukumu: jalan yang kamu tempuh di versi interaktif, dirakit menjadi satu novel. Perjalanan lain akan menghasilkan buku yang lain.', 'Your book: the path you took in the interactive version, bound as one novel. Another journey makes another book.')}*`);
+      const last = path[path.length - 1];
+      if (last && N[last.id] && N[last.id].kind !== 'ending') chs[chs.length - 1].body.push('***', `*${t('Perjalanan ini belum selesai. Lanjutkan di versi interaktif.', 'This journey is not finished. Continue in the interactive version.')}*`);
+    }
+    return chs.map(c => ({ title: c.title, body: c.body }));
+  }
 
   /* ---------- tampilan buku ---------- */
   const book = $('#book');
@@ -114,9 +151,9 @@
     : t(`Ke mana Laras pergi hari ${DAYS[timeOf(n.id).day]}?`, `Where does Laras go on ${DAYS[timeOf(n.id).day]}?`);
 
   // gema: kutip tindakan pembaca sendiri (sebelum gema itu) yang memasang tanda pemicunya
-  function causeOf(because, before) {
-    for (let k = Math.min(before, run.path.length) - 1; k >= 0; k--) {
-      const e = run.path[k]; if (!e.choice) continue;
+  function causeOf(because, before, path = run.path) {
+    for (let k = Math.min(before, path.length) - 1; k >= 0; k--) {
+      const e = path[k]; if (!e.choice) continue;
       const c = (N[e.id].choices || []).find(x => x.id === e.choice);
       if (c && (c.set_flags || []).some(f => because.includes(f))) return { c, tm: timeOf(e.id), id: e.id };
     }
@@ -157,6 +194,7 @@
     const sec = html(`<section class="node k-${k}${who ? ' who-' + who : ''}" data-id="${n.id}" data-i="${idx}" data-day="${tm.day}" data-part="${tm.part}"></section>`);
     const title = who ? shortTitle(n).replace(new RegExp(`^${who}:\\s*`), '') : shortTitle(n);
     let head = `<header class="n-head"><p class="n-kind"><span>${esc(KIND[k])}${who ? ' · ' + esc(who) : ''}</span><span>${esc(when)}</span></p><h2>${esc(title)}</h2></header>`;
+    if (MEM.nodes[n.id]) head += `<p class="n-seen"><span>${esc(t('Pernah kamu baca di perjalanan lain. Laras tidak mengingatnya.', 'You read this on another journey. Laras does not remember it.'))}</span>${n.kind !== 'ending' ? `<button type="button" class="n-skip">${esc(n.kind === 'choice' ? t('Ke pilihan', 'To the choice') : t('Ke ujungnya', 'To the end'))} <span aria-hidden="true">↓</span></button>` : ''}</p>`;
     if (n.kind === 'perspective') head += `<p class="n-note">${esc(t(`Laras tidak mengetahui apa yang ${who} pikirkan di sini.`, `Laras does not know what ${who} thinks here.`))}</p>`;
     if (n.kind === 'callback' && entry.because) {
       const cause = causeOf(entry.because, idx);
@@ -203,7 +241,7 @@
     const box = html(`<div class="choose c-${kind}" role="group" aria-label="${esc(prompt(n))}"><p class="ch-q">${esc(prompt(n))}</p><div class="ch-list"></div><p class="ch-hint">${esc(t('Tekan dan tahan pilihanmu', 'Press and hold your choice'))}</p></div>`);
     opts.forEach(c => {
       const ppl = people(c.label);
-      const b = html(`<button type="button" class="opt" data-c="${c.id}"><span class="o-fill" aria-hidden="true"></span><span class="o-t">${esc(c.label)}</span>${kind === 'places' && ppl.length ? `<span class="o-p">${ppl.map(p => `<i title="${p}">${p[0]}</i>`).join('')}</span>` : ''}${kind === 'doors' ? `<span class="o-d">${/^Tidak menetap/i.test(c.label) ? t('tidak menetap', 'does not stay') : t('menetap', 'stays')}</span>` : ''}</button>`);
+      const b = html(`<button type="button" class="opt" data-c="${c.id}"><span class="o-fill" aria-hidden="true"></span><span class="o-t">${esc(c.label)}${MEM.choices[c.id] ? `<small class="o-was">${esc(t('pernah kamu pilih', 'chosen before'))}</small>` : ''}</span>${kind === 'places' && ppl.length ? `<span class="o-p">${ppl.map(p => `<i title="${p}">${p[0]}</i>`).join('')}</span>` : ''}${kind === 'doors' ? `<span class="o-d">${/^Tidak menetap/i.test(c.label) ? t('tidak menetap', 'does not stay') : t('menetap', 'stays')}</span>` : ''}</button>`);
       let timer = 0;
       const stop = () => { if (!timer) return; clearTimeout(timer); timer = 0; b.classList.remove('holding'); box.classList.remove('pressing'); };
       b.addEventListener('pointerdown', e => {
@@ -285,6 +323,7 @@
     (c.unset_flags || []).forEach(f => flags.delete(f));
     settle(box, entry, !reduced());
     stamp(entry, c);
+    SND?.stamp();
     save(); threadSoon();
     setTimeout(() => enter(c.target), reduced() ? 0 : 1000);
   }
@@ -315,6 +354,7 @@
     return ov;
   }
   function night(from, to, last) {
+    if (last) SND?.last(); else SND?.roll();
     if (last) {
       const ov = overlay('night last', `<p class="nt-k">${esc(dateOf(to))}</p><p class="nt-n"><b>17.40</b></p><p class="nt-u">${esc(t('batas', 'deadline'))}</p>`, 3800);
       if (!ov) return;
@@ -333,9 +373,11 @@
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('dawn')));
   }
   function cross(who) {
+    SND?.cross();
     overlay(`cross who-${who}`, `<p class="cr-k">${esc(t('Sela', 'Interlude'))}</p><p class="cr-n">${esc(who)}</p><p class="cr-u">${esc(t('Laras tidak ikut ke sini', 'Laras does not come here'))}</p>`, 1600);
   }
   function ripple(sec) {
+    SND?.echo();
     const ov = overlay('ripple', '<i></i><i></i><i></i>', 2400);
     if (ov) { const r = thread.getBoundingClientRect(); ov.style.setProperty('--x', (r.width ? r.left + r.width - 7 : 20) + 'px'); }
     const cause = sec.dataset.cause && $(`.node[data-id="${sec.dataset.cause}"] .opt.picked`, book);
@@ -349,6 +391,8 @@
       if (opt) { opt.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); opt.classList.remove('called'); void opt.offsetWidth; opt.classList.add('called'); }
       return;
     }
+    const skip = e.target.closest('.n-skip');
+    if (skip) { const to = $('.choose, .cont, .after', skip.closest('.node')); if (to) to.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); return; }
     const kn = e.target.closest('.kn');
     if (kn) { e.stopPropagation(); openPerson(kn.dataset.who, kn); }
   });
@@ -462,7 +506,7 @@
 
   /* ---------- akhir: pola jahitan ---------- */
   function endingEl() {
-    return html(`<div class="after" id="after"><p class="af-k">${esc(t('Salah satu dari delapan akhir', 'One of eight endings'))}</p><div class="map" id="map"></div><div class="af-act"><button type="button" class="go" id="again">${esc(t('Pulang lagi', 'Come back again'))}</button><label class="af-from"><span>${esc(t('atau mulai lagi dari', 'or start again from'))}</span><select id="fromDay"></select></label></div><div class="af-next" id="afNext"></div></div>`);
+    return html(`<div class="after" id="after"><p class="af-k">${esc(t('Salah satu dari delapan akhir', 'One of eight endings'))}</p><div class="map" id="map"></div><div class="af-act"><button type="button" class="go" id="again">${esc(t('Pulang lagi', 'Come back again'))}</button><button type="button" class="ghost" id="shareEnd">${esc(t('Bagikan kartu akhir', 'Share the ending card'))}</button><label class="af-from"><span>${esc(t('atau mulai lagi dari', 'or start again from'))}</span><select id="fromDay"></select></label></div><div class="af-next" id="afNext"></div></div>`);
   }
   function finish(n, isNew) {
     const found = new Set(store.get('usia:endings', []) || []); found.add(n.id); store.set('usia:endings', [...found]);
@@ -473,43 +517,116 @@
     const sel = $('#fromDay');
     sel.innerHTML = `<option value="">${esc(t('pilih hari…', 'choose a day…'))}</option>` + Object.keys(run.snaps).sort().map(id => `<option value="${id}">${esc(DAYS[timeOf(id).day])} · ${esc(shortTitle(N[id]))}</option>`).join('');
     sel.onchange = () => { if (sel.value) startFrom(sel.value); };
+    $('#shareEnd').onclick = () => shareCard(n, found);
     if (G) $('#afNext').innerHTML = G.next(SLUG);
   }
-  function pattern(endNode) {
+  // pola jahitan: satu model, digambar sebagai SVG di halaman dan di kanvas untuk kartu bagikan
+  function patternModel(endNode) {
     const v = new Set(visited), idxOf = (id, cid) => Math.max(0, (N[id].choices || []).findIndex(c => c.id === cid));
-    const W = 320, rowY = d => 46 + d * 42, cx = i => 52 + i * 20, hx = i => 152 + i * 20, PX = 262, zy = 352;
-    let grid = '', marks = '', labels = '';
-    const pts = [];
+    const rowY = d => 46 + d * 42, cx = i => 52 + i * 20, hx = i => 152 + i * 20, PX = 262, zy = 352;
+    const m = { W: 320, H: 400, cx, hx, PX, zy, days: [], grid: [], pts: [], cs: [], hs: [], ps: [], echoes: [], knot: null, tail: null };
     for (let d = 0; d < 7; d++) {
       const y = rowY(d), C = 'C0' + (d + 1), P = 'P0' + (d + 1);
-      labels += `<text class="pt-day" x="10" y="${y + 4}">${esc(DAYS[d].slice(0, 3))}</text>`;
-      for (let i = 0; i < 4; i++) grid += `<circle class="pt-dot" cx="${cx(i)}" cy="${y}" r="1.6"/><circle class="pt-dot" cx="${hx(i)}" cy="${y}" r="1.6"/>`;
+      m.days.push({ y, label: DAYS[d].slice(0, 3) });
+      for (let i = 0; i < 4; i++) m.grid.push([cx(i), y], [hx(i), y]);
       const ce = run.path.find(e => e.id === C);
-      if (ce && ce.choice) { const ci = idxOf(C, ce.choice); pts.push([cx(ci), y]); marks += `<circle class="st lit" data-id="${C}" cx="${cx(ci)}" cy="${y}" r="4.5"><title>${esc(labelOf(C, ce.choice))}</title></circle>`; }
+      if (ce && ce.choice) { const x = cx(idxOf(C, ce.choice)); m.pts.push([x, y]); m.cs.push({ x, y, id: C, label: labelOf(C, ce.choice) }); }
       const he = run.path.find(e => new RegExp(`^H${d + 1}[A-D]$`).test(e.id));
-      if (he) { const hi = he.choice ? idxOf(he.id, he.choice) : 0; pts.push([hx(hi), y]); marks += `<rect class="st lit" data-id="${he.id}" x="${hx(hi) - 4}" y="${y - 4}" width="8" height="8" transform="rotate(45 ${hx(hi)} ${y})"><title>${esc(he.choice ? labelOf(he.id, he.choice) : shortTitle(N[he.id]))}</title></rect>`; }
+      if (he) { const x = hx(he.choice ? idxOf(he.id, he.choice) : 0); m.pts.push([x, y]); m.hs.push({ x, y, id: he.id, label: he.choice ? labelOf(he.id, he.choice) : shortTitle(N[he.id]) }); }
       if (v.has(P)) {
-        pts.push([PX, y]);
-        marks += `<g class="st lit" data-id="${P}"><circle cx="${PX}" cy="${y}" r="9"/><text x="${PX}" y="${y + 3.5}">${esc(whoOf(N[P])[0])}</text></g>`;
+        m.pts.push([PX, y]); m.ps.push({ x: PX, y, id: P, letter: whoOf(N[P])[0] });
         const pi = run.path.findIndex(e => e.id === P);
-        let k = 0;
-        for (let j = pi + 1; j < run.path.length && N[run.path[j].id].kind === 'callback'; j++, k++) {
-          const e = run.path[j], ex = PX + 13 + k * 12;
-          marks += `<path class="pt-echo" data-id="${e.id}" d="M${ex} ${y}a5 5 0 1 1 0.1 0"><title>${esc(shortTitle(N[e.id]))}</title></path>`;
-        }
+        for (let j = pi + 1, k = 0; j < run.path.length && N[run.path[j].id].kind === 'callback'; j++, k++) m.echoes.push({ x: PX + 13 + k * 12, y, id: run.path[j].id, label: shortTitle(N[run.path[j].id]) });
       }
     }
-    for (let i = 0; i < 8; i++) grid += `<circle class="pt-dot" cx="${46 + i * 32}" cy="${zy}" r="1.6"/>`;
+    for (let i = 0; i < 8; i++) m.grid.push([46 + i * 32, zy]);
     const ze = run.path.find(e => e.id === 'Z00');
-    let tail = '';
     if (ze && ze.choice) {
-      const zx = 46 + idxOf('Z00', ze.choice) * 32; pts.push([zx, zy]);
-      if (endNode && STAYS(endNode.id)) marks += `<circle class="pt-knot" cx="${zx}" cy="${zy}" r="5.5"/>`;
-      else tail = `<path class="pt-tail" d="M${zx} ${zy}L${zx} 404"/>`;
+      const zx = 46 + idxOf('Z00', ze.choice) * 32; m.pts.push([zx, zy]);
+      if (endNode && STAYS(endNode.id)) m.knot = [zx, zy]; else m.tail = [zx, zy];
     }
-    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join('');
-    return `<svg class="pattern" viewBox="0 0 ${W} 400" role="img" aria-label="${esc(t('Pola jahitan perjalananmu', 'The stitch pattern of your journey'))}"><defs><pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3H6M3 0V6" class="pt-weave"/></pattern></defs><rect class="pt-cloth" x="0" y="0" width="${W}" height="400" rx="14"/><rect x="0" y="0" width="${W}" height="400" rx="14" fill="url(#weave)"/>${labels}<text class="pt-col" x="${cx(0) - 6}" y="22">${esc(t('pagi', 'morning'))}</text><text class="pt-col" x="${hx(0) - 6}" y="22">${esc(t('siang', 'afternoon'))}</text><text class="pt-col" x="${PX - 12}" y="22">${esc(t('sela', 'interlude'))}</text>${grid}<g class="pt-run"><path class="pt-thread" d="${d}"/>${tail}</g>${marks}<text class="pt-day" x="10" y="${zy + 4}">${esc(DAYS[7].slice(0, 3))}</text></svg>`;
+    return m;
   }
+  function pattern(endNode) {
+    const m = patternModel(endNode);
+    const grid = m.grid.map(([x, y]) => `<circle class="pt-dot" cx="${x}" cy="${y}" r="1.6"/>`).join('');
+    const labels = m.days.map(d => `<text class="pt-day" x="10" y="${d.y + 4}">${esc(d.label)}</text>`).join('');
+    let marks = m.cs.map(c => `<circle class="st lit" data-id="${c.id}" cx="${c.x}" cy="${c.y}" r="4.5"><title>${esc(c.label)}</title></circle>`).join('');
+    marks += m.hs.map(h => `<rect class="st lit" data-id="${h.id}" x="${h.x - 4}" y="${h.y - 4}" width="8" height="8" transform="rotate(45 ${h.x} ${h.y})"><title>${esc(h.label)}</title></rect>`).join('');
+    marks += m.ps.map(p => `<g class="st lit" data-id="${p.id}"><circle cx="${p.x}" cy="${p.y}" r="9"/><text x="${p.x}" y="${p.y + 3.5}">${esc(p.letter)}</text></g>`).join('');
+    marks += m.echoes.map(e => `<path class="pt-echo" data-id="${e.id}" d="M${e.x} ${e.y}a5 5 0 1 1 0.1 0"><title>${esc(e.label)}</title></path>`).join('');
+    if (m.knot) marks += `<circle class="pt-knot" cx="${m.knot[0]}" cy="${m.knot[1]}" r="5.5"/>`;
+    const tail = m.tail ? `<path class="pt-tail" d="M${m.tail[0]} ${m.tail[1]}L${m.tail[0]} 404"/>` : '';
+    const d = m.pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join('');
+    return `<svg class="pattern" viewBox="0 0 ${m.W} ${m.H}" role="img" aria-label="${esc(t('Pola jahitan perjalananmu', 'The stitch pattern of your journey'))}"><defs><pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3H6M3 0V6" class="pt-weave"/></pattern></defs><rect class="pt-cloth" x="0" y="0" width="${m.W}" height="${m.H}" rx="14"/><rect x="0" y="0" width="${m.W}" height="${m.H}" rx="14" fill="url(#weave)"/>${labels}<text class="pt-col" x="${m.cx(0) - 6}" y="22">${esc(t('pagi', 'morning'))}</text><text class="pt-col" x="${m.hx(0) - 6}" y="22">${esc(t('siang', 'afternoon'))}</text><text class="pt-col" x="${m.PX - 12}" y="22">${esc(t('sela', 'interlude'))}</text>${grid}<g class="pt-run"><path class="pt-thread" d="${d}"/>${tail}</g>${marks}<text class="pt-day" x="10" y="${m.zy + 4}">${esc(DAYS[7].slice(0, 3))}</text></svg>`;
+  }
+
+  /* ---------- kartu bagikan akhir: gambar PNG dari pola jahitan dan akhirnya ---------- */
+  const rr = (x, X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
+  function wrap(x, text, maxW) {
+    const words = String(text).split(/\s+/), lines = []; let line = '';
+    words.forEach(w => { const tryL = line ? line + ' ' + w : w; if (x.measureText(tryL).width > maxW && line) { lines.push(line); line = w; } else line = tryL; });
+    if (line) lines.push(line); return lines;
+  }
+  async function cardBlob(endNode, found) {
+    try { await Promise.all(['900 120px Doto', '500 60px Newsreader', '400 34px Newsreader', '600 26px Geist'].map(f => document.fonts.load(f))); } catch (e) { /* huruf cadangan */ }
+    const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d'), INK = '#F4F4F5', MUT = 'rgba(244,244,245,.6)', BLUE = '#6E9BFF', ECHO = '#B39BFF';
+    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#090B1A'); g.addColorStop(.55, '#1E1238'); g.addColorStop(1, '#4A1E4E');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    rr(x, 56, 56, W - 112, H - 112, 60); x.fillStyle = '#111113'; x.fill();
+    x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+    const sp = v => { try { x.letterSpacing = v; } catch (e) { /* lama */ } };
+    sp('5px'); x.font = '600 24px Geist, system-ui, sans-serif'; x.fillStyle = MUT; x.fillText('QUIET MARGINS · TEMUSAI', W / 2, 146);
+    sp('-3px'); x.font = '900 112px Doto, ui-monospace, monospace'; x.fillStyle = INK; x.fillText('USIA PULANG', W / 2, 262);
+    sp('4px'); x.font = '600 24px Geist, system-ui, sans-serif'; x.fillStyle = MUT; x.fillText(t(`AKHIR ${ENDINGS.indexOf(endNode.id) + 1} DARI 8 · ${found.size}/8 DITEMUKAN`, `ENDING ${ENDINGS.indexOf(endNode.id) + 1} OF 8 · ${found.size}/8 FOUND`), W / 2, 330);
+    sp('0px'); x.font = '500 60px Newsreader, Georgia, serif'; x.fillStyle = INK;
+    const tl = wrap(x, shortTitle(endNode), 820); tl.slice(0, 2).forEach((l, i) => x.fillText(l, W / 2, 402 + i * 64));
+    const by = 402 + Math.min(2, tl.length) * 64 - 8;
+    x.font = '400 32px Newsreader, Georgia, serif'; x.fillStyle = MUT; x.fillText(STAYS(endNode.id) ? t('Laras menetap.', 'Laras stays.') : t('Laras tidak menetap.', 'Laras does not stay.'), W / 2, by);
+    // pola
+    const m = patternModel(endNode), s = 1.55, ox = (W - m.W * s) / 2, oy = by + 34;
+    rr(x, ox, oy, m.W * s, m.H * s, 28); x.fillStyle = '#1C1C1F'; x.fill();
+    const P = ([px, py]) => [ox + px * s, oy + py * s];
+    x.fillStyle = 'rgba(244,244,245,.22)'; m.grid.forEach(q => { const [a, b] = P(q); x.beginPath(); x.arc(a, b, 2.4, 0, 7); x.fill(); });
+    x.font = '700 15px Doto, ui-monospace, monospace'; x.textAlign = 'left'; x.fillStyle = MUT;
+    m.days.forEach(d => { const [a, b] = P([10, d.y + 4]); x.fillText(d.label.toUpperCase(), a, b); });
+    { const [a, b] = P([10, m.zy + 4]); x.fillText(DAYS[7].slice(0, 3).toUpperCase(), a, b); }
+    x.setLineDash([9, 6]); x.lineWidth = 2.6; x.strokeStyle = INK; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); m.pts.forEach((q, i) => { const [a, b] = P(q); i ? x.lineTo(a, b) : x.moveTo(a, b); });
+    if (m.tail) { const [a, b] = P([m.tail[0], 404]); x.lineTo(a, Math.min(b, oy + m.H * s)); }
+    x.stroke(); x.setLineDash([]);
+    m.cs.forEach(q => { const [a, b] = P([q.x, q.y]); x.beginPath(); x.arc(a, b, 7, 0, 7); x.fillStyle = '#1C1C1F'; x.fill(); x.lineWidth = 2.6; x.strokeStyle = INK; x.stroke(); });
+    m.hs.forEach(q => { const [a, b] = P([q.x, q.y]); x.save(); x.translate(a, b); x.rotate(Math.PI / 4); x.fillStyle = BLUE; x.fillRect(-6, -6, 12, 12); x.restore(); });
+    x.textAlign = 'center'; x.font = '900 16px Doto, ui-monospace, monospace';
+    m.ps.forEach(q => { const [a, b] = P([q.x, q.y]); x.beginPath(); x.arc(a, b, 14, 0, 7); x.fillStyle = INK; x.fill(); x.fillStyle = '#1C1C1F'; x.fillText(q.letter, a, b + 6); });
+    m.echoes.forEach(q => { const [a, b] = P([q.x, q.y]); x.beginPath(); x.arc(a + 8, b, 8, 0, 7); x.lineWidth = 2.2; x.strokeStyle = ECHO; x.stroke(); });
+    if (m.knot) { const [a, b] = P(m.knot); x.beginPath(); x.arc(a, b, 9, 0, 7); x.fillStyle = BLUE; x.fill(); }
+    // angka
+    const choices = run.path.filter(e => e.choice).length, echoes = run.path.filter(e => N[e.id].kind === 'callback').length;
+    const words = $$('.n-body > p', book).reduce((n, el) => n + el.textContent.trim().split(/\s+/).length, 0);
+    x.textAlign = 'center'; sp('0px'); x.font = '500 26px Geist, system-ui, sans-serif'; x.fillStyle = INK;
+    x.fillText(t(`${choices} pilihan · ${echoes} gema · ${words.toLocaleString('id-ID')} dari ${TOTAL_WORDS.toLocaleString('id-ID')} kata`, `${choices} choices · ${echoes} echoes · ${words.toLocaleString('en-GB')} of ${TOTAL_WORDS.toLocaleString('en-GB')} words`), W / 2, H - 132);
+    x.font = '500 22px Geist, system-ui, sans-serif'; x.fillStyle = MUT; x.fillText('quietmargins.site/antologi/usia-pulang', W / 2, H - 92);
+    return new Promise(res => c.toBlob(res, 'image/png'));
+  }
+  let shareUrl = '';
+  async function shareCard(endNode, found) {
+    const dlg = $('#shareDialog'), img = $('#shareImg'), save = $('#shareSave'), go = $('#shareGo');
+    img.removeAttribute('src'); dlg.showModal(); dlg.dataset.ready = '';
+    delete dlg.dataset.ready;
+    const blob = await cardBlob(endNode, found); if (!blob) return;
+    if (shareUrl) URL.revokeObjectURL(shareUrl);
+    shareUrl = URL.createObjectURL(blob);
+    const name = `usia-pulang-${fold(shortTitle(endNode))}.png`, file = new File([blob], name, { type: 'image/png' });
+    img.src = shareUrl; img.alt = t(`Kartu akhir: ${shortTitle(endNode)}`, `Ending card: ${shortTitle(endNode)}`);
+    save.href = shareUrl; save.download = name;
+    const can = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    go.hidden = !can;
+    go.onclick = () => navigator.share({ files: [file], title: 'Usia Pulang', text: `${shortTitle(endNode)} · quietmargins.site` }).catch(() => {});
+    dlg.dataset.ready = '';
+  }
+  const fold = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   function paintMap(endNode, found, isNew) {
     const ends = ENDINGS.map(id => `<span class="mp-end ${found.has(id) ? 'found' : ''}${endNode && id === endNode.id ? ' here' : ''}"><i class="${STAYS(id) ? 'e-stay' : 'e-go'}" aria-hidden="true"></i><b>${found.has(id) ? esc(shortTitle(N[id])) : '—'}</b></span>`).join('');
     const words = $$('.n-body > p', book).reduce((s, el) => s + (el.textContent.trim().split(/\s+/).length), 0);
@@ -547,9 +664,10 @@
     const r = store.get('read', []) || []; if (!r.includes(SLUG)) store.set('read', [...r, SLUG]);
     store.set('last', { key: SLUG, at: Date.now() });
   }
-  function startFresh() { run = fresh(); flags = new Set(); visited = []; known = {}; loopsDrawn = new Set(); $$('.node', book).forEach(n => n.remove()); save(); enter(ENTRY); }
+  function startFresh() { remember(run); run = fresh(); flags = new Set(); visited = []; known = {}; loopsDrawn = new Set(); $$('.node', book).forEach(n => n.remove()); save(); enter(ENTRY); }
   function startFrom(id) {
     const s = run.snaps[id]; if (!s) return;
+    remember(run);
     const snaps = Object.fromEntries(Object.entries(run.snaps).filter(([k]) => k < id));
     run = { ...fresh(), path: s.path, flags: s.flags, visited: s.visited, snaps };
     flags = new Set(s.flags); visited = [...s.visited];
@@ -591,6 +709,7 @@
     $('#cast').innerHTML = cast.map(x => `<button type="button" class="ck-p${x === 'Laras' ? ' me' : ''}" data-who="${x}" aria-label="${esc(x)}, ${PEOPLE[x].now} ${esc(t('tahun', 'years'))}"><span aria-hidden="true">${esc(x[0])}</span><small aria-hidden="true">${PEOPLE[x].now}</small></button>`).join('');
     if (G) { $('#stepChip').hidden = false; G.step(Math.min(7, tm.day + 1), 7, t('Hari', 'Day')); }
     root.dataset.backdrop = isDark() || away ? 'malam' : SKY[tm.part];
+    SND?.part(tm.part, away);
     const pr = store.get('prog', {}) || {}; if ((pr[SLUG] || 0) < 1) { pr[SLUG] = +(elapsed(tm) / 168).toFixed(3); store.set('prog', pr); }
   }
   let raf = 0;
@@ -604,6 +723,22 @@
   const setSize = d => { size = Math.min(24, Math.max(15, size + d)); applySize(); store.set('rd', { ...(store.get('rd', {}) || {}), size }); };
   $('#smaller').onclick = () => setSize(-1); $('#bigger').onclick = () => setSize(1); applySize();
   $('#openCard').setAttribute('aria-label', t('Kartu Kepulangan', 'Return Card'));
+  if (MEM.runs) $('#cvLeft').textContent = t(`Perjalanan ke-${MEM.runs + 1}`, `Journey ${MEM.runs + 1}`);
+  { const d = $('#shareDialog'); d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); }); }
+  $('#shareKick').textContent = t('Kartu akhir', 'Ending card'); $('#shareTitle').textContent = t('Bagikan', 'Share');
+  $('#shareGo').textContent = t('Bagikan', 'Share'); $('#shareSave').textContent = t('Unduh gambar', 'Download image');
+
+  /* ---------- suasana pelabuhan (suara.js), mati sampai pembaca menyalakannya ---------- */
+  {
+    const btn = $('#sound'), row = btn.closest('.setting-row');
+    if (!SND || !SND.supported) row.hidden = true;
+    $('#soundLabel').textContent = t('Suasana pelabuhan', 'Harbour sound');
+    const paint = () => { const on = !!SND?.isOn(); btn.setAttribute('aria-pressed', String(on)); btn.textContent = on ? t('Matikan', 'Turn off') : t('Nyalakan', 'Turn on'); };
+    btn.addEventListener('click', () => { const on = !SND.isOn(); SND.setOn(on); store.set('usia:sound', on); paint(); shownKey = ''; frame(true); });
+    // suara yang pernah dinyalakan menunggu sentuhan pertama (peramban tidak mengizinkan suara sebelumnya)
+    if (SND && store.get('usia:sound', false)) { const wake = () => { removeEventListener('pointerdown', wake, true); removeEventListener('keydown', wake, true); SND.setOn(true); paint(); shownKey = ''; frame(true); }; addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true); }
+    paint();
+  }
   $('#cast').setAttribute('aria-label', t('Di adegan ini', 'In this scene'));
   $('#sheetClose').setAttribute('aria-label', t('Tutup', 'Close'));
 
