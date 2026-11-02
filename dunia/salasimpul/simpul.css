@@ -261,8 +261,8 @@ a { color: inherit; }
 .n-body:has(.locked) { padding: 0; background: none; box-shadow: none; }
 .n-body:has(.locked)::before { display: none; }
 /* beberapa buku punya kertas sendiri */
-.note[data-owner="karman"] .n-body, .note[data-owner="bagas"] .n-body, .note[data-owner="hesti"] .n-body { background-image: linear-gradient(90deg, transparent 22px, color-mix(in srgb, var(--nb) 18%, transparent) 22px 23px, transparent 23px); }
-.note[data-owner="ratih"] .n-body { background-image: linear-gradient(color-mix(in srgb, var(--nb) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--nb) 7%, transparent) 1px, transparent 1px); background-size: 22px 22px; }
+.note[data-owner="karman"] .n-body, .note[data-owner="bagas"] .n-body { background-image: linear-gradient(90deg, transparent 22px, color-mix(in srgb, var(--nb) 18%, transparent) 22px 23px, transparent 23px); }
+.note[data-owner="laras"] .n-body { background-image: linear-gradient(color-mix(in srgb, var(--nb) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--nb) 8%, transparent) 1px, transparent 1px); background-size: 22px 22px; }
 .note[data-owner="joni"] .n-body, .note[data-owner="bayu"] .n-body, .note[data-owner="lira"] .n-body { background-image: repeating-linear-gradient(transparent 0 calc(var(--size) * 1.72 - 1px), color-mix(in srgb, var(--nb) 12%, transparent) calc(var(--size) * 1.72 - 1px) calc(var(--size) * 1.72)); background-position: 0 30px; }
 .note[data-owner="elmar"] .n-body, .note[data-owner="rasmi"] .n-body, .note[data-owner="inah"] .n-body { background-image: radial-gradient(ellipse at 10% 0%, color-mix(in srgb, #A07A3A 10%, transparent), transparent 60%), radial-gradient(ellipse at 95% 100%, color-mix(in srgb, #A07A3A 9%, transparent), transparent 55%); }
 .note[data-owner="nara"] .n-body, .note[data-owner="lestari"] .n-body { background-image: linear-gradient(180deg, color-mix(in srgb, var(--nb) 5%, transparent), transparent 120px); }
@@ -467,3 +467,104 @@ a { color: inherit; }
   .tie-gap b { font-size: 22px; }
   .fks { grid-template-columns: 1fr; }
 }
+
+/* ---------- tiap orang: kertasnya sendiri ---------- */
+/* Hesti: surat. Catatannya selalu dibuka dengan "Nak," */
+.note[data-owner="hesti"] .n-body { background-image: linear-gradient(180deg, color-mix(in srgb, var(--nb) 6%, transparent), transparent 90px); }
+.note[data-owner="hesti"] #nBody > p:first-of-type { font-style: italic; font-size: 1.22em; letter-spacing: -.01em; }
+/* Wardi: dapur jam tiga pagi, kertas yang lebih gelap */
+.note[data-owner="wardi"] .n-body { background-color: color-mix(in srgb, var(--paper) 90%, #1d2433); }
+/* Sukrim: buku tulis bekas, halaman depannya disobek */
+.note[data-owner="sukrim"] .n-body, .note[data-owner="endah"] .n-body { --tear: 8px; -webkit-mask: linear-gradient(#000 0 0) 0 var(--tear) / 100% 100% no-repeat, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 0 0 / calc(var(--tear) * 2) var(--tear) repeat-x; mask: linear-gradient(#000 0 0) 0 var(--tear) / 100% 100% no-repeat, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 0 0 / calc(var(--tear) * 2) var(--tear) repeat-x; padding-top: calc(26px + var(--tear)); }
+/* Endah: buku pasar loak, kertasnya sudah menguning */
+.note[data-owner="endah"] .n-body { background-image: radial-gradient(ellipse at 80% 10%, color-mix(in srgb, #B08A3C 12%, transparent), transparent 55%), radial-gradient(circle at 12% 88%, color-mix(in srgb, #B08A3C 8%, transparent), transparent 30%); }
+/* Ratih: kardus-kardus pindahan */
+.note[data-owner="ratih"] .n-body { background-color: color-mix(in srgb, var(--paper) 88%, #A9824F); }
+/* Elian: rapi, garis ganda di atas, seperti formulir yang diisi dengan benar */
+.note[data-owner="elian"] .n-body { background-image: linear-gradient(var(--nb), var(--nb)), linear-gradient(var(--nb), var(--nb)); background-size: calc(100% - 52px) 1px, calc(100% - 52px) 1px; background-position: 30px 12px, 30px 16px; background-repeat: no-repeat; }
+/* Basri: kartu katalog dengan bingkai tipis */
+.note[data-owner="basri"] .n-body { background-image: linear-gradient(var(--paper), var(--paper)), linear-gradient(color-mix(in srgb, var(--nb) 30%, transparent), color-mix(in srgb, var(--nb) 30%, transparent)); background-clip: content-box, padding-box; outline: 1px solid color-mix(in srgb, var(--nb) 25%, transparent); outline-offset: -8px; }
+/* Elmar: buku daftar dengan kolom nomor petak */
+.note[data-owner="elmar"] .n-body { background-image: linear-gradient(90deg, transparent 46px, color-mix(in srgb, var(--nb) 22%, transparent) 46px 47px, transparent 47px), radial-gradient(ellipse at 10% 0%, color-mix(in srgb, #A07A3A 10%, transparent), transparent 60%); padding-left: 60px; }
+/* anak-anak menulis lebih besar, di buku bergaris lebar: buku Nara ikut tumbuh bersama Nara */
+.note[data-young] .n-body { font-size: calc(var(--size) + 2px); line-height: 2; letter-spacing: .01em; background-image: repeating-linear-gradient(transparent 0 calc((var(--size) + 2px) * 2 - 1px), color-mix(in srgb, var(--nb) 16%, transparent) calc((var(--size) + 2px) * 2 - 1px) calc((var(--size) + 2px) * 2)); background-position: 0 24px; }
+.note[data-young] .n-head h2 { letter-spacing: 0; }
+
+/* tanda tangan: umur dan hitungan yang dibawa penulisnya */
+.n-sig { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 12px 0 0; }
+.n-sig > span { display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 12px 6px; border-radius: 14px; background: color-mix(in srgb, var(--nb) 10%, var(--paper)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nb) 22%, transparent); color: var(--muted); font: 12.5px var(--f-ui); }
+.n-sig b { color: var(--nb); font: 900 17px/1 var(--f-dot); letter-spacing: -.02em; }
+
+/* malam yang sama */
+.night { margin: 34px 0 0; padding: 18px 18px 16px; border-radius: 24px; background: color-mix(in srgb, #0B0D12 88%, var(--nb)); color: #EDEFF3; box-shadow: var(--shadow), inset 0 0 0 1px rgb(255 255 255 / .07); }
+.night-k { margin: 0; font: 900 20px/1 var(--f-dot); letter-spacing: -.02em; text-transform: uppercase; }
+.night-l { margin: 6px 0 0; color: rgb(237 239 243 / .62); font: 13px var(--f-ui); }
+.rail { position: relative; height: 44px; margin: 12px 4px 4px; }
+.rl-line { position: absolute; left: 0; right: 0; top: 14px; height: 1px; background: currentColor; opacity: .25; }
+.rail i { position: absolute; top: 10px; width: 1px; height: 9px; background: currentColor; opacity: .3; }
+.rail i.lab { opacity: .6; }
+.rail i span { position: absolute; top: 14px; left: 50%; translate: -50% 0; font: 600 10px var(--f-ui); white-space: nowrap; }
+.rl-dot { position: absolute; top: 8px; width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2px var(--fk); }
+.rl-dot.read { background: var(--fk); }
+.rl-dot.here { box-shadow: 0 0 0 4px color-mix(in srgb, var(--fk) 35%, transparent), inset 0 0 0 2px var(--fk); background: var(--fk); }
+.nt-rows { display: grid; gap: 6px; margin: 6px 0 14px; }
+.nt-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: baseline; gap: 2px 10px; padding: 10px 12px; border-radius: 14px; background: rgb(255 255 255 / .06); color: inherit; text-decoration: none; }
+.nt-row:hover { background: rgb(255 255 255 / .11); }
+.nr-h { font: 900 16px/1 var(--f-dot); }
+.nr-who { color: color-mix(in srgb, var(--fk) 55%, #fff); font: 600 13px var(--f-ui); }
+.nr-q { color: rgb(237 239 243 / .72); font: 400 14.5px/1.35 var(--f-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-row.shut .nr-who, .nt-row.shut .nr-q { color: rgb(237 239 243 / .45); }
+.night .go { background: #EDEFF3; color: #0B0D12; }
+/* membaca satu malam menurut jam */
+.nh-night .nw-k { font: 900 30px/1 var(--f-dot); letter-spacing: -.02em; text-transform: uppercase; color: var(--nb); }
+.nh-night .rail { position: sticky; top: calc(var(--qm-top-h, 60px) + 4px); z-index: 5; margin: 16px 0 0; padding: 0 10px; border-radius: 14px; background: color-mix(in srgb, var(--paper) 86%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink); }
+.nh-night .rl-dot { transition: box-shadow .4s ease, background .4s ease; }
+.nights { display: grid; gap: 8px; }
+.nt-note { --nb: var(--ink); }
+.nn-clock { display: flex; align-items: baseline; gap: 12px; margin: 26px 0 6px; }
+.nn-clock b { font: 900 clamp(40px, 12vw, 64px)/1 var(--f-dot); letter-spacing: -.04em; color: var(--nb); }
+.nn-clock span { color: var(--muted); font: 600 11.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; }
+.nt-note .n-who { margin: 0 0 12px; }
+.nt-note .n-who a { font: 900 22px/1 var(--f-dot); color: var(--nb); }
+.nt-note .n-who span { font: 400 17px var(--f-text); color: var(--ink); }
+.nn-shut { padding: 16px 18px; border-radius: 18px; background: var(--btn); color: var(--muted); font: 14px var(--f-ui); }
+
+/* kartu orang */
+.who-dialog .dialog-head { position: absolute; right: 0; top: 0; z-index: 2; padding: 14px; }
+.who-body { padding: 22px 20px 20px; overflow: auto; max-height: calc(100dvh - 60px); }
+.wc-head h2 { margin: 6px 0 0; font: 900 clamp(36px, 10vw, 52px)/.9 var(--f-dot); letter-spacing: -.03em; text-transform: uppercase; color: var(--nb); }
+.wc-head .cd-k { margin: 0; color: var(--muted); font: 600 11.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; }
+.wc-lede { margin: 12px 0 0; font: 400 17px/1.45 var(--f-text); }
+.wc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin: 18px 0 8px; }
+.wc-stats div { padding: 10px 12px; border-radius: 14px; background: var(--btn); }
+.wc-stats dt { color: var(--muted); font: 600 10.5px var(--f-ui); letter-spacing: .06em; text-transform: uppercase; }
+.wc-stats dd { margin: 4px 0 0; font: 900 20px/1 var(--f-dot); letter-spacing: -.02em; }
+.wc-stats small { color: var(--muted); font: 500 12px var(--f-ui); letter-spacing: 0; }
+.wc-bar { display: block; height: 4px; border-radius: 2px; background: var(--btn); overflow: hidden; }
+.wc-bar i { display: block; height: 100%; width: calc(var(--r) * 100%); background: var(--accent); }
+.wc-two { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: center; margin: 14px 0 0; }
+.wc-clock { margin: 0; text-align: center; }
+.wc-clock svg { width: 150px; height: 150px; }
+.wc-clock .ring { fill: none; stroke: var(--line); stroke-width: 10; }
+.wc-clock line { stroke: var(--muted); stroke-width: 1.2; }
+.wc-clock text { fill: var(--muted); font: 600 9px var(--f-ui); text-anchor: middle; }
+.wc-clock circle:not(.ring) { fill: none; stroke: var(--nb, var(--ink)); stroke-width: 2; }
+.wc-clock circle.rd { fill: var(--nb, var(--ink)); }
+.wc-clock figcaption { color: var(--muted); font: 12px var(--f-ui); }
+.wc-webw .f-k { margin: 0 0 4px; }
+.wc-web { width: 100%; max-width: 260px; height: auto; overflow: visible; }
+.wc-web line { stroke-linecap: round; opacity: .55; }
+.wc-web .me { stroke: var(--paper); stroke-width: 3; }
+.wc-web text { fill: var(--ink); font: 600 10.5px var(--f-ui); text-anchor: middle; }
+.wc-p[data-who] { cursor: pointer; }
+.wc-p[data-who]:hover text, .wc-p[data-who]:focus-visible text { fill: var(--accent); }
+.wc-p:focus-visible { outline: none; }
+.wc-p.unk circle { fill: var(--btn); stroke: var(--muted); stroke-dasharray: 2 2; }
+.wc-p.unk text { fill: var(--muted); }
+.wc-q { display: block; font: 400 17px/1.5 var(--f-text); }
+.wc-q::before { content: '“'; } .wc-q::after { content: '”'; }
+.wc-act { margin-top: 18px; }
+.n-who a[data-who] { cursor: pointer; text-decoration: underline 2px color-mix(in srgb, var(--nb) 0%, transparent); text-underline-offset: 6px; transition: text-decoration-color .3s ease; }
+.n-who a[data-who]:hover { text-decoration-color: color-mix(in srgb, var(--nb) 60%, transparent); }
+.p-card { margin-left: 8px; padding: 3px 10px; border: 0; border-radius: 10px; background: var(--btn); color: var(--muted); font: 600 11px var(--f-ui); letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+@media (max-width: 420px) { .wc-two { grid-template-columns: 1fr; justify-items: center; } }

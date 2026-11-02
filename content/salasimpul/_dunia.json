@@ -31,5 +31,114 @@
     "stability0": 5000,
     "retrievalBonus": 0.25,
     "retrievals": 0
+  },
+  "persona": {
+    "bagas": {
+      "lede": "Polisi muda. Baru sebulan di kantor, dan belum tahu cara bergaul dengan orang yang dijuluki Tembok.",
+      "since": {
+        "y": 2019,
+        "d": 126,
+        "label": "di kantor"
+      },
+      "room": "ruang"
+    },
+    "basri": {
+      "lede": "Pemilik toko antik, dengan bengkel di belakang.",
+      "room": "hujan"
+    },
+    "bayu": {
+      "lede": "Mulai menulis di ulang tahunnya yang keenam.",
+      "born": 2013,
+      "room": "malam"
+    },
+    "elian": {
+      "lede": "Baru pindah ke rumah kecil yang dapurnya menghadap timur.",
+      "born": 1994,
+      "room": "malam"
+    },
+    "elmar": {
+      "lede": "Penjaga pemakaman tua. Hafal nama-nama di tanahnya.",
+      "since": {
+        "y": 1996,
+        "d": 30,
+        "label": "di pemakaman"
+      },
+      "room": "angin"
+    },
+    "endah": {
+      "lede": "Menulis supaya tidak lupa nama mana yang sudah ia pakai untuk siapa.",
+      "room": "jalan"
+    },
+    "hesti": {
+      "lede": "Menulis kepada anaknya. Setiap catatannya dimulai dengan Nak.",
+      "since": {
+        "y": 2023,
+        "d": 303,
+        "unit": "hari",
+        "label": "dihitung tiap pagi"
+      },
+      "room": "jam"
+    },
+    "inah": {
+      "lede": "Tetangga yang mulutnya jalan duluan.",
+      "room": "malam"
+    },
+    "joni": {
+      "lede": "Partner pertama Karman. Bicara delapan jam kalau gugup.",
+      "born": 1966,
+      "room": "jalan"
+    },
+    "karman": {
+      "lede": "Polisi. Di kantor ia dijuluki Tembok.",
+      "born": 1961,
+      "since": {
+        "y": 1987,
+        "d": 1,
+        "label": "sejak hari pertama"
+      },
+      "room": "ruang"
+    },
+    "laras": {
+      "lede": "Mulai menulis di buku tulis kotak-kotak, umur sepuluh.",
+      "born": 1977,
+      "room": "jam"
+    },
+    "lestari": {
+      "lede": "Istri lelaki yang dijuluki Tembok. Ada radio yang menyala di dapurnya.",
+      "room": "radio"
+    },
+    "lira": {
+      "lede": "Menghitung berapa orang yang menjawab sapaannya.",
+      "born": 2016,
+      "room": "malam"
+    },
+    "nara": {
+      "lede": "Ingatan pertamanya bunyi, bukan gambar.",
+      "born": 1994,
+      "room": "radio"
+    },
+    "rasmi": {
+      "lede": "Ibu Sukrim. Jualan kue, menghitung uang di meja tiap malam.",
+      "room": "malam"
+    },
+    "ratih": {
+      "lede": "Menelungkupkan gelas, seperti ibunya, tanpa tahu kenapa.",
+      "room": "malam"
+    },
+    "sukrim": {
+      "lede": "Anak penjual kue yang mengambil barang kecil-kecil. Kadang dipanggil Krim.",
+      "born": 1969,
+      "room": "jalan"
+    },
+    "wardi": {
+      "lede": "Menghitung hari setiap pagi, sebelum sempat memutuskan untuk tidak menghitung.",
+      "since": {
+        "y": 2023,
+        "d": 303,
+        "unit": "hari",
+        "label": "dihitung tiap pagi"
+      },
+      "room": "jam"
+    }
   }
 }

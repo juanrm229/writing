@@ -39,7 +39,7 @@
     $('#tabAngle').textContent = 'Angle'; $('#tabBook').textContent = 'Your edit'; $('label[for=cityRange]').firstChild.textContent = 'The city in ';
     $('#tabScore').textContent = 'Score'; $('#scoreHint').textContent = 'Tap a name to highlight someone. Tap a dot to peek.'; $('#tabPeople').textContent = 'People'; $('#tabTime').textContent = 'Time';
     $('#knowKick').textContent = 'What you know';
-    $('#openLabel').textContent = 'Open city'; $('#resetLabel').textContent = 'Your memory of this city'; $('#reset').textContent = 'Start from zero';
+    $('#openLabel').textContent = 'Open city'; $('#soundLabel').textContent = 'Sound of the rooms'; $('#resetLabel').textContent = 'Your memory of this city'; $('#reset').textContent = 'Start from zero';
   }
   $('#openKnow').setAttribute('aria-label', t('Yang kamu tahu', 'What you know'));
 
@@ -70,6 +70,24 @@
     touches.set(e.id, who); linksTo.set(e.id, out);
   });
   const ALL_PROPS = Object.keys(PROPS).length;
+  // ciri tiap penulis (persona di _dunia.json): umur, hitungan yang ia bawa, ruangan tempat ia menulis
+  const PER = W.persona || {};
+  const ageAt = (o, at) => (PER[o] && PER[o].born ? at.y - PER[o].born : null);
+  function sinceAt(o, at) {
+    const sc = PER[o] && PER[o].since; if (!sc) return null;
+    const days = Math.round((dateOf(at) - dateOf(sc)) / 864e5);
+    if (days < 0 || (sc.unit === 'hari' && days === 0)) return null;
+    if (sc.unit === 'hari') return { n: days, u: t('hari', days > 1 ? 'days' : 'day'), label: sc.label };
+    if (days < 365) { const m = Math.max(1, Math.round(days / 30.44)); return { n: m, u: t('bulan', m > 1 ? 'months' : 'month'), label: sc.label }; }
+    const y = Math.floor(days / 365.25); return { n: y, u: t('tahun', y > 1 ? 'years' : 'year'), label: sc.label };
+  }
+  // catatan yang ditulis pada hari yang sama, diurutkan menurut jam
+  const NIGHT = new Map();
+  E.forEach(e => { const k = `${e.at.y}-${e.at.d}`; (NIGHT.get(k) || NIGHT.set(k, []).get(k)).push(e); });
+  NIGHT.forEach(l => l.sort((a, b) => (a.at.h ?? 99) - (b.at.h ?? 99)));
+  const nightOf = e => NIGHT.get(`${e.at.y}-${e.at.d}`) || [e];
+  const hh = h => (h == null ? '' : String(h).padStart(2, '0') + '.00');
+  const isNight = list => list.every(x => x.at.h == null || x.at.h >= 17 || x.at.h < 6);
 
   /* ---------- ingatan pembaca ---------- */
   const blank = () => ({ v: 1, read: {}, early: {}, known: {}, last: null, open: false, recall: {}, book: [], strand: [] });
@@ -234,7 +252,7 @@
   function people() {
     $('#panePeople').innerHTML = `<div class="people">${laneOrder.map(p => {
       const list = ofOwner[p.id], r = list.filter(e => isRead(e.id)).length, o = list.filter(e => state(e).open).length;
-      return `<details class="person" data-o="${p.id}"><summary><b>${esc(p.name)}</b><span class="p-y">${list[0].at.y}–${list[list.length - 1].at.y}</span><span class="p-m"><i style="--r:${r / list.length};--o:${o / list.length}"></i></span><small>${esc(t(`${r} dibaca · ${o} terbuka · ${list.length} catatan`, `${r} read · ${o} open · ${list.length} notes`))}</small></summary><div class="rows">${list.map(row).join('')}</div></details>`;
+      return `<details class="person" data-o="${p.id}"><summary><b>${esc(p.name)}</b><button type="button" class="p-card" data-who="${p.id}" aria-label="${esc(t(`Kartu ${p.name}`, `${p.name}’s card`))}">${esc(t('kartu', 'card'))}</button><span class="p-y">${list[0].at.y}–${list[list.length - 1].at.y}</span><span class="p-m"><i style="--r:${r / list.length};--o:${o / list.length}"></i></span><small>${esc(t(`${r} dibaca · ${o} terbuka · ${list.length} catatan`, `${r} read · ${o} open · ${list.length} notes`))}</small></summary><div class="rows">${list.map(row).join('')}</div></details>`;
     }).join('')}</div>`;
   }
   function timeline() {
@@ -291,7 +309,7 @@
   // membaca suntingan (milikmu, atau yang dibagikan lewat tautan) sebagai satu buku
   function readBook(ids, shared) {
     const list = ids.map(id => BY.get(id)).filter(Boolean);
-    note.dataset.owner = ''; note.style.removeProperty('--nb'); sky(null);
+    note.dataset.owner = ''; delete note.dataset.young; note.style.removeProperty('--nb'); sky(null); sound(list[0] || null);
     note.innerHTML = `<header class="n-head"><p class="n-who"><a href="#kota">${esc(shared ? t('Suntingan seseorang', 'Someone’s edit') : t('Suntinganmu', 'Your edit'))}</a><span>${esc(t(`${list.length} catatan`, `${list.length} notes`))}</span></p><h2>${esc(t('Salasimpul, disunting', 'Salasimpul, edited'))}</h2></header><div class="bk-read" id="bkRead"></div><footer class="n-foot"><div class="f-act">${shared ? `<button type="button" class="go" id="bkKeep">${esc(t('Simpan sebagai suntinganku', 'Keep as my edit'))}</button>` : ''}<a class="ghost" href="#kota">${esc(t('Kembali ke kota', 'Back to the city'))}</a></div></footer>`;
     const host = $('#bkRead');
     list.forEach(e => {
@@ -409,12 +427,13 @@
     knot: t('Kamu menarik benang dari', 'You pulled a thread from'), echo: t('Kamu mengikuti gema dari', 'You followed an echo from'),
     book: t('Lanjut di buku yang sama, dari', 'On in the same notebook, from'), back: t('Mundur di buku yang sama, dari', 'Back in the same notebook, from'),
     time: t('Sementara itu di kota, setelah', 'Meanwhile in the town, after'), in: t('Mundur ke yang menyimpul ke', 'Back to what knotted into'),
+    night: t('Di malam yang sama, setelah', 'The same night, after'),
     go: t('Lalu, setelah', 'Then, after')
   };
   // lompatan waktu di antara dua catatan: angka besar dan satuannya
   function gapOf(a, b) {
     const days = Math.round((dateOf(b.at) - dateOf(a.at)) / 864e5), ad = Math.abs(days), fwd = days >= 0;
-    if (ad === 0) return { n: '0', u: t('hari yang sama', 'the same day') };
+    if (ad === 0) { const dh = a.at.h != null && b.at.h != null ? b.at.h - a.at.h : 0; return dh ? { n: (dh > 0 ? '+' : '−') + Math.abs(dh), u: EN ? `hour${Math.abs(dh) > 1 ? 's' : ''} ${dh > 0 ? 'later' : 'earlier'}` : `jam ${dh > 0 ? 'kemudian' : 'sebelumnya'}` } : { n: '0', u: t('hari yang sama', 'the same day') }; }
     const [n, u, uEn] = ad < 31 ? [ad, 'hari', 'day'] : ad < 365 ? [Math.max(1, Math.round(ad / 30.44)), 'bulan', 'month'] : [Math.round(ad / 365.25), 'tahun', 'year'];
     return { n: (fwd ? '+' : '−') + n, u: EN ? `${uEn}${n > 1 ? 's' : ''} ${fwd ? 'later' : 'earlier'}` : `${u} ${fwd ? 'kemudian' : 'sebelumnya'}` };
   }
@@ -432,12 +451,13 @@
     const out = [], seen = new Set([e.id, skip]), add = (x, how) => { if (x && !seen.has(x.id)) { seen.add(x.id); out.push({ e: x, how }); } };
     const r = rank.get(e.id), list = ofOwner[e.owner], i = E.indexOf(e);
     [...linksTo.get(e.id)].sort((a, b) => isRead(a.id) - isRead(b.id)).slice(0, 2).forEach(l => add(BY.get(l.id), l.kind === 'echo' ? 'echo' : 'knot'));
+    nightOf(e).filter(x => x !== e && !isRead(x.id)).slice(0, 1).forEach(x => add(x, 'night'));
     add(list[r + 1], 'book');
     add(E.slice(i + 1).find(x => x.owner !== e.owner && !isRead(x.id) && state(x).open) || E.slice(i + 1).find(x => x.owner !== e.owner && !isRead(x.id)), 'time');
     (linkedBy.get(e.id) || []).filter(l => !isRead(l.from)).forEach(l => out.length < 3 && add(BY.get(l.from), 'in'));
     return out.slice(0, 4);
   }
-  const FORK = { knot: t('Tarik benangnya', 'Pull the thread'), echo: t('Ikuti gemanya', 'Follow the echo'), time: t('Sementara itu', 'Meanwhile'), in: t('Yang menyimpul ke sini', 'What knotted here') };
+  const FORK = { night: t('Malam itu juga', 'That same night'), knot: t('Tarik benangnya', 'Pull the thread'), echo: t('Ikuti gemanya', 'Follow the echo'), time: t('Sementara itu', 'Meanwhile'), in: t('Yang menyimpul ke sini', 'What knotted here') };
   function forkHTML(e, skip) {
     const cs = choices(e, skip);
     if (!cs.length) return `<nav class="fork" id="fork" aria-label="${esc(t('Ke mana sekarang', 'Where now'))}"><p class="fork-k">${esc(t('Benang ini berhenti di sini', 'This thread stops here'))}</p><div class="f-row"><a class="go" href="#">${esc(t('Buka jendela lain', 'Open another window'))}</a><a class="ghost" href="#kota">${esc(t('Lihat kotanya', 'See the city'))}</a></div></nav>`;
@@ -448,6 +468,58 @@
     }).join('')}</div></nav>`;
   }
   const knotPill = l => { const to = BY.get(l.id), st = state(to); return `<a class="knot ${st.read ? 'read' : st.open ? 'open' : 'shut'}${l.kind === 'echo' ? ' echo' : ''}" href="#c-${l.id}" style="--fk:${inkOf(to.owner)}"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6C7 0 9 12 16 6"/><circle cx="22" cy="6" r="3.4"/></svg><b>${esc(NAME[to.owner])}</b><span>${esc(String(to.at.y))}${st.read ? ' · ' + esc(t('dibaca', 'read')) : ''}</span></a>`; };
+
+  // tanda tangan di kepala catatan: umur penulis dan hitungan yang ia bawa
+  function sigHTML(e) {
+    const age = ageAt(e.owner, e.at), sc = sinceAt(e.owner, e.at);
+    if (age == null && !sc) return '';
+    return `<p class="n-sig">${age != null ? `<span class="n-age"><b>${age}</b>${esc(t(' tahun', ' years old'))}</span>` : ''}${sc ? `<span class="n-since"><b>${sc.n}</b> ${esc(sc.u)} ${esc(sc.label)}</span>` : ''}</p>`;
+  }
+  // malam yang sama: siapa lagi yang menulis hari itu, pada jam berapa
+  function railHTML(list, here) {
+    const hs = list.map(x => x.at.h).filter(h => h != null);
+    if (!hs.length) return '';
+    let a = Math.min(...hs) - 1, b = Math.max(...hs) + 1; if (b - a < 4) { a -= 1; b += 1; }
+    const X = h => ((h - a) / (b - a) * 100).toFixed(2);
+    const ticks = []; for (let h = Math.ceil(a); h <= b; h++) ticks.push(`<i style="left:${X(h)}%"${h % 3 ? '' : ' class="lab"'}>${h % 3 ? '' : `<span>${hh((h + 24) % 24)}</span>`}</i>`);
+    return `<div class="rail" aria-hidden="true"><span class="rl-line"></span>${ticks.join('')}${list.filter(x => x.at.h != null).map(x => `<b class="rl-dot${x === here ? ' here' : ''}${isRead(x.id) ? ' read' : ''}" style="left:${X(x.at.h)}%;--fk:${inkOf(x.owner)}"></b>`).join('')}</div>`;
+  }
+  function nightHTML(e) {
+    const list = nightOf(e); if (list.length < 2) return '';
+    const others = list.filter(x => x !== e);
+    return `<section class="night" id="night" style="--nb:${inkOf(e.owner)}"><p class="night-k">${esc(isNight(list) ? t('Malam itu juga', 'That same night') : t('Hari itu juga', 'That same day'))}</p>
+      <p class="night-l">${esc(t(`${list.length} orang menulis pada ${fmtDate(e.at)}.`, `${list.length} people wrote on ${fmtDate(e.at)}.`))}</p>${railHTML(list, e)}
+      <div class="nt-rows">${others.map(x => { const st = state(x); return `<a class="nt-row ${st.read ? 'read' : st.open ? 'open' : 'shut'}" href="#c-${x.id}" data-how="night" style="--fk:${inkOf(x.owner)}"><b class="nr-h">${esc(hh(x.at.h))}</b><span class="nr-who">${esc(st.open ? NAME[x.owner] : t('Seseorang', 'Someone'))}</span><span class="nr-q">${esc(st.open ? firstLine(x) : t('belum kamu kenal', 'not known yet'))}</span></a>`; }).join('')}</div>
+      <a class="go sm" href="#malam-${e.at.y}-${e.at.d}" id="nightGo">${esc(isNight(list) ? t('Baca malam ini menurut jam', 'Read this night by the clock') : t('Baca hari ini menurut jam', 'Read this day by the clock'))}</a></section>`;
+  }
+  // malam ini, menurut jam: semua catatan hari itu dalam satu gulungan, satu jam demi satu jam
+  function readNight(y, d) {
+    const list = NIGHT.get(`${y}-${d}`); if (!list) return go(null);
+    const first = list[0];
+    note.dataset.owner = ''; delete note.dataset.young; note.style.setProperty('--nb', inkOf(first.owner)); sky(first.at.h); sound(first);
+    note.innerHTML = `<header class="n-head nh-night"><p class="n-who"><span class="nw-k">${esc(isNight(list) ? t('Satu malam', 'One night') : t('Satu hari', 'One day'))}</span><span>${esc(t(`${list.length} orang`, `${list.length} people`))}</span></p><h2>${esc(fmtDate(first.at))}</h2>${railHTML(list, null)}</header><div class="nights" id="nights"></div>
+      <footer class="n-foot"><div class="f-row"><a class="ghost sm" href="#c-${(S.last && BY.has(S.last)) ? S.last : first.id}">${esc(t('Kembali ke benangmu', 'Back to your thread'))}</a><a class="ghost sm" href="#kota">${esc(t('Peta kota', 'Town map'))}</a></div></footer>`;
+    const host = $('#nights');
+    list.forEach((x, i) => {
+      const st = state(x), sec = document.createElement('section');
+      sec.className = 'nt-note' + (st.open ? '' : ' shut'); sec.style.setProperty('--nb', inkOf(x.owner)); sec.dataset.id = x.id;
+      const gap = i ? gapOf(list[i - 1], x) : null;
+      sec.innerHTML = `<p class="nn-clock"><b>${esc(hh(x.at.h) || '—')}</b>${gap && gap.n !== '0' ? `<span>${esc(gap.n + ' ' + gap.u)}</span>` : ''}</p><p class="n-who"><a href="#c-${x.id}">${esc(st.open ? NAME[x.owner] : t('Seseorang', 'Someone'))}</a>${st.open ? `<span>${esc(x.title)}</span>` : ''}</p>`;
+      if (st.open) { const body = document.createElement('div'); body.className = 'n-body'; x.p.forEach((p, pi) => body.append(para(p, x, pi))); sec.append(body); if (!isRead(x.id)) { S.read[x.id] = Date.now(); delete S.early[x.id]; } }
+      else sec.insertAdjacentHTML('beforeend', `<p class="nn-shut">${esc(st.key ? t('Catatan ini menunggu sesuatu yang belum kamu ketahui.', 'This note waits for something you do not know yet.') : t('Kamu belum cukup kenal orang ini.', 'You do not know this person well enough yet.'))} <a href="#c-${x.id}">${esc(t('Lihat', 'Look'))}</a></p>`);
+      host.append(sec);
+    });
+    save(); pending = $$('#nights .s.cl'); show('note'); light(); paintCount(); requestAnimationFrame(learnSeen);
+    $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on');
+    // suara mengikuti catatan yang sedang di tengah layar
+    nightSecs = $$('#nights .nt-note');
+  }
+  let nightSecs = [];
+  addEventListener('scroll', () => {
+    if (note.hidden || !nightSecs.length || !nightSecs[0].isConnected) return;
+    const mid = innerHeight * .45, cur = nightSecs.filter(x => x.getBoundingClientRect().top < mid).pop() || nightSecs[0], e = BY.get(cur.dataset.id);
+    if (e && note.dataset.nightAt !== e.id) { note.dataset.nightAt = e.id; note.style.setProperty('--nb', inkOf(e.owner)); sky(e.at.h); sound(e); $$('#note .nh-night .rl-dot').forEach((d, i) => d.classList.toggle('here', nightSecs[i] === cur)); }
+  }, { passive: true });
 
   function open(id, pulled) {
     const e = BY.get(id); if (!e) return go(null);
@@ -465,11 +537,12 @@
     const how = shown[shown.length - 1].how;
     note.dataset.owner = e.owner;
     note.style.setProperty('--nb', inkOf(e.owner));
-    sky(e.at.h);
+    const age = ageAt(e.owner, e.at); if (age != null && age < 13) note.dataset.young = ''; else delete note.dataset.young;
+    sky(e.at.h); sound(e);
     tieN = 0;
     let threadHTML = before ? `<p class="st-more">${esc(t(`${before} catatan sebelumnya di benangmu`, `${before} earlier notes on your thread`))}</p>` : '';
     for (let k = 0; k < shown.length - 1; k++) { const a = BY.get(shown[k].id); threadHTML += foldHTML(a); if (k < shown.length - 2) threadHTML += tieHTML(a, BY.get(shown[k + 1].id), shown[k + 1].how, false); }
-    note.innerHTML = `${shown.length > 1 ? `<div class="strand" id="strand">${threadHTML}</div>${tieHTML(prev, e, how, true)}` : ''}<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date"><span>${esc(fmtDate(e.at))}</span>${e.at.h != null ? `<b class="n-hour">${String(e.at.h).padStart(2, '0')}.00</b>` : ''}</p><h2>${esc(e.title)}</h2></header>
+    note.innerHTML = `${shown.length > 1 ? `<div class="strand" id="strand">${threadHTML}</div>${tieHTML(prev, e, how, true)}` : ''}<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}" data-who="${e.owner}" aria-haspopup="dialog">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date"><span>${esc(fmtDate(e.at))}</span>${e.at.h != null ? `<b class="n-hour">${String(e.at.h).padStart(2, '0')}.00</b>` : ''}</p>${sigHTML(e)}<h2>${esc(e.title)}</h2></header>
       <div class="n-body" id="nBody"></div>
       <div id="forkHost"></div>
       <footer class="n-foot" id="nFoot"></footer>
@@ -486,6 +559,7 @@
         if (ls.length) body.insertAdjacentHTML('beforeend', `<div class="knots inline" aria-label="${esc(t('Simpul dari paragraf ini', 'Knots from this paragraph'))}">${ls.map(knotPill).join('')}</div>`);
       });
       markRead(e);
+      $('#forkHost').insertAdjacentHTML('beforebegin', nightHTML(e));
       $('#forkHost').outerHTML = forkHTML(e, prev?.id);
     }
     $('#forkHost')?.remove();
@@ -535,8 +609,8 @@
     const line = innerHeight - 48;
     pending = pending.filter(span => {
       if (span.getBoundingClientRect().top > line) return true;
-      const fresh = span.dataset.claims.split(' ').filter(p => !knows(p));
-      if (fresh.length) { fresh.forEach(p => { S.known[p] = learnFrom; }); save(); span.classList.add('learned'); light(); flashback(fresh, learnFrom); $('#announcement').textContent = t('Kamu tahu sesuatu yang baru.', 'You know something new.'); }
+      const fresh = span.dataset.claims.split(' ').filter(p => !knows(p)), src = (span.dataset.k || '').split(':')[0] || learnFrom;
+      if (fresh.length) { fresh.forEach(p => { S.known[p] = src; }); save(); span.classList.add('learned'); light(); flashback(fresh, src); $('#announcement').textContent = t('Kamu tahu sesuatu yang baru.', 'You know something new.'); }
       return false;
     });
   }
@@ -596,6 +670,66 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePop(); });
   document.addEventListener('click', e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest('.s.ir')) closePop(); });
 
+  /* ---------- kartu orang: siapa dia, kapan ia menulis, siapa di sekitarnya ---------- */
+  const whoDlg = $('#whoDialog');
+  const met = o => ofOwner[o].some(e => isRead(e.id));
+  // ikatan dua orang: catatan yang satu menyebut atau menyimpul ke yang lain, dua arah
+  function ties(o) {
+    const w = {};
+    E.forEach(e => { if (e.owner === o) touches.get(e.id).forEach(x => { w[x] = (w[x] || 0) + 1; }); else if (touches.get(e.id).has(o)) w[e.owner] = (w[e.owner] || 0) + 1; });
+    return Object.entries(w).sort((a, b) => b[1] - a[1]);
+  }
+  function clockHTML(o) {
+    const list = ofOwner[o], R = 52, C = 64;
+    const pos = h => { const a = (h / 24) * Math.PI * 2 - Math.PI / 2; return [C + Math.cos(a) * R, C + Math.sin(a) * R]; };
+    const count = {}; list.forEach(e => { if (e.at.h != null) count[e.at.h] = (count[e.at.h] || 0) + 1; });
+    const top = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+    const marks = [0, 6, 12, 18].map(h => { const [x, y] = pos(h), [lx, ly] = [C + (x - C) * 1.32, C + (y - C) * 1.32]; return `<line x1="${C + (x - C) * .9}" y1="${C + (y - C) * .9}" x2="${x}" y2="${y}"/><text x="${lx}" y="${ly + 3}">${String(h).padStart(2, '0')}</text>`; }).join('');
+    const dots = Object.entries(count).map(([h, n]) => { const [x, y] = pos(+h), rd = list.some(e => e.at.h === +h && isRead(e.id)); return `<circle class="${rd ? 'rd' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(3 + Math.sqrt(n) * 2.2).toFixed(1)}"/>`; }).join('');
+    return `<figure class="wc-clock"><svg viewBox="-14 -14 156 156" role="img" aria-label="${esc(t(`Jam ${NAME[o]} menulis`, `When ${NAME[o]} writes`))}"><circle class="ring" cx="${C}" cy="${C}" r="${R}"/>${marks}${dots}</svg><figcaption>${top ? esc(t(`Paling sering pukul ${hh(+top[0])}`, `Most often at ${hh(+top[0])}`)) : ''}</figcaption></figure>`;
+  }
+  function webHTML(o) {
+    const tt = ties(o).slice(0, 8), C = 110, max = Math.max(1, ...tt.map(x => x[1]));
+    const pts = tt.map(([x, n], i) => { const a = (i / tt.length) * Math.PI * 2 - Math.PI / 2, r = 78 - (n / max) * 22; return { x, n, px: C + Math.cos(a) * r * 1.25, py: C + Math.sin(a) * r }; });
+    return `<svg class="wc-web" viewBox="0 0 220 220" role="group" aria-label="${esc(t(`Orang di sekitar ${NAME[o]}`, `People around ${NAME[o]}`))}">${pts.map(q => `<line x1="${C}" y1="${C}" x2="${q.px.toFixed(1)}" y2="${q.py.toFixed(1)}" style="stroke:${inkOf(q.x)};stroke-width:${(1 + q.n / max * 3.5).toFixed(1)}"/>`).join('')}
+      <circle class="me" cx="${C}" cy="${C}" r="9" style="fill:${inkOf(o)}"/>${pts.map(q => met(q.x) ? `<g class="wc-p" data-who="${q.x}" tabindex="0" role="button" aria-label="${esc(NAME[q.x])}"><circle cx="${q.px.toFixed(1)}" cy="${q.py.toFixed(1)}" r="5" style="fill:${inkOf(q.x)}"/><text x="${q.px.toFixed(1)}" y="${(q.py + (q.py > C ? 17 : -10)).toFixed(1)}">${esc(NAME[q.x])}</text></g>` : `<g class="wc-p unk"><circle cx="${q.px.toFixed(1)}" cy="${q.py.toFixed(1)}" r="4"/><text x="${q.px.toFixed(1)}" y="${(q.py + (q.py > C ? 16 : -9)).toFixed(1)}">?</text></g>`).join('')}</svg>`;
+  }
+  function who(o) {
+    const list = ofOwner[o], r = list.filter(e => isRead(e.id)).length, m = met(o), per = PER[o] || {};
+    const ages = per.born ? [list[0].at.y - per.born, list[list.length - 1].at.y - per.born] : null;
+    const lastRead = [...list].reverse().find(e => isRead(e.id)), sc = lastRead && sinceAt(o, lastRead.at);
+    const next = list.find(e => !isRead(e.id) && state(e).open);
+    $('#whoBody').innerHTML = `<div class="wc-head" style="--nb:${inkOf(o)}"><p class="cd-k">${esc(t('Orang di kota ini', 'Someone in this town'))}</p><h2 id="whoTitle">${esc(m ? NAME[o] : t('Seseorang', 'Someone'))}</h2>${m && per.lede ? `<p class="wc-lede">${esc(per.lede)}</p>` : ''}</div>
+      <dl class="wc-stats"><div><dt>${esc(t('Menulis', 'Writes'))}</dt><dd>${list[0].at.y}–${list[list.length - 1].at.y}</dd></div><div><dt>${esc(t('Catatan', 'Notes'))}</dt><dd>${r}<small>/${list.length}</small></dd></div>${m && ages ? `<div><dt>${esc(t('Umur di bukunya', 'Age in the notebook'))}</dt><dd>${ages[0]}–${ages[1]}</dd></div>` : ''}${m && sc ? `<div><dt>${esc(sc.label)}</dt><dd>${sc.n}<small> ${esc(sc.u)}</small></dd></div>` : ''}</dl>
+      <span class="wc-bar"><i style="--r:${r / list.length}"></i></span>
+      ${m ? `<div class="wc-two">${clockHTML(o)}<div class="wc-webw"><p class="f-k">${esc(t('Orang di sekitarnya', 'People around them'))}</p>${webHTML(o)}</div></div>
+      <p class="f-k">${esc(t('Kalimat pertamanya', 'Their first sentence'))}</p><q class="wc-q">${esc(firstLine(list[0]))}</q>` : `<p class="wc-lede">${esc(t(`Kamu belum membaca satu pun catatannya. Ia menulis ${list.length} catatan.`, `You have not read any of their notes yet. They wrote ${list.length}.`))}</p>`}
+      <div class="f-row wc-act">${next ? `<a class="go sm" href="#c-${next.id}">${esc(t('Catatan berikutnya', 'Next note'))}</a>` : ''}<a class="ghost sm" href="#orang-${o}">${esc(t('Semua catatannya', 'All their notes'))}</a>${m ? `<button type="button" class="ghost sm" data-angle="${o}">${esc(t('Kota dari sudutnya', 'The town from their angle'))}</button>` : ''}</div>`;
+    whoDlg.dataset.o = o; $('#whoBody').style.setProperty('--nb', inkOf(o));
+    if (!whoDlg.open) whoDlg.showModal();
+  }
+  whoDlg.addEventListener('click', e => {
+    if (e.target === whoDlg || e.target.closest('[data-close]')) return whoDlg.close();
+    const p = e.target.closest('.wc-p[data-who]'); if (p) return who(p.dataset.who);
+    const a = e.target.closest('[data-angle]'); if (a) { angleOf = a.dataset.angle; store.set('simpul:angle', angleOf); whoDlg.close(); location.hash = 'sudut'; return; }
+    if (e.target.closest('a[href^="#"]')) whoDlg.close();
+  });
+  whoDlg.addEventListener('keydown', e => { const p = e.target.closest('.wc-p[data-who]'); if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); who(p.dataset.who); } });
+  document.addEventListener('click', e => { const a = e.target.closest('#note [data-who], #panePeople [data-who]'); if (a) { e.preventDefault(); who(a.dataset.who); } });
+
+  /* ---------- suara ruangan ---------- */
+  const SND = window.SimpulSound;
+  const sound = e => { if (SND && SND.isOn()) SND.room(e ? (PER[e.owner] && PER[e.owner].room) || 'malam' : null, e ? e.at.h : null); };
+  const paintSound = () => { const b = $('#sound'); if (!b) return; const on = !!(SND && SND.isOn()); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? t('Hidup', 'On') : t('Mati', 'Off'); };
+  if (SND && SND.supported) {
+    $('#sound').onclick = () => { SND.setOn(!SND.isOn()); store.set('simpul:sound', SND.isOn()); paintSound(); const e = !note.hidden && BY.get(note.dataset.nightAt || note.dataset.id); sound(e || null); };
+    paintSound();
+  } else $('#soundRow')?.remove();
+  // suara yang dinyalakan di kunjungan lalu menyala lagi pada sentuhan pertama (peramban tidak mengizinkan bunyi sebelum itu)
+  if (SND && SND.supported && store.get('simpul:sound', false)) addEventListener('pointerdown', () => { if (!SND.isOn()) { SND.setOn(true); paintSound(); const e = !note.hidden && BY.get(note.dataset.nightAt || note.dataset.id); sound(e || null); } }, { once: true });
+  // membalik halaman: persimpangan, lipatan, dan malam yang sama
+  document.addEventListener('click', e => { if (e.target.closest('#fork .fk, .knots.inline .knot, .nt-row, #nightGo')) SND?.page(); }, true);
+
   /* ---------- yang kamu tahu ---------- */
   const knowDlg = $('#knowDialog');
   $('#openKnow').addEventListener('click', () => {
@@ -618,16 +752,17 @@
     closePop();
     if (h.startsWith('c-')) { const from = via; via = null; open(h.slice(2), from); return; }
     if (h === 'suntingan') { readBook(S.book, false); return; }
+    if (h.startsWith('malam-')) { const [y, d] = h.slice(6).split('-').map(Number); readNight(y, d); return; }
     if (h.startsWith('suntingan=')) { readBook(h.slice(10).split(',').filter(id => BY.has(id)), true); return; }
     $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on');
     if (h === 'kota' || h.startsWith('orang-') || h === 'sudut' || h === 'sunting') {
-      paintCity(); show('city');
+      paintCity(); show('city'); sound(null);
       const tab = h.startsWith('orang-') ? 'orang' : h === 'sudut' || h === 'sunting' ? h : store.get('simpul:tab', 'partitur');
       $(`#tabs [data-tab="${tab}"]`).click();
       if (h.startsWith('orang-')) { const d = $(`.person[data-o="${h.slice(6)}"]`); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }
       return;
     }
-    coverActs(); lanes($('#cvLanes'), 320, 120); show('cover'); sky(null);
+    coverActs(); lanes($('#cvLanes'), 320, 120); show('cover'); sky(null); sound(null);
   }
   addEventListener('hashchange', route);
   // menarik simpul: catatan asal diingat supaya benangnya bisa digambar
