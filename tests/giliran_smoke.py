@@ -200,6 +200,84 @@ class GiliranSmoke(unittest.TestCase):
         self.page.locator('#openSettings').click()
         self.assertTrue(self.page.locator('#plainLink').get_attribute('href').endswith('#baca-giliran'))
 
+    # --- pengembangan: tulisan yang dilengkapi, dua ruang, diam, langit, peta giliran ---
+
+    def test_unquoted_messages_and_unsaid_sentences_are_written_out(self):
+        self.open()
+        written = self.page.locator('.m-x')
+        self.assertGreaterEqual(written.count(), 8)
+        self.assertIn('pulang telat', self.page.locator('.win.chat').first.inner_text())
+        self.assertIn('Pemeriksaan kasus', self.page.locator('.win.mail').inner_text())
+        texts = self.page.locator('.unsaid span').all_inner_texts()
+        self.assertEqual(len(texts), 11)
+        self.assertTrue(all(x.strip() for x in texts))
+        self.assertIn('Sejak kapan?', texts)
+        # the reader's turn at the end is still empty
+        self.assertEqual(self.page.locator('.stumble .st i').count(), 3)
+
+    def test_turn_ribbon_counts_every_turn(self):
+        self.open()
+        self.choose()
+        said = self.page.locator('.story .balloon:not(.stumble)').count()
+        typed = self.page.locator('.story .m').count()
+        legend = self.page.locator('.rb-legend').inner_text()
+        self.assertIn(f'{said} diucapkan', legend)
+        self.assertIn(f'{typed} diketik', legend)
+        self.assertIn('11 tidak jadi diucapkan', legend)
+        self.assertEqual(self.page.locator('.rb-row i').count(), said + typed + 11 + 1)
+
+    def test_silence_is_counted_when_the_reader_stays_quiet(self):
+        self.open()
+        self.choose()
+        win = self.page.locator('[data-p="198"]').locator('xpath=ancestor::section[contains(@class,"win")]')
+        win.scroll_into_view_if_needed()
+        self.page.evaluate("scrollBy(0, 120)")
+        self.page.wait_for_function("document.documentElement.classList.contains('hush')")
+        self.page.wait_for_timeout(2300)
+        self.page.mouse.wheel(0, 200)
+        self.page.wait_for_selector('.silence')
+        self.assertRegex(self.page.locator('.silence').inner_text(), r'kalian diam 0\.0[2-9]')
+        self.assertFalse(self.page.evaluate("document.documentElement.classList.contains('hush')"))
+
+    def test_the_sky_follows_the_story_clock(self):
+        self.context.add_init_script("localStorage.setItem('jm:theme', JSON.stringify('light'))")
+        self.open()
+        self.choose()
+        self.page.locator('.scene[data-s="9"]').scroll_into_view_if_needed()
+        self.page.evaluate("scrollBy(0, 200)")
+        self.page.wait_for_function("document.documentElement.dataset.backdrop === 'fajar'")
+        self.page.locator('.scene[data-s="10"]').scroll_into_view_if_needed()
+        self.page.evaluate("scrollBy(0, 200)")
+        self.page.wait_for_function("document.documentElement.dataset.backdrop === 'siang'")
+
+    def test_two_rooms_on_a_wide_screen(self):
+        self.page.set_viewport_size({'width': 1280, 'height': 860})
+        self.open()
+        self.choose()
+        self.assertTrue(self.page.evaluate("document.documentElement.classList.contains('two-rooms')"))
+        self.page.locator('[data-p="23"]').locator('xpath=ancestor::section[contains(@class,"win")]').scroll_into_view_if_needed()
+        self.page.wait_for_function("document.getElementById('screen').textContent.includes('Apa yang ingin kamu sampaikan kepadanya?')")
+        screen = self.page.locator('#screen')
+        self.assertTrue(screen.is_visible())
+        self.assertIn('Sela', screen.locator('.w-bar').inner_text())
+        self.assertIn('Apa yang ingin kamu sampaikan kepadanya?', screen.inner_text())
+        self.assertEqual(screen.get_attribute('aria-hidden'), 'true')
+        # the flower-shop client is a different window from Kaca's case
+        self.assertNotIn('Semoga lancar', screen.inner_text())
+        # a phone call moves to the phone
+        self.page.locator('[data-p="213"]').locator('xpath=ancestor::section[contains(@class,"win")]').scroll_into_view_if_needed()
+        self.page.wait_for_function("document.getElementById('screen').dataset.dev === 'phone'")
+        # when there is no coaching window any more, the screen closes and one room is left
+        self.page.locator('[data-p="326"]').scroll_into_view_if_needed()
+        self.page.evaluate("scrollBy(0, 300)")
+        self.page.wait_for_function("document.documentElement.classList.contains('one-room')")
+        self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
+
+    def test_phones_keep_everything_in_the_flow(self):
+        self.open()
+        self.assertFalse(self.page.evaluate("document.documentElement.classList.contains('two-rooms')"))
+        self.assertTrue(self.page.locator('#screen').is_hidden())
+
     def test_an_edited_manuscript_still_shows_everything(self):
         work = json.loads(json.dumps(self.work))
         work['body'] = work['body'][:40] + ['“Kalimat baru,” kata Mira.', 'Paragraf baru.'] + work['body'][40:]

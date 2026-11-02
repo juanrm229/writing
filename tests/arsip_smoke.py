@@ -157,6 +157,7 @@ class ArsipSmoke(unittest.TestCase):
         self.page.reload(); self.page.wait_for_function("document.documentElement.hasAttribute('data-loaded')")
         self.assertEqual(self.page.locator('#ruangText').input_value(), 'Diam juga jawaban.')
         self.assertIn('Ruangmu', self.page.locator('#files').inner_text())
+        self.page.wait_for_selector('.jm-next[data-filled]')
         self.assertIn('The Room', self.page.locator('.jm-next').inner_text())
 
     # Umum
