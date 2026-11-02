@@ -367,7 +367,20 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - *Partitur*: satu garis per orang dan satu titik per catatan menurut urutan waktu, dengan benang di antara catatan yang menyimpul;
   - *Orang*: buku tiap orang, dengan seberapa jauh kamu mengenalnya;
   - *Waktu*: semua catatan, tahun demi tahun.
-- Di kaki setiap catatan ada simpul keluar dan masuk, catatan sebelum dan sesudahnya di buku yang sama, dan catatan sebelum dan sesudahnya di kota.
+- **Benang baca.** Jalan bacamu adalah satu benang (`jm:simpul.strand`).
+  - Catatan yang sudah lewat terlipat di atas catatan yang sedang dibaca: nama, tanggal, judul, dan kalimat pertamanya. Lipatan bisa dibuka lagi di tempat.
+  - Di antara dua catatan ada simpul berwarna tinta kedua penulisnya. Simpul itu menyebut bagaimana kamu sampai (*Kamu menarik benang dari …*, *Lanjut di buku yang sama*, *Sementara itu di kota*) dan seberapa jauh waktu melompat, misalnya **+11** tahun kemudian.
+  - Catatan baru muncul di bawah lipatan yang baru ditinggalkan, lalu halaman bergulir turun ke sana.
+  - Tombol kembali di peramban memotong benang di catatan yang dituju. Tujuh catatan terakhir ditampilkan, dan yang lebih lama disebut jumlahnya.
+- **Persimpangan.** Di akhir setiap catatan ada *Ke mana sekarang?* dengan paling banyak empat jalan. Setiap jalan menampilkan nama penulisnya dan kalimat pertamanya:
+  - *Tarik benangnya* atau *Ikuti gemanya*: simpul keluar, yang belum dibaca lebih dulu;
+  - *Lanjut di buku …*: catatan berikutnya dari orang yang sama;
+  - *Sementara itu*: catatan berikutnya dari orang lain yang terbuka dan belum dibaca;
+  - *Yang menyimpul ke sini*: simpul masuk yang belum dibaca.
+  - Catatan yang baru saja kamu tinggalkan tidak ditawarkan lagi. Catatan yang belum terbuka tetap tampil sebagai *Seseorang*, dengan alasannya.
+- Simpul di dalam teks tampil sebagai pil kecil berwarna tinta penulis tujuannya, supaya paragraf tidak terputus.
+- Di bawah persimpangan ada baris kecil: *Sebelumnya di buku …*, *Ingat dari tahun lain*, *＋ Suntinganmu*, dan *Peta kota*.
+- Di peramban yang mendukung animasi yang mengikuti gulir, tepi buku terisi tinta sejauh kamu membaca dan paragraf muncul saat kamu sampai. Tidak ada animasi kalau gerak dikurangi.
 - **Jendela-jendela.** Di sampul ada empat jendela berisi kalimat pertama orang-orang yang belum kamu kenal, tanpa nama ("seseorang · 1999"). Kamu memilih orang asing dari suaranya, dan namanya baru terungkap saat kamu masuk. *Jendela lain* mengacak ulang. Di kunjungan pertama, catatan pembuka (`start`) selalu ada di antaranya.
 - **Buku tiap orang.** Setiap penulis punya warna penanda sendiri di tepi halaman. Beberapa buku punya kertas sendiri: bergaris tepi untuk Karman, Bagas, dan Hesti; kotak untuk Ratih; bergaris untuk Joni, Bayu, dan Lira; kertas lama untuk Elmar, Rasmi, dan Inah.
 - **Langit mengikuti jam catatan ditulis.** Jam itu tampil dengan Doto, misalnya *23.00*.
@@ -380,7 +393,7 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - Tombol − dan + merapatkan atau merenggangkan waktu.
 - Banner di halaman Album dibuat tipis: satu baris berisi judul, garis kota, angka, dan panah.
 - **Ingatan yang memudar.**
-  - Di setiap catatan ada penggeser *Diingat pada*, dari tahun catatan ditulis sampai tahun terakhir dunia ini. Kalimat yang dilupakan penulisnya pada tahun itu memudar menjadi kabut.
+  - *Ingat dari tahun lain* di bawah setiap catatan membuka bilah di bawah layar dengan penggeser *Diingat pada*, dari tahun catatan ditulis sampai tahun terakhir dunia ini. Kalimat yang dilupakan penulisnya pada tahun itu memudar menjadi kabut, dan teksnya tetap terlihat di atas bilah. Menutup bilah mengembalikan teks utuh.
   - Kalimat `@protected` tetap tajam, dan tahun catatan ditulis menampilkan teks utuh.
   - Rumusnya R = e^(−t/S): t adalah hari sejak `memory.encodedAt` (atau tanggal catatan), S = `stability0` × (1 + `retrievalBonus` × `retrievals`). Catatan tanpa `memory` memakai ingatan bawaan `memory` di `_dunia.json`.
   - Kalimat yang memudar dipilih secara tetap, jadi kalimat yang sama selalu hilang pada ingatan yang sama.
@@ -392,7 +405,7 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - Halaman tidak pernah memutuskan siapa yang benar.
 - **Sudut.** Tab *Sudut* menampilkan kota dari satu orang, dengan Sukrim sebagai bawaan: catatannya sendiri diselingi kalimat orang lain yang menyebutnya, lengkap dengan jumlahnya.
 - **Suntinganmu.** Tab *Suntingan* adalah buku yang disusun pembaca sendiri.
-  - Tambahkan catatan lewat *＋ Masukkan ke suntinganmu* di kaki setiap catatan, atau sekaligus dari *Jejakmu* dan *Rantai yang disarankan* (`spine` di `_dunia.json`).
+  - Tambahkan catatan lewat *＋ Suntinganmu* di kaki setiap catatan, atau sekaligus dari *Jejakmu* dan *Rantai yang disarankan* (`spine` di `_dunia.json`).
   - Urutannya bisa digeser.
   - *Baca suntinganmu* menampilkannya sebagai satu buku. *Unduh .md* memberi berkas Markdown berisi teks catatan tanpa tanda.
   - *Salin tautan* membuat `#suntingan=id,id,…`. Penerima membaca suntingan itu sebagai satu buku dan bisa menyimpannya sebagai suntingannya sendiri.
