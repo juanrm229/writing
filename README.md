@@ -430,7 +430,12 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - Ketuk titik untuk mengintip judul dan kalimat pertamanya sebelum membaca.
   - *Jejakmu*: urutan bacamu digambar sebagai satu benang biru.
   - Tombol − dan + merapatkan atau merenggangkan waktu.
-- Banner di halaman Album dibuat tipis: satu baris berisi judul, garis kota, angka, dan panah.
+- **Banner di halaman Album** tetap tipis, berisi judul, garis kota, angka, dan panah.
+  - Garis kota memakai tinta tiap penulis, dengan titik-titik yang disebar menurut urutan catatan, bukan menurut tahun, supaya tahun-tahun yang ramai tidak bertumpuk.
+  - Beberapa benang berdenyut dan beberapa jendela berkedip. Animasi berhenti kalau gerak dikurangi.
+  - Di bawah garis, kalimat pertama orang-orang bergantian tanpa nama (*seseorang · 1993*).
+  - Setelah pembaca mulai membaca, catatan yang sudah dibaca menyala biru, dan angkanya berganti menjadi *kamu kenal 5 dari 18 orang · 6/187* dengan *Dunia · lanjutkan*.
+  - Datanya (`ids`, `at`, `links`, `inks`, `voices`) disusun oleh `node tools/salasimpul.js` di `content/salasimpul.meta.json`.
 - **Ingatan yang memudar.**
   - *Ingat dari tahun lain* di bawah setiap catatan membuka bilah di bawah layar dengan penggeser *Diingat pada*, dari tahun catatan ditulis sampai tahun terakhir dunia ini. Kalimat yang dilupakan penulisnya pada tahun itu memudar menjadi kabut, dan teksnya tetap terlihat di atas bilah. Menutup bilah mengembalikan teks utuh.
   - Kalimat `@protected` tetap tajam, dan tahun catatan ditulis menampilkan teks utuh.

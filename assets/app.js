@@ -3091,17 +3091,42 @@
   const sleeve = (a, size, spin) => `<span class="al-sleeve${spin ? ' on' : ''}"><span class="al-rec${spin ? ' spin' : ''}" style="--lc:${catOf(a.tracks[0].cat).ink}" aria-hidden="true"><i></i></span><canvas data-cover="${esc(a.id)}" data-size="${size}"></canvas></span>`;
   /* ---------- DUNIA: karya yang bukan album punya raknya sendiri di atas album (Salasimpul) ---------- */
   const worldReady = fetch('content/salasimpul.meta.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
-  const worldBanner = () => `<a class="wd-banner" href="dunia/salasimpul/${LANG === BASE ? '' : '?lang=' + LANG}" aria-label="${t('Salasimpul: catatan-catatan sebuah kota yang saling menyimpul', 'Salasimpul: the notes of a town, knotting into each other')}"><span class="wd-t"><span class="wd-k">${t('Dunia', 'A world')}</span><b>Salasimpul</b></span><svg class="wd-lanes" data-wd-lanes viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true"></svg><span class="wd-meta" data-wd-meta>…</span><span class="wd-go" aria-hidden="true">→</span></a>`;
+  const worldBanner = () => `<a class="wd-banner" href="dunia/salasimpul/${LANG === BASE ? '' : '?lang=' + LANG}" aria-label="${t('Salasimpul: catatan-catatan sebuah kota yang saling menyimpul', 'Salasimpul: the notes of a town, knotting into each other')}"><span class="wd-t"><span class="wd-k" data-wd-kick>${t('Dunia', 'A world')}</span><b>Salasimpul</b></span><span class="wd-mid"><svg class="wd-lanes" data-wd-lanes viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true"></svg><span class="wd-voice" data-wd-voice aria-hidden="true"></span></span><span class="wd-meta" data-wd-meta>…</span><span class="wd-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span></a>`;
+  // garis-garis kota: satu garis per penulis dengan tintanya, titik per catatan menurut urutan waktu, benang di antara catatan
+  // yang menyimpul. Beberapa benang berdenyut, beberapa jendela berkedip, dan catatan yang sudah kamu baca menyala biru.
+  // Di bawahnya kalimat pertama orang-orang, bergantian, tanpa nama.
   function fillWorld() {
     worldReady.then(m => {
       if (!m) { $$('.wd-banner').forEach(el => { el.hidden = true; }); return; }
-      $$('[data-wd-meta]').forEach(el => { el.textContent = `${m.people} ${t('orang', 'people')} · ${m.entries} ${t('catatan', 'notes')} · ${m.from}–${m.to}`; });
-      const X = y => 2 + (y - m.from) / Math.max(1, m.to + 1 - m.from) * 396, Y = i => 4 + i * (52 / Math.max(1, m.lanes.length - 1));
-      const svg = m.lanes.map((l, i) => `<line x1="0" x2="400" y1="${Y(i).toFixed(1)}" y2="${Y(i).toFixed(1)}"/>`).join('')
-        + m.knots.map(([a, ya, b, yb]) => { const x1 = X(ya), y1 = Y(a), x2 = X(yb), y2 = Y(b); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)}C${x1.toFixed(1)} ${((y1 + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${((y1 + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`; }).join('')
-        + m.lanes.map((l, i) => l.map(y => `<rect x="${(X(y) - .8).toFixed(1)}" y="${(Y(i) - .8).toFixed(1)}" width="1.6" height="1.6"/>`).join('')).join('');
+      let read = {};
+      try { read = (JSON.parse(localStorage.getItem('jm:simpul') || 'null') || {}).read || {}; } catch (e) { /* penyimpanan tidak tersedia */ }
+      const n = Object.keys(read).length, ids = m.ids || [], metN = ids.filter(l => l.some(id => read[id])).length;
+      $$('[data-wd-meta]').forEach(el => { el.textContent = n ? t(`kamu kenal ${metN} dari ${m.people} orang · ${n}/${m.entries}`, `you know ${metN} of ${m.people} people · ${n}/${m.entries}`) : `${m.people} ${t('orang', 'people')} · ${m.entries} ${t('catatan', 'notes')} · ${m.from}–${m.to}`; });
+      if (n) $$('[data-wd-kick]').forEach(el => { el.textContent = t('Dunia · lanjutkan', 'A world · continue'); });
+      const N = Math.max(2, m.entries), L = m.lanes.length, X = i => 4 + i / (N - 1) * 392, Y = l => 5 + l * (50 / Math.max(1, L - 1));
+      const at = m.at || m.lanes.map(l => l.map(y => Math.round((y - m.from) / Math.max(1, m.to + 1 - m.from) * (N - 1))));
+      const laneAt = new Map(); at.forEach((l, li) => l.forEach(i => laneAt.set(i, li)));
+      const ink = li => (m.inks || [])[li] || 'currentColor';
+      const seeded = k => { let h = 2166136261; for (const c of String(k)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+      const curve = (a, b) => { const x1 = X(a), y1 = Y(laneAt.get(a)), x2 = X(b), y2 = Y(laneAt.get(b)), my = ((y1 + y2) / 2).toFixed(1); return `M${x1.toFixed(1)} ${y1.toFixed(1)}C${x1.toFixed(1)} ${my} ${x2.toFixed(1)} ${my} ${x2.toFixed(1)} ${y2.toFixed(1)}`; };
+      const links = (m.links || []).filter(([a, b]) => laneAt.has(a) && laneAt.has(b));
+      const svg = m.lanes.map((l, li) => `<line x1="0" x2="400" y1="${Y(li).toFixed(1)}" y2="${Y(li).toFixed(1)}" style="--c:${ink(li)}"/>`).join('')
+        + links.map(([a, b]) => `<path class="th" d="${curve(a, b)}" style="--c:${ink(laneAt.get(a))}"/>`).join('')
+        + links.filter(([a, b]) => seeded(a + ':' + b) < .07).map(([a, b], k) => `<path class="pulse" pathLength="100" d="${curve(a, b)}" style="--c:${ink(laneAt.get(a))};--d:${(k * 1.7).toFixed(1)}s"/>`).join('')
+        + at.map((l, li) => l.map((i, k) => { const id = (ids[li] || [])[k], rd = id && read[id], tw = !rd && seeded(id || i) < .08; return `<path class="dt${rd ? ' rd' : ''}${tw ? ' tw' : ''}" d="M${X(i).toFixed(1)} ${Y(li).toFixed(1)}h.01" style="--c:${ink(li)}${tw ? `;--d:${(seeded(i + 'd') * 6).toFixed(1)}s` : ''}"/>`; }).join('')).join('');
       $$('[data-wd-lanes]').forEach(el => { el.innerHTML = svg; });
+      worldVoices = (m.voices || []).filter(v => v.q);
+      worldVoice(true);
     });
+  }
+  let worldVoices = [], voiceAt = -1, voiceTimer = 0;
+  function worldVoice(first) {
+    const els = $$('[data-wd-voice]'); if (!els.length || !worldVoices.length) return;
+    if (first && voiceAt < 0) voiceAt = Math.floor(Math.random() * worldVoices.length); else voiceAt = (voiceAt + 1) % worldVoices.length;
+    const v = worldVoices[voiceAt];
+    els.forEach(el => { el.classList.remove('in'); void el.offsetWidth; el.innerHTML = `<q>${esc(v.q)}</q><small>${t('seseorang', 'someone')} · ${v.y}</small>`; el.classList.add('in'); });
+    clearTimeout(voiceTimer);
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) voiceTimer = setTimeout(() => { if (document.hidden) { voiceTimer = setTimeout(() => worldVoice(), 4000); return; } worldVoice(); }, 5200);
   }
   function showAlbum(id) {
     setView('album');

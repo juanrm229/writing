@@ -258,7 +258,19 @@ class SalasimpulSmoke(unittest.TestCase):
         self.assertLess(banner.bounding_box()['height'], 130)
         # the banner sits above the album shelf
         self.assertTrue(self.page.evaluate("document.querySelector('.wd-banner').compareDocumentPosition(document.querySelector('.al-grid')) & Node.DOCUMENT_POSITION_FOLLOWING"))
-        self.assertEqual(self.page.locator('.wd-lanes rect').count(), len(self.W['entries']))
+        self.assertEqual(self.page.locator('.wd-lanes .dt').count(), len(self.W['entries']))
+        self.assertEqual(self.page.locator('.wd-lanes .dt.rd').count(), 0)
+        # a first sentence, without a name
+        firsts = {next(e for e in self.W['entries'] if e['owner'] == p['id'])['p'][0]['t'].replace('*', '')[:40] for p in self.W['people']}
+        voice = self.page.locator('[data-wd-voice] q').text_content()
+        self.assertTrue(any(f.startswith(voice[:30]) for f in firsts), voice)
+        self.assertIn('seseorang', self.page.locator('[data-wd-voice] small').text_content())
+        # once you have read something, the banner remembers you
+        self.page.evaluate("localStorage.setItem('jm:simpul', JSON.stringify({ v: 1, read: { n1999: 1, k1987: 2 } }))")
+        self.page.reload(wait_until='domcontentloaded')
+        self.page.wait_for_function("/kamu kenal 2 dari 18 orang/.test(document.querySelector('.wd-banner [data-wd-meta]')?.textContent || '')")
+        self.assertEqual(self.page.locator('.wd-lanes .dt.rd').count(), 2)
+        self.assertIn('lanjutkan', self.page.locator('[data-wd-kick]').text_content())
 
     def test_flashback_when_old_sentences_change(self):
         # read n1999 first; then learning what makes its sentence ironic shows the flashback card

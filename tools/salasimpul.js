@@ -90,6 +90,7 @@ function paragraph(raw) {
   return { t: clean, a: [...ann.values()].sort((x, y) => x.from - y.from), ...(links.length ? { l: links } : {}) };
 }
 
+const INKS = ['#1F4E8C', '#9A3B2E', '#2F6B4F', '#6A3DFF', '#8A6A1F', '#0E7490', '#B4235A', '#4D5B2A', '#7C3A9E', '#A2541A', '#2B6CB0', '#5B5F66', '#8B2F2F', '#2E7D6B', '#6B4E9B', '#9C6B00', '#3B5BA9', '#7A4A3A'];
 function build() {
   const config = fs.existsSync(CONFIG) ? JSON.parse(fs.readFileSync(CONFIG, 'utf8')) : {};
   const owners = fs.readdirSync(SRC, { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith('_') && !d.name.startsWith('.')).map(d => d.name).sort();
@@ -138,7 +139,14 @@ function build() {
     title: world.title, people: people.length, entries: entries.length, words: entries.reduce((n, e) => n + e.words, 0), from: Math.min(...years), to: Math.max(...years),
     // satu baris per penulis: tahun-tahun catatannya, untuk garis-garis kecil di banner
     lanes: people.map(p => entries.filter(e => e.owner === p.id).map(e => +(e.at.y + e.at.d / 366).toFixed(2))),
-    knots: entries.flatMap(e => e.p.flatMap(p => (p.l || []).map(l => { const to = byId.get(l.id); return [owners.indexOf(e.owner), +(e.at.y + e.at.d / 366).toFixed(2), owners.indexOf(to.owner), +(to.at.y + to.at.d / 366).toFixed(2)]; })))
+    knots: entries.flatMap(e => e.p.flatMap(p => (p.l || []).map(l => { const to = byId.get(l.id); return [owners.indexOf(e.owner), +(e.at.y + e.at.d / 366).toFixed(2), owners.indexOf(to.owner), +(to.at.y + to.at.d / 366).toFixed(2)]; }))),
+    // untuk banner: id dan urutan waktu tiap catatan (sejajar dengan lanes), simpul sebagai pasangan urutan,
+    // tinta tiap penulis (sama dengan INKS di dunia/salasimpul/simpul.js), dan kalimat pertama tiap orang tanpa nama
+    ids: people.map(p => entries.filter(e => e.owner === p.id).map(e => e.id)),
+    at: people.map(p => entries.filter(e => e.owner === p.id).map(e => entries.indexOf(e))),
+    links: entries.flatMap((e, i) => e.p.flatMap(p => (p.l || []).map(l => [i, entries.indexOf(byId.get(l.id))]))),
+    inks: people.map((p, i) => INKS[i % INKS.length]),
+    voices: people.map(p => { const e = entries.find(x => x.owner === p.id), txt = (e.p[0] ? e.p[0].t : '').replace(/\*/g, ''), m = txt.match(/^.+?[.!?…](?=\s|$)/); return { y: e.at.y, q: (m ? m[0] : txt).slice(0, 140) }; })
   };
   return { world, meta };
 }
