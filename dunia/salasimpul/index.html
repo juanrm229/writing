@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../../antologi/panduan.css?v=1">
 <link rel="stylesheet" href="../../antologi/bingkai.css?v=3">
-<link rel="stylesheet" href="simpul.css?v=2">
+<link rel="stylesheet" href="simpul.css?v=3">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -53,14 +53,19 @@
       <button type="button" role="tab" data-tab="partitur" aria-selected="true" id="tabScore">Partitur</button>
       <button type="button" role="tab" data-tab="orang" aria-selected="false" id="tabPeople">Orang</button>
       <button type="button" role="tab" data-tab="waktu" aria-selected="false" id="tabTime">Waktu</button>
+      <button type="button" role="tab" data-tab="sudut" aria-selected="false" id="tabAngle">Sudut</button>
+      <button type="button" role="tab" data-tab="sunting" aria-selected="false" id="tabBook">Suntingan</button>
     </nav>
     <div class="pane" id="paneScore" role="tabpanel" aria-labelledby="tabScore">
       <div class="score-bar"><p class="score-hint" id="scoreHint">Ketuk nama untuk menyorot seseorang. Ketuk titik untuk mengintip.</p><span class="zoom" id="zoom"><button type="button" data-z="-6" aria-label="Rapatkan">−</button><button type="button" data-z="6" aria-label="Renggangkan">+</button></span></div>
       <div class="score" id="score"><div class="score-names" id="scoreNames" aria-hidden="true"></div><div class="score-scroll" id="scoreScroll"><svg id="scoreSvg" role="group" aria-label="Partitur catatan"></svg></div></div>
+      <div class="city-yr"><label for="cityRange">Kota pada <b id="cityYearB"></b></label><input type="range" id="cityRange" step="1"><span id="cityNote"></span></div>
       <p class="legend" id="legend"></p>
     </div>
     <div class="pane" id="panePeople" role="tabpanel" aria-labelledby="tabPeople" hidden></div>
     <div class="pane" id="paneTime" role="tabpanel" aria-labelledby="tabTime" hidden></div>
+    <div class="pane" id="paneAngle" role="tabpanel" aria-labelledby="tabAngle" hidden></div>
+    <div class="pane" id="paneBook" role="tabpanel" aria-labelledby="tabBook" hidden></div>
   </section>
 
   <article class="note" id="note" hidden aria-live="polite"></article>
@@ -85,6 +90,6 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../../antologi/panduan.js?v=4"></script>
-<script src="simpul.js?v=2"></script>
+<script src="simpul.js?v=3"></script>
 </body>
 </html>
