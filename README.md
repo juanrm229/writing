@@ -151,6 +151,29 @@ python3 tests/interlude_smoke.py
 
 Pemeriksaan menjalankan server sementara sendiri, memakai profil browser terpisah, dan mencakup bahasa Inggris, tautan bab, navigasi keyboard dialog, pemulihan posisi baca, ukuran huruf, pembatalan efek, mode tenang, serta tata letak ponsel dan desktop. Arsip diperiksa untuk pembukaan fragmen sesuai adegan, pencegahan bocoran dari bab yang dilompati, penyimpanan lintas kunjungan dan bahasa, serta tautan kembali ke adegan. Foto diperiksa untuk pemuatan aset dan navigasi kiriman. Pemeriksaan suasana mengukur keluaran Web Audio, memastikan tidak ada pemutaran otomatis, menguji jeda tab dan pelepasan sumber, serta memeriksa mode fokus, kegagalan modul suara, dan pemuatan offline melalui service worker. Dua Ingatan diperiksa untuk penguncian sebelum tamat, petikan asli, bahasa, posisi baca, dan tata letak kedua sisi; indikator mengetik diperiksa untuk animasi, pembersihan, dan kestabilan tinggi halaman. Penerbitan dan autentikasi GitHub tidak dijalankan.
 
+### Giliran (antologi/giliran/)
+
+Cerpen kedua di antologi **Temusai** (*Your Turn* dalam bahasa Inggris). Bima bekerja di Sela, layanan tempat orang berlatih mengatakan sesuatu yang sulit, dan memerankan lawan bicara mereka. Lalu kliennya berlatih meninggalkan dia. Seluruh teks dimuat utuh dari `content/works.json`; yang ditambahkan hanya antarmukanya.
+
+- **Diucapkan atau diketik.** Ucapan di rumah menjadi balon kata (Mira di kiri, Bima di kanan), dengan keterangan seperti *tanya Bima* kecil di bawahnya. Yang diketik tinggal di aplikasinya:
+  - **Sela** punya dua tab: *Latihan* (Bima memerankan seseorang) dan *Pendamping* (latihannya dibicarakan). Ada juga kartu pesanan dengan kolom yang tidak pernah selesai dimuat, catatan pelatihan Ratih, pemberitahuan klien menunggu, pedoman kerja, formulir pengalihan, tab pencarian yang dibuka lalu ditutup, dan penilaian lima bintang.
+  - **Pesan** di ponsel (Mira, Ibu): pesan yang tidak dikutip di naskah tampil sebagai baris samar.
+  - **Telepon** dengan teks langsung (Ratih, Mira, Ibu), dan satu **surel** dari kantor.
+- **Kenangan** masa kecil Bima tampil di kertas yang lebih hangat, dengan balon *Bima, 9 tahun*.
+- **Yang tidak jadi diucapkan.** Setiap kali Bima hampir mengatakan sesuatu lalu menahannya, muncul balon kosong bergaris putus-putus yang memudar.
+- **Kaca menjadi Mira.** Setelah cerita tentang tanaman, pesan Kaca di Sela berganti warna menjadi warna balon Mira. Sejak sesi kelima, label *PEMERAN* pada pesan Bima dicoret.
+- **Giliranmu.** Di sesi keempat cerita berhenti di layar Sela: pembaca harus menekan **Kirim** atau **Jeda sesi** (yang membuka formulir pengalihan). Pilihan itu diingat (`jm:giliran:choice`), dan muncul lagi di telepon Ratih: *Kamu juga menekan kirim* atau *Kamu menekan jeda. Bima tidak.*
+- **Akses ditutup.** Saat Ratih menutup akses Bima, semua jendela kasus Kaca sebelumnya tersegel dan kabur; ketuk untuk tetap membaca.
+- **Akhir.** Balon Bima tersandung dan tidak pernah selesai. Tombol *Buka jendela pendamping* tidak bisa ditekan. Penanda giliran di bawah layar berubah menjadi **Giliranmu**, dengan kotak untuk menulis kalimat pertama: tanpa tombol kirim, dan tidak disimpan.
+- Penanda di bawah layar mengikuti percakapan yang sedang terlihat (*Giliran Mira*, *Giliran Bima*, …). Bingkai, panduan, penanda bagian (*Bagian n dari 15*), mode baca biasa, tema, bahasa, pratinjau, dan riwayat baca sama dengan pengalaman lain.
+- Pembagian ucapan per orang dan per aplikasi ada di `VOICES` di `giliran.js`, berurutan per bagian. Kalau naskah diubah sampai susunannya berbeda, ceritanya tetap tampil utuh sebagai narasi dan balon biasa.
+
+Kartu *berikutnya* di akhir tulisan yang tergabung dalam antologi menunjuk tulisan berikutnya di antologi itu (Interlude ↔ Giliran).
+
+```bash
+python3 tests/giliran_smoke.py
+```
+
 ### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
 
 **Lacak Surat** membaca empat sisi *Terlambat Satu Menit / One Minute Too Late* sebagai halaman lacak kiriman pos. Tanpa gambar: hanya antarmuka yang dikenal semua orang. Seluruh prosa dan terjemahan dimuat utuh dari `content/works.json`; label status, lokasi, dan cap waktu adalah antarmuka, bukan kalimat cerita.
