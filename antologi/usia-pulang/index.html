@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Usia Pulang · Quiet Margins</title>
 <meta name="description" content="Novel interaktif. Laras kembali dua puluh sembilan tahun sesudah kematiannya dan punya 168 jam untuk memutuskan apakah akan menetap. Tujuh hari, delapan akhir.">
-<meta name="theme-color" content="#F2F1EE">
+<meta name="theme-color" content="#F6F6F7">
 <meta property="og:title" content="Usia Pulang">
 <meta property="og:description" content="Laras kembali dua puluh sembilan tahun sesudah kematiannya. Tubuhnya tetap 31 tahun; putrinya sudah 37. Ia punya 168 jam untuk memutuskan apakah akan menetap.">
 <meta property="og:type" content="article">
@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=2">
-<link rel="stylesheet" href="usia.css?v=2">
+<link rel="stylesheet" href="usia.css?v=3">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -46,18 +46,25 @@
 
 <main class="read" id="read">
   <header class="cover" id="cover">
-    <p class="kick" id="kick">Temusai · Novel interaktif</p>
-    <h1 id="title">Usia Pulang</h1>
-    <p class="by">Juan</p>
-    <p class="digits" aria-hidden="true"><span>18</span><b>.</b><span class="blink">40</span></p>
-    <p class="lede" id="lede">Laras kembali dua puluh sembilan tahun sesudah kematiannya. Tubuhnya tetap 31 tahun; putrinya sudah 37. Ia punya 168 jam untuk memutuskan apakah akan menetap.</p>
-    <ul class="rules" id="rules">
-      <li id="rule1">Tujuh hari. Setiap hari kamu memilih ke mana Laras pergi, lalu apa yang ia lakukan.</li>
-      <li id="rule2">Tekan dan tahan untuk memilih. Pilihan tidak bisa ditarik kembali, dan tidak ada nilai baik atau buruk.</li>
-      <li id="rule3">Delapan akhir. Satu perjalanan hanya membaca sebagian cerita.</li>
-    </ul>
-    <p class="lost" id="lost" hidden></p>
-    <div class="cover-act" id="coverAct"><p class="loading">…</p></div>
+    <div class="cv-top">
+      <span class="cv-pill" id="cvLeft">Temusai</span>
+      <p class="digits" aria-hidden="true"><span>18</span>.<span class="blink">40</span></p>
+      <span class="cv-pill" id="cvRight">168 jam</span>
+    </div>
+    <div class="cv-sheet">
+      <div class="cv-status"><span id="cvDate">Sen, 9 Nov 2026</span><i aria-hidden="true"></i><span id="cvEnds">0/8 akhir</span></div>
+      <p class="kick" id="kick">Temusai · Novel interaktif</p>
+      <h1 id="title"><span>Usia</span> <span>Pulang</span></h1>
+      <p class="by">Juan</p>
+      <p class="lede" id="lede">Laras kembali dua puluh sembilan tahun sesudah kematiannya. Tubuhnya tetap 31 tahun; putrinya sudah 37. Ia punya 168 jam untuk memutuskan apakah akan menetap.</p>
+      <ul class="rules" id="rules">
+        <li id="rule1">Tujuh hari. Setiap hari kamu memilih ke mana Laras pergi, lalu apa yang ia lakukan.</li>
+        <li id="rule2">Tekan dan tahan untuk memilih. Pilihan tidak bisa ditarik kembali, dan tidak ada nilai baik atau buruk.</li>
+        <li id="rule3">Delapan akhir. Satu perjalanan hanya membaca sebagian cerita.</li>
+      </ul>
+      <p class="lost" id="lost" hidden></p>
+      <div class="cover-act" id="coverAct"><p class="loading">…</p></div>
+    </div>
   </header>
   <div class="book" id="book" aria-live="polite"></div>
 </main>
@@ -77,7 +84,7 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
-<script src="benda.js?v=1"></script>
-<script src="usia.js?v=2"></script>
+<script src="benda.js?v=2"></script>
+<script src="usia.js?v=3"></script>
 </body>
 </html>

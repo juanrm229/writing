@@ -35,6 +35,7 @@
 
   /* ---------- teks antarmuka ---------- */
   $('#kick').textContent = t('Temusai · Novel interaktif', 'Temusai · Interactive novel');
+  $('#cvRight').textContent = t('168 jam', '168 hours'); $('#cvDate').textContent = t('Sen, 9 Nov 2026', 'Mon, 9 Nov 2026');
   if (EN) {
     $('#lede').textContent = 'Laras comes back twenty-nine years after her death. Her body is still 31; her daughter is 37. She has 168 hours to decide whether to stay.';
     $('#rule1').textContent = 'Seven days. Each day you choose where Laras goes, then what she does.';
@@ -54,6 +55,7 @@
   const STAYS = id => !/^Tidak menetap/i.test((N.Z00.choices || []).find(c => c.target === id)?.label || '');
   const shortTitle = n => String(n.title || n.id).replace(/^[A-Z]\d{2}[A-D]?\s*[—-]\s*/, '').replace(/^[A-Z]\d[A-D]\s*[—-]\s*/, '');
   const has = (flags, list) => (list || []).every(f => flags.has(f));
+  { const f = (store.get('usia:endings', []) || []).length; $('#cvEnds').textContent = t(`${f}/8 akhir`, `${f}/8 endings`); }
   const labelOf = (nodeId, choiceId) => ((N[nodeId] && N[nodeId].choices) || []).find(x => x.id === choiceId)?.label || '';
 
   /* ---------- orang: usia dari kanon pengarang (1997 saat Laras meninggal, 2026 saat ia kembali) ---------- */
@@ -446,7 +448,7 @@
     }
     const z = run.path.find(e => e.id === 'Z00'), zl = z && z.choice ? labelOf('Z00', z.choice) : '';
     rows.push(`<li class="last ${zl ? 'on' : ''}"><span class="cd-day"><b>${esc(DAYS[7])}</b><small>16 Nov · 18.40</small></span><span class="cd-what">${zl ? `<span class="stamp final">${esc(zl)}</span>` : `<span class="cd-empty">${esc(t('belum diputuskan', 'not decided yet'))}</span>`}</span></li>`);
-    return `<p class="cd-who"><span>${esc(t('Nama', 'Name'))}</span><b>Laras</b><span>${esc(t('Usia saat kembali', 'Age on return'))}</span><b>31</b><span>${esc(t('Masa sementara', 'Interim period'))}</span><b>${esc(t('168 jam', '168 hours'))}</b></p><ol class="cd-days">${rows.join('')}</ol><p class="cd-foot">${esc(t('Yang dicatat hanya yang dipilih. Pilihan yang tidak diambil tidak tercatat.', 'Only what was chosen is recorded. Choices not taken are not kept.'))}</p>`;
+    return `<p class="cd-who"><span><small>${esc(t('Nama', 'Name'))}</small><b>Laras</b></span><span><small>${esc(t('Usia saat kembali', 'Age on return'))}</small><b>31</b></span><span><small>${esc(t('Masa sementara', 'Interim'))}</small><b>${esc(t('168 jam', '168 h'))}</b></span></p><ol class="cd-days">${rows.join('')}</ol><p class="cd-foot">${esc(t('Yang dicatat hanya yang dipilih. Pilihan yang tidak diambil tidak tercatat.', 'Only what was chosen is recorded. Choices not taken are not kept.'))}</p>`;
   }
   const cardDlg = $('#cardDialog');
   $('#openCard').addEventListener('click', () => { $('#cardBody').innerHTML = run ? cardHTML() : `<p class="cd-foot">${esc(t('Perjalanan belum dimulai.', 'The journey has not started.'))}</p>`; cardDlg.showModal(); });
