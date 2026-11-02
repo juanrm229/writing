@@ -140,5 +140,112 @@
       },
       "room": "jam"
     }
-  }
+  },
+  "benda": [
+    {
+      "id": "gelang",
+      "name": "Gelang",
+      "match": [
+        "gelang"
+      ]
+    },
+    {
+      "id": "gorengan",
+      "name": "Gorengan",
+      "match": [
+        "gorengan"
+      ]
+    },
+    {
+      "id": "radio",
+      "name": "Radio",
+      "match": [
+        "radio"
+      ]
+    },
+    {
+      "id": "permen",
+      "name": "Permen",
+      "match": [
+        "permen"
+      ]
+    },
+    {
+      "id": "ayunan",
+      "name": "Ayunan",
+      "match": [
+        "ayunan"
+      ]
+    },
+    {
+      "id": "kuitansi",
+      "name": "Kuitansi",
+      "match": [
+        "kuitansi"
+      ]
+    },
+    {
+      "id": "kancing",
+      "name": "Kancing",
+      "match": [
+        "kancing"
+      ]
+    },
+    {
+      "id": "kelereng",
+      "name": "Kelereng",
+      "match": [
+        "kelereng"
+      ]
+    },
+    {
+      "id": "sandal",
+      "name": "Sandal",
+      "match": [
+        "sandal"
+      ]
+    },
+    {
+      "id": "amplop",
+      "name": "Amplop",
+      "match": [
+        "amplop"
+      ]
+    },
+    {
+      "id": "pulpen",
+      "name": "Pulpen",
+      "match": [
+        "pulpen"
+      ]
+    },
+    {
+      "id": "lilin",
+      "name": "Lilin",
+      "match": [
+        "lilin"
+      ]
+    },
+    {
+      "id": "kue",
+      "name": "Kue",
+      "match": [
+        "kue"
+      ]
+    },
+    {
+      "id": "kunci",
+      "name": "Kunci",
+      "match": [
+        "kunci"
+      ]
+    },
+    {
+      "id": "kotak",
+      "name": "Kotak",
+      "match": [
+        "kotak"
+      ]
+    }
+  ]
 }

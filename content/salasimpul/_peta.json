@@ -1,0 +1,990 @@
+{
+ "maps": {
+  "kota": {
+   "name": "Kota",
+   "w": 1000,
+   "h": 680,
+   "water": [
+    {
+     "d": "M600 680C700 600 820 560 1000 500L1000 680Z",
+     "name": "Laut"
+    },
+    {
+     "d": "M128 0C170 110 96 210 176 318S318 452 410 548S560 640 612 680",
+     "river": true,
+     "w": 16,
+     "name": "Kali"
+    }
+   ],
+   "parks": [
+    {
+     "d": "M36 168L282 160L292 300L44 306Z",
+     "kind": "makam",
+     "trees": 26
+    },
+    {
+     "d": "M690 150L812 146L818 236L694 240Z",
+     "kind": "taman",
+     "trees": 9
+    },
+    {
+     "d": "M330 560L452 600L430 660L318 640Z",
+     "kind": "hijau",
+     "trees": 8
+    },
+    {
+     "d": "M860 360L990 352L994 430L866 440Z",
+     "kind": "hijau",
+     "trees": 7
+    }
+   ],
+   "blocks": [
+    [
+     330,
+     160,
+     150,
+     120
+    ],
+    [
+     560,
+     150,
+     110,
+     40
+    ],
+    [
+     560,
+     250,
+     110,
+     54
+    ],
+    [
+     850,
+     150,
+     120,
+     120
+    ],
+    [
+     830,
+     20,
+     150,
+     80
+    ],
+    [
+     580,
+     20,
+     220,
+     70
+    ],
+    [
+     330,
+     20,
+     150,
+     90
+    ],
+    [
+     30,
+     350,
+     150,
+     60
+    ],
+    [
+     210,
+     350,
+     100,
+     30
+    ],
+    [
+     350,
+     350,
+     150,
+     60
+    ],
+    [
+     560,
+     352,
+     70,
+     70
+    ],
+    [
+     680,
+     352,
+     150,
+     50
+    ],
+    [
+     30,
+     440,
+     140,
+     60
+    ],
+    [
+     200,
+     470,
+     110,
+     60
+    ],
+    [
+     520,
+     460,
+     90,
+     80
+    ],
+    [
+     650,
+     430,
+     180,
+     60
+    ],
+    [
+     860,
+     450,
+     120,
+     40
+    ],
+    [
+     40,
+     540,
+     250,
+     110
+    ],
+    [
+     470,
+     560,
+     90,
+     50
+    ],
+    [
+     660,
+     510,
+     120,
+     50
+    ]
+   ],
+   "roads": [
+    {
+     "d": "M0 336C280 326 600 346 1000 306",
+     "name": "Jalan Kartini",
+     "major": true
+    },
+    {
+     "d": "M560 680C690 596 840 540 1000 474",
+     "name": "Jalan Pelabuhan",
+     "major": true
+    },
+    {
+     "d": "M528 0C514 200 540 410 604 640"
+    },
+    {
+     "d": "M0 128C250 140 460 122 1000 116",
+     "name": "Jalan Atas"
+    },
+    {
+     "d": "M312 0L326 680"
+    },
+    {
+     "d": "M818 0C800 200 760 400 742 580"
+    },
+    {
+     "d": "M0 424C120 422 230 430 300 440S440 470 484 540"
+    },
+    {
+     "d": "M0 520C160 512 300 520 360 540"
+    },
+    {
+     "d": "M640 336L656 430",
+     "name": "lorong",
+     "lane": true
+    },
+    {
+     "d": "M180 336L200 440",
+     "lane": true
+    },
+    {
+     "d": "M900 306L960 214",
+     "lane": true
+    }
+   ],
+   "exits": [
+    {
+     "x": 1000,
+     "y": 116,
+     "to": "sela",
+     "label": "Kampung Sela · 85 km"
+    }
+   ]
+  },
+  "sela": {
+   "name": "Kampung Sela",
+   "w": 1000,
+   "h": 680,
+   "water": [
+    {
+     "d": "M868 0C820 190 912 380 846 520S864 640 880 680",
+     "river": true,
+     "w": 22,
+     "name": "Sungai"
+    },
+    {
+     "d": "M0 300L560 300",
+     "river": true,
+     "w": 4,
+     "name": "Saluran air",
+     "ditch": true
+    }
+   ],
+   "parks": [
+    {
+     "d": "M430 128L532 124L540 238L436 244Z",
+     "kind": "terbengkalai",
+     "trees": 7
+    },
+    {
+     "d": "M470 280L628 276L640 528L478 534Z",
+     "kind": "pematang",
+     "trees": 0
+    },
+    {
+     "d": "M560 560L800 548L812 668L572 676Z",
+     "kind": "kebun",
+     "trees": 16
+    },
+    {
+     "d": "M900 80L1000 70L1000 260L920 270Z",
+     "kind": "hijau",
+     "trees": 8
+    }
+   ],
+   "blocks": [
+    [
+     70,
+     110,
+     150,
+     140,
+     "A"
+    ],
+    [
+     250,
+     110,
+     150,
+     140,
+     "B"
+    ],
+    [
+     70,
+     350,
+     150,
+     150,
+     "D"
+    ],
+    [
+     250,
+     350,
+     150,
+     150,
+     "C"
+    ],
+    [
+     660,
+     150,
+     60,
+     40
+    ],
+    [
+     740,
+     130,
+     50,
+     50
+    ],
+    [
+     668,
+     228,
+     44,
+     44
+    ],
+    [
+     740,
+     220,
+     60,
+     40
+    ],
+    [
+     660,
+     320,
+     60,
+     46
+    ],
+    [
+     740,
+     300,
+     46,
+     60
+    ],
+    [
+     664,
+     410,
+     50,
+     50
+    ],
+    [
+     736,
+     400,
+     60,
+     44
+    ],
+    [
+     700,
+     486,
+     70,
+     40
+    ]
+   ],
+   "roads": [
+    {
+     "d": "M0 320L1000 320",
+     "name": "Jalan ke kota",
+     "major": true
+    },
+    {
+     "d": "M236 40L236 620",
+     "name": "Jalan komplek"
+    },
+    {
+     "d": "M60 92L420 92"
+    },
+    {
+     "d": "M60 530L420 530"
+    },
+    {
+     "d": "M420 92L420 620"
+    },
+    {
+     "d": "M728 80C716 200 742 330 720 470S730 560 724 600",
+     "name": "gang sebelah",
+     "lane": true
+    },
+    {
+     "d": "M640 320L640 470L800 470",
+     "lane": true
+    }
+   ],
+   "bridges": [
+    [
+     850,
+     320
+    ]
+   ],
+   "exits": [
+    {
+     "x": 0,
+     "y": 320,
+     "to": "kota",
+     "label": "Kota · 85 km"
+    },
+    {
+     "x": 600,
+     "y": 680,
+     "label": "Puskesmas · 3 km",
+     "place": "puskesmas"
+    }
+   ]
+  }
+ },
+ "kinds": {
+  "polisi": {
+   "name": "Polisi & lapas",
+   "color": "#1F4E8C"
+  },
+  "makam": {
+   "name": "Pemakaman",
+   "color": "#2F6B4F"
+  },
+  "toko": {
+   "name": "Toko & pasar",
+   "color": "#C2410C"
+  },
+  "umum": {
+   "name": "Tempat umum",
+   "color": "#7C3A9E"
+  },
+  "rumah": {
+   "name": "Rumah",
+   "color": "#B4235A"
+  },
+  "air": {
+   "name": "Air",
+   "color": "#0E7490"
+  },
+  "taman": {
+   "name": "Taman & kebun",
+   "color": "#4D7C0F"
+  },
+  "jalan": {
+   "name": "Jalan & gang",
+   "color": "#5B5F66"
+  }
+ },
+ "places": [
+  {
+   "id": "kantor_polisi",
+   "map": "kota",
+   "x": 600,
+   "y": 214,
+   "name": "Kantor polisi",
+   "sub": "ruang tiga",
+   "kind": "polisi",
+   "match": [
+    "kantor polisi",
+    "ruang tiga",
+    "ruang periksa"
+   ]
+  },
+  {
+   "id": "lapas",
+   "map": "kota",
+   "x": 70,
+   "y": 470,
+   "name": "Lapas",
+   "kind": "polisi",
+   "match": [
+    "lapas",
+    "penjara"
+   ]
+  },
+  {
+   "id": "pekuburan",
+   "map": "kota",
+   "x": 160,
+   "y": 236,
+   "name": "Pekuburan tua",
+   "sub": "petak sembilan, petak sebelas",
+   "kind": "makam",
+   "match": [
+    "pekuburan",
+    "pemakaman",
+    "kuburan",
+    "petak (sembilan|sebelas|keempat|nomor|kosong|lima|dua)",
+    "kamboja"
+   ]
+  },
+  {
+   "id": "angsana",
+   "map": "kota",
+   "x": 290,
+   "y": 300,
+   "name": "Pohon angsana",
+   "sub": "di pinggir jalan, di samping pekuburan",
+   "kind": "makam",
+   "match": [
+    "angsana"
+   ]
+  },
+  {
+   "id": "pos_jaga",
+   "map": "kota",
+   "x": 64,
+   "y": 292,
+   "name": "Pos jaga",
+   "kind": "makam",
+   "match": [
+    "pos jaga"
+   ]
+  },
+  {
+   "id": "kartini",
+   "map": "kota",
+   "x": 760,
+   "y": 320,
+   "name": "Jalan Kartini",
+   "kind": "jalan",
+   "match": [
+    "Kartini"
+   ]
+  },
+  {
+   "id": "toko_bunga",
+   "map": "kota",
+   "x": 664,
+   "y": 392,
+   "name": "Toko bunga",
+   "sub": "ruko di sudut lorong, jendelanya buram",
+   "kind": "toko",
+   "match": [
+    "toko bunga",
+    "jendelanya buram",
+    "ruko di sudut lorong",
+    "ruko saya",
+    "jualan bunga"
+   ]
+  },
+  {
+   "id": "toko_antik",
+   "map": "kota",
+   "x": 960,
+   "y": 300,
+   "name": "Toko antik",
+   "sub": "di ujung jalan, bengkel di belakang",
+   "kind": "toko",
+   "match": [
+    "toko antik",
+    "tokoku",
+    "bengkel belakang"
+   ],
+   "by": [
+    "basri",
+    "endah",
+    "bayu"
+   ]
+  },
+  {
+   "id": "museum",
+   "map": "kota",
+   "x": 748,
+   "y": 190,
+   "name": "Museum kota",
+   "kind": "umum",
+   "match": [
+    "museum"
+   ]
+  },
+  {
+   "id": "koran",
+   "map": "kota",
+   "x": 908,
+   "y": 196,
+   "name": "Koran daerah",
+   "kind": "umum",
+   "match": [
+    "koran daerah",
+    "redaksi"
+   ]
+  },
+  {
+   "id": "rumah_sakit",
+   "map": "kota",
+   "x": 404,
+   "y": 70,
+   "name": "Rumah sakit",
+   "kind": "umum",
+   "match": [
+    "rumah sakit"
+   ]
+  },
+  {
+   "id": "klinik",
+   "map": "kota",
+   "x": 430,
+   "y": 380,
+   "name": "Klinik",
+   "sub": "dua kursi, satu jendela yang tidak bisa ditutup rapat",
+   "kind": "umum",
+   "match": [
+    "klinik"
+   ]
+  },
+  {
+   "id": "pasar",
+   "map": "kota",
+   "x": 476,
+   "y": 446,
+   "name": "Pasar",
+   "kind": "toko",
+   "match": [
+    "pasar(?! loak)"
+   ]
+  },
+  {
+   "id": "pasar_loak",
+   "map": "kota",
+   "x": 396,
+   "y": 486,
+   "name": "Pasar loak",
+   "kind": "toko",
+   "match": [
+    "pasar loak"
+   ]
+  },
+  {
+   "id": "ruko_pasar",
+   "map": "kota",
+   "x": 560,
+   "y": 496,
+   "name": "Ruko dekat pasar",
+   "sub": "satu kipas angin, dua kursi",
+   "kind": "umum",
+   "match": [
+    "ruko sempit"
+   ]
+  },
+  {
+   "id": "terminal",
+   "map": "kota",
+   "x": 214,
+   "y": 404,
+   "name": "Terminal",
+   "kind": "umum",
+   "match": [
+    "terminal"
+   ]
+  },
+  {
+   "id": "toko_emas",
+   "map": "kota",
+   "x": 262,
+   "y": 458,
+   "name": "Toko emas",
+   "sub": "dekat terminal",
+   "kind": "toko",
+   "match": [
+    "toko emas"
+   ]
+  },
+  {
+   "id": "kali",
+   "map": "kota",
+   "x": 360,
+   "y": 506,
+   "name": "Kali",
+   "kind": "air",
+   "match": [
+    "tasnya di kali",
+    "di kali begitu"
+   ]
+  },
+  {
+   "id": "gudang",
+   "map": "kota",
+   "x": 770,
+   "y": 592,
+   "name": "Gudang jalan pelabuhan",
+   "kind": "polisi",
+   "match": [
+    "jalan pelabuhan",
+    "gudang di jalan"
+   ]
+  },
+  {
+   "id": "pelabuhan",
+   "map": "kota",
+   "x": 900,
+   "y": 590,
+   "name": "Pelabuhan",
+   "kind": "air",
+   "match": [
+    "pelabuhan",
+    "melaut"
+   ]
+  },
+  {
+   "id": "rumah_karman",
+   "map": "kota",
+   "x": 150,
+   "y": 590,
+   "name": "Rumah keluarga Karman",
+   "sub": "radio di dapur, lantai kayu di depan kamar",
+   "kind": "rumah",
+   "match": [
+    "radio",
+    "lantai kayu",
+    "dapur"
+   ],
+   "by": [
+    "lestari",
+    "nara",
+    "karman"
+   ]
+  },
+  {
+   "id": "rumah_kota",
+   "map": "kota",
+   "x": 900,
+   "y": 56,
+   "name": "Rumah kota Ratih dan Elian",
+   "kind": "rumah",
+   "match": [
+    "rumah kota",
+    "rumah di kota"
+   ],
+   "by": [
+    "ratih",
+    "elian",
+    "bagas"
+   ]
+  },
+  {
+   "id": "blok_a",
+   "map": "sela",
+   "x": 145,
+   "y": 180,
+   "name": "Blok A",
+   "kind": "rumah",
+   "match": [
+    "blok A"
+   ]
+  },
+  {
+   "id": "blok_b",
+   "map": "sela",
+   "x": 325,
+   "y": 180,
+   "name": "Blok B",
+   "kind": "rumah",
+   "match": [
+    "blok B"
+   ]
+  },
+  {
+   "id": "blok_c",
+   "map": "sela",
+   "x": 325,
+   "y": 425,
+   "name": "Blok C",
+   "kind": "rumah",
+   "match": [
+    "blok C"
+   ]
+  },
+  {
+   "id": "blok_d",
+   "map": "sela",
+   "x": 145,
+   "y": 425,
+   "name": "Blok D",
+   "kind": "rumah",
+   "match": [
+    "blok D"
+   ]
+  },
+  {
+   "id": "taman",
+   "map": "sela",
+   "x": 486,
+   "y": 184,
+   "name": "Taman terbengkalai",
+   "sub": "dua ayunan",
+   "kind": "taman",
+   "match": [
+    "taman terbengkalai",
+    "taman itu",
+    "ayunan"
+   ]
+  },
+  {
+   "id": "pematang",
+   "map": "sela",
+   "x": 556,
+   "y": 404,
+   "name": "Pematang",
+   "sub": "yang belum dibangun",
+   "kind": "taman",
+   "match": [
+    "pematang"
+   ]
+  },
+  {
+   "id": "rumah_elian",
+   "map": "sela",
+   "x": 404,
+   "y": 450,
+   "name": "Rumah Elian dan Ratih",
+   "sub": "blok C, teras belakang menghadap kampung",
+   "kind": "rumah",
+   "match": [
+    "teras belakang",
+    "dapurnya menghadap timur",
+    "rumah baru"
+   ],
+   "by": [
+    "elian",
+    "ratih"
+   ]
+  },
+  {
+   "id": "rumah_lira",
+   "map": "sela",
+   "x": 236,
+   "y": 262,
+   "name": "Rumah Hesti dan Wardi",
+   "kind": "rumah",
+   "match": [
+    "dapur",
+    "kamar mandi",
+    "kulkas",
+    "pintu"
+   ],
+   "by": [
+    "hesti",
+    "wardi",
+    "lira"
+   ]
+  },
+  {
+   "id": "gang_sebelah",
+   "map": "sela",
+   "x": 724,
+   "y": 120,
+   "name": "Gang sebelah",
+   "kind": "jalan",
+   "match": [
+    "gang sebelah",
+    "komplek sebelah"
+   ]
+  },
+  {
+   "id": "pagar_inah",
+   "map": "sela",
+   "x": 690,
+   "y": 368,
+   "name": "Pagar Bu Inah",
+   "kind": "rumah",
+   "match": [
+    "pagar"
+   ],
+   "by": [
+    "inah",
+    "elian",
+    "sukrim",
+    "ratih"
+   ]
+  },
+  {
+   "id": "warung_sela",
+   "map": "sela",
+   "x": 784,
+   "y": 470,
+   "name": "Warung",
+   "kind": "toko",
+   "match": [
+    "warung"
+   ],
+   "by": [
+    "elian",
+    "inah"
+   ]
+  },
+  {
+   "id": "sumur",
+   "map": "sela",
+   "x": 150,
+   "y": 476,
+   "name": "Sumur",
+   "sub": "di blok D",
+   "kind": "air",
+   "match": [
+    "sumur"
+   ]
+  },
+  {
+   "id": "saluran",
+   "map": "sela",
+   "x": 120,
+   "y": 300,
+   "name": "Saluran air",
+   "kind": "air",
+   "match": [
+    "saluran air"
+   ]
+  },
+  {
+   "id": "jembatan",
+   "map": "sela",
+   "x": 850,
+   "y": 320,
+   "name": "Jembatan",
+   "kind": "air",
+   "match": [
+    "jembatan"
+   ],
+   "by": [
+    "lira",
+    "wardi",
+    "hesti",
+    "bagas"
+   ]
+  },
+  {
+   "id": "sungai",
+   "map": "sela",
+   "x": 880,
+   "y": 560,
+   "name": "Sungai",
+   "kind": "air",
+   "match": [
+    "sungai"
+   ],
+   "by": [
+    "wardi",
+    "hesti",
+    "bagas"
+   ]
+  },
+  {
+   "id": "kebun",
+   "map": "sela",
+   "x": 686,
+   "y": 612,
+   "name": "Kebun belakang",
+   "kind": "taman",
+   "match": [
+    "kebun belakang"
+   ]
+  },
+  {
+   "id": "komplek",
+   "map": "sela",
+   "x": 236,
+   "y": 600,
+   "name": "Komplek",
+   "sub": "di tepi Kampung Sela",
+   "kind": "jalan",
+   "match": [
+    "komplek",
+    "Kampung Sela",
+    "kampung ini",
+    "di kampung"
+   ]
+  },
+  {
+   "id": "puskesmas",
+   "map": "sela",
+   "x": 600,
+   "y": 680,
+   "off": true,
+   "name": "Puskesmas",
+   "sub": "tiga kilometer, dalam gelap",
+   "kind": "umum",
+   "match": [
+    "puskesmas"
+   ]
+  },
+  {
+   "id": "rumah_rasmi",
+   "map": "sela",
+   "x": 770,
+   "y": 250,
+   "name": "Rumah Bu Rasmi",
+   "sub": "lima puluh dua tahun bertetangga dengan Bu Inah",
+   "kind": "rumah",
+   "match": [
+    "pintu",
+    "genting",
+    "ruang depan",
+    "dapur",
+    "kue"
+   ],
+   "by": [
+    "rasmi"
+   ]
+  },
+  {
+   "id": "warung_tini",
+   "map": "sela",
+   "x": 676,
+   "y": 470,
+   "name": "Warung Bu Tini",
+   "kind": "toko",
+   "match": [
+    "Bu Tini"
+   ]
+  }
+ ]
+}
