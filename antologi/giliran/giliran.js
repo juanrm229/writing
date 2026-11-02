@@ -72,6 +72,14 @@
   } : { msg: {} };
   const UNSAID = ALIGNED ? new Set([46, 93, 147, 148, 161, 173, 184, 203, 258, 271, 321]) : new Set();
   const MEMORY_SCENE = ALIGNED ? 3 : -1;
+  // sesi dan harinya, dari keterangan waktu di naskah (Selasa, Rabu malam, pagi berikutnya, dua hari sebelum Minggu)
+  const SESSION = ALIGNED ? { 2: t('Sesi 1', 'Session 1'), 4: t('Sesi 2', 'Session 2'), 5: t('Sesi 3 · Selasa', 'Session 3 · Tuesday'), 6: t('Sesi 4 · Rabu malam', 'Session 4 · Wednesday night'), 8: t('Sesi 5 · Kamis pagi', 'Session 5 · Thursday morning'), 10: t('Sesi 6 · Jumat', 'Session 6 · Friday') } : {};
+  // langit mengikuti waktu di cerita, dengan palet langit situs
+  const SKY = ['senja', 'senja', 'siang', 'kabut', 'malam', 'malam', 'malam', 'malam', 'fajar', 'siang', 'senja', 'senja', 'malam', 'kabut', 'senja'];
+  // panggilan berakhir di paragraf ini
+  const CALL_END = ALIGNED ? { 232: 'R', 241: 'M', 302: 'I' } : {};
+  // diam yang sungguhan, setelah "Kita bisa diam dulu."
+  const QUIET = ALIGNED ? 198 : -1;
 
   /* ---------- membangun cerita ---------- */
   const NAME_CH = { PENDAMPING: 'coach', COACH: 'coach', PEMERAN: 'role', ACTOR: 'role' };
@@ -89,7 +97,7 @@
     if (open && open.kind === 'sela') { open.el.dataset.ch = ch; return open; }
     const client = !!label && label !== 'Kaca';
     const el = push(html(`<section class="win sela" data-ch="${ch}" data-pair="${client ? 'C' : 'K'}" aria-label="Sela">
-      <header class="w-bar"><span class="w-dots" aria-hidden="true"><i></i><i></i><i></i></span><b>Sela</b><span class="w-who">${esc(label || 'Kaca')}</span></header>
+      <header class="w-bar"><span class="w-dots" aria-hidden="true"><i></i><i></i><i></i></span><b>Sela</b><span class="w-who">${esc(label || 'Kaca')}${!client && SESSION[sceneNo] ? ' · ' + esc(SESSION[sceneNo]) : ''}</span></header>
       <nav class="w-tabs" aria-hidden="true"><span data-tab="role">${t('Latihan', 'Rehearsal')}</span><span data-tab="coach">${t('Pendamping', 'Coaching')}</span></nav>
       <div class="w-list"></div></section>`));
     open = { kind: 'sela', el, list: $('.w-list', el) };
@@ -104,7 +112,7 @@
     const el = push(html(`<section class="win phone ${call ? 'call' : 'chat'}" data-who="${who}" aria-label="${esc(NAMES[who])}">
       <header class="p-bar"><span class="av av-${who}" aria-hidden="true">${esc(NAMES[who][0])}</span><span class="p-name"><b>${esc(NAMES[who])}</b><small class="p-status">${status}</small></span>${call ? '<span class="p-timer">00.00</span>' : ''}</header>
       ${call ? `<p class="p-cap" aria-hidden="true">${t('Teks langsung', 'Live captions')}</p>` : ''}
-      <div class="w-list"></div></section>`));
+      <div class="w-list"></div>${call ? '<footer class="p-ctl" aria-hidden="true"><i class="c-mute"></i><i class="c-spk"></i><i class="c-end"></i></footer>' : ''}</section>`));
     open = { kind, who, el, list: $('.w-list', el) };
     cont(el, kind + who);
     if (call && el.classList.contains('cont')) $('.p-status', el).textContent = t('Masih tersambung', 'Still on the call');
@@ -122,7 +130,9 @@
   function message(box, who, textHtml, o = {}) {
     const mine = who === 'B' || who === 'b';
     const label = o.label ? `<span class="m-label">${o.label}</span>` : '';
-    const el = html(`<div class="m ${mine ? 'out' : 'in'} who-${who}${o.cls ? ' ' + o.cls : ''}"${o.wait ? ` data-wait="${o.wait}"` : ''}${o.para != null ? ` data-p="${o.para}"` : ''}>${label}<div class="m-b">${textHtml}</div>${o.tag ? `<span class="m-tag">${o.tag}</span>` : ''}</div>`);
+    const el = html(`<div class="m ${mine ? 'out' : 'inc'} who-${who}${o.cls ? ' ' + o.cls : ''}"${o.wait ? ` data-wait="${o.wait}"` : ''}${o.para != null ? ` data-p="${o.para}"` : ''}>${label}<div class="m-b">${textHtml}</div>${o.tag ? `<span class="m-tag">${o.tag}</span>` : ''}</div>`);
+    const prev = [...box.list.children].reverse().find(x => x.classList.contains('m'));
+    if (prev && prev === box.list.lastElementChild && prev.className.match(/who-\w/)?.[0] === `who-${who}` && (prev.querySelector('.m-label')?.innerHTML || '') === (el.querySelector('.m-label')?.innerHTML || '')) el.classList.add('grp');
     box.list.append(el);
     return el;
   }
@@ -148,18 +158,21 @@
     segs.forEach(sg => { if (sg.q) quotes.push({ s: sg.s, tag: '' }); else if (quotes.length) quotes[quotes.length - 1].tag += sg.s; else tags.push(sg.s); });
     if (where === 'h' || where === 'k') {
       closeBox();
-      const wrap = push(html(`<div class="talk ${where === 'k' ? 'kid' : ''}" data-p="${i}"></div>`));
-      quotes.forEach(q => {
-        wrap.append(html(`<div class="balloon ${who === 'B' || who === 'b' ? 'right' : 'left'} who-${who}"><span class="b-name">${esc(where === 'k' ? t('Bima, 9 tahun', 'Bima, nine') : NAMES[who])}</span><p>${spoken(q.s)}</p>${q.tag.trim() ? `<small class="b-tag">${inline(q.tag.trim())}</small>` : ''}</div>`));
+      const lastOut = out[out.length - 1];
+      const wrap = lastOut && lastOut.classList?.contains('talk') && lastOut.classList.contains('kid') === (where === 'k') && !lead.length ? lastOut : push(html(`<div class="talk ${where === 'k' ? 'kid' : ''}"></div>`));
+      quotes.forEach((q, k) => {
+        const prev = wrap.lastElementChild, same = prev && prev.classList.contains(`who-${who}`);
+        wrap.append(html(`<div class="balloon ${who === 'B' || who === 'b' ? 'right' : 'left'} who-${who}${same ? ' grp' : ''}"${k ? '' : ` data-p="${i}"`}><span class="b-name">${esc(where === 'k' ? t('Bima, 9 tahun', 'Bima, nine') : NAMES[who])}</span><p>${spoken(q.s)}</p>${q.tag.trim() ? `<small class="b-tag">${inline(q.tag.trim())}</small>` : ''}</div>`));
       });
       return;
     }
     let box;
-    if (where === 'c') { box = selaBox('coach', who === 'C' ? t('Klien · toko bunga', 'Client · flower shop') : 'Kaca'); lastCh = 'coach'; }
+    // di awal cerita, sebelum pesanan Kaca masuk, jendela Pendamping masih milik klien toko bunga
+    if (where === 'c') { box = selaBox('coach', who === 'C' || (ALIGNED && i < AT.booking) ? t('Klien · toko bunga', 'Client · flower shop') : 'Kaca'); lastCh = 'coach'; }
     else if (where === 'r') box = reviewBox();
     else if (where === 'w') box = phoneBox('chat', who === 'B' ? 'M' : who);
     else box = phoneBox('call', where === 'u' ? 'M' : scenes.findIndex(s => s.includes(i)) === 13 ? 'I' : 'R');
-    const label = where === 'c' ? (who === 'B' ? t('PENDAMPING', 'COACH') : who === 'C' ? t('KLIEN', 'CLIENT') : 'KACA') : where === 't' || where === 'u' ? NAMES[who] : where === 'r' ? NAMES[who] : '';
+    const label = where === 'c' ? (who === 'B' ? t('PENDAMPING', 'COACH') : who === 'C' || (ALIGNED && i < AT.booking) ? t('KLIEN', 'CLIENT') : 'KACA') : where === 't' || where === 'u' ? NAMES[who] : where === 'r' ? NAMES[who] : '';
     quotes.forEach((q, k) => message(box, who, spoken(q.s), { label: esc(label), tag: q.tag.trim() ? inline(q.tag.trim()) : '', para: k ? null : i, cls: recognized && who === 'K' ? 'mira' : '', wait: i === AT.waitLong ? 2600 : 0 }));
   }
 
@@ -208,15 +221,27 @@
   W[AT.sent] = () => push(html(`<div class="chip-row"><span class="chip ok">${t('Formulir pengalihan kasus · terkirim', 'Case transfer form · sent')}</span></div>`));
   W[AT.paper] = () => push(html(`<div class="paper" aria-label="${t('Urutan sesi', 'The sessions')}"><p>${t('Sesi keempat · Rabu malam', 'Fourth session · Wednesday night')}</p><p>${t('Sesi kelima', 'Fifth session')}</p><p>${t('Sesi keenam', 'Sixth session')}</p></div>`));
   W[AT.email] = () => push(html(`<section class="win mail" aria-label="${t('Surel', 'Email')}"><header class="w-bar"><span class="w-dots" aria-hidden="true"><i></i><i></i><i></i></span><b>${t('Surel', 'Mail')}</b><span class="w-who">Sela</span></header>
-      <div class="mail-b"><p class="mail-s"><b>${t('Pemeriksaan kasus', 'Case review')}</b><small>${t('dari', 'from')} Sela</small></p>${redacted(4)}</div></section>`));
+      <div class="mail-b"><p class="mail-s"><b>${t('Pemeriksaan kasus', 'Case review')}</b><small>${t('dari', 'from')} Sela</small></p><div class="mail-t m-x">${t('<p>Halo Bima,</p><p>pemeriksaan atas laporanmu belum selesai. Mohon lengkapi laporan tersebut, dan jangan menghubungi klien melalui kanal layanan.</p><p>Untuk sementara, tidak ada sesi untukmu pada jadwal minggu depan.</p><p>Ratih<br>Sela</p>', '<p>Hi Bima,</p><p>the review of your report is still in progress. Please complete your report, and do not contact the client through the service.</p><p>For now, you have no sessions on next week’s schedule.</p><p>Ratih<br>Sela</p>')}</div></div></section>`));
   W[AT.noCoach] = () => push(html(`<div class="no-coach"><button type="button" aria-disabled="true">${t('Buka jendela pendamping', 'Open the coaching window')}</button></div>`));
   W[AT.stumble] = () => push(html(`<div class="talk"><div class="balloon right who-B stumble" aria-label="${t('Bima mencoba bicara', 'Bima tries to speak')}"><span class="b-name">Bima</span><p class="st" aria-hidden="true"><i></i><i></i><i></i></p></div></div>`));
+  /* Pesan yang di naskah hanya diceritakan (tidak dikutip) ditulis di sini dengan suara tokohnya, mengikuti isi
+     yang diceritakan. Penanda kecil "ditulis untuk tampilan ini" ada di kelas .m-x. */
+  const say = (b, who, id, en, o = {}) => message(b, who, esc(t(id, en)), { ...o, cls: ((o.cls || '') + ' m-x').trim() });
   const MSG = {
-    late: () => { const b = phoneBox('chat', 'M'); message(b, 'M', redacted(1)); message(b, 'B', '<span class="emoji" role="img" aria-label="' + t('ibu jari', 'thumbs up') + '">👍</span>'); },
-    soap: () => { const b = phoneBox('chat', 'M'); message(b, 'M', photo(t('Foto · dua sabun cuci', 'Photo · two detergents')), { cls: 'm-photo' }); message(b, 'M', redacted(1)); },
-    reply: () => { const b = phoneBox('chat', 'M'); message(b, 'B', redacted(2)); },
-    medicine: () => { const b = phoneBox('chat', 'I'); message(b, 'I', photo(t('Foto · bungkus obat', 'Photo · medicine packet')), { cls: 'm-photo' }); },
-    sunday: () => { const b = phoneBox('chat', 'M'); message(b, 'M', redacted(2)); message(b, 'B', redacted(1)); message(b, 'M', redacted(1)); }
+    late: () => { const b = phoneBox('chat', 'M'); say(b, 'M', 'Aku pulang telat ya. Jangan nunggu aku buat makan.', 'I’ll be home late. Don’t wait for me to eat.'); message(b, 'B', '<span class="emoji" role="img" aria-label="' + t('ibu jari', 'thumbs up') + '">👍</span>'); },
+    soap: () => { const b = phoneBox('chat', 'M'); message(b, 'M', photo(t('Foto · dua sabun cuci', 'Photo · two detergents')), { cls: 'm-photo' }); say(b, 'M', 'Biasanya kita beli yang mana?', 'Which one do we usually get?'); },
+    reply: () => { const b = phoneBox('chat', 'M'); say(b, 'B', 'Yang biru.', 'The blue one.'); say(b, 'B', 'Tapi di rumah masih ada kok, masih setengah botol.', 'We’ve still got some at home though, about half a bottle.'); },
+    medicine: () => { const b = phoneBox('chat', 'I'); message(b, 'I', photo(t('Foto · bungkus obat', 'Photo · medicine packet')), { cls: 'm-photo' }); say(b, 'I', 'Ini, Bim. Ibu telepon ya.', 'This one, Bim. I’ll call you.'); },
+    sunday: () => { const b = phoneBox('chat', 'M'); say(b, 'M', 'Hari ini aku mau ambil barang-barangku. Sekalian ngobrol, kalau kamu bisa.', 'I’d like to pick up my things today. And talk, if you can.'); say(b, 'B', 'Bisa. Kamu mau ada yang nemenin?', 'I can. Do you want someone with you?'); say(b, 'M', 'Temanku nanti bantu angkat kotak, setelah kita selesai.', 'My friend will help carry the boxes once we’re done.'); }
+  };
+  // kalimat yang hampir diucapkan Bima, lalu ditahan
+  const UNSAID_TEXT = {
+    46: ['Itu amplop apa?', 'What’s that envelope?'], 93: ['Mejanya nggak akan rusak cuma karena sedikit air.', 'A little water won’t ruin the table.'],
+    147: ['Sejak kapan?', 'Since when?'], 148: ['Kamu sudah nemu tempat tinggal?', 'Have you found somewhere to live?'],
+    161: ['Kamu nggak kenal aku sebaik itu.', 'You don’t know me that well.'], 173: ['Kenapa masih beli sabun?', 'Why are you still buying detergent?'],
+    184: ['Aku nggak lagi minta Ibu menahanmu.', 'I’m not asking my mom to make you stay.'], 203: ['Aku nggak akan langsung ikut.', 'I wouldn’t just come along.'],
+    258: ['Aku ngerti.', 'I understand.'], 271: ['Sebagian yang kita omongin itu sungguhan.', 'Some of what we said was real.'],
+    321: ['Masih ada kesempatan?', 'Is there still a chance?']
   };
 
   scenes.forEach((idxs, s) => {
@@ -239,7 +264,7 @@
       if (W[i] === 'doc') el.classList.add('doc'), el.dataset.docTitle = t('Pedoman kerja · Benturan kepentingan', 'Staff handbook · Conflicts of interest');
       else if (W[i]) W[i]();
       if (AT.msg[i]) MSG[AT.msg[i]]();
-      if (UNSAID.has(i)) push(html(`<div class="unsaid" aria-hidden="true"><span></span></div>`));
+      if (UNSAID.has(i)) { const u = UNSAID_TEXT[i]; push(html(`<div class="unsaid" aria-hidden="true"><span>${u ? esc(t(u[0], u[1])) : ''}</span></div>`)); }
     });
     const sec = document.createElement('section'); sec.className = 'scene' + (s === MEMORY_SCENE ? ' memory' : ''); sec.dataset.s = s + 1;
     out.splice(start).forEach(el => sec.append(el));
@@ -271,6 +296,8 @@
       $('.g-hint', gate).textContent = c === 'kirim' ? t('Kamu menekan kirim.', 'You pressed send.') : t('Kamu menekan jeda. Di cerita ini, yang ditekan adalah kirim.', 'You pressed pause. In this story, it is send that gets pressed.');
       $$('button', gate).forEach(b => { b.disabled = true; });
       lock(false); G?.want(null);
+      // jari telunjuknya tetap menempel pada tombol itu beberapa detik
+      if (!quiet && c === 'kirim' && !calm()) { const b = $('.g-send', gate); b.classList.add('held'); setTimeout(() => b.classList.remove('held'), 2600); }
       if (!quiet) { announce($('.g-hint', gate).textContent); schedule(); }
     };
     if (choice) resolve(choice, true);
@@ -297,18 +324,43 @@
     el.dataset.q = '1';
     const box = el.closest('.win');
     const typed = box && el.classList.contains('m') && !el.classList.contains('out');
-    busy = busy.then(async () => {
+    busy = busy.then(() => show(el, box, typed)).catch(e => { el.classList.add('in'); console.error(e); });
+  };
+  // satu kegagalan tidak boleh menghentikan antrean: pesan tetap tampil
+  const show = async (el, box, typed) => {
+    {
       if (el.classList.contains('in')) return;
       const above = el.getBoundingClientRect().top < 0;
+      const inSela = box && box.classList.contains('sela') && !box.classList.contains('gate');
       if (typed && !above && !calm()) {
+        const total = +el.dataset.wait || Math.min(1300, 320 + el.textContent.length * 9);
         const ty = html(typingRow); el.before(ty);
-        await wait(+el.dataset.wait || Math.min(1300, 320 + el.textContent.length * 9));
+        // Kaca mengetik, berhenti, lalu mengetik lagi
+        if (inSela && el.classList.contains('who-K') && (total > 1500 || el.textContent.length > 70)) {
+          await wait(total * .45); ty.hidden = true; await wait(650); ty.hidden = false; await wait(total * .45);
+        } else await wait(total);
         ty.remove();
+      } else if (inSela && el.classList.contains('out') && !above && !calm() && !el.querySelector('.redact, .ph, .emoji')) {
+        await compose(box, el);
       } else if (!above && box) await wait(160);
       el.classList.add('in');
-      if (el.matches('.m, .balloon')) turnFrom(el);
-    });
+      if (el.matches('.m, .balloon')) { turnFrom(el); reflect(el); }
+    }
   };
+  // pesan Bima di Sela diketik dulu di kotak tulis: sebagian dihapus, diketik lagi, baru dikirim
+  async function compose(box, el) {
+    const text = $('.m-b', el).textContent, c = html(`<div class="compose" aria-hidden="true"><span class="c-text"></span><span class="caret"></span><i class="c-send"></i></div>`);
+    box.append(c);
+    const tx = $('.c-text', c), step = text.length > 90 ? 12 : text.length > 50 ? 18 : 26;
+    const typeTo = async (from, to) => { for (let k = from; k <= to; k++) { tx.textContent = text.slice(0, k); if (k % 2 === 0) await wait(step); } };
+    const stop = text.length > 24 ? Math.max(8, text.lastIndexOf(' ', Math.floor(text.length * .62))) : -1;
+    if (stop > 0) {
+      await typeTo(0, stop + 6); await wait(380);
+      for (let k = stop + 6; k >= stop; k--) { tx.textContent = text.slice(0, k); await wait(40); }
+      await wait(300); await typeTo(stop, text.length);
+    } else await typeTo(0, text.length);
+    await wait(280); c.classList.add('sent'); await wait(220); c.remove();
+  }
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
   $$('.m, .balloon, .unsaid, .rating, .notice, .chip-row, .tabstrip, .paper, .no-coach, .win.booking, .win.tform, .win.mail').forEach(el => { if (calm()) el.classList.add('in'); else io.observe(el); });
   // pesan di atas layar (melompat lewat tautan atau melanjutkan) langsung tampil
@@ -343,22 +395,44 @@
   // kolom alasan: satu kalimat diketik, lalu dihapus
   $$('.tform .reason').forEach(r => new IntersectionObserver(async (es, ob) => {
     if (!es[0].isIntersecting) return; ob.disconnect();
-    const dots = document.createElement('span'); dots.className = 'typed'; r.prepend(dots);
+    const typedEl = document.createElement('span'); typedEl.className = 'typed'; r.prepend(typedEl);
     if (calm()) return;
-    for (let k = 1; k <= 22; k++) { dots.textContent = '•'.repeat(k); await wait(70); }
-    await wait(900);
-    for (let k = 22; k >= 0; k--) { dots.textContent = '•'.repeat(k); await wait(28); }
+    const line = t('Saya mengenali klien ini.', 'I know this client.');
+    for (let k = 1; k <= line.length; k++) { typedEl.textContent = line.slice(0, k); await wait(65); }
+    await wait(1100);
+    for (let k = line.length; k >= 0; k--) { typedEl.textContent = line.slice(0, k); await wait(30); }
   }, { rootMargin: '0px 0px -25% 0px' }).observe(r));
   // tab pencarian kota: dibuka, lalu ditutup
   if (ALIGNED) when(AT.searchClosed, function closeSearch() { $('.tabstrip.search')?.classList.add('closed'); });
-  // "Kita bisa diam dulu": layar meredup kalau pembaca ikut diam
-  if (ALIGNED) when(AT.dim, function dim(el) {
-    const win = el.previousElementSibling?.closest?.('.win') || [...$$('.win.sela')].filter(w => w.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).pop();
-    if (!win) return;
-    const t0 = setTimeout(() => win.classList.add('dim'), calm() ? 0 : 2600);
-    const wake = () => { clearTimeout(t0); win.classList.remove('dim'); removeEventListener('pointerdown', wake); };
-    addEventListener('pointerdown', wake);
-  });
+  // "Kita bisa diam dulu": layar meredup dan menghitung berapa lama pembaca ikut diam
+  let hushed = false;
+  // dipicu saat jendela itu terbaca dan pesannya sudah tampil (juga dalam mode Gerak: Tenang)
+  {
+    const qEl = QUIET >= 0 && at(QUIET), qWin = qEl && qEl.closest('.win');
+    if (qWin) new IntersectionObserver((es, ob) => {
+      if (!es[0].isIntersecting) return; ob.disconnect();
+      const go = () => { if (qEl.classList.contains('in')) hush(qEl); else setTimeout(go, 200); };
+      go();
+    }, { rootMargin: '0px 0px -35% 0px' }).observe(qWin);
+  }
+  function hush(el) {
+    if (hushed) return; hushed = true;
+    const win = el.closest('.win'); win?.classList.add('quiet');
+    root.classList.add('hush');
+    const chip = html(`<div class="hush-count" aria-hidden="true"><i></i><span>0${t('.', ':')}00</span></div>`); document.body.append(chip);
+    const t0 = Date.now(); let armed = false;
+    const fmt = ms => { const sec = Math.floor(ms / 1000); return `${Math.floor(sec / 60)}${t('.', ':')}${String(sec % 60).padStart(2, '0')}`; };
+    const tick = setInterval(() => { $('span', chip).textContent = fmt(Date.now() - t0); }, 250);
+    setTimeout(() => { armed = true; }, 900);
+    const end = () => {
+      if (!armed) return;
+      clearInterval(tick); chip.remove(); root.classList.remove('hush'); win?.classList.remove('quiet');
+      ['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach(ev => removeEventListener(ev, end, true));
+      const ms = Date.now() - t0;
+      if (ms >= 2000 && win) win.after(html(`<p class="silence">${t(`kalian diam ${fmt(ms)}`, `you were both quiet for ${fmt(ms)}`)}</p>`));
+    };
+    ['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, end, { capture: true, passive: true }));
+  }
   // jendela percakapan dikecilkan
   if (ALIGNED) when(AT.minimize, function minimize(el) { const w = [...$$('.win.sela')].filter(x => x.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).pop(); w?.classList.add('mini'); });
   // akses ke kasus ditutup: semua jendela Sela sebelumnya tersegel (tetap bisa dibaca kalau pembaca memilih)
@@ -376,15 +450,116 @@
     if (!choice || el.parentElement.querySelector('.you')) return;
     el.after(html(`<p class="you">${choice === 'kirim' ? t('Kamu juga menekan kirim.', 'You pressed send too.') : t('Kamu menekan jeda. Bima tidak.', 'You pressed pause. Bima didn’t.')}</p>`));
   });
+  // panggilan berakhir
+  Object.entries(CALL_END).forEach(([i, who]) => when(+i, function hangUp(el) {
+    $$(`.win.call[data-who="${who}"]`).filter(w => w.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).forEach(w => { w.classList.add('ended'); $('.p-status', w).textContent = t('Panggilan berakhir', 'Call ended'); });
+  }));
   // tidak ada jendela pendamping
   $$('.no-coach button').forEach(b => b.addEventListener('click', () => { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); announce(t('Tidak ada jendela pendamping.', 'There is no coaching window.')); }));
   // pengatur waktu telepon
   setInterval(() => $$('.win.call').forEach(c => {
-    const r = c.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+    const r = c.getBoundingClientRect(); if (c.classList.contains('ended') || r.bottom < 0 || r.top > innerHeight) return;
     const s = (+c.dataset.sec || 0) + 1; c.dataset.sec = s;
     $('.p-timer', c).textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}${t('.', ':')}${String(s % 60).padStart(2, '0')}`;
-    $('.p-status', c).textContent = t('Tersambung', 'Connected');
+    if (!c.classList.contains('cont')) $('.p-status', c).textContent = t('Tersambung', 'Connected');
   }), 1000);
+
+  /* ---------- dua ruang: rumah di kiri, layar Bima di kanan (layar lebar) ----------
+     Jendela aplikasi di alur cerita menjadi selip kecil; isinya tampil di layar yang diam di kanan, seperti laptop
+     atau ponsel yang terus menyala di sudut meja. Sejak Bima mengenali Kaca, balon Mira terpantul di layar itu.
+     Saat tidak ada lagi jendela pendamping, layarnya tertutup dan tinggal satu ruang. */
+  const wideQ = matchMedia('(min-width: 1100px)');
+  const screenEl = html(`<aside class="screen" id="screen" aria-hidden="true"><div class="sc-dev"><div class="sc-body"></div></div><p class="sc-cap"></p></aside>`);
+  document.body.append(screenEl);
+  const scBody = $('.sc-body', screenEl);
+  let scSrc = null, scT = 0;
+  const twoRooms = () => root.classList.contains('two-rooms');
+  const setRooms = () => { root.classList.toggle('two-rooms', wideQ.matches && ALIGNED); scSrc = null; schedule(); };
+  wideQ.addEventListener('change', setRooms);
+  // kunci aplikasi sebuah jendela: Sela (kasus Kaca atau klien), atau ponsel dengan orang tertentu
+  const appKey = w => w.classList.contains('booking') ? 'book' : w.classList.contains('tform') ? 'form' : w.classList.contains('phone') ? 'p' + (w.classList.contains('call') ? 'c' : 'm') + w.dataset.who : w.classList.contains('review') ? 'r' : w.classList.contains('mail') ? 'e' : 's' + (w.dataset.pair || 'K');
+  const syncScreen = () => {
+    if (!scSrc) return;
+    const keep = scBody.scrollHeight - scBody.scrollTop - scBody.clientHeight < 40;
+    // seluruh percakapan aplikasi itu di bagian ini, sampai jendela yang sedang terbaca
+    const key = appKey(scSrc), scene = scSrc.closest('.scene');
+    // kartu (pesanan, formulir, surel) tampil utuh apa adanya
+    if (!$(':scope > .w-list', scSrc)) { const c = scSrc.cloneNode(true); c.classList.remove('cont', 'mini', 'quiet'); c.classList.add('whole', 'card'); scBody.replaceChildren(c); return; }
+    const list = $$('.win:not(.gate)', scene).filter(w => appKey(w) === key && !(scSrc.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING));
+    // satu jendela utuh: kepala dari jendela pertama, isi semua jendela berurutan, tombol dari yang terakhir
+    const shell = list[0].cloneNode(false); shell.className = list[0].className.replace(/\b(cont|sealed|peek|mini|quiet)\b/g, '').trim() + ' whole';
+    if (scSrc.dataset.ch) shell.dataset.ch = scSrc.dataset.ch;
+    if (scSrc.classList.contains('sealed')) shell.classList.add('sealed');
+    if (scSrc.classList.contains('peek')) shell.classList.add('peek');
+    if (scSrc.classList.contains('ended')) shell.classList.add('ended');
+    const head = $(':scope > .w-bar, :scope > .p-bar', list[0]); if (head) shell.append(head.cloneNode(true));
+    const tabs = $(':scope > .w-tabs, :scope > .p-cap', list[0]); if (tabs) shell.append(tabs.cloneNode(true));
+    if (scSrc.classList.contains('ended')) { const st = $('.p-status', shell); if (st) st.textContent = t('Panggilan berakhir', 'Call ended'); }
+    const body = document.createElement('div'); body.className = 'w-list';
+    list.forEach(w => { const l = $(':scope > .w-list, :scope > .form, :scope > .mail-b', w); if (l) [...l.children].forEach(c => body.append(c.cloneNode(true))); else if (l === null && w.classList.contains('booking')) {} });
+    if (!list.some(w => $(':scope > .w-list', w))) list.forEach(w => [...w.children].filter(c => !c.matches('.w-bar, .p-bar, .w-tabs, .p-cap, .seal')).forEach(c => body.append(c.cloneNode(true))));
+    shell.append(body);
+    [...scSrc.children].filter(c => c.matches('.compose, .p-ctl, .seal')).forEach(c => shell.append(c.cloneNode(true)));
+    scBody.replaceChildren(shell);
+    if (keep) scBody.scrollTop = scBody.scrollHeight;
+  };
+  const scheduleScreen = () => { clearTimeout(scT); scT = setTimeout(syncScreen, 30); };
+  new MutationObserver(ms => { if (scSrc && ms.some(m => scSrc.closest('.scene')?.contains(m.target))) scheduleScreen(); }).observe(story, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'hidden'], characterData: true });
+  screenEl.addEventListener('click', e => { if (e.target.closest('.seal') && scSrc) scSrc.classList.toggle('peek'); });
+  function screenFrame(sceneEl) {
+    if (!twoRooms()) return;
+    const line = innerHeight * .62;
+    const wins = $$('.story .win:not(.gate)', sceneEl || story).filter(w => w.offsetParent !== null && w.getBoundingClientRect().top < line);
+    const act = wins.pop() || null;
+    screenEl.classList.toggle('idle', !act);
+    if (act && act !== scSrc) {
+      scSrc = act;
+      screenEl.dataset.dev = act.classList.contains('phone') ? 'phone' : 'laptop';
+      $('.sc-cap', screenEl).textContent = act.classList.contains('phone') ? t('Ponsel Bima', 'Bima’s phone') : t('Laptop Bima', 'Bima’s laptop');
+      syncScreen(); scBody.scrollTop = scBody.scrollHeight;
+      // pesan di jendela yang baru tampil di layar muncul satu per satu
+      $$('.win:not(.gate)', act.closest('.scene')).filter(w => appKey(w) === appKey(act) && !(act.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING)).forEach(w => $$('.m:not(.in)', w).forEach(reveal));
+    }
+    // saat tidak ada lagi jendela pendamping, layar ditutup
+    const nc = AT.noCoach != null && at(AT.noCoach);
+    root.classList.toggle('one-room', !!nc && nc.offsetParent !== null && nc.getBoundingClientRect().top < innerHeight * .5);
+  }
+  // pantulan: setelah Bima mengenali Kaca, ucapan Mira di rumah terpantul di layar
+  function reflect(el) {
+    if (!twoRooms() || !el.classList.contains('balloon') || !el.classList.contains('who-M')) return;
+    const p = +($$('[data-p]').filter(x => x.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).pop()?.dataset.p || 0);
+    if (!(AT.recognized != null && p >= AT.recognized)) return;
+    $$('.reflect', screenEl).forEach(x => x.remove());
+    const r = html(`<p class="reflect">${$('p', el).innerHTML}</p>`); screenEl.append(r);
+    setTimeout(() => r.remove(), calm() ? 1500 : 4200);
+  }
+
+  /* ---------- langit mengikuti jam cerita ---------- */
+  const isDark = () => { const v = root.getAttribute('data-theme'); return v ? v === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  let skyScene = 0;
+  const applySky = () => { if (skyScene && ALIGNED) root.dataset.backdrop = isDark() ? 'malam' : SKY[skyScene - 1]; };
+  addEventListener('qm-frame', applySky);
+  new MutationObserver(applySky).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  document.body.prepend(html('<div class="sky-tint" aria-hidden="true"></div>'));
+
+  /* ---------- peta giliran: seluruh cerita dalam satu pita ---------- */
+  {
+    const marks = $$('.story .balloon:not(.stumble), .story .m, .story .unsaid');
+    let said = 0, typed = 0, unsaid = 0;
+    const bars = marks.map((el, k) => {
+      if (el.classList.contains('unsaid')) { unsaid++; return '<i class="rb-gap"></i>'; }
+      const who = (el.className.match(/who-(\w)/) || [])[1] || 'K', len = el.textContent.length;
+      const h = Math.round(8 + Math.min(26, Math.sqrt(len) * 2.4));
+      if (el.classList.contains('balloon')) { said++; return `<i class="rb-say w-${who}" style="--h:${h}px;--k:${k}"></i>`; }
+      typed++; return `<i class="rb-type w-${who}${el.classList.contains('mira') ? ' w-mira' : ''}" style="--h:${h}px;--k:${k}"></i>`;
+    }).join('');
+    $('#yourTurn').before(html(`<section class="ribbon" aria-label="${t('Semua giliran dalam cerita ini', 'Every turn in this story')}">
+      <p class="rb-k">${t('Semua giliran dalam cerita ini', 'Every turn in this story')}</p>
+      <div class="rb-row" aria-hidden="true">${bars}<i class="rb-you"></i></div>
+      <p class="rb-legend"><span class="l-say">${said} ${t('diucapkan', 'spoken')}</span><span class="l-type">${typed} ${t('diketik', 'typed')}</span><span class="l-gap">${unsaid} ${t('tidak jadi diucapkan', 'left unsaid')}</span><span class="l-you">1 ${t('giliranmu', 'yours')}</span></p></section>`));
+    const rb = $('.ribbon');
+    new IntersectionObserver((es, ob) => { if (es[0].isIntersecting) { rb.classList.add('in'); ob.disconnect(); } }, { rootMargin: '0px 0px -15% 0px' }).observe(rb);
+  }
 
   /* ---------- bagian, kemajuan, dan riwayat baca ---------- */
   const scenesEl = $$('.scene');
@@ -393,7 +568,8 @@
     flushAbove();
     const line = innerHeight * .45;
     let cur = 0; scenesEl.forEach((s, k) => { if (s.offsetParent !== null && s.getBoundingClientRect().top < line) cur = k + 1; });
-    if (cur !== shownScene) { shownScene = cur; $('#stepChip').hidden = !cur; if (cur && G) G.step(cur, scenesEl.length, t('Bagian', 'Part')); }
+    if (cur !== shownScene) { shownScene = cur; $('#stepChip').hidden = !cur; if (cur && G) G.step(cur, scenesEl.length, t('Bagian', 'Part')); skyScene = cur; applySky(); }
+    screenFrame(scenesEl[cur - 1]);
     const max = document.documentElement.scrollHeight - innerHeight, f = max > 0 ? Math.min(1, scrollY / max) : 0;
     // penanda giliran hanya tampil selama percakapannya terlihat
     if (turnBox) { const r = turnBox.getBoundingClientRect(); if (r.bottom < 60 || r.top > innerHeight) { turn.hidden = true; turnBox = null; } }
@@ -448,6 +624,7 @@
     b.onclick = () => { $$('.m, .balloon, .talk').forEach(e => e.classList.add('in')); scrollTo({ top: saved * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' }); b.remove(); };
     $('#cover').append(b);
   }
+  setRooms();
   frame();
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();
