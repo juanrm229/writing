@@ -406,6 +406,66 @@ class SalasimpulSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('#nMem').is_hidden())
         self.assertEqual(self.page.locator('.sn.fog').count(), 0)
 
+    # ---------- the people ----------
+    def test_each_writer_carries_their_age_and_count(self):
+        self.go()
+        self.seed_state()
+        self.open_note('w2025')
+        # Wardi: "Tujuh ratus tiga puluh hari." The header counts the same mornings
+        self.assertIn('730', self.page.locator('.n-since').text_content())
+        self.open_note('n1999')
+        self.assertEqual(self.page.locator('.n-age b').text_content(), '5')
+        self.assertEqual(self.page.evaluate("document.getElementById('note').hasAttribute('data-young')"), True)
+        self.open_note('n2014')
+        self.assertEqual(self.page.locator('.n-age b').text_content(), '20')
+        self.assertEqual(self.page.evaluate("document.getElementById('note').hasAttribute('data-young')"), False)
+        self.open_note('el2024')
+        self.assertIn('28', self.page.locator('.n-since').text_content())
+        for o, per in self.W['persona'].items():
+            self.assertIn(o, {p['id'] for p in self.W['people']})
+
+    def test_a_writers_card(self):
+        self.go()
+        self.seed_state(read={'k1987': 1, 'k2010': 2, 'ls1990': 3})
+        self.open_note('k2010')
+        self.page.locator('.n-who a[data-who="karman"]').click()
+        dlg = self.page.locator('#whoDialog')
+        self.assertTrue(dlg.is_visible())
+        self.assertEqual(self.page.locator('#whoTitle').text_content(), 'Karman')
+        self.assertIn('Tembok', self.page.locator('#whoBody').text_content())
+        self.assertGreater(self.page.locator('#whoBody .wc-clock circle:not(.ring)').count(), 0)
+        # someone you have met can be opened from the web; someone you have not stays a question mark
+        self.assertGreater(self.page.locator('#whoBody .wc-p.unk').count(), 0)
+        self.page.locator('#whoBody .wc-p[data-who="lestari"]').click()
+        self.assertEqual(self.page.locator('#whoTitle').text_content(), 'Lestari')
+        self.page.keyboard.press('Escape')
+        self.assertFalse(dlg.is_visible())
+
+    def test_the_same_night(self):
+        self.go()
+        self.seed_state()
+        self.open_note('k2010')
+        night = [e for e in self.W['entries'] if e['at']['y'] == 2010 and e['at']['d'] == self.BY['k2010']['at']['d']]
+        self.assertEqual(self.page.locator('#night .nt-row').count(), len(night) - 1)
+        self.assertEqual(self.page.locator('#fork .fk[data-how="night"]').count(), 1)
+        # pulling the same-night thread says so, in hours
+        self.page.locator('#fork .fk[data-how="night"]').click()
+        self.page.wait_for_function("document.getElementById('fromStrip')")
+        self.assertIn('jam kemudian', self.page.locator('#fromStrip').text_content())
+        # the whole night, by the clock
+        self.page.locator('#nightGo').click()
+        self.page.wait_for_selector('#nights .nt-note')
+        hours = [s.split('.')[0] for s in self.page.locator('#nights .nn-clock b').all_text_contents()]
+        self.assertEqual(hours, [f"{e['at']['h']:02d}" for e in sorted(night, key=lambda e: e['at']['h'])])
+        for e in night:
+            self.assertIn(e['id'], self.state()['read'])
+
+    def test_sound_of_the_rooms(self):
+        self.go()
+        self.assertEqual(self.page.locator('#sound').text_content(), 'Mati')
+        rooms = {'malam', 'radio', 'jam', 'ruang', 'angin', 'jalan', 'hujan'}
+        self.assertTrue(all(v.get('room') in rooms for v in self.W['persona'].values()))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

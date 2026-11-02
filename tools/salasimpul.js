@@ -21,7 +21,8 @@
    Menambah catatan di masa depan, masa lalu, atau titik mana pun: taruh berkasnya di folder penulisnya
    (folder baru = penulis baru), lalu jalankan:  node tools/salasimpul.js
    Skrip berhenti dengan pesan bila ada id ganda atau rujukan yang menggantung.
-   _dunia.json juga boleh memuat "spine" (rantai yang disarankan) dan "memory" (ingatan bawaan untuk catatan tanpa memory).
+   _dunia.json juga boleh memuat "spine" (rantai yang disarankan), "memory" (ingatan bawaan untuk catatan tanpa memory),
+   dan "persona": ciri tiap penulis untuk antarmuka (lede, born, since: { y, d, label }, room).
    Hasil: content/salasimpul.json (seluruh dunia) dan content/salasimpul.meta.json (ringkas, untuk banner). */
 'use strict';
 const fs = require('fs');
@@ -126,7 +127,13 @@ function build() {
   Object.entries(config.keys || {}).forEach(([id, need]) => { if (!byId.has(id)) throw new Error(`_dunia.json: kunci "${id}" bukan id catatan`); need.forEach(p => { if (!props[p]) throw new Error(`_dunia.json: fakta "${p}" untuk "${id}" tidak pernah dinyatakan`); }); });
   if (config.start && !byId.has(config.start)) throw new Error(`_dunia.json: start "${config.start}" bukan id catatan`);
   (config.spine || []).forEach(id => { if (!byId.has(id)) throw new Error(`_dunia.json: spine "${id}" bukan id catatan`); });
-  const world = { title: config.title || 'Salasimpul', start: config.start || entries[0].id, people, entries, props, keys: config.keys || {}, spine: config.spine || [], memory: config.memory || { stability0: 5000, retrievalBonus: 0.25, retrievals: 0 } };
+  const ROOMS = ['malam', 'radio', 'jam', 'ruang', 'angin', 'jalan', 'hujan'];
+  Object.entries(config.persona || {}).forEach(([o, v]) => {
+    if (!owners.includes(o)) throw new Error(`_dunia.json: persona "${o}" bukan penulis (folder)`);
+    if (v.room && !ROOMS.includes(v.room)) throw new Error(`_dunia.json: persona "${o}": room harus salah satu dari ${ROOMS.join(', ')}`);
+    if (v.since && !(Number.isInteger(v.since.y) && Number.isInteger(v.since.d))) throw new Error(`_dunia.json: persona "${o}": since butuh { y, d }`);
+  });
+  const world = { title: config.title || 'Salasimpul', start: config.start || entries[0].id, people, entries, props, keys: config.keys || {}, spine: config.spine || [], persona: config.persona || {}, memory: config.memory || { stability0: 5000, retrievalBonus: 0.25, retrievals: 0 } };
   const meta = {
     title: world.title, people: people.length, entries: entries.length, words: entries.reduce((n, e) => n + e.words, 0), from: Math.min(...years), to: Math.max(...years),
     // satu baris per penulis: tahun-tahun catatannya, untuk garis-garis kecil di banner

@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../../antologi/panduan.css?v=1">
 <link rel="stylesheet" href="../../antologi/bingkai.css?v=3">
-<link rel="stylesheet" href="simpul.css?v=4">
+<link rel="stylesheet" href="simpul.css?v=5">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -76,6 +76,11 @@
   <div class="know-body" id="knowBody"></div>
 </dialog>
 
+<dialog class="sm-dialog who-dialog" id="whoDialog" aria-labelledby="whoTitle">
+  <header class="dialog-head"><span></span><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="who-body" id="whoBody"></div>
+</dialog>
+
 <div class="flash" id="flash" role="status" aria-live="polite" hidden></div>
 <div class="pop" id="pop" role="dialog" aria-labelledby="popTitle" hidden><button class="close" id="popClose" type="button" aria-label="Tutup">×</button><div id="popBody"></div></div>
 
@@ -84,12 +89,14 @@
   <div class="settings-body">
     <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
     <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+    <div class="setting-row" id="soundRow"><span id="soundLabel">Suara ruangan</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Mati</button></div>
     <div class="setting-row"><span id="openLabel">Kota terbuka</span><button class="setting-button" id="openAll" type="button" aria-pressed="false">Mati</button></div>
     <div class="setting-row"><span id="resetLabel">Ingatanmu di kota ini</span><button class="setting-button" id="reset" type="button">Mulai dari nol</button></div>
   </div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../../antologi/panduan.js?v=4"></script>
-<script src="simpul.js?v=4"></script>
+<script src="suara.js?v=1"></script>
+<script src="simpul.js?v=5"></script>
 </body>
 </html>

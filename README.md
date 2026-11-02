@@ -353,6 +353,16 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
 
 `content/salasimpul/_dunia.json` memuat judul, nama panggilan (Sukrim juga disebut Krim), catatan pembuka (`start`), dan **catatan kunci** (`keys`): catatan yang baru terbuka setelah pembaca tahu fakta tertentu. Sekarang ada tiga: enam kata Hesti, petak sebelas Elmar, dan kuitansi Nara di makam.
 
+`_dunia.json` juga memuat **persona**: ciri tiap penulis yang dipakai antarmuka, bukan teks catatan. Persona diperiksa oleh `node tools/salasimpul.js`.
+
+- `lede`: satu kalimat pengenal di kartu orang, diambil dari catatan-catatan pertamanya.
+- `born`: tahun lahir, hanya kalau umurnya disebut di teks. Contohnya Nara (*Aku lima tahun*, 1999), Karman (*Dua puluh enam tahun* di hari pertama, *enam puluh lima* di 2026), Laras, Bayu, Joni, Sukrim, Elian, dan Lira.
+- `since: { y, d, label, unit }`: hitungan yang dibawa penulisnya, dicocokkan dengan kalimatnya sendiri:
+  - Elmar *28 tahun di pemakaman* pada 2024;
+  - Bagas *7 tahun di kantor* pada 2026;
+  - Wardi dan Hesti *730 hari, dihitung tiap pagi*.
+- `room`: ruangan tempat ia menulis, untuk suara: `malam`, `radio`, `jam`, `ruang`, `angin`, `jalan`, atau `hujan`.
+
 **Membaca:**
 
 - **Kenalan.** Pembaca orang baru di kota ini.
@@ -382,7 +392,36 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
 - Di bawah persimpangan ada baris kecil: *Sebelumnya di buku …*, *Ingat dari tahun lain*, *＋ Suntinganmu*, dan *Peta kota*.
 - Di peramban yang mendukung animasi yang mengikuti gulir, tepi buku terisi tinta sejauh kamu membaca dan paragraf muncul saat kamu sampai. Tidak ada animasi kalau gerak dikurangi.
 - **Jendela-jendela.** Di sampul ada empat jendela berisi kalimat pertama orang-orang yang belum kamu kenal, tanpa nama ("seseorang · 1999"). Kamu memilih orang asing dari suaranya, dan namanya baru terungkap saat kamu masuk. *Jendela lain* mengacak ulang. Di kunjungan pertama, catatan pembuka (`start`) selalu ada di antaranya.
-- **Buku tiap orang.** Setiap penulis punya warna penanda sendiri di tepi halaman. Beberapa buku punya kertas sendiri: bergaris tepi untuk Karman, Bagas, dan Hesti; kotak untuk Ratih; bergaris untuk Joni, Bayu, dan Lira; kertas lama untuk Elmar, Rasmi, dan Inah.
+- **Buku tiap orang.** Setiap penulis punya warna penanda sendiri di tepi halaman, dan setiap buku punya kertasnya sendiri:
+  - bergaris tepi untuk Karman dan Bagas;
+  - surat untuk Hesti, dengan *Nak,* di pembukanya;
+  - buku tulis kotak-kotak untuk Laras;
+  - bergaris untuk Joni, Bayu, dan Lira;
+  - buku daftar dengan kolom nomor petak untuk Elmar;
+  - kertas lama untuk Rasmi dan Inah;
+  - kartu katalog berbingkai untuk Basri;
+  - buku bekas yang halaman depannya disobek untuk Sukrim, dan buku pasar loak yang menguning untuk Endah;
+  - kertas kardus untuk Ratih, garis ganda yang rapi untuk Elian, dan kertas dapur jam tiga pagi untuk Wardi.
+- **Penulis yang masih anak-anak** (di bawah 13 tahun menurut `born`) menulis lebih besar di buku bergaris lebar. Buku Nara ikut tumbuh: besar di 1999, biasa di 2014.
+- **Tanda tangan di kepala catatan:** umur penulis saat itu (*16 tahun*) dan hitungan yang ia bawa (*730 hari dihitung tiap pagi*, *28 tahun di pemakaman*).
+- **Kartu orang.** Mengetuk nama penulis di kepala catatan, atau *kartu* di tab Orang, membuka kartunya. Isinya:
+  - `lede`, tahun menulis, jumlah catatan yang sudah dibaca, umur di bukunya, dan hitungannya;
+  - jam menulis: lingkaran 24 jam dengan titik di setiap jam ia menulis, terisi kalau catatannya sudah dibaca;
+  - orang di sekitarnya: jaring orang yang ia sebut atau yang menyebutnya, dengan tebal garis menurut seberapa sering. Orang yang belum kamu kenal tampil sebagai *?*, dan orang yang sudah kamu kenal bisa diketuk untuk membuka kartunya;
+  - kalimat pertamanya, dan jalan ke *Catatan berikutnya*, *Semua catatannya*, dan *Kota dari sudutnya*.
+  - Orang yang belum kamu kenal tampil sebagai *Seseorang*.
+- **Malam yang sama.** Ada 42 hari ketika lebih dari satu orang menulis, misalnya 31 Maret 2010: Karman pukul 20.00, lalu Lestari dan Nara pukul 23.00.
+  - Di catatan seperti itu ada panel gelap *Malam itu juga*, berisi garis jam, siapa lagi yang menulis, dan kalimat pertamanya.
+  - Persimpangan menawarkan *Malam itu juga* lebih dulu, dan simpulnya menyebut selisih jam (*+3 jam kemudian*).
+  - *Baca malam ini menurut jam* (`#malam-<tahun>-<hari>`) membuka semua catatan hari itu dalam satu gulungan dengan jam besar Doto. Garis jamnya menempel di atas, dan langit serta tintanya berganti saat kamu menggulir dari satu jam ke jam berikutnya.
+- **Suara ruangan** (*Suara ruangan* di Aa, mati sampai dinyalakan). Bunyinya dibuat dengan Web Audio di `dunia/salasimpul/suara.js`, mengikuti `room` penulis dan jam catatan:
+  - radio dapur yang sayup untuk Lestari dan Nara;
+  - jam dinding untuk Wardi, Hesti, dan Laras;
+  - dengung ruang periksa untuk Karman dan Bagas;
+  - angin pemakaman untuk Elmar;
+  - jalan yang belum tidur untuk Sukrim, Endah, dan Joni;
+  - hujan di atap toko untuk Basri.
+  - Malam hari ditambah jangkrik, dan subuh ditambah burung. Kertas berbunyi saat kamu memilih jalan.
 - **Langit mengikuti jam catatan ditulis.** Jam itu tampil dengan Doto, misalnya *23.00*.
 - **Menarik benang.** Mengikuti simpul membuka catatan tujuan dengan pita *Kamu menarik benang dari …*. Di layar lebar (≥1100px), catatan asal tetap terbuka di kiri dan benang biru digambar dari simpulnya ke judul catatan tujuan.
 - **Kilat balik.** Saat fakta yang baru kamu ketahui membuat kalimat di catatan yang *sudah* kamu baca berubah makna, muncul kartu *n kalimat yang pernah kamu baca berubah*, berisi kalimat-kalimat itu dan tautannya.
