@@ -140,7 +140,7 @@ class UsiaSmoke(unittest.TestCase):
             node = box.evaluate("e => e.closest('.node').dataset.id")
             ids = box.locator('.opt').evaluate_all('els => els.map(e => e.dataset.c)')
             choice = pick(node, ids)
-            box.locator(f'.opt[data-c="{choice}"]').click()
+            box.locator(f'.opt[data-c="{choice}"]').press('Enter')
 
     def route_to(self, wanted):
         """A picker that heads for the given choice ids: it picks the shared scene option leading to each one's journey."""
@@ -251,7 +251,7 @@ class UsiaSmoke(unittest.TestCase):
         self.play(self.route_to([cause['id']]), until=cb['target'])
         echo = self.page.locator(f'.node[data-id="{cb["target"]}"]')
         self.assertIn('Gema', echo.locator('.n-kind').text_content())
-        self.assertEqual(norm(echo.locator('.n-cause span').inner_text()), norm(cause['label']))
+        self.assertEqual(norm(echo.locator('.n-quote').inner_text()), norm(cause['label']))
         self.assertIn('kamu memilih', echo.locator('.n-cause small').text_content())
         # the echo comes right after the interlude, then the story goes on to the next day
         ids = self.page.locator('.node').evaluate_all('els => els.map(e => e.dataset.id)')
@@ -287,8 +287,8 @@ class UsiaSmoke(unittest.TestCase):
         self.begin()
         first = self.page.locator('.node[data-id="C01"] .opt').first
         cid = first.get_attribute('data-c')
-        first.click()
-        self.page.wait_for_selector('.node:nth-child(2)')
+        first.press('Enter')
+        self.page.wait_for_selector('.node ~ .node')
         box = self.page.locator('.node[data-id="C01"] .choose')
         self.assertEqual(box.locator('.opt:visible').count(), 1)
         self.assertTrue(box.locator('.opt.picked').is_disabled())
@@ -352,9 +352,13 @@ class UsiaSmoke(unittest.TestCase):
         self.begin()
         self.play(lambda node, ids: ids[0])
         run = self.run_state()
-        lit = set(self.page.locator('#map .mp.lit').evaluate_all('els => els.map(e => e.title)'))
-        self.assertEqual(self.page.locator('#map .mp-row:not(.echoes) .mp.lit').count(), sum(1 for v in run['visited'] if v[0] in 'CHP'))
-        self.assertTrue(lit)
+        # the stitch pattern: one stitch for every morning, afternoon and interlude on the path
+        lit = self.page.locator('#map .st.lit').evaluate_all('els => els.map(e => e.dataset.id)')
+        self.assertEqual(sorted(lit), sorted(v for v in run['visited'] if v[0] in 'CHP'))
+        self.assertEqual(self.page.locator('#map .pt-echo').count(), sum(1 for v in run['visited'] if v[0] == 'R'))
+        stays = not self.N['Z00']['choices'][[c['id'] for c in self.N['Z00']['choices']].index(run['path'][-2]['choice'])]['label'].startswith('Tidak menetap')
+        self.assertEqual(self.page.locator('#map .pt-knot').count(), 1 if stays else 0)
+        self.assertEqual(self.page.locator('#map .pt-tail').count(), 0 if stays else 1)
         self.assertIn('1 dari 8', self.page.locator('#map').text_content())
         self.assertRegex(self.page.locator('.mp-words').inner_text(), r'Kamu membaca [\d.]+ dari 51\.309 kata\.')
         self.assertEqual(self.page.evaluate("JSON.parse(localStorage.getItem('jm:usia:endings'))"), [run['path'][-1]['id']])
@@ -376,21 +380,22 @@ class UsiaSmoke(unittest.TestCase):
         self.begin()
         self.assertTrue(self.page.locator('#clock').is_visible())
         self.assertIn('18.40', self.page.locator('#ckTime').inner_text())
-        self.assertIn('sisa 168 jam', self.page.locator('#ckTime').inner_text())
+        self.assertIn('sisa 168 jam', self.page.locator('#ckTime').text_content())
         self.assertIn('Senin, 9 November', self.page.locator('#ckWhen').inner_text())
-        self.assertIn('Laras 31 · Dian 37', self.page.locator('#ckAges').inner_text())
+        self.assertEqual(self.page.locator('#cast .ck-p').first.get_attribute('data-who'), 'Laras')
+        self.assertIn('Dian', self.page.locator('#cast .ck-p').evaluate_all('els => els.map(e => e.dataset.who)'))
         self.assertIn('Hari 1 dari 7', self.page.locator('#stepChip').inner_text())
         self.play(lambda node, ids: ids[0], until='Z00')
         self.page.locator('.node[data-id="Z00"]').scroll_into_view_if_needed()
         self.page.locator('.node[data-id="Z00"] .n-head').evaluate('e => e.scrollIntoView()')
         self.page.wait_for_function("document.getElementById('ckTime').innerText.includes('17.40')")
-        self.assertIn('sisa 1 jam', self.page.locator('#ckTime').inner_text())
+        self.assertIn('sisa 1 jam', self.page.locator('#ckTime').text_content())
         self.assertIn('Senin, 16 November', self.page.locator('#ckWhen').inner_text())
 
     def test_preview_writes_no_history(self):
         self.begin('?preview=1')
-        self.page.locator('.opt').first.click()
-        self.page.wait_for_selector('.node:nth-child(2)')
+        self.page.locator('.opt').first.press('Enter')
+        self.page.wait_for_selector('.node ~ .node')
         stored = self.page.evaluate("Object.keys(localStorage).filter(k => k.startsWith('jm:') && !k.startsWith('jm:guide'))")
         self.assertEqual(stored, [])
 
@@ -406,6 +411,124 @@ class UsiaSmoke(unittest.TestCase):
         self.assertIn('Monday, 9 November', self.page.locator('#ckWhen').inner_text())
         self.assertIn('Where does Laras go tonight?', self.page.locator('.ch-q').inner_text())
         self.assertIn('Day 1 of 7', self.page.locator('#stepChip').inner_text())
+
+    # ---------- the immersive layer ----------
+    def motion_page(self):
+        ctx = self.browser.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='no-preference', service_workers='block')
+        ctx.add_init_script(SEEN)
+        ctx.route(re.compile(r'https://fonts\.(googleapis|gstatic)\.com/.*'), lambda route: route.abort())
+        page = ctx.new_page()
+        page.on('pageerror', lambda e: self.errors.append(str(e)))
+        page.on('dialog', lambda d: d.accept())
+        self.addCleanup(ctx.close)
+        return page
+
+    def test_a_choice_is_pressed_and_held(self):
+        self.begin()
+        opt = self.page.locator('.node[data-id="C01"] .opt').nth(1)
+        opt.scroll_into_view_if_needed()
+        box = opt.bounding_box()
+        self.page.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+        # a quick tap does nothing
+        self.page.mouse.down(); self.page.wait_for_timeout(250); self.page.mouse.up()
+        self.page.wait_for_timeout(1200)
+        self.assertEqual(self.page.locator('.choose.done').count(), 0)
+        self.assertIn('Tekan dan tahan', self.page.locator('.ch-hint').inner_text())
+        # holding long enough stamps it
+        self.page.mouse.down(); self.page.wait_for_timeout(1300); self.page.mouse.up()
+        self.page.wait_for_selector('.node[data-id="C01"] .choose.done')
+        self.assertEqual(self.page.locator('.opt.picked').get_attribute('data-c'), opt.get_attribute('data-c'))
+        self.assertIn('Senin', self.page.locator('.opt.picked .o-stamp').text_content())
+
+    def test_story_objects_sit_beside_their_sentence(self):
+        self.open()
+        benda = self.page.evaluate('window.USIA_BENDA')
+        self.assertGreaterEqual(sum(len(v) for v in benda.values()), 30)
+        for node, items in benda.items():
+            n = self.N[node]
+            parts = [p for t in [n.get('body'), n.get('body_before'), n.get('body_after')] + [v['body'] for v in n.get('variants', [])] if t for p in re.split(r'\n\s*\n', t)]
+            for o in items:
+                with self.subTest(node=node, at=o['at']):
+                    self.assertEqual(sum(o['at'] in p for p in parts), 1)
+        # on the page: the temporary identity card has an empty address, the letter names Kota Hilir
+        self.page.locator('#begin').click()
+        self.play(self.route_to(['H2A_1']), until='C03')
+        card = self.page.locator('.node[data-id="C02"] .bd-card')
+        self.assertIn('Kartu Identitas Sementara', card.inner_text())
+        self.assertEqual(card.locator('.bd-empty').count(), 1)
+        self.assertIn('Ratna', self.page.locator('.node[data-id="C02"] .bd-phone .bd-bar').inner_text())
+        letter = self.page.locator('.node[data-id="C03"] .bd-letter')
+        self.assertIn('Kota Hilir', letter.inner_text())
+        self.assertIn('Minggu, 9 November 1997', letter.inner_text())
+        # the object comes right after the paragraph it belongs to, and the prose is untouched
+        prev = letter.evaluate('e => e.parentElement.textContent')
+        self.assertIn('Dian membaca alamat pada surat', prev)
+        self.assertEqual(self.page.locator('.node[data-id="H2A"] .bd-photo').count(), 1)
+
+    def test_who_is_in_the_scene_and_what_you_know(self):
+        self.begin()
+        self.play(self.route_to(['H1B_1']), until='C02')
+        # Dian's interlude was read: her name is dotted later, and the sheet says Laras does not know
+        kn = self.page.locator('.node[data-id="C02"] .kn[data-who="Dian"]').first
+        self.assertEqual(kn.inner_text(), 'Dian')
+        kn.click()
+        sheet = self.page.locator('#sheet')
+        self.assertTrue(sheet.is_visible())
+        self.assertIn('Laras tidak mengetahui ini', sheet.inner_text())
+        self.assertIn('37', sheet.inner_text()); self.assertIn('8', sheet.locator('.sh-ages').inner_text())
+        self.page.keyboard.press('Escape')
+        self.assertFalse(sheet.is_visible())
+        # the cast under the clock
+        self.page.locator('.node[data-id="C02"] .n-head').evaluate('e => e.scrollIntoView()')
+        self.page.wait_for_function("document.querySelector('#cast .ck-p')")
+        laras = self.page.locator('#cast .ck-p').first
+        self.assertEqual(laras.get_attribute('data-who'), 'Laras')
+        laras.click()
+        self.assertIn('Tubuhnya tidak ikut menua', sheet.inner_text())
+        # interludes: the clock says Laras is not here
+        self.page.locator('.node[data-id="P01"] .n-head').evaluate('e => e.scrollIntoView()')
+        self.page.wait_for_function("document.getElementById('clock').classList.contains('away')")
+        self.assertIn('Laras tidak di sini', self.page.locator('#ckWhen').inner_text())
+
+    def test_thread_knots_and_echo_loops(self):
+        cb = self.N['P02']['callbacks'][0]
+        cause = self.story.setter(cb['requires_flags'][0])
+        self.begin()
+        self.play(self.route_to([cause['id']]), until=cb['target'])
+        self.page.wait_for_timeout(100)
+        knots = self.page.locator('#thread .th-knots path').count()
+        self.assertEqual(knots, self.page.locator('.opt.picked').count())
+        self.assertEqual(self.page.locator('#thread .th-loops path').count(), 1)
+        self.assertIn(cb['target'], self.page.evaluate("[...document.querySelectorAll('.node[data-cause]')].map(e => e.dataset.id)"))
+        # "see that choice" goes back to it
+        self.page.locator(f'.node[data-id="{cb["target"]}"] .n-back').click()
+        self.page.wait_for_selector('.opt.called')
+
+    def test_time_passes_between_days_and_stops_at_the_end(self):
+        page = self.motion_page()
+        page.goto(self.url, wait_until='domcontentloaded')
+        page.locator('#begin').click()
+        page.wait_for_selector('.node[data-id="C01"].surface')
+        # through the first night: the remaining hours roll down
+        while not page.locator('.node[data-id="C02"]').count():
+            state = page.wait_for_function(STATE).json_value()
+            if state == 'go':
+                page.locator('.cont:not(.done) .go').click()
+            else:
+                box = page.locator('.choose:not(.done)')
+                if box.locator('.opt').count():
+                    box.locator('.opt').first.press('Enter')
+                    page.wait_for_function("document.querySelectorAll('.choose:not(.done) .opt').length === 0 || document.querySelector('.cross, .night')")
+            if page.locator('.cross').count():
+                self.assertIn('Laras tidak ikut ke sini', page.locator('.cross').inner_text())
+                page.locator('.cross').dispatch_event('click')
+        night = page.locator('.night')
+        self.assertEqual(night.count(), 1)
+        self.assertIn('Selasa', night.inner_text())
+        self.assertIn('jam tersisa', night.text_content())
+        page.wait_for_function("document.querySelector('.night .nt-n b').textContent === '156'")
+        night.dispatch_event('click')
+        page.wait_for_selector('.night', state='detached')
 
 
 if __name__ == '__main__':
