@@ -4,7 +4,11 @@
    - memilih: pasang set_flags, cabut unset_flags, pindah ke target; pilihan dengan requires_flags hanya muncul bila tandanya ada
    - sela (perspective): body_before, tepat satu varian yang cocok dengan visited_all, body_after; lalu antrekan semua
      callbacks yang cocok berurutan; gema kembali ke antrean, lalu next
-   Nama tanda tidak pernah ditampilkan. Pikiran di sela hanya untuk pembaca. Tidak ada skor. */
+   Nama tanda tidak pernah ditampilkan. Pikiran di sela hanya untuk pembaca. Tidak ada skor.
+
+   Di atasnya: malam yang lewat, angka 18.40 yang berkedip sampai batas, pembuka dari dalam air, pilihan yang ditahan
+   lalu dicap, pilihan lain yang tenggelam, benang jahitan di tepi buku, gema sebagai riak, pola jahitan di akhir,
+   masuk ke sela, yang kamu tahu tetapi Laras tidak, siapa di adegan, dan benda-benda dari benda.js. */
 (async () => {
   'use strict';
   const $ = (s, el = document) => el.querySelector(s);
@@ -17,7 +21,7 @@
     get(k, d) { if (PREVIEW && HISTORY.includes(k)) return k in mem ? mem[k] : d; try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { if (PREVIEW && HISTORY.includes(k)) { mem[k] = v; return; } try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
-  const SLUG = 'usia-pulang', G = window.JMGuide, root = document.documentElement;
+  const SLUG = 'usia-pulang', G = window.JMGuide, root = document.documentElement, BENDA = window.USIA_BENDA || {};
   const EN = (qs.get('lang') || store.get('lang', 'id')) === 'en';
   const t = (id, en) => (EN ? en : id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -25,6 +29,7 @@
   const paras = s => String(s || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const html = s => { const d = document.createElement('div'); d.innerHTML = s.trim(); return d.firstElementChild; };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
   root.lang = t('id', 'en');
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
@@ -33,7 +38,7 @@
   if (EN) {
     $('#lede').textContent = 'Laras comes back twenty-nine years after her death. Her body is still 31; her daughter is 37. She has 168 hours to decide whether to stay.';
     $('#rule1').textContent = 'Seven days. Each day you choose where Laras goes, then what she does.';
-    $('#rule2').textContent = 'Choices cannot be taken back. There is no good or bad score.';
+    $('#rule2').textContent = 'Press and hold to choose. Choices cannot be taken back, and nothing is scored.';
     $('#rule3').textContent = 'Eight endings. One journey reads only part of the story.';
     $('#lost').hidden = false; $('#lost').textContent = 'This novel is not translated yet, so it is shown in the original Indonesian.';
     $('#cardKick').textContent = 'Teluk Rantau · Return support'; $('#cardTitle').textContent = 'Return Card';
@@ -46,18 +51,35 @@
   const N = data.nodes, ENTRY = data.entry;
   const TOTAL_WORDS = Object.values(N).reduce((n, x) => n + (+x.prose_words || 0), 0);
   const ENDINGS = Object.values(N).filter(n => n.kind === 'ending').map(n => n.id).sort();
+  const STAYS = id => !/^Tidak menetap/i.test((N.Z00.choices || []).find(c => c.target === id)?.label || '');
   const shortTitle = n => String(n.title || n.id).replace(/^[A-Z]\d{2}[A-D]?\s*[—-]\s*/, '').replace(/^[A-Z]\d[A-D]\s*[—-]\s*/, '');
   const has = (flags, list) => (list || []).every(f => flags.has(f));
+  const labelOf = (nodeId, choiceId) => ((N[nodeId] && N[nodeId].choices) || []).find(x => x.id === choiceId)?.label || '';
+
+  /* ---------- orang: usia dari kanon pengarang (1997 saat Laras meninggal, 2026 saat ia kembali) ---------- */
+  const PEOPLE = {
+    Laras: { rel: t('Kembali sesudah dua puluh sembilan tahun.', 'Back after twenty-nine years.'), then: 31, now: 31 },
+    Dian: { rel: t('Putri Laras. Ibu Banyu.', 'Laras’s daughter. Banyu’s mother.'), then: 8, now: 37 },
+    Hadi: { rel: t('Suami Laras dahulu. Suami Ratna sekarang.', 'Laras’s husband then. Ratna’s husband now.'), then: 33, now: 62 },
+    Ratna: { rel: t('Istri Hadi sekarang.', 'Hadi’s wife now.'), then: 29, now: 58 },
+    Sulastri: { rel: t('Ibu Laras.', 'Laras’s mother.'), then: 53, now: 82 },
+    Tama: { rel: t('Anak Hadi dan Ratna.', 'Hadi and Ratna’s son.'), born: 2003, now: 23 },
+    Banyu: { rel: t('Anak Dian.', 'Dian’s son.'), born: 2017, now: 9 },
+    Anin: { rel: t('Sahabat dan rekan jahit lama.', 'Old friend, fellow seamstress.'), then: 31, now: 60 },
+    Suri: { rel: t('Petugas pendampingan kepulangan.', 'Return support officer.'), now: 44 },
+    Rafi: { rel: t('Wartawan.', 'Journalist.'), now: 38 }
+  };
+  const NAMES = Object.keys(PEOPLE);
+  const nameRe = name => new RegExp(`(^|[^\\p{L}])(${name})(?![\\p{L}])`, 'u');
 
   /* ---------- jam cerita: Senin 9 November 2026 18.40 sampai Senin 16 November 2026 18.40 ---------- */
   const DAYS = EN ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday'] : ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu', 'Senin'];
   const PART = { pagi: t('pagi', 'morning'), siang: t('siang', 'afternoon'), sore: t('sore', 'evening'), malam: t('malam', 'night'), senja: t('petang', 'dusk') };
   const HOUR = { pagi: 8, siang: 13, sore: 17.67, senja: 18.67, malam: 21.5 };
   const SKY = { pagi: 'fajar', siang: 'siang', sore: 'senja', senja: 'senja', malam: 'malam' };
-  // hari dan bagian hari untuk tiap simpul; gema mengikuti hari selanya
   let lastDay = 0;
   function timeOf(id) {
-    const n = N[id], m = id.match(/^([CHPRZE])(\d)?(\d)?/);
+    const n = N[id], m = id.match(/^([CHPRZE])/);
     if (id === ENTRY) return { day: 0, part: 'senja', exact: '18.40' };
     if (id === 'Z00') return { day: 7, part: 'sore', exact: '17.40' };
     if (n.kind === 'ending') return { day: 7, part: 'senja', exact: '18.40' };
@@ -67,14 +89,15 @@
     return { day: lastDay, part: 'malam' };
   }
   const elapsed = tm => Math.max(0, Math.min(168, tm.day * 24 + HOUR[tm.part] - 18.67));
-  const dateOf = tm => `${DAYS[tm.day]}, ${9 + tm.day} ${t('November', 'November')}`;
+  const left = tm => Math.max(0, Math.round(168 - elapsed(tm)));
+  const dateOf = tm => `${DAYS[tm.day]}, ${9 + tm.day} November`;
 
   /* ---------- perjalanan (run) ---------- */
-  // path: [{ id, choice?, queue? }]; snaps: keadaan sebelum masuk tiap adegan bersama C, untuk "mulai dari hari ini"
   const fresh = () => ({ v: 1, path: [], flags: [], visited: [], queue: [], pNext: null, snaps: {}, started: Date.now() });
   let run = store.get('usia:run', null);
   if (!run || run.v !== 1 || !Array.isArray(run.path)) run = null;
   let flags = new Set(), visited = [];
+  let known = {};          // yang dibaca di sela: { Dian: [{ pid, day, text }] }
   const save = () => { run.flags = [...flags]; run.visited = visited; store.set('usia:run', run); };
 
   /* ---------- tampilan buku ---------- */
@@ -82,60 +105,129 @@
   const KIND = { choice: t('Bersama', 'Together'), journey: t('Perjalanan', 'Journey'), perspective: t('Sela', 'Interlude'), callback: t('Gema', 'Echo'), ending: t('Akhir', 'Ending'), last: t('Batas', 'Deadline') };
   const kindOf = n => n.kind === 'choice' ? (/^H/.test(n.id) ? 'journey' : n.id === 'Z00' ? 'last' : 'choice') : n.kind;
   const whoOf = n => (String(n.title).match(/—\s*([A-Z][a-z]+):/) || [])[1] || '';
-  const NAMES = ['Dian', 'Sulastri', 'Hadi', 'Ratna', 'Suri', 'Anin', 'Banyu', 'Tama', 'Kamal', 'Rafi'];
-  const people = label => NAMES.filter(x => new RegExp(`\\b${x}\\b`).test(label));
+  const people = label => NAMES.filter(x => x !== 'Laras' && nameRe(x).test(label));
   const prompt = n => n.id === 'Z00' ? t('Sebelum pukul 18.40, Laras memutuskan…', 'Before 18:40, Laras decides…')
     : /^H/.test(n.id) ? t('Apa yang Laras lakukan?', 'What does Laras do?')
     : n.id === ENTRY ? t('Ke mana Laras pergi malam ini?', 'Where does Laras go tonight?')
     : t(`Ke mana Laras pergi hari ${DAYS[timeOf(n.id).day]}?`, `Where does Laras go on ${DAYS[timeOf(n.id).day]}?`);
 
-  // gema: kutip tindakan pembaca sendiri yang memasang tanda pemicunya
-  function causeOf(because) {
-    for (let k = run.path.length - 1; k >= 0; k--) {
+  // gema: kutip tindakan pembaca sendiri (sebelum gema itu) yang memasang tanda pemicunya
+  function causeOf(because, before) {
+    for (let k = Math.min(before, run.path.length) - 1; k >= 0; k--) {
       const e = run.path[k]; if (!e.choice) continue;
       const c = (N[e.id].choices || []).find(x => x.id === e.choice);
-      if (c && (c.set_flags || []).some(f => because.includes(f))) return { c, tm: timeOf(e.id) };
+      if (c && (c.set_flags || []).some(f => because.includes(f))) return { c, tm: timeOf(e.id), id: e.id };
     }
     return null;
   }
 
+  /* ---------- benda ---------- */
+  function bendaHTML(o, when) {
+    const head = (title, sub) => `<header class="bd-bar"><span class="bd-app">${esc(t('Pesan', 'Messages'))}</span><b>${esc(title)}</b><small>${esc(sub)}</small></header>`;
+    const owner = o.owner ? t(`ponsel ${o.owner}`, `${o.owner}’s phone`) + ' · ' : '';
+    const bubble = it => {
+      const [k, a, b] = it;
+      if (k === 'voice') return `<div class="bd-m in voice"><span class="bd-b"><i class="bd-play" aria-hidden="true"></i><span class="bd-wave" aria-hidden="true">${Array.from({ length: 22 }, (_, i) => `<i style="--h:${(4 + ((i * 7) % 11) + (i % 3) * 2)}px"></i>`).join('')}</span><small>${esc(a)}</small></span><span class="bd-tr">${esc(t('Transkrip', 'Transcript'))}: ${esc(b)}</span></div>`;
+      if (/photo$/.test(k)) return `<div class="bd-m ${k.split('-')[0]}"><span class="bd-b bd-pic"><span class="bd-ph" aria-hidden="true"></span><small>${esc(a)}</small></span></div>`;
+      return `<div class="bd-m ${k}"><span class="bd-b">${esc(a)}</span></div>`;
+    };
+    const ph = (cap, mods = [], tags = []) => `<figure class="bd bd-photo ${mods.map(m => 'pm-' + m).join(' ')}"><span class="bd-frame">${tags.map((x, i) => `<span class="bd-tag" style="--i:${i}">${esc(x)}</span>`).join('')}</span><figcaption>${esc(cap)}</figcaption></figure>`;
+    switch (o.k) {
+      case 'msg': return `<div class="bd bd-phone" data-k="msg">${head(o.from, owner + when)}<div class="bd-list">${o.items.map(bubble).join('')}</div>${o.note ? `<p class="bd-note">${esc(o.note)}</p>` : ''}</div>`;
+      case 'draft': return `<div class="bd bd-phone bd-draft" data-k="draft" data-tries="${esc(JSON.stringify(o.tries || []))}" data-final="${esc(o.final)}">${head(o.from, owner + (o.note ? o.note + ' · ' : '') + when)}<div class="bd-list">${o.items.map(bubble).join('')}${bubble(['out', o.final])}</div><div class="bd-compose" aria-hidden="true"><span class="bd-field"></span><i class="bd-send"></i></div></div>`;
+      case 'photo': return ph(o.cap, o.mods, o.tags);
+      case 'strip': return `<div class="bd bd-strip">${o.items.map(c => ph(c, ['old'])).join('')}</div>`;
+      case 'card': return `<div class="bd bd-card"><p class="bd-k">${esc(o.head)}</p><h4>${esc(o.title)}</h4><dl>${o.rows.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${b ? esc(b) : `<span class="bd-empty" aria-label="${esc(t('kosong', 'empty'))}"></span>`}</dd></div>`).join('')}</dl></div>`;
+      case 'letter': return `<div class="bd bd-letter"><header><b>${esc(o.head)}</b><small>${esc(o.sub)}</small></header><h4>${esc(o.title)}</h4><p class="bd-to">${esc(o.to)}</p>${o.body.map(p => `<p>${esc(p)}</p>`).join('')}<dl>${o.meta.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl></div>`;
+      case 'forged': return `<figure class="bd bd-forged"><span class="bd-lines" aria-hidden="true">${[86, 64, 92, 48, 78, 36].map(w => `<i style="--w:${w}%"></i>`).join('')}</span><span class="bd-sign">Laras</span><figcaption>${esc(o.cap)}</figcaption></figure>`;
+      case 'slip': return `<div class="bd bd-slip"><p class="bd-k">${esc(o.title)}</p>${o.lines.map(([a, b]) => `<p class="bd-row"><span>${esc(a)}</span><b>${esc(b)}</b></p>`).join('')}<p class="bd-foot">${esc(o.foot)}</p></div>`;
+      case 'blank': return `<div class="bd bd-blank" role="img" aria-label="${esc(t('Satu halaman kosong', 'One blank page'))}"></div>`;
+      case 'envs': return `<div class="bd bd-envs">${o.items.map((x, i) => `<span class="bd-env" style="--i:${i}">${esc(x)}</span>`).join('')}${o.extra ? `<span class="bd-env voice" style="--i:${o.items.length}">${esc(o.extra)}</span>` : ''}</div>`;
+    }
+    return '';
+  }
+
+  /* ---------- simpul ---------- */
   function nodeEl(entry, idx) {
     const n = N[entry.id], k = kindOf(n), tm = timeOf(entry.id), who = whoOf(n);
     if (n.kind === 'perspective' || n.kind === 'choice' && /^C/.test(n.id)) lastDay = tm.day;
     const when = `${DAYS[tm.day]} ${PART[tm.part]}`;
     const sec = html(`<section class="node k-${k}${who ? ' who-' + who : ''}" data-id="${n.id}" data-i="${idx}" data-day="${tm.day}" data-part="${tm.part}"></section>`);
-    let head = `<header class="n-head"><p class="n-kind"><span>${esc(KIND[k])}${who ? ' · ' + esc(who) : ''}</span><span>${esc(when)}</span></p><h2>${esc(who ? shortTitle(n).replace(new RegExp(`^${who}:\\s*`), '') : shortTitle(n))}</h2></header>`;
+    const title = who ? shortTitle(n).replace(new RegExp(`^${who}:\\s*`), '') : shortTitle(n);
+    let head = `<header class="n-head"><p class="n-kind"><span>${esc(KIND[k])}${who ? ' · ' + esc(who) : ''}</span><span>${esc(when)}</span></p><h2>${esc(title)}</h2></header>`;
     if (n.kind === 'perspective') head += `<p class="n-note">${esc(t(`Laras tidak mengetahui apa yang ${who} pikirkan di sini.`, `Laras does not know what ${who} thinks here.`))}</p>`;
     if (n.kind === 'callback' && entry.because) {
-      const cause = causeOf(entry.because);
-      if (cause) head += `<p class="n-cause"><small>${esc(t(`${DAYS[cause.tm.day]} ${PART[cause.tm.part]}, kamu memilih`, `${DAYS[cause.tm.day]} ${PART[cause.tm.part]}, you chose`))}</small><span>${esc(cause.c.label)}</span></p>`;
+      const cause = causeOf(entry.because, idx);
+      if (cause) { sec.dataset.cause = cause.id; head += `<p class="n-cause"><small>${esc(t(`${DAYS[cause.tm.day]} ${PART[cause.tm.part]}, kamu memilih`, `${DAYS[cause.tm.day]} ${PART[cause.tm.part]}, you chose`))}</small><span class="n-quote">${esc(cause.c.label)}</span><button type="button" class="n-back">${esc(t('Lihat pilihan itu', 'See that choice'))} <span aria-hidden="true">↑</span></button></p>`; }
     }
-    let body = '';
+    let raw = [];
     if (n.kind === 'perspective') {
       const v = (n.variants || []).find(x => (x.visited_all || []).every(id => visited.includes(id)));
-      body = [...paras(n.body_before), ...(v ? paras(v.body) : []), ...paras(n.body_after)].map(p => `<p>${inline(p)}</p>`).join('');
-    } else body = paras(n.body).map(p => `<p>${inline(p)}</p>`).join('');
-    sec.innerHTML = head + `<div class="n-body">${body}</div>`;
+      raw = [...paras(n.body_before), ...(v ? paras(v.body) : []), ...paras(n.body_after)];
+      const vp = v ? paras(v.body) : raw, mark = vp[vp.length - 1];   // kalimat pertama dari paragraf terakhir varian: biasanya yang paling dalam
+      const sent = (String(mark || '').match(/^.+?[.!?](?=\s|$)/) || [mark || ''])[0];
+      (known[who] = known[who] || []).push({ pid: n.id, day: tm.day, text: sent.replace(/\*/g, '') });
+    } else raw = paras(n.body);
+    let ps = raw.map(p => inline(p));
+    // jam di dalam teks: berkedip di awal dan di batas, diam di akhir
+    if (n.id === ENTRY || n.id === 'Z00') ps = ps.map(p => p.replace(/\b(1[78])\.(40)\b/g, '<span class="loket">$1.<span class="blink">$2</span></span>'));
+    if (n.kind === 'ending') ps = ps.map(p => p.replace(/\b(18)\.(40)\b/g, '<span class="loket still">$1.$2</span>'));
+    // yang kamu tahu dari sela, sementara Laras tidak: nama pertama orang itu di simpul ini diberi titik
+    if (n.kind !== 'perspective') {
+      Object.keys(known).forEach(name => {
+        for (let i = 0; i < ps.length; i++) { const re = nameRe(name); if (re.test(ps[i])) { ps[i] = ps[i].replace(re, `$1<button type="button" class="kn" data-who="${name}" aria-label="${esc(t(`${name}: yang kamu tahu dari selanya`, `${name}: what you know from the interlude`))}">$2</button>`); break; } }
+      });
+    }
+    const body = ps.map(p => `<p>${p}</p>`);
+    // benda di dalam cerita
+    (BENDA[n.id] || []).forEach(o => {
+      const i = raw.findIndex(p => p.includes(o.at)); if (i < 0) return;
+      body[i] += bendaHTML(o, when);
+    });
+    sec.innerHTML = head + `<div class="n-body">${body.join('')}</div>`;
+    // siapa di adegan ini
+    const text = raw.join(' ');
+    const cast = NAMES.filter(x => x !== 'Laras' && nameRe(x).test(text)).sort((a, b) => text.search(nameRe(a)) - text.search(nameRe(b)));
+    sec.dataset.cast = (n.kind === 'perspective' ? [who, ...cast.filter(x => x !== who)] : ['Laras', ...cast]).join(' ');
     return sec;
   }
 
+  /* ---------- pilihan: ditahan, dicap, yang lain tenggelam ---------- */
+  const HOLD = 1100;
   function choiceEl(entry) {
     const n = N[entry.id];
     const opts = (n.choices || []).filter(c => has(flags, c.requires_flags));
     const kind = n.id === 'Z00' ? 'doors' : /^H/.test(n.id) ? 'acts' : 'places';
-    const box = html(`<div class="choose c-${kind}" role="group" aria-label="${esc(prompt(n))}"><p class="ch-q">${esc(prompt(n))}</p><div class="ch-list"></div></div>`);
+    const box = html(`<div class="choose c-${kind}" role="group" aria-label="${esc(prompt(n))}"><p class="ch-q">${esc(prompt(n))}</p><div class="ch-list"></div><p class="ch-hint">${esc(t('Tekan dan tahan pilihanmu', 'Press and hold your choice'))}</p></div>`);
     opts.forEach(c => {
       const ppl = people(c.label);
-      const b = html(`<button type="button" class="opt" data-c="${c.id}"><span class="o-t">${esc(c.label)}</span>${kind === 'places' && ppl.length ? `<span class="o-p">${ppl.map(p => `<i title="${p}">${p[0]}</i>`).join('')}</span>` : ''}${kind === 'doors' ? `<span class="o-d">${/^Tidak menetap/i.test(c.label) ? t('tidak menetap', 'does not stay') : t('menetap', 'stays')}</span>` : ''}</button>`);
-      b.onclick = () => choose(entry, c, box, b);
+      const b = html(`<button type="button" class="opt" data-c="${c.id}"><span class="o-fill" aria-hidden="true"></span><span class="o-t">${esc(c.label)}</span>${kind === 'places' && ppl.length ? `<span class="o-p">${ppl.map(p => `<i title="${p}">${p[0]}</i>`).join('')}</span>` : ''}${kind === 'doors' ? `<span class="o-d">${/^Tidak menetap/i.test(c.label) ? t('tidak menetap', 'does not stay') : t('menetap', 'stays')}</span>` : ''}</button>`);
+      let timer = 0;
+      const stop = () => { if (!timer) return; clearTimeout(timer); timer = 0; b.classList.remove('holding'); box.classList.remove('pressing'); };
+      b.addEventListener('pointerdown', e => {
+        if (e.button || b.disabled || entry.choice) return;
+        b.classList.add('holding'); box.classList.add('pressing');
+        timer = setTimeout(() => { timer = 0; b.classList.remove('holding'); box.classList.remove('pressing'); choose(entry, c, box); }, HOLD);
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, stop));
+      b.addEventListener('click', e => { if (e.detail === 0) choose(entry, c, box); });   // papan ketik dan pembaca layar
+      b.addEventListener('contextmenu', e => e.preventDefault());
       $('.ch-list', box).append(b);
     });
-    if (entry.choice) settle(box, entry.choice);
+    if (entry.choice) settle(box, entry, false);
     return box;
   }
-  function settle(box, choiceId) {
+  function settle(box, entry, animate) {
     box.classList.add('done');
-    $$('.opt', box).forEach(b => { const me = b.dataset.c === choiceId; b.classList.toggle('picked', me); b.disabled = true; if (!me) b.hidden = true; b.setAttribute('aria-pressed', String(me)); });
+    const tm = timeOf(entry.id);
+    $$('.opt', box).forEach(b => {
+      const me = b.dataset.c === entry.choice;
+      b.classList.toggle('picked', me); b.disabled = true; b.setAttribute('aria-pressed', String(me));
+      if (me) b.insertAdjacentHTML('beforeend', `<span class="o-stamp" aria-hidden="true">${esc(t('Tercatat', 'Noted'))} · ${esc(DAYS[tm.day])}</span>`);
+      else if (animate) { b.classList.add('sink'); setTimeout(() => { b.hidden = true; }, 900); }
+      else b.hidden = true;
+    });
+    $('.ch-hint', box)?.remove();
     if (!box.querySelector('.ch-note')) box.append(html(`<p class="ch-note">${esc(t('Tercatat di Kartu Kepulangan', 'Noted on the Return Card'))}</p>`));
   }
   function continueEl(entry) {
@@ -147,23 +239,26 @@
     return b;
   }
 
-  function render(entry, idx, fresh) {
+  function render(entry, idx, isNew) {
     const n = N[entry.id];
     const sec = nodeEl(entry, idx);
     if (n.kind === 'choice') sec.append(choiceEl(entry));
     else if (n.kind === 'perspective' || n.kind === 'callback') sec.append(continueEl(entry));
     else if (n.kind === 'ending') sec.append(endingEl(n));
     book.append(sec);
-    if (fresh) {
-      if (!reduced()) sec.classList.add('enter');
+    if (isNew) {
+      if (!reduced()) { sec.classList.add('enter'); $$('.bd', sec).forEach(b => b.classList.add('anim')); }
+      if (n.id === ENTRY && !reduced()) { sec.classList.add('surface'); try { $('#waterGo').beginElement(); } catch (e) { /* tanpa SMIL */ } setTimeout(() => sec.classList.remove('surface'), 6500); }
       requestAnimationFrame(() => sec.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' }));
     }
+    threadSoon();
     return sec;
   }
 
   /* ---------- gerak cerita ---------- */
   function enter(id) {
-    const n = N[id];
+    const n = N[id], prev = run.path[run.path.length - 1];
+    const from = prev ? timeOf(prev.id) : null;
     if (/^C\d/.test(id)) run.snaps[id] = { flags: [...flags], visited: [...visited], path: JSON.parse(JSON.stringify(run.path)), queue: [], pNext: null };
     if (!visited.includes(id)) visited.push(id);
     (n.on_enter_flags || []).forEach(f => flags.add(f));
@@ -174,19 +269,22 @@
       run.pNext = n.next;
     }
     run.path.push(entry); save();
+    const to = timeOf(id);
+    if (from && (to.day > from.day || n.kind === 'ending')) night(from, to, n.kind === 'ending');
+    if (n.kind === 'perspective') cross(whoOf(n));
     render(entry, run.path.length - 1, true);
-    if (n.kind === 'ending') finish(n);
-    frame();
+    if (n.kind === 'ending') finish(n, true);
+    frame(true);
   }
-  function choose(entry, c, box, b) {
+  function choose(entry, c, box) {
     if (entry.choice) return;
     entry.choice = c.id;
     (c.set_flags || []).forEach(f => flags.add(f));
     (c.unset_flags || []).forEach(f => flags.delete(f));
-    settle(box, c.id);
-    stamp();
-    save();
-    setTimeout(() => enter(c.target), reduced() ? 0 : 420);
+    settle(box, entry, !reduced());
+    stamp(entry, c);
+    save(); threadSoon();
+    setTimeout(() => enter(c.target), reduced() ? 0 : 1000);
   }
   function advance() {
     const next = run.queue.shift();
@@ -199,61 +297,232 @@
     (n.on_enter_flags || []).forEach(f => flags.add(f));
     const entry = { id: q.id, because: q.because };
     run.path.push(entry); save();
-    render(entry, run.path.length - 1, true);
-    frame();
+    const sec = render(entry, run.path.length - 1, true);
+    ripple(sec);
+    frame(true);
   }
+
+  /* ---------- malam yang lewat, jam terakhir, masuk ke sela, riak gema ---------- */
+  function overlay(cls, inner, ms) {
+    if (reduced()) return null;
+    const ov = html(`<div class="${cls}" aria-hidden="true">${inner}</div>`);
+    document.body.append(ov);
+    const end = () => { ov.classList.add('out'); setTimeout(() => ov.remove(), 650); };
+    const timer = setTimeout(end, ms);
+    ov.addEventListener('click', () => { clearTimeout(timer); end(); });
+    return ov;
+  }
+  function night(from, to, last) {
+    if (last) {
+      const ov = overlay('night last', `<p class="nt-k">${esc(dateOf(to))}</p><p class="nt-n"><b>17.40</b></p><p class="nt-u">${esc(t('batas', 'deadline'))}</p>`, 3800);
+      if (!ov) return;
+      const b = $('.nt-n b', ov), t0 = performance.now();
+      const step = now => { const m = Math.min(60, Math.round(Math.pow(Math.min(1, (now - t0) / 2400), .7) * 60)); b.textContent = m < 60 ? `17.${String(m).padStart(2, '0')}` : '18.40'; if (m < 60) requestAnimationFrame(step); else ov.classList.add('stopped'); };
+      requestAnimationFrame(step);
+      return;
+    }
+    const a = left(from), z = left(to);
+    const bar = `<span class="nt-bar">${Array.from({ length: 7 }, (_, k) => `<i class="${k < Math.min(7, to.day) ? 'gone' : ''}${k === to.day - 1 ? ' now' : ''}"></i>`).join('')}</span>`;
+    const ov = overlay('night', `<p class="nt-k">${esc(`${DAYS[from.day]} ${PART[from.part]}`)} <span aria-hidden="true">→</span> ${esc(`${DAYS[to.day]} ${PART[to.part]}`)}</p><p class="nt-n"><b>${a}</b></p><p class="nt-u">${esc(t('jam tersisa', 'hours left'))}</p>${bar}<p class="nt-d">${esc(dateOf(to))}</p>`, 3000);
+    if (!ov) return;
+    const b = $('.nt-n b', ov), t0 = performance.now();
+    const step = now => { const p = Math.min(1, (now - t0) / 2000), e = 1 - Math.pow(1 - p, 3); b.textContent = Math.round(a - (a - z) * e); if (p < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('dawn')));
+  }
+  function cross(who) {
+    overlay(`cross who-${who}`, `<p class="cr-k">${esc(t('Sela', 'Interlude'))}</p><p class="cr-n">${esc(who)}</p><p class="cr-u">${esc(t('Laras tidak ikut ke sini', 'Laras does not come here'))}</p>`, 1600);
+  }
+  function ripple(sec) {
+    const ov = overlay('ripple', '<i></i><i></i><i></i>', 2400);
+    if (ov) { const r = thread.getBoundingClientRect(); ov.style.setProperty('--x', (r.width ? r.left + r.width - 7 : 20) + 'px'); }
+    const cause = sec.dataset.cause && $(`.node[data-id="${sec.dataset.cause}"] .opt.picked`, book);
+    if (cause) { cause.classList.remove('called'); void cause.offsetWidth; cause.classList.add('called'); }
+    sec.classList.add('arrive');
+  }
+  book.addEventListener('click', e => {
+    const back = e.target.closest('.n-back');
+    if (back) {
+      const sec = back.closest('.node'), opt = $(`.node[data-id="${sec.dataset.cause}"] .opt.picked`, book);
+      if (opt) { opt.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); opt.classList.remove('called'); void opt.offsetWidth; opt.classList.add('called'); }
+      return;
+    }
+    const kn = e.target.closest('.kn');
+    if (kn) { e.stopPropagation(); openPerson(kn.dataset.who, kn); }
+  });
+
+  /* ---------- benang jahitan di tepi buku ---------- */
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const thread = document.createElementNS(SVGNS, 'svg');
+  thread.id = 'thread'; thread.setAttribute('class', 'thread'); thread.setAttribute('aria-hidden', 'true');
+  thread.innerHTML = '<defs><clipPath id="threadClip"><rect x="-40" y="0" width="120" height="0"/></clipPath></defs><g clip-path="url(#threadClip)"><path class="th-faint"/><path class="th-line"/><g class="th-loops"></g><g class="th-knots"></g></g>';
+  book.append(thread);
+  let drawRaf = 0;
+  const threadSoon = () => { if (!drawRaf) drawRaf = requestAnimationFrame(() => { drawRaf = 0; drawThread(); }); };
+  let loopsDrawn = new Set();
+  function drawThread() {
+    const secs = $$('.node', book); if (!secs.length) { thread.style.height = '0px'; return; }
+    const br = book.getBoundingClientRect(), H = book.scrollHeight, w = thread.clientWidth || 18, X = w - 7;
+    thread.style.height = H + 'px'; thread.setAttribute('viewBox', `0 0 ${w} ${H}`);
+    const y0 = secs[0].offsetTop + 70, y1 = Math.max(y0, H - 40);
+    const holes = secs.filter(s => s.classList.contains('k-perspective')).map(s => [s.offsetTop, s.offsetTop + s.offsetHeight]);
+    let main = '', faint = '', y = y0;
+    holes.forEach(([a, b]) => { if (a > y) main += `M${X} ${y}V${a}`; faint += `M${X} ${Math.max(a, y)}V${b}`; y = Math.max(y, b); });
+    if (y < y1) main += `M${X} ${y}V${y1}`;
+    $('.th-line', thread).setAttribute('d', main || 'M0 0'); $('.th-faint', thread).setAttribute('d', faint || 'M0 0');
+    const yOf = el => { const r = el.getBoundingClientRect(); return r.top - br.top + r.height / 2; };
+    $('.th-knots', thread).innerHTML = $$('.opt.picked', book).map(o => { const k = yOf(o); return `<path d="M${X - 4} ${k - 4}L${X + 4} ${k + 4}M${X + 4} ${k - 4}L${X - 4} ${k + 4}"/>`; }).join('');
+    $('.th-loops', thread).innerHTML = $$('.node[data-cause]', book).map((s, i) => {
+      const o = $(`.node[data-id="${s.dataset.cause}"] .opt.picked`, book); if (!o) return '';
+      const a = yOf($('.n-head', s)), b = yOf(o), bx = Math.max(1, X - 9 - (i % 3) * 3), isNew = !loopsDrawn.has(s.dataset.i);
+      loopsDrawn.add(s.dataset.i);
+      return `<path class="${isNew && s.classList.contains('arrive') ? 'fresh' : ''}" pathLength="1" d="M${X} ${a}C${bx} ${a} ${bx} ${b} ${X} ${b}"/>`;
+    }).join('');
+    reveal();
+  }
+  function reveal() {
+    const r = book.getBoundingClientRect();
+    $('#threadClip rect', thread).setAttribute('height', Math.max(0, innerHeight * .72 - r.top));
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(threadSoon).observe(book);
+  document.fonts?.ready.then(threadSoon);
+
+  /* ---------- benda yang bergerak saat terlihat ---------- */
+  const seen = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; seen.unobserve(e.target); play(e.target); }), { rootMargin: '0px 0px -20% 0px' }) : null;
+  new MutationObserver(() => $$('.bd.anim:not([data-watch])', book).forEach(b => { b.dataset.watch = ''; if (seen) seen.observe(b); else b.classList.remove('anim'); })).observe(book, { childList: true, subtree: true });
+  async function play(b) {
+    if (b.dataset.k === 'draft') {
+      const list = $('.bd-list', b), last = list.lastElementChild, field = $('.bd-field', b);
+      last.remove(); b.classList.remove('anim'); b.classList.add('typing');
+      const items = $$('.bd-m', list); items.forEach(m => m.classList.add('wait'));
+      for (const m of items) { await sleep(500); m.classList.remove('wait'); }
+      const states = [...JSON.parse(b.dataset.tries || '[]'), b.dataset.final];
+      let cur = '';
+      for (const s of states) {
+        let k = 0; while (k < cur.length && k < s.length && cur[k] === s[k]) k++;
+        while (cur.length > k) { cur = cur.slice(0, -1); field.textContent = cur; await sleep(22); }
+        await sleep(cur ? 180 : 320);
+        while (cur.length < s.length) { cur = s.slice(0, cur.length + 1); field.textContent = cur; await sleep(46 + Math.random() * 40); }
+        await sleep(s === b.dataset.final ? 420 : 900);
+      }
+      field.textContent = ''; list.append(last); last.classList.add('sent'); b.classList.remove('typing');
+      return;
+    }
+    const items = $$('.bd-m, .bd-tag, .bd-env', b);
+    items.forEach(m => m.classList.add('wait'));
+    b.classList.remove('anim'); b.classList.add('arrived');
+    for (const m of items) { await sleep(m.classList.contains('bd-m') ? 520 : 160); m.classList.remove('wait'); }
+  }
+
+  /* ---------- orang, dan yang kamu tahu ---------- */
+  const sheet = $('#sheet');
+  let sheetFrom = null;
+  function openPerson(name, from) {
+    const p = PEOPLE[name]; if (!p) return;
+    const age = (y, v) => `<span><small>${y}</small><b>${v}</b></span>`;
+    let ages = '';
+    if (p.born) ages = age(1997, '—') + '<i aria-hidden="true">→</i>' + age(2026, p.now) + `<em>${esc(t(`lahir ${p.born}`, `born ${p.born}`))}</em>`;
+    else if (p.then != null) ages = age(1997, p.then) + `<i aria-hidden="true">${name === 'Laras' ? '=' : '→'}</i>` + age(2026, p.now) + `<em>${esc(name === 'Laras' ? t('Tubuhnya tidak ikut menua.', 'Her body did not age.') : t(`${p.now - p.then} tahun tanpa Laras`, `${p.now - p.then} years without Laras`))}</em>`;
+    else ages = age(2026, p.now);
+    const k = (known[name] || []).map(x => `<li><small>${esc(t(`Sela, ${DAYS[x.day]} malam`, `Interlude, ${DAYS[x.day]} night`))}</small><q>${esc(x.text)}</q></li>`).join('');
+    $('#sheetBody').innerHTML = `<p class="sh-k">${esc(from && from.classList.contains('kn') ? t('Yang kamu tahu', 'What you know') : t('Di adegan ini', 'In this scene'))}</p><h3 id="sheetTitle">${esc(name)}</h3><p class="sh-rel">${esc(p.rel)}</p><div class="sh-ages">${ages}</div>${k ? `<div class="sh-know"><p class="sh-k">${esc(t('Dari selanya', 'From the interlude'))}</p><ul>${k}</ul><p class="sh-not">${esc(t('Laras tidak mengetahui ini.', 'Laras does not know this.'))}</p></div>` : ''}`;
+    sheet.hidden = false; sheet.dataset.who = name; sheetFrom = from || null;
+    $('#sheetClose').focus({ preventScroll: true });
+  }
+  const closeSheet = () => { if (sheet.hidden) return; sheet.hidden = true; sheetFrom?.focus({ preventScroll: true }); sheetFrom = null; };
+  $('#sheetClose').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+  document.addEventListener('click', e => { if (!sheet.hidden && !sheet.contains(e.target) && !e.target.closest('.kn, .ck-p')) closeSheet(); });
+  $('#cast').addEventListener('click', e => { const b = e.target.closest('.ck-p'); if (b) { e.stopPropagation(); openPerson(b.dataset.who, b); } });
 
   /* ---------- Kartu Kepulangan ---------- */
   function cardHTML() {
     const rows = [];
     for (let d = 0; d < 7; d++) {
       const c = run.path.find(e => e.id === `C0${d + 1}`), h = run.path.find(e => new RegExp(`^H${d + 1}[A-D]$`).test(e.id));
-      const cl = c && c.choice ? (N[c.id].choices || []).find(x => x.id === c.choice)?.label : '';
-      const hl = h && h.choice ? (N[h.id].choices || []).find(x => x.id === h.choice)?.label : '';
+      const cl = c && c.choice ? labelOf(c.id, c.choice) : '', hl = h && h.choice ? labelOf(h.id, h.choice) : '';
       const echoes = run.path.filter(e => N[e.id].kind === 'callback' && run.path.indexOf(e) > run.path.indexOf(h || c || {}) && (d === 6 || run.path.indexOf(e) < run.path.findIndex(x => x.id === `C0${d + 2}`)));
       rows.push(`<li class="${cl ? 'on' : ''}"><span class="cd-day"><b>${esc(DAYS[d])}</b><small>${9 + d} Nov</small></span><span class="cd-what">${cl ? `<span class="stamp">${esc(cl)}</span>` : `<span class="cd-empty">—</span>`}${hl ? `<span class="hand">${esc(hl)}</span>` : ''}${echoes.length ? `<span class="cd-echo">${esc(t(`${echoes.length} gema`, `${echoes.length} echo${echoes.length > 1 ? 'es' : ''}`))}</span>` : ''}</span></li>`);
     }
-    const z = run.path.find(e => e.id === 'Z00'), zl = z && z.choice ? (N.Z00.choices || []).find(x => x.id === z.choice)?.label : '';
+    const z = run.path.find(e => e.id === 'Z00'), zl = z && z.choice ? labelOf('Z00', z.choice) : '';
     rows.push(`<li class="last ${zl ? 'on' : ''}"><span class="cd-day"><b>${esc(DAYS[7])}</b><small>16 Nov · 18.40</small></span><span class="cd-what">${zl ? `<span class="stamp final">${esc(zl)}</span>` : `<span class="cd-empty">${esc(t('belum diputuskan', 'not decided yet'))}</span>`}</span></li>`);
     return `<p class="cd-who"><span>${esc(t('Nama', 'Name'))}</span><b>Laras</b><span>${esc(t('Usia saat kembali', 'Age on return'))}</span><b>31</b><span>${esc(t('Masa sementara', 'Interim period'))}</span><b>${esc(t('168 jam', '168 hours'))}</b></p><ol class="cd-days">${rows.join('')}</ol><p class="cd-foot">${esc(t('Yang dicatat hanya yang dipilih. Pilihan yang tidak diambil tidak tercatat.', 'Only what was chosen is recorded. Choices not taken are not kept.'))}</p>`;
   }
   const cardDlg = $('#cardDialog');
   $('#openCard').addEventListener('click', () => { $('#cardBody').innerHTML = run ? cardHTML() : `<p class="cd-foot">${esc(t('Perjalanan belum dimulai.', 'The journey has not started.'))}</p>`; cardDlg.showModal(); });
   cardDlg.addEventListener('click', e => { if (e.target === cardDlg || e.target.closest('[data-close]')) cardDlg.close(); });
-  function stamp() { const b = $('#openCard'); b.classList.remove('stamped'); void b.offsetWidth; b.classList.add('stamped'); $('#announcement').textContent = t('Tercatat di Kartu Kepulangan.', 'Noted on the Return Card.'); }
+  function stamp(entry, c) {
+    const b = $('#openCard'); b.classList.remove('stamped'); void b.offsetWidth; b.classList.add('stamped');
+    $('#announcement').textContent = t('Tercatat di Kartu Kepulangan.', 'Noted on the Return Card.');
+    const tm = timeOf(entry.id), journey = /^H/.test(entry.id);
+    overlay('slip', `<span class="sl-k">${esc(t('Kartu Kepulangan', 'Return Card'))}</span><span class="sl-row"><span class="sl-day"><b>${esc(DAYS[tm.day])}</b><small>${9 + tm.day} Nov</small></span>${journey ? `<span class="hand">${esc(c.label)}</span>` : `<span class="stamp${entry.id === 'Z00' ? ' final' : ''}">${esc(c.label)}</span>`}</span>`, 1900);
+  }
 
-  /* ---------- akhir dan peta ---------- */
-  function endingEl(n) {
+  /* ---------- akhir: pola jahitan ---------- */
+  function endingEl() {
     return html(`<div class="after" id="after"><p class="af-k">${esc(t('Salah satu dari delapan akhir', 'One of eight endings'))}</p><div class="map" id="map"></div><div class="af-act"><button type="button" class="go" id="again">${esc(t('Pulang lagi', 'Come back again'))}</button><label class="af-from"><span>${esc(t('atau mulai lagi dari', 'or start again from'))}</span><select id="fromDay"></select></label></div><div class="af-next" id="afNext"></div></div>`);
   }
-  function finish(n) {
+  function finish(n, isNew) {
     const found = new Set(store.get('usia:endings', []) || []); found.add(n.id); store.set('usia:endings', [...found]);
     const st = store.get('stats', {}) || {}; st.done = st.done || []; if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); }
     const pr = store.get('prog', {}) || {}; pr[SLUG] = 1; store.set('prog', pr);
-    paintMap(n, found);
+    paintMap(n, found, isNew);
     $('#again').onclick = () => { if (!confirm(t('Mulai perjalanan baru? Kartu ini akan diganti.', 'Start a new journey? This card will be replaced.'))) return; startFresh(); };
     const sel = $('#fromDay');
     sel.innerHTML = `<option value="">${esc(t('pilih hari…', 'choose a day…'))}</option>` + Object.keys(run.snaps).sort().map(id => `<option value="${id}">${esc(DAYS[timeOf(id).day])} · ${esc(shortTitle(N[id]))}</option>`).join('');
     sel.onchange = () => { if (sel.value) startFrom(sel.value); };
     if (G) $('#afNext').innerHTML = G.next(SLUG);
   }
-  function paintMap(endNode, found) {
-    const v = new Set(visited), cell = (id, lab) => `<span class="mp ${v.has(id) ? 'lit' : ''}${endNode && id === endNode.id ? ' here' : ''}" title="${esc(shortTitle(N[id]))}">${esc(lab || id)}</span>`;
-    let rows = '';
-    for (let d = 1; d <= 7; d++) rows += `<div class="mp-row"><span class="mp-day">${esc(DAYS[d - 1].slice(0, 3))}</span>${cell('C0' + d, '●')}<span class="mp-h">${['A', 'B', 'C', 'D'].map(x => cell(`H${d}${x}`, x)).join('')}</span>${cell('P0' + d, whoOf(N['P0' + d])[0])}</div>`;
-    const echoes = Object.values(N).filter(n => n.kind === 'callback').map(n => n.id).sort().map(id => cell(id, '·')).join('');
-    const ends = ENDINGS.map(id => `<span class="mp-end ${found.has(id) ? 'found' : ''}${endNode && id === endNode.id ? ' here' : ''}"><b>${found.has(id) ? esc(shortTitle(N[id])) : '—'}</b></span>`).join('');
-    const words = $$('.n-body', book).reduce((s, el) => s + (el.textContent.trim().split(/\s+/).length), 0);
-    $('#map').innerHTML = `<p class="mp-k">${esc(t('Peta perjalanan', 'Journey map'))}</p><div class="mp-grid">${rows}<div class="mp-row echoes"><span class="mp-day">${esc(t('Gema', 'Echo'))}</span><span class="mp-e">${echoes}</span></div></div>
+  function pattern(endNode) {
+    const v = new Set(visited), idxOf = (id, cid) => Math.max(0, (N[id].choices || []).findIndex(c => c.id === cid));
+    const W = 320, rowY = d => 46 + d * 42, cx = i => 52 + i * 20, hx = i => 152 + i * 20, PX = 262, zy = 352;
+    let grid = '', marks = '', labels = '';
+    const pts = [];
+    for (let d = 0; d < 7; d++) {
+      const y = rowY(d), C = 'C0' + (d + 1), P = 'P0' + (d + 1);
+      labels += `<text class="pt-day" x="10" y="${y + 4}">${esc(DAYS[d].slice(0, 3))}</text>`;
+      for (let i = 0; i < 4; i++) grid += `<circle class="pt-dot" cx="${cx(i)}" cy="${y}" r="1.6"/><circle class="pt-dot" cx="${hx(i)}" cy="${y}" r="1.6"/>`;
+      const ce = run.path.find(e => e.id === C);
+      if (ce && ce.choice) { const ci = idxOf(C, ce.choice); pts.push([cx(ci), y]); marks += `<circle class="st lit" data-id="${C}" cx="${cx(ci)}" cy="${y}" r="4.5"><title>${esc(labelOf(C, ce.choice))}</title></circle>`; }
+      const he = run.path.find(e => new RegExp(`^H${d + 1}[A-D]$`).test(e.id));
+      if (he) { const hi = he.choice ? idxOf(he.id, he.choice) : 0; pts.push([hx(hi), y]); marks += `<rect class="st lit" data-id="${he.id}" x="${hx(hi) - 4}" y="${y - 4}" width="8" height="8" transform="rotate(45 ${hx(hi)} ${y})"><title>${esc(he.choice ? labelOf(he.id, he.choice) : shortTitle(N[he.id]))}</title></rect>`; }
+      if (v.has(P)) {
+        pts.push([PX, y]);
+        marks += `<g class="st lit" data-id="${P}"><circle cx="${PX}" cy="${y}" r="9"/><text x="${PX}" y="${y + 3.5}">${esc(whoOf(N[P])[0])}</text></g>`;
+        const pi = run.path.findIndex(e => e.id === P);
+        let k = 0;
+        for (let j = pi + 1; j < run.path.length && N[run.path[j].id].kind === 'callback'; j++, k++) {
+          const e = run.path[j], ex = PX + 13 + k * 12;
+          marks += `<path class="pt-echo" data-id="${e.id}" d="M${ex} ${y}a5 5 0 1 1 0.1 0"><title>${esc(shortTitle(N[e.id]))}</title></path>`;
+        }
+      }
+    }
+    for (let i = 0; i < 8; i++) grid += `<circle class="pt-dot" cx="${46 + i * 32}" cy="${zy}" r="1.6"/>`;
+    const ze = run.path.find(e => e.id === 'Z00');
+    let tail = '';
+    if (ze && ze.choice) {
+      const zx = 46 + idxOf('Z00', ze.choice) * 32; pts.push([zx, zy]);
+      if (endNode && STAYS(endNode.id)) marks += `<circle class="pt-knot" cx="${zx}" cy="${zy}" r="5.5"/>`;
+      else tail = `<path class="pt-tail" d="M${zx} ${zy}L${zx} 404"/>`;
+    }
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join('');
+    return `<svg class="pattern" viewBox="0 0 ${W} 400" role="img" aria-label="${esc(t('Pola jahitan perjalananmu', 'The stitch pattern of your journey'))}"><defs><pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3H6M3 0V6" class="pt-weave"/></pattern></defs><rect class="pt-cloth" x="0" y="0" width="${W}" height="400" rx="14"/><rect x="0" y="0" width="${W}" height="400" rx="14" fill="url(#weave)"/>${labels}<text class="pt-col" x="${cx(0) - 6}" y="22">${esc(t('pagi', 'morning'))}</text><text class="pt-col" x="${hx(0) - 6}" y="22">${esc(t('siang', 'afternoon'))}</text><text class="pt-col" x="${PX - 12}" y="22">${esc(t('sela', 'interlude'))}</text>${grid}<g class="pt-run"><path class="pt-thread" d="${d}"/>${tail}</g>${marks}<text class="pt-day" x="10" y="${zy + 4}">${esc(DAYS[7].slice(0, 3))}</text></svg>`;
+  }
+  function paintMap(endNode, found, isNew) {
+    const ends = ENDINGS.map(id => `<span class="mp-end ${found.has(id) ? 'found' : ''}${endNode && id === endNode.id ? ' here' : ''}"><i class="${STAYS(id) ? 'e-stay' : 'e-go'}" aria-hidden="true"></i><b>${found.has(id) ? esc(shortTitle(N[id])) : '—'}</b></span>`).join('');
+    const words = $$('.n-body > p', book).reduce((s, el) => s + (el.textContent.trim().split(/\s+/).length), 0);
+    const map = $('#map');
+    map.innerHTML = `<p class="mp-k">${esc(t('Pola jahitan perjalananmu', 'The stitch pattern of your journey'))}</p>${pattern(endNode)}
+      <p class="mp-legend"><span><i class="lg-c"></i>${esc(t('tujuan pagi', 'morning'))}</span><span><i class="lg-h"></i>${esc(t('tindakan siang', 'afternoon'))}</span><span><i class="lg-p"></i>${esc(t('sela', 'interlude'))}</span><span><i class="lg-e"></i>${esc(t('gema', 'echo'))}</span><span><i class="lg-k"></i>${esc(t('menetap', 'stays'))}</span></p>
       <p class="mp-words">${esc(t(`Kamu membaca ${words.toLocaleString('id-ID')} dari ${TOTAL_WORDS.toLocaleString('id-ID')} kata.`, `You read ${words.toLocaleString('en-GB')} of ${TOTAL_WORDS.toLocaleString('en-GB')} words.`))}</p>
       <p class="mp-k">${esc(t(`Akhir yang sudah kamu temukan: ${found.size} dari ${ENDINGS.length}`, `Endings you have found: ${found.size} of ${ENDINGS.length}`))}</p><div class="mp-ends">${ends}</div>`;
+    if (isNew && !reduced()) map.classList.add('sew');
   }
 
   /* ---------- mulai, lanjutkan, ulang ---------- */
   function rebuild() {
-    book.innerHTML = '';
-    flags = new Set(run.flags || []); visited = [...(run.visited || [])];
-    // susun ulang tampilan dari jalan yang sudah ditempuh, dengan keadaan saat itu
+    $$('.node', book).forEach(n => n.remove());
+    flags = new Set(run.flags || []); visited = [...(run.visited || [])]; known = {}; loopsDrawn = new Set();
     const fl = new Set(), vi = [];
     lastDay = 0;
     run.path.forEach((e, i) => {
@@ -266,17 +535,17 @@
       if (e.choice) { const c = (n.choices || []).find(x => x.id === e.choice); (c?.set_flags || []).forEach(f => fl.add(f)); (c?.unset_flags || []).forEach(f => fl.delete(f)); }
     });
     const last = run.path[run.path.length - 1];
-    if (last && N[last.id].kind === 'ending') finish(N[last.id]);
-    frame();
+    if (last && N[last.id].kind === 'ending') finish(N[last.id], false);
+    frame(true);
   }
   function begin() {
     $('#cover').classList.add('started');
-    if (!run) { run = fresh(); flags = new Set(); visited = []; enter(ENTRY); }
+    if (!run) { run = fresh(); flags = new Set(); visited = []; known = {}; enter(ENTRY); }
     else rebuild();
     const r = store.get('read', []) || []; if (!r.includes(SLUG)) store.set('read', [...r, SLUG]);
     store.set('last', { key: SLUG, at: Date.now() });
   }
-  function startFresh() { run = fresh(); flags = new Set(); visited = []; book.innerHTML = ''; save(); enter(ENTRY); }
+  function startFresh() { run = fresh(); flags = new Set(); visited = []; known = {}; loopsDrawn = new Set(); $$('.node', book).forEach(n => n.remove()); save(); enter(ENTRY); }
   function startFrom(id) {
     const s = run.snaps[id]; if (!s) return;
     const snaps = Object.fromEntries(Object.entries(run.snaps).filter(([k]) => k < id));
@@ -296,50 +565,58 @@
   $('#restart').onclick = () => { $('#settingsDialog').close(); if (confirm(t('Mulai perjalanan baru? Kartu yang lama akan diganti.', 'Start a new journey? The old card will be replaced.'))) { $('#cover').classList.add('started'); startFresh(); } };
   $('#restartLabel').textContent = t('Perjalanan', 'Journey'); $('#restart').textContent = t('Mulai baru', 'Start over');
 
-  /* ---------- jam, langit, bagian ---------- */
+  /* ---------- jam, langit, siapa di adegan ---------- */
   const isDark = () => { const v = root.getAttribute('data-theme'); return v ? v === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
   let shownKey = '';
-  function frame() {
+  function frame(force) {
+    reveal();
     const secs = $$('.node', book); if (!secs.length) { $('#clock').hidden = true; return; }
     const line = innerHeight * .4;
     let cur = secs[0]; secs.forEach(s => { if (s.getBoundingClientRect().top < line) cur = s; });
-    const id = cur.dataset.id, tm = timeOf(id), key = id + tm.day + tm.part;
+    const id = cur.dataset.id, n = N[id], tm = timeOf(id), away = n.kind === 'perspective', key = cur.dataset.i + id;
     $('#clock').hidden = false;
-    if (key !== shownKey) {
-      shownKey = key;
-      $('#ckWhen').innerHTML = `<b>${esc(dateOf(tm))}</b><span>${esc(PART[tm.part])}</span>`;
-      const tt = $('#ckTime'); tt.hidden = !tm.exact; if (tm.exact) tt.innerHTML = `${esc(tm.exact.replace('.', t('.', ':')))}<small>${esc(id === 'Z00' ? t('sisa 1 jam', '1 hour left') : id === ENTRY ? t('sisa 168 jam', '168 hours left') : t('batas', 'deadline'))}</small>`;
-      const f = elapsed(tm) / 168;
-      $('#ckBar').innerHTML = Array.from({ length: 7 }, (_, k) => `<i style="--f:${Math.max(0, Math.min(1, f * 7 - k)).toFixed(3)}"></i>`).join('');
-      $('#ckAges').textContent = t('Laras 31 · Dian 37', 'Laras 31 · Dian 37');
-      if (G) { $('#stepChip').hidden = false; G.step(Math.min(7, tm.day + 1), 7, t('Hari', 'Day')); }
-      if (!isDark()) root.dataset.backdrop = SKY[tm.part]; else root.dataset.backdrop = 'malam';
-      const pr = store.get('prog', {}) || {}; if ((pr[SLUG] || 0) < 1) { pr[SLUG] = +(elapsed(tm) / 168).toFixed(3); store.set('prog', pr); }
-    }
+    if (key === shownKey && !force) return;
+    shownKey = key;
+    $('#clock').classList.toggle('away', away); $('#openCard').classList.toggle('away', away);
+    $('#ckWhen').innerHTML = away ? `<b>${esc(t('Sela', 'Interlude'))} · ${esc(whoOf(n))}</b><span>${esc(t('Laras tidak di sini', 'Laras is not here'))}</span>` : `<b>${esc(dateOf(tm))}</b><span>${esc(PART[tm.part])} · ${esc(t(`sisa ${left(tm)} jam`, `${left(tm)} hours left`))}</span>`;
+    const tt = $('#ckTime'), still = n.kind === 'ending';
+    tt.hidden = !tm.exact || away;
+    if (tm.exact) tt.innerHTML = `<span>${still ? tm.exact : tm.exact.replace(/\.(\d\d)$/, '.<span class="blink">$1</span>')}</span><small>${esc(id === 'Z00' ? t('sisa 1 jam', '1 hour left') : id === ENTRY ? t('sisa 168 jam', '168 hours left') : t('batas', 'deadline'))}</small>`;
+    tt.classList.toggle('still', still);
+    const f = elapsed(tm) / 168;
+    $('#ckBar').innerHTML = Array.from({ length: 7 }, (_, k) => `<i style="--f:${Math.max(0, Math.min(1, f * 7 - k)).toFixed(3)}"></i>`).join('');
+    const cast = (cur.dataset.cast || '').split(' ').filter(Boolean).slice(0, 5);
+    $('#cast').innerHTML = cast.map(x => `<button type="button" class="ck-p${x === 'Laras' ? ' me' : ''}" data-who="${x}" aria-label="${esc(x)}, ${PEOPLE[x].now} ${esc(t('tahun', 'years'))}"><span aria-hidden="true">${esc(x[0])}</span><small aria-hidden="true">${PEOPLE[x].now}</small></button>`).join('');
+    if (G) { $('#stepChip').hidden = false; G.step(Math.min(7, tm.day + 1), 7, t('Hari', 'Day')); }
+    root.dataset.backdrop = isDark() || away ? 'malam' : SKY[tm.part];
+    const pr = store.get('prog', {}) || {}; if ((pr[SLUG] || 0) < 1) { pr[SLUG] = +(elapsed(tm) / 168).toFixed(3); store.set('prog', pr); }
   }
   let raf = 0;
   addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; frame(); }); }, { passive: true });
+  addEventListener('resize', threadSoon);
   addEventListener('qm-frame', () => { shownKey = ''; frame(); });
 
   /* ---------- pengaturan baca ---------- */
   let size = Math.min(24, Math.max(15, +(store.get('rd', {}) || {}).size || 19));
-  const applySize = () => { root.style.setProperty('--size', size + 'px'); $('#smaller').disabled = size <= 15; $('#bigger').disabled = size >= 24; };
+  const applySize = () => { root.style.setProperty('--size', size + 'px'); $('#smaller').disabled = size <= 15; $('#bigger').disabled = size >= 24; threadSoon(); };
   const setSize = d => { size = Math.min(24, Math.max(15, size + d)); applySize(); store.set('rd', { ...(store.get('rd', {}) || {}), size }); };
   $('#smaller').onclick = () => setSize(-1); $('#bigger').onclick = () => setSize(1); applySize();
   $('#openCard').setAttribute('aria-label', t('Kartu Kepulangan', 'Return Card'));
+  $('#cast').setAttribute('aria-label', t('Di adegan ini', 'In this scene'));
+  $('#sheetClose').setAttribute('aria-label', t('Tutup', 'Close'));
 
   /* ---------- bingkai situs ---------- */
   if (G) {
     G.mount({ slug: SLUG, title: t('Usia Pulang', 'Usia Pulang'), helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#begin',
       lede: t('Novel interaktif. Laras punya 168 jam untuk memutuskan apakah akan menetap.', 'An interactive novel. Laras has 168 hours to decide whether to stay.'),
       steps: [
-        t('Tujuh hari. Setiap hari dimulai bersama keluarga, lalu kamu memilih ke mana Laras pergi.', 'Seven days. Each day begins with the family, then you choose where Laras goes.'),
-        t('Di akhir perjalanan, pilih apa yang Laras lakukan. Pilihan tidak bisa ditarik kembali, dan tidak ada nilai baik atau buruk.', 'At the end of a journey, choose what Laras does. Choices cannot be taken back, and nothing is scored as good or bad.'),
-        t('Sela membawamu ke pikiran orang lain. Laras tidak mengetahui apa yang kamu baca di sana. Gema menunjukkan akibat pilihanmu yang datang belakangan.', 'Interludes take you into someone else’s mind. Laras does not know what you read there. Echoes show consequences that arrive later.'),
-        t('Kartu Kepulangan (ikon kartu di kanan atas) mencatat jalanmu. Ada delapan akhir; satu perjalanan hanya membaca sebagian.', 'The Return Card (the card icon at the top right) records your path. There are eight endings; one journey reads only part of the story.')
+        t('Tujuh hari. Setiap hari dimulai bersama keluarga, lalu kamu memilih ke mana Laras pergi dan apa yang ia lakukan.', 'Seven days. Each day begins with the family, then you choose where Laras goes and what she does.'),
+        t('Tekan dan tahan pilihanmu sampai tercap (dengan papan ketik: Enter). Pilihan tidak bisa ditarik kembali, dan tidak ada nilai baik atau buruk.', 'Press and hold your choice until it is stamped (keyboard: Enter). Choices cannot be taken back, and nothing is scored.'),
+        t('Sela membawamu ke pikiran orang lain. Laras tidak mengetahui apa yang kamu baca di sana; nama yang bertitik menyimpan yang kamu tahu. Gema adalah akibat pilihanmu yang datang belakangan, dijahit kembali ke pilihan itu.', 'Interludes take you into someone else’s mind. Laras does not know what you read there; dotted names keep what you know. Echoes are consequences that arrive later, stitched back to the choice.'),
+        t('Ketuk inisial di bawah jam untuk melihat siapa di adegan dan usia mereka. Kartu Kepulangan (ikon kartu) mencatat jalanmu. Ada delapan akhir.', 'Tap the initials under the clock to see who is in the scene and their ages. The Return Card (card icon) records your path. There are eight endings.')
       ] });
     G.settings();
   }
-  frame();
+  frame(true);
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

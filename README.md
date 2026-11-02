@@ -186,19 +186,45 @@ Novel interaktif di antologi **Temusai**: 64 simpul, sekitar 51 ribu kata, delap
 
 - **Naskahnya** ada di `content/usia-pulang.json`: salinan apa adanya dari `build/Simpul-Cerita.json` di paket naskah pengarang (diperkecil, isinya tidak diubah). Kalau naskah diperbarui, bangun ulang paketnya, lalu salin berkas itu ke sini. Berkas ini tidak bisa diubah dari panel admin. Entri di `works.json` hanya memuat judul, ringkasan, dan pembuka (C01), sehingga mode baca biasa sementara ini hanya menampilkan pembukaan.
 - **Mesin cerita** (`usia.js`) mengikuti kontrak naskah. Saat masuk simpul, simpul dicatat dan tanda `on_enter_flags` dipasang. Memilih memasang `set_flags`, mencabut `unset_flags`, lalu pindah ke `target`. Pilihan dengan `requires_flags` hanya muncul bila tandanya ada; begitulah pintu akhir E01 dan E04 terbuka atau tertutup lagi. Nama tanda tidak pernah ditampilkan, dan tidak ada skor.
-- **Jam 168 jam** menempel di bawah bilah atas: tanggal cerita, bagian hari, tujuh segmen hari yang terisi, dan usia (*Laras 31 · Dian 37*). Jam pastinya hanya tampil di tiga titik: 18.40 (sisa 168 jam), 17.40 (sisa 1 jam), dan 18.40 di akhir. Langit situs mengikuti bagian hari, dan penanda bagian menjadi *Hari n dari 7*.
-- **Pilihan** tampil sebagai kartu: tujuan bersama tiap pagi (dengan inisial orang yang ditemui), tindakan di perjalanan siang, dan pintu terakhir di Senin sore (*menetap* atau *tidak menetap*). Pilihan tidak bisa ditarik kembali: yang tidak diambil hilang, yang diambil dicap *Tercatat di Kartu Kepulangan*.
-- **Sela** (P01 sampai P07) membawa pembaca ke pikiran Dian, Ratna, Tama, Sulastri, atau Hadi, masing-masing dengan kertasnya sendiri (kertas kotak, tenunan berjahit, lembar kontak, kertas lama, abu kebiruan), diberi keterangan *Laras tidak mengetahui apa yang … pikirkan di sini.* Sela menampilkan tepat satu varian, yaitu yang cocok dengan perjalanan siang yang ditempuh.
-- **Gema** (R01 sampai R13) adalah akibat yang datang belakangan. Gema mengutip pilihan pembaca sendiri (*Selasa siang, kamu memilih "…"*), diantrekan sesuai urutan pengarang, lalu cerita kembali ke hari berikutnya.
+- **Waktu yang terasa.**
+  - Jam menempel di bawah bilah atas: tanggal cerita, bagian hari, sisa jam, dan garis tujuh hari di tepi bawahnya. Jam pastinya hanya tampil di 18.40 (sisa 168 jam), 17.40 (sisa 1 jam), dan 18.40 di akhir.
+  - Angka 18.40 berkedip sejak sampul dan di dalam teks pembuka. Di akhir, kedipannya berhenti.
+  - Setiap pindah hari, layar menjadi malam: jam yang tersisa bergulir turun (misalnya 165 → 156), satu segmen hari habis, dan langit berganti ke fajar.
+  - Sebelum akhir, jam berjalan dari 17.40 ke 18.40 lalu diam.
+  - Pembuka muncul dari bawah air: paragraf pertama kabur dan bergoyang, lalu menajam.
+  - Langit situs mengikuti bagian hari, dan penanda bagian menjadi *Hari n dari 7*.
+- **Pilihan yang berat.** Pilihan tampil sebagai kartu: tujuan pagi (dengan inisial orang yang ditemui), tindakan siang, dan pintu terakhir (*menetap* / *tidak menetap*).
+  - Kartu harus ditekan dan ditahan sekitar satu detik sampai tercap *Tercatat · <hari>*. Ketukan singkat tidak memilih. Dengan papan ketik atau pembaca layar, Enter langsung memilih.
+  - Pilihan lain tenggelam dan hilang.
+  - Kartu Kepulangan naik sebentar dari bawah dan mencatat pilihan itu. Pilihan tidak bisa ditarik kembali.
+- **Benang jahitan.** Di tepi kiri buku ada benang yang menjahit turun mengikuti bacaan, dengan satu tusukan silang untuk setiap pilihan. Di bagian sela, benangnya tinggal titik samar karena Laras tidak ada di sana.
+- **Gema** (R01 sampai R13) adalah akibat yang datang belakangan.
+  - Saat gema datang, layar beriak dari benang. Benang melengkung balik ke pilihan yang memicunya, dan pilihan lama itu menyala.
+  - Gema mengutip pilihan pembaca sendiri (*Selasa siang, kamu memilih "…"*), dengan tautan *Lihat pilihan itu ↑*.
+  - Gema diantrekan sesuai urutan pengarang.
+- **Sela** (P01 sampai P07) membawa pembaca ke pikiran Dian, Ratna, Tama, Sulastri, atau Hadi.
+  - Saat masuk, kertas tokoh itu naik menutup layar dengan namanya: kertas kotak, tenunan berjahit, lembar kontak, kertas lama, atau abu kebiruan.
+  - Selama sela terbaca, jam menjadi gelap dan berkata *Laras tidak di sini*, dan ikon kartu meredup.
+  - Sela menampilkan tepat satu varian, yaitu yang cocok dengan perjalanan siang yang ditempuh.
+- **Yang kamu tahu, Laras tidak.** Setelah sela seseorang dibaca, nama orang itu di adegan berikutnya diberi titik. Saat diketuk, muncul kalimat dari selanya dengan catatan *Laras tidak mengetahui ini*. Kalimat itu tidak pernah dipakai di dialog.
+- **Siapa di adegan.** Inisial di kanan jam menunjukkan siapa yang disebut di adegan yang sedang dibaca, dengan Laras paling depan. Saat diketuk, muncul hubungan orang itu dengan Laras dan dua usianya: 1997 dan 2026 (misalnya Dian 8 → 37, Laras 31 = 31). Usia diambil dari kanon pengarang dan ada di `PEOPLE` di `usia.js`.
+- **Benda di dalam cerita** (`benda.js`). Pesan, pesan suara, surat, foto, kartu, nota, amplop, dan satu halaman kosong muncul tepat sesudah paragraf yang menyebutnya. Setiap benda menunjuk paragrafnya lewat potongan kalimat `at`, dan tes memastikan setiap potongan cocok dengan tepat satu paragraf.
+  - Pesan yang diketik ulang tampil sebagai ketikan yang dihapus lalu dikirim.
+  - Foto hanya berupa bingkai, label orang, dan keterangan; tidak ada gambar.
+  - Isi pesan yang tidak dikutip naskah ditulis dengan suara tokohnya. Surat palsu sengaja tidak bisa dibaca, kecuali tanda tangannya.
+  - Semua ini hanya ada di versi interaktif. Naskah di `content/usia-pulang.json` tidak berubah.
 - **Kartu Kepulangan** (ikon kartu di kanan atas) mencatat tujuan tiap hari sebagai cap, tindakan siangnya dengan tulisan tangan, jumlah gema, dan keputusan terakhir.
-- **Sesudah akhir**: peta perjalanan (simpul yang dilewati menyala), jumlah kata yang dibaca dari seluruh novel, akhir yang sudah ditemukan (`jm:usia:endings`), tombol **Pulang lagi**, dan *mulai lagi dari* hari tertentu (hari-hari sebelumnya tetap seperti yang sudah dipilih).
+- **Sesudah akhir**:
+  - Perjalanan dijahit menjadi pola di atas kain: pagi, siang, dan sela tiap hari, lengkungan untuk gema, lalu pintu terakhir. Menetap diakhiri simpul; tidak menetap membuat benangnya keluar dari kain. Setiap rute menghasilkan pola yang berbeda.
+  - Ada juga jumlah kata yang dibaca, akhir yang sudah ditemukan (`jm:usia:endings`), tombol **Pulang lagi**, dan *mulai lagi dari* hari tertentu.
+- Di layar dengan gerak dikurangi, layar malam, layar masuk sela, riak, air, dan ketikan dilewati. Semua informasinya tetap ada di halaman.
 - Perjalanan tersimpan otomatis di `jm:usia:run`. Saat dibuka lagi, sampul menawarkan *Lanjutkan · <hari>* atau *Mulai dari awal*. Pratinjau (`?preview=1`) tidak menyimpan apa pun. Naskahnya baru ada dalam bahasa Indonesia; dalam bahasa Inggris antarmukanya diterjemahkan, dan ada catatan bahwa ceritanya tampil dalam bahasa aslinya.
 
 ```bash
 python3 tests/usia_smoke.py
 ```
 
-Pemeriksaan ini mengikuti `verify_story.py` milik pengarang: setiap simpul, ke-125 pilihan, dan kedelapan akhir dicapai lewat halaman; jalan yang ditempuh halaman dicocokkan dengan model kontraknya; pintu akhir yang terbuka dan tertutup lagi; varian sela; urutan dan kutipan gema; tidak ada nama tanda di halaman; pilihan tidak bisa dibatalkan; lanjut setelah dimuat ulang; kartu, peta, mulai dari hari tertentu, jam, pratinjau, dan bahasa Inggris.
+Pemeriksaan ini mengikuti `verify_story.py` milik pengarang: setiap simpul, ke-125 pilihan, dan kedelapan akhir dicapai lewat halaman; jalan yang ditempuh halaman dicocokkan dengan model kontraknya; pintu akhir yang terbuka dan tertutup lagi; varian sela; urutan dan kutipan gema; tidak ada nama tanda di halaman; pilihan tidak bisa dibatalkan; lanjut setelah dimuat ulang; kartu, pola jahitan, mulai dari hari tertentu, jam, pratinjau, dan bahasa Inggris. Lapisan imersifnya juga diperiksa: tekan-tahan, letak setiap benda, titik pengetahuan dan lembar orang, jam saat sela, simpul dan lengkung benang, serta layar malam dengan jam yang bergulir.
 
 ### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
 
