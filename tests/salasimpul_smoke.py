@@ -363,6 +363,49 @@ class SalasimpulSmoke(unittest.TestCase):
         self.page.wait_for_selector('#bkKeep')
         self.assertEqual(self.page.locator('#bkRead .bk-note').count(), 2)
 
+    # ---------- the reading thread ----------
+    def test_the_fork_and_your_thread(self):
+        self.go()
+        self.seed_state(open=False)
+        self.open_note('n1999')
+        cards = self.page.locator('#fork .fk')
+        self.assertGreaterEqual(cards.count(), 2)
+        self.assertLessEqual(cards.count(), 4)
+        nxt = next(e for e in self.W['entries'] if e['owner'] == 'nara' and e['id'] != 'n1999')
+        book = self.page.locator('#fork .fk[data-how="book"]')
+        self.assertEqual(book.get_attribute('href'), '#c-' + nxt['id'])
+        book.click()
+        self.page.wait_for_function(f"document.querySelector('#note h2').textContent === {json.dumps(nxt['title'])}")
+        tie = self.page.locator('#fromStrip').text_content()
+        self.assertIn('Lanjut di buku yang sama', tie)
+        self.assertIn(f"+{nxt['at']['y'] - 1999}", tie)
+        self.assertEqual([x['id'] for x in self.state()['strand']], ['n1999', nxt['id']])
+        # the note you left is folded above, and opens again in place
+        fold = self.page.locator('#strand .fold')
+        self.assertEqual(fold.count(), 1)
+        fold.locator('summary').click()
+        self.page.wait_for_selector('#strand .fold .fd-body p')
+        # the crossroads never offers the note you just came from
+        self.assertEqual(self.page.locator('#fork .fk[href="#c-n1999"]').count(), 0)
+        # going back cuts the thread there
+        self.page.go_back()
+        self.page.wait_for_function("document.querySelector('#note h2').textContent === " + json.dumps(self.BY['n1999']['title']))
+        self.assertEqual([x['id'] for x in self.state()['strand']], ['n1999'])
+        self.assertEqual(self.page.locator('#strand').count(), 0)
+
+    def test_memory_bar_opens_and_returns(self):
+        self.go()
+        self.seed_state(read={'r1983': 1})
+        self.open_note('r1983')
+        self.assertTrue(self.page.locator('#nMem').is_hidden())
+        self.page.locator('#memToggle').click()
+        self.assertTrue(self.page.locator('#nMem').is_visible())
+        self.page.evaluate("(() => { const r = document.getElementById('memRange'); r.value = r.max; r.dispatchEvent(new Event('input')); })()")
+        self.assertGreater(self.page.locator('.sn.fog').count(), 0)
+        self.page.locator('#memClose').click()
+        self.assertTrue(self.page.locator('#nMem').is_hidden())
+        self.assertEqual(self.page.locator('.sn.fog').count(), 0)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

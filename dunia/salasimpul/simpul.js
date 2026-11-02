@@ -33,7 +33,7 @@
     $('#kick').textContent = 'A world · Notes';
     $('#lede').textContent = 'Eighteen people keep notes, not knowing their writing ties itself into knots.';
     $('#rule1').textContent = 'You are new here. Everyone opens their notebook as far as you know them, and you get to know them through other people.';
-    $('#rule2').textContent = 'Pull the thread. A note that knots into another one takes you there.';
+    $('#rule2').textContent = 'Every note ends at a crossroads. Pull the thread to someone else, go on in their notebook, or see what happened in the town meanwhile. Your way becomes one thread.';
     $('#rule3').textContent = 'Sentences you understand later will light up, even on pages you have already read.';
     $('#lost').hidden = false; $('#lost').textContent = 'These notes are not translated yet, so they are shown in the original Indonesian.';
     $('#tabAngle').textContent = 'Angle'; $('#tabBook').textContent = 'Your edit'; $('label[for=cityRange]').firstChild.textContent = 'The city in ';
@@ -72,7 +72,7 @@
   const ALL_PROPS = Object.keys(PROPS).length;
 
   /* ---------- ingatan pembaca ---------- */
-  const blank = () => ({ v: 1, read: {}, early: {}, known: {}, last: null, open: false, recall: {}, book: [] });
+  const blank = () => ({ v: 1, read: {}, early: {}, known: {}, last: null, open: false, recall: {}, book: [], strand: [] });
   let S = store.get('simpul', null);
   if (!S || S.v !== 1) S = blank();
   S.recall = S.recall || {}; S.book = Array.isArray(S.book) ? S.book.filter(id => BY.has(id)) : [];
@@ -400,20 +400,82 @@
       ${via.length ? `<p class="lk-k">${esc(st.key ? t('Mungkin dimulai dari', 'Perhaps start with') : t(`Kenali ${owner} lewat`, `Get to know ${owner} through`))}</p><div class="knots">${via.map(x => knotCard(x.id, 'node', 'out').replace(/<small>[^<]*<\/small>/, '')).join('')}</div>` : ''}
       <div class="lk-act"><button type="button" class="ghost" id="early">${esc(t('Buka saja', 'Open anyway'))}</button></div></div>`;
   }
-  let via = null;   // catatan asal saat pembaca menarik sebuah simpul
-  function open(id, from) {
+  /* ---------- benang baca ----------
+     Jalan bacamu adalah satu benang: catatan yang sudah lewat terlipat di atas, disambung simpul yang menyebut
+     bagaimana kamu sampai (menarik benang, lanjut di buku, sementara itu) dan berapa jauh waktunya melompat.
+     Di akhir setiap catatan ada persimpangan: paling banyak empat jalan, masing-masing dengan suaranya sendiri. */
+  let via = null;   // { from, how }: dari catatan mana, dan lewat jalan apa, pembaca datang
+  const HOW = {
+    knot: t('Kamu menarik benang dari', 'You pulled a thread from'), echo: t('Kamu mengikuti gema dari', 'You followed an echo from'),
+    book: t('Lanjut di buku yang sama, dari', 'On in the same notebook, from'), back: t('Mundur di buku yang sama, dari', 'Back in the same notebook, from'),
+    time: t('Sementara itu di kota, setelah', 'Meanwhile in the town, after'), in: t('Mundur ke yang menyimpul ke', 'Back to what knotted into'),
+    go: t('Lalu, setelah', 'Then, after')
+  };
+  // lompatan waktu di antara dua catatan: angka besar dan satuannya
+  function gapOf(a, b) {
+    const days = Math.round((dateOf(b.at) - dateOf(a.at)) / 864e5), ad = Math.abs(days), fwd = days >= 0;
+    if (ad === 0) return { n: '0', u: t('hari yang sama', 'the same day') };
+    const [n, u, uEn] = ad < 31 ? [ad, 'hari', 'day'] : ad < 365 ? [Math.max(1, Math.round(ad / 30.44)), 'bulan', 'month'] : [Math.round(ad / 365.25), 'tahun', 'year'];
+    return { n: (fwd ? '+' : '−') + n, u: EN ? `${uEn}${n > 1 ? 's' : ''} ${fwd ? 'later' : 'earlier'}` : `${u} ${fwd ? 'kemudian' : 'sebelumnya'}` };
+  }
+  let tieN = 0;
+  function tieHTML(a, b, how, current) {
+    const g = gapOf(a, b), k = ++tieN;
+    return `<div class="tie tie-${how || 'go'}"${current ? ' id="fromStrip"' : ''} style="--a:${inkOf(a.owner)};--b:${inkOf(b.owner)}">
+      <svg class="tie-th" viewBox="0 0 40 84" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="tg${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M20 0C20 18 6 24 6 42S20 66 20 84" stroke="url(#tg${k})"/><circle cx="6" cy="42" r="5"/></svg>
+      <p class="tie-t"><small>${esc(HOW[how] || HOW.go)}</small><b>${esc(NAME[a.owner])}</b><span>${esc(a.title)}</span></p>
+      <p class="tie-gap">${g.n === '0' ? '' : `<b>${esc(g.n)}</b>`}<span>${esc(g.u)}</span></p></div>`;
+  }
+  const foldHTML = e => `<details class="fold" data-id="${e.id}" style="--nb:${inkOf(e.owner)}"><summary><span class="fd-who">${esc(NAME[e.owner])}</span><span class="fd-d">${esc(fmtDate(e.at, true))}${e.at.h != null ? ' · ' + String(e.at.h).padStart(2, '0') + '.00' : ''}</span><b class="fd-t">${esc(e.title)}</b><span class="fd-q">${esc(firstLine(e))}</span></summary><div class="n-body fd-body"></div></details>`;
+  // persimpangan di akhir catatan
+  function choices(e, skip) {
+    const out = [], seen = new Set([e.id, skip]), add = (x, how) => { if (x && !seen.has(x.id)) { seen.add(x.id); out.push({ e: x, how }); } };
+    const r = rank.get(e.id), list = ofOwner[e.owner], i = E.indexOf(e);
+    [...linksTo.get(e.id)].sort((a, b) => isRead(a.id) - isRead(b.id)).slice(0, 2).forEach(l => add(BY.get(l.id), l.kind === 'echo' ? 'echo' : 'knot'));
+    add(list[r + 1], 'book');
+    add(E.slice(i + 1).find(x => x.owner !== e.owner && !isRead(x.id) && state(x).open) || E.slice(i + 1).find(x => x.owner !== e.owner && !isRead(x.id)), 'time');
+    (linkedBy.get(e.id) || []).filter(l => !isRead(l.from)).forEach(l => out.length < 3 && add(BY.get(l.from), 'in'));
+    return out.slice(0, 4);
+  }
+  const FORK = { knot: t('Tarik benangnya', 'Pull the thread'), echo: t('Ikuti gemanya', 'Follow the echo'), time: t('Sementara itu', 'Meanwhile'), in: t('Yang menyimpul ke sini', 'What knotted here') };
+  function forkHTML(e, skip) {
+    const cs = choices(e, skip);
+    if (!cs.length) return `<nav class="fork" id="fork" aria-label="${esc(t('Ke mana sekarang', 'Where now'))}"><p class="fork-k">${esc(t('Benang ini berhenti di sini', 'This thread stops here'))}</p><div class="f-row"><a class="go" href="#">${esc(t('Buka jendela lain', 'Open another window'))}</a><a class="ghost" href="#kota">${esc(t('Lihat kotanya', 'See the city'))}</a></div></nav>`;
+    return `<nav class="fork" id="fork" aria-label="${esc(t('Ke mana sekarang', 'Where now'))}"><p class="fork-k">${esc(t('Ke mana sekarang?', 'Where now?'))}</p><div class="fks">${cs.map(({ e: x, how }, i) => {
+      const st = state(x), g = gapOf(e, x);
+      const kick = how === 'book' ? t(`Lanjut di buku ${NAME[x.owner]}`, `On in ${NAME[x.owner]}’s notebook`) : FORK[how];
+      return `<a class="fk fk-${how} ${st.read ? 'read' : st.open ? 'open' : 'shut'}" href="#c-${x.id}" data-how="${how}" style="--fk:${inkOf(x.owner)};--i:${i}"><small>${esc(kick)}</small><b class="fk-who">${esc(st.open ? NAME[x.owner] : t('Seseorang', 'Someone'))}</b>${st.open ? `<q>${esc(firstLine(x))}</q>` : `<span class="fk-shut">${esc(st.key ? t('Catatan ini menunggu sesuatu yang belum kamu ketahui.', 'This note waits for something you do not know yet.') : t(`Kamu belum cukup kenal ${NAME[x.owner]}.`, `You do not know ${NAME[x.owner]} well enough yet.`))}</span>`}<span class="fk-meta"><span>${esc(fmtDate(x.at, true))}</span><span>${esc(g.n === '0' ? g.u : `${g.n} ${g.u.split(' ')[0]}`)}</span>${st.read ? `<span>${esc(t('sudah dibaca', 'read'))}</span>` : ''}</span></a>`;
+    }).join('')}</div></nav>`;
+  }
+  const knotPill = l => { const to = BY.get(l.id), st = state(to); return `<a class="knot ${st.read ? 'read' : st.open ? 'open' : 'shut'}${l.kind === 'echo' ? ' echo' : ''}" href="#c-${l.id}" style="--fk:${inkOf(to.owner)}"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6C7 0 9 12 16 6"/><circle cx="22" cy="6" r="3.4"/></svg><b>${esc(NAME[to.owner])}</b><span>${esc(String(to.at.y))}${st.read ? ' · ' + esc(t('dibaca', 'read')) : ''}</span></a>`; };
+
+  function open(id, pulled) {
     const e = BY.get(id); if (!e) return go(null);
-    const st = state(e), i = E.indexOf(e), list = ofOwner[e.owner], r = rank.get(e.id);
-    const prevO = list[r - 1], nextO = list[r + 1], prevT = E[i - 1], nextT = E[i + 1];
+    const st = state(e), list = ofOwner[e.owner], r = rank.get(e.id), prevO = list[r - 1];
+    // benangmu: disambung kalau kamu datang dari catatan terakhirnya; kalau kamu mundur ke catatan di benang, benangnya dipotong di sana
+    let strand = (Array.isArray(S.strand) ? S.strand : []).filter(x => x && BY.has(x.id));
+    const tail = strand[strand.length - 1];
+    let appended = false;
+    if (tail && tail.id === id) { /* catatan yang sama: dimuat ulang */ }
+    else if (pulled && tail && tail.id === pulled.from) { strand.push({ id, how: pulled.how }); appended = true; }
+    else if (pulled && BY.has(pulled.from)) { strand = [{ id: pulled.from, how: null }, { id, how: pulled.how }]; appended = true; }
+    else { const k = strand.findIndex(x => x.id === id); if (k >= 0) strand = strand.slice(0, k + 1); else { strand.push({ id, how: strand.length ? 'go' : null }); appended = strand.length > 1; } }
+    strand = strand.slice(-24); S.strand = strand;
+    const shown = strand.slice(-7), before = strand.length - shown.length, prev = shown.length > 1 ? BY.get(shown[shown.length - 2].id) : null;
+    const how = shown[shown.length - 1].how;
     note.dataset.owner = e.owner;
     note.style.setProperty('--nb', inkOf(e.owner));
     sky(e.at.h);
-    const src = from && BY.get(from);
-    note.innerHTML = `${src ? `<a class="from" href="#c-${src.id}" id="fromStrip"><svg class="from-th" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true"><path d="M0 10C30 0 40 20 60 10S100 0 120 10"/></svg><small>${esc(t('Kamu menarik benang dari', 'You pulled a thread from'))}</small><b>${esc(NAME[src.owner])}</b><span>${esc(src.title)}</span></a>` : ''}<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date"><span>${esc(fmtDate(e.at))}</span>${e.at.h != null ? `<b class="n-hour">${String(e.at.h).padStart(2, '0')}.00</b>` : ''}</p>${st.open && e.at.y < Y1 ? `<div class="n-mem" id="nMem"><label for="memRange">${esc(t('Diingat pada', 'Remembered in'))} <b id="memYear">${e.at.y}</b></label><input type="range" id="memRange" min="${e.at.y}" max="${Y1}" step="1" value="${e.at.y}"><span id="memNote">${esc(t('seperti saat ditulis', 'as it was written'))}</span></div>` : ''}<h2>${esc(e.title)}</h2>${S.early[e.id] && !st.read ? '' : ''}</header>
+    tieN = 0;
+    let threadHTML = before ? `<p class="st-more">${esc(t(`${before} catatan sebelumnya di benangmu`, `${before} earlier notes on your thread`))}</p>` : '';
+    for (let k = 0; k < shown.length - 1; k++) { const a = BY.get(shown[k].id); threadHTML += foldHTML(a); if (k < shown.length - 2) threadHTML += tieHTML(a, BY.get(shown[k + 1].id), shown[k + 1].how, false); }
+    note.innerHTML = `${shown.length > 1 ? `<div class="strand" id="strand">${threadHTML}</div>${tieHTML(prev, e, how, true)}` : ''}<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date"><span>${esc(fmtDate(e.at))}</span>${e.at.h != null ? `<b class="n-hour">${String(e.at.h).padStart(2, '0')}.00</b>` : ''}</p><h2>${esc(e.title)}</h2></header>
       <div class="n-body" id="nBody"></div>
-      <footer class="n-foot" id="nFoot"></footer>`;
+      <div id="forkHost"></div>
+      <footer class="n-foot" id="nFoot"></footer>
+      ${st.open && e.at.y < Y1 ? `<div class="n-mem" id="nMem" hidden><label for="memRange">${esc(t('Diingat pada', 'Remembered in'))} <b id="memYear">${e.at.y}</b></label><input type="range" id="memRange" min="${e.at.y}" max="${Y1}" step="1" value="${e.at.y}"><button type="button" class="close" id="memClose" aria-label="${esc(t('Kembali ke saat ditulis', 'Back to when it was written'))}">×</button><span id="memNote">${esc(t('Geser untuk melihat apa yang masih diingat, bertahun-tahun kemudian.', 'Slide to see what is still remembered, years later.'))}</span></div>` : ''}`;
     const body = $('#nBody');
-    note.classList.toggle('pulled', !!src);
+    note.classList.toggle('pulled', !!pulled);
     if (st.read && S.last !== e.id) { S.recall[e.id] = (S.recall[e.id] || 0) + 1; save(); }
     if (!st.open) { body.innerHTML = lockedHTML(e, st); $('#early').onclick = () => { S.early[e.id] = 1; save(); open(id); }; }
     else {
@@ -421,26 +483,41 @@
       e.p.forEach((p, pi) => {
         body.append(para(p, e, pi));
         const ls = (p.l || []);
-        if (ls.length) body.insertAdjacentHTML('beforeend', `<div class="knots inline">${ls.map(l => knotCard(l.id, l.kind, 'out')).join('')}</div>`);
+        if (ls.length) body.insertAdjacentHTML('beforeend', `<div class="knots inline" aria-label="${esc(t('Simpul dari paragraf ini', 'Knots from this paragraph'))}">${ls.map(knotPill).join('')}</div>`);
       });
-      if (S.early[e.id] && !isRead(e.id)) body.querySelector('.n-early') && body.prepend(body.querySelector('.n-early'));
       markRead(e);
+      $('#forkHost').outerHTML = forkHTML(e, prev?.id);
     }
-    const inc = (linkedBy.get(e.id) || []);
-    $('#nFoot').innerHTML = `${inc.length ? `<p class="f-k">${esc(t('Yang menyimpul ke catatan ini', 'Notes that knot into this one'))}</p><div class="knots">${inc.map(l => knotCard(l.from, l.kind, 'in')).join('')}</div>` : ''}
-      <p class="f-k">${esc(t(`Di buku ${NAME[e.owner]}`, `In ${NAME[e.owner]}’s notebook`))}</p><div class="nav2">${prevO ? `<a href="#c-${prevO.id}" class="nv"><small>← ${esc(t('sebelumnya', 'before'))}</small><span>${esc(state(prevO).open ? prevO.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}${nextO ? `<a href="#c-${nextO.id}" class="nv r"><small>${esc(t('berikutnya', 'after'))} →</small><span>${esc(state(nextO).open ? nextO.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}</div>
-      <p class="f-k">${esc(t('Di kota, pada waktu yang sama', 'In the city, at the same time'))}</p><div class="nav2">${prevT ? `<a href="#c-${prevT.id}" class="nv"><small>← ${esc(NAME[prevT.owner])}, ${esc(fmtDate(prevT.at, true))}</small><span>${esc(state(prevT).open ? prevT.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}${nextT ? `<a href="#c-${nextT.id}" class="nv r"><small>${esc(NAME[nextT.owner])}, ${esc(fmtDate(nextT.at, true))} →</small><span>${esc(state(nextT).open ? nextT.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}</div>
-      <div class="f-act">${st.open ? `<button type="button" class="ghost" id="toBook" aria-pressed="${S.book.includes(e.id)}">${esc(S.book.includes(e.id) ? t('Ada di suntinganmu', 'In your edit') : t('＋ Masukkan ke suntinganmu', '＋ Add to your edit'))}</button>` : ''}<a class="ghost" href="#kota">${esc(t('Kembali ke kota', 'Back to the city'))}</a></div>`;
-    const mr = $('#memRange');
-    if (mr) mr.addEventListener('input', () => {
-      const y = +mr.value, R = fog(e, y === e.at.y ? null : y);
+    $('#forkHost')?.remove();
+    $('#nFoot').innerHTML = `<div class="f-row">${prevO ? `<a class="ghost sm" href="#c-${prevO.id}" data-how="back">← ${esc(t(`Sebelumnya di buku ${NAME[e.owner]}`, `Earlier in ${NAME[e.owner]}’s notebook`))}</a>` : ''}${$('#nMem') ? `<button type="button" class="ghost sm" id="memToggle" aria-pressed="false" aria-controls="nMem">${esc(t('Ingat dari tahun lain', 'Remember from another year'))}</button>` : ''}${st.open ? `<button type="button" class="ghost sm" id="toBook" aria-pressed="${S.book.includes(e.id)}">${esc(S.book.includes(e.id) ? t('Ada di suntinganmu', 'In your edit') : t('＋ Suntinganmu', '＋ Your edit'))}</button>` : ''}<a class="ghost sm" href="#kota">${esc(t('Peta kota', 'Town map'))}</a></div>`;
+    // ingatan: sebuah bilah di bawah layar, supaya teksnya tetap terlihat saat digeser
+    const mr = $('#memRange'), mem = $('#nMem');
+    const setMem = y => {
+      const R = fog(e, y === e.at.y ? null : y);
       $('#memYear').textContent = y;
-      $('#memNote').textContent = y === e.at.y ? t('seperti saat ditulis', 'as it was written') : t(`${NAME[e.owner]} masih mengingat ${Math.round(R * 100)}%`, `${NAME[e.owner]} still remembers ${Math.round(R * 100)}%`) + ((S.recall[e.id] || 0) ? t(` · kamu sudah kembali ${S.recall[e.id]} kali`, ` · you came back ${S.recall[e.id]} times`) : '');
+      $('#memNote').textContent = y === e.at.y ? t('Seperti saat ditulis.', 'As it was written.') : t(`${NAME[e.owner]} masih mengingat ${Math.round(R * 100)}%`, `${NAME[e.owner]} still remembers ${Math.round(R * 100)}%`) + ((S.recall[e.id] || 0) ? t(` · kamu sudah kembali ${S.recall[e.id]} kali`, ` · you came back ${S.recall[e.id]} times`) : '');
       note.classList.toggle('remembering', y !== e.at.y);
-    });
-    $('#toBook')?.addEventListener('click', () => { const i = S.book.indexOf(e.id); if (i >= 0) S.book.splice(i, 1); else S.book.push(e.id); save(); const b = $('#toBook'); const on = S.book.includes(e.id); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? t('Ada di suntinganmu', 'In your edit') : t('＋ Masukkan ke suntinganmu', '＋ Add to your edit'); });
+    };
+    if (mr) {
+      mr.addEventListener('input', () => setMem(+mr.value));
+      const toggle = on => { mem.hidden = !on; $('#memToggle').setAttribute('aria-pressed', String(on)); if (!on) { mr.value = e.at.y; setMem(e.at.y); } else mr.focus({ preventScroll: true }); };
+      $('#memToggle').onclick = () => toggle(mem.hidden);
+      $('#memClose').onclick = () => toggle(false);
+    }
+    $('#toBook')?.addEventListener('click', () => { const i = S.book.indexOf(e.id); if (i >= 0) S.book.splice(i, 1); else S.book.push(e.id); save(); const b = $('#toBook'); const on = S.book.includes(e.id); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? t('Ada di suntinganmu', 'In your edit') : t('＋ Suntinganmu', '＋ Your edit'); });
+    // lipatan dibuka: teksnya baru diisi saat dibuka
+    $$('#strand .fold').forEach(d => d.addEventListener('toggle', () => { const b = $('.fd-body', d); if (d.open && !b.childElementCount) { const x = BY.get(d.dataset.id); x.p.forEach((p, pi) => b.append(para(p, x, pi))); light(); } }));
     S.last = e.id; save(); note.dataset.id = e.id;
-    show('note'); light(); paintCount(); requestAnimationFrame(learnSeen);
+    show('note', false); light(); paintCount();
+    // gulir: catatan baru muncul di bawah lipatan yang baru saja kamu tinggalkan
+    const tie = $('#fromStrip'), top = $('.qm-top')?.offsetHeight || 60;
+    if (tie) {
+      const y = tie.getBoundingClientRect().top + scrollY - top - 8;
+      if (appended && !reduced()) { const last = $$('#strand .fold').pop(); scrollTo({ top: Math.max(0, last.getBoundingClientRect().top + scrollY - top - 8), behavior: 'auto' }); requestAnimationFrame(() => scrollTo({ top: y, behavior: 'smooth' })); }
+      else scrollTo({ top: y, behavior: 'auto' });
+    } else scrollTo({ top: 0, behavior: 'auto' });
+    requestAnimationFrame(learnSeen);
+    const src = prev && ['knot', 'echo', 'in'].includes(how) ? prev : null;
     if (src && wide()) duo(src, e);
     else { $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on'); }
     if (!reduced()) note.classList.remove('enter'), void note.offsetWidth, note.classList.add('enter');
@@ -450,7 +527,7 @@
   let pending = [], learnFrom = null;
   function markRead(e) {
     if (!isRead(e.id)) { S.read[e.id] = Date.now(); delete S.early[e.id]; save(); }
-    pending = $$('.s.cl', note); learnFrom = e.id;
+    pending = $$('#nBody .s.cl'); learnFrom = e.id;
   }
   // kalimat yang sudah masuk layar (atau sudah terlewati) menjadi yang kamu tahu
   function learnSeen() {
@@ -554,7 +631,12 @@
   }
   addEventListener('hashchange', route);
   // menarik simpul: catatan asal diingat supaya benangnya bisa digambar
-  document.addEventListener('click', e => { const k = e.target.closest('#nBody .knots.inline .knot'); if (k && !note.hidden) via = note.dataset.id || null; }, true);
+  document.addEventListener('click', e => {
+    if (note.hidden) return;
+    const k = e.target.closest('#nBody .knots.inline .knot'), f = e.target.closest('#fork .fk, #nFoot [data-how]');
+    if (k) via = { from: note.dataset.id, how: k.classList.contains('echo') ? 'echo' : 'knot' };
+    else if (f) via = { from: note.dataset.id, how: f.dataset.how };
+  }, true);
 
   /* ---------- pengaturan ---------- */
   let size = Math.min(24, Math.max(15, +(store.get('rd', {}) || {}).size || 19));
@@ -572,9 +654,9 @@
       lede: t('Catatan-catatan sebuah kota yang saling menyimpul.', 'The notes of a town, knotted into each other.'),
       steps: [
         t('Kamu orang baru di kota ini. Dua catatan pertama setiap orang terbuka; catatan berikutnya terbuka sejauh kamu mengenalnya lewat catatan orang lain.', 'You are new in this town. Everyone’s first two notes are open; the rest open as you get to know them through other people’s notes.'),
-        t('Di bawah paragraf ada simpul ke catatan orang lain. Simpul yang kamu ikuti selalu terbuka.', 'Under some paragraphs there are knots to other people’s notes. A knot you follow is always open.'),
+        t('Di akhir setiap catatan ada persimpangan: tarik benangnya, lanjut di buku yang sama, atau lihat kota sementara itu. Catatan yang sudah lewat terlipat di atas, jadi benangmu bisa digulir kembali.', 'Every note ends at a crossroads: pull the thread, go on in the same notebook, or see the town meanwhile. Notes you have passed fold up above, so you can scroll back along your thread.'),
         t('Kalimat yang kamu pahami belakangan akan menyala. Ketuk untuk melihat apa yang kamu ketahui. Semuanya tersimpan di ikon mata.', 'Sentences you understand later light up. Tap to see what you know. Everything is kept under the eye icon.'),
-        t('Partitur, Orang, dan Waktu adalah tiga cara melihat kota. Tidak sabar? Ada "Buka saja" di setiap halaman yang terkunci, dan "Kota terbuka" di Aa.', 'Score, People and Time are three ways to see the town. Impatient? Every locked page has "Open anyway", and Aa has "Open city".')
+        t('"Ingat dari tahun lain" di bawah catatan memperlihatkan apa yang masih diingat penulisnya. "Peta kota" menunjukkan semua orang dan benangnya. Tidak sabar? Ada "Buka saja" di setiap halaman yang terkunci, dan "Kota terbuka" di Aa.', '"Remember from another year" under a note shows what its writer still remembers. "Town map" shows everyone and their threads. Impatient? Every locked page has "Open anyway", and Aa has "Open city".')
       ] });
     G.settings();
   }
