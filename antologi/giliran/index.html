@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id" class="qm-theme-auto qm-sky-wide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giliran · Quiet Margins</title>
+<meta name="description" content="Bima dibayar untuk memerankan orang yang akan ditinggalkan. Lalu kliennya berlatih meninggalkan dia. Dibaca di antara balon kata, aplikasi Sela, pesan, dan telepon.">
+<meta name="theme-color" content="#F2F2F4">
+<meta property="og:title" content="Giliran">
+<meta property="og:description" content="Pada hari ketika seorang perempuan membayarnya untuk berlatih meninggalkan seorang lelaki, Bima baru saja selesai menjadi ayah yang tidak merestui anaknya membuka toko bunga.">
+<meta property="og:type" content="article">
+<link rel="canonical" href="https://quietmargins.site/antologi/giliran/">
+<meta property="og:site_name" content="Quiet Margins">
+<meta property="og:url" content="https://quietmargins.site/antologi/giliran/">
+<meta property="og:image" content="https://quietmargins.site/assets/og/giliran.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Giliran">
+<meta name="twitter:description" content="Bima dibayar untuk memerankan orang yang akan ditinggalkan. Lalu kliennya berlatih meninggalkan dia.">
+<meta name="twitter:image" content="https://quietmargins.site/assets/og/giliran.png">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=2">
+<link rel="stylesheet" href="giliran.css?v=1">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+</head>
+<body>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
+
+<main class="read" id="read">
+  <header class="cover" id="cover">
+    <p class="kick" id="kick">Temusai · Cerpen</p>
+    <h1 id="title">Giliran</h1>
+    <p class="by" id="by">Juan</p>
+    <ul class="legend" id="legend" aria-label="Cara membaca">
+      <li><span class="lg-balloon" aria-hidden="true"></span><span id="lgSpoken">Diucapkan</span></li>
+      <li><span class="lg-chat" aria-hidden="true"></span><span id="lgTyped">Diketik</span></li>
+      <li><span class="lg-unsaid" aria-hidden="true"></span><span id="lgUnsaid">Tidak jadi diucapkan</span></li>
+    </ul>
+    <p class="lost" id="lost" hidden></p>
+  </header>
+  <div class="story" id="story" aria-live="off"><p class="loading">…</p></div>
+  <footer class="end" id="end" hidden>
+    <div class="your-turn" id="yourTurn">
+      <p class="yt-k" id="ytKick">Giliranmu</p>
+      <div class="yt-box"><label class="sr-only" for="ytText" id="ytLabel">Kalimat pertamamu</label><textarea id="ytText" rows="2" maxlength="400" placeholder="…"></textarea></div>
+      <p class="yt-note" id="ytNote">Tidak ada tombol kirim. Tidak ada yang disimpan.</p>
+    </div>
+    <div class="end-next" id="endNext"></div>
+  </footer>
+</main>
+
+<div class="turn" id="turn" hidden aria-hidden="true"><i></i><span id="turnText"></span></div>
+
+<dialog class="gl-dialog" id="transferDialog" aria-labelledby="trTitle">
+  <header class="dialog-head"><h2 id="trTitle">Formulir pengalihan kasus</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="tr-body">
+    <p class="tr-row"><span id="trCaseL">Kasus</span><b>Kaca</b></p>
+    <label class="tr-l" for="trReason"><span id="trReasonL">Alasan</span><textarea id="trReason" rows="3"></textarea></label>
+    <div class="tr-act"><button class="setting-button" data-close type="button" id="trCancel">Batal</button><button class="setting-button primary" type="button" id="trSend">Kirim formulir</button></div>
+  </div>
+</dialog>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../panduan.js?v=4"></script>
+<script src="giliran.js?v=1"></script>
+</body>
+</html>

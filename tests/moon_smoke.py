@@ -250,10 +250,10 @@ class MoonSmoke(unittest.TestCase):
 
     def test_theme_follows_the_site_choice(self):
         self.open()
-        light = self.page.evaluate("getComputedStyle(document.body).backgroundColor")
+        light = self.page.evaluate("getComputedStyle(document.body).color")
         self.page.evaluate("() => { localStorage.setItem('jm:theme', JSON.stringify('dark')); dispatchEvent(new StorageEvent('storage', { key: 'jm:theme' })); }")
         self.page.wait_for_timeout(100)
-        self.assertNotEqual(light, self.page.evaluate("getComputedStyle(document.body).backgroundColor"))
+        self.assertNotEqual(light, self.page.evaluate("getComputedStyle(document.body).color"))
 
 
 if __name__ == '__main__':

@@ -949,6 +949,9 @@
       const tag = ordered ? 'ol' : 'ul', start = ordered ? +lines[0].match(/^\s*(\d+)/)[1] : 1;
       return `<${tag} class="rd-list"${k}${ordered && start > 1 ? ` start="${start}"` : ''}>${items.map(x => `<li>${mark(x)}</li>`).join('')}</${tag}>`;
     }
+    // transkrip obrolan: > **NAMA:** pesan, satu pesan per baris
+    const said = lines.map(l => l.replace(/^>[ \t]?/, '').match(/^\*\*([^*]+?):\*\*[ \t]*(.*)$/));
+    if (lines.length && lines.every(l => l.startsWith('>')) && said.some(Boolean)) return `<div class="rd-chat"${k}>${said.map((m, j) => m ? `<p><b>${esc(m[1])}</b><span>${mark(m[2])}</span></p>` : `<p><span>${mark(lines[j].replace(/^>[ \t]?/, ''))}</span></p>`).join('')}</div>`;
     if (lines.every(l => l.startsWith('>'))) return `<blockquote class="rd-quote"${k}>${mark(lines.map(l => l.replace(/^>[ \t]?/, '')).join(' '))}</blockquote>`;
     return `<p${k}>${mark(p)}</p>`;
   }

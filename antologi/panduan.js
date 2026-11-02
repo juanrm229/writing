@@ -97,14 +97,21 @@
   // daftar pengalaman, urut menurut tanggal dan jam tulisannya
   let works = null;
   const loadWorks = () => works || (works = (qs.get('preview') === '1' ? Promise.resolve(read('preview')?.works || []) : fetch('../../content/works.json', { cache: 'no-cache' }).then(r => r.json())).catch(() => []));
-  const nextHTML = (list, slug) => {
+  // antologi: tulisan yang tergabung dalam satu antologi menunjuk tulisan berikutnya di antologi itu
+  let albums = null;
+  const loadAlbums = () => albums || (albums = (qs.get('preview') === '1' && read('preview')?.albums ? Promise.resolve(read('preview').albums) : fetch('../../content/albums.json', { cache: 'no-cache' }).then(r => r.json())).catch(() => []));
+  const nextHTML = (list, slug, albumList) => {
     const i = list.findIndex(w => w.slug === slug); if (i < 0) return '';
     const night = NIGHT.findIndex(n => n.slug === slug), nNext = night >= 0 ? NIGHT[night + 1] : null;
     if (nNext) return `<small>${esc(t('Masih malam yang sama · ditulis ', 'Same night · written at ') + time(nNext.time))}</small><b>${esc(nNext.title)} →</b><span>${esc(t(nNext.kind[0], nNext.kind[1]))}</span>|${withLang(nNext.href)}`;
-    const after = list.slice(i + 1).find(w => !NIGHT.some(n => n.slug === w.slug) || w.slug === NIGHT[0].slug) || list.find(w => w.slug !== slug);
+    const anth = (Array.isArray(albumList) ? albumList : []).find(a => a && a.kind === 'antologi' && Array.isArray(a.tracks) && a.tracks.includes(slug) && a.tracks.filter(x => list.some(w => w.slug === x)).length > 1);
+    const tracks = anth ? anth.tracks.filter(x => list.some(w => w.slug === x)) : [];
+    const inAnth = anth ? list.find(w => w.slug === tracks[(tracks.indexOf(slug) + 1) % tracks.length]) : null;
+    const after = inAnth || list.slice(i + 1).find(w => !NIGHT.some(n => n.slug === w.slug) || w.slug === NIGHT[0].slug) || list.find(w => w.slug !== slug);
     if (!after) return '';
     const exp = String(after.experience).replace(/^antologi\//, ''), date = after.date ? new Date(after.date + 'T00:00:00').toLocaleDateString(EN ? 'en-GB' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-    const head = night >= 0 ? t(`Malam 19 Juli selesai di sini · ${time(NIGHT[night].time)}`, `The night of 19 July ends here · ${time(NIGHT[night].time)}`) : t('Pengalaman berikutnya', 'Next experience');
+    const anthTitle = inAnth ? ((EN && anth.en?.title) || anth.title) : '';
+    const head = night >= 0 ? t(`Malam 19 Juli selesai di sini · ${time(NIGHT[night].time)}`, `The night of 19 July ends here · ${time(NIGHT[night].time)}`) : inAnth ? t(`Masih di antologi ${anthTitle}`, `Still in the ${anthTitle} anthology`) : t('Pengalaman berikutnya', 'Next experience');
     const ttl = (EN && after.en?.title) || after.title;
     return `<small>${esc(head)}</small><b>${esc(ttl)} →</b><span>${esc(date)}</span>|${withLang(exp)}`;
   };
@@ -112,9 +119,9 @@
   const fillSoon = () => { clearTimeout(fillT); fillT = setTimeout(fill, 0); };
   const fill = async () => {
     const els = [...document.querySelectorAll('[data-next-for]:not([data-filled])')]; if (!els.length) return;
-    const all = await loadWorks();
+    const [all, albumList] = await Promise.all([loadWorks(), loadAlbums()]);
     const list = (Array.isArray(all) ? all : []).filter(w => w && w.experience && !w.draft).sort((a, b) => `${a.date || ''} ${a.time || ''}`.localeCompare(`${b.date || ''} ${b.time || ''}`));
-    els.forEach(el => { const h = nextHTML(list, el.dataset.nextFor); if (!h) { el.hidden = true; return; } const k = h.lastIndexOf('|'); el.innerHTML = h.slice(0, k); el.href = h.slice(k + 1); el.dataset.filled = ''; });
+    els.forEach(el => { const h = nextHTML(list, el.dataset.nextFor, albumList); if (!h) { el.hidden = true; return; } const k = h.lastIndexOf('|'); el.innerHTML = h.slice(0, k); el.href = h.slice(k + 1); el.dataset.filled = ''; });
   };
   new MutationObserver(() => { if (document.querySelector('[data-next-for]:not([data-filled])')) fillSoon(); }).observe(document.documentElement, { childList: true, subtree: true });
 

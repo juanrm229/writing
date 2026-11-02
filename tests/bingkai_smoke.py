@@ -14,7 +14,7 @@ from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ['anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi', 'arsip', 'the-room', 'trillions-of-seconds', 'the-moon-behind-my-eyes']
+PAGES = ['anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi', 'arsip', 'the-room', 'trillions-of-seconds', 'the-moon-behind-my-eyes', 'giliran']
 SEEN = "try { %s } catch (e) {}" % ' '.join(f"localStorage.setItem('jm:guide:{p}', '1');" for p in PAGES)
 
 
@@ -101,7 +101,7 @@ class BingkaiSmoke(unittest.TestCase):
                 self.assertEqual(page.locator('.qm-back').inner_text().strip(), 'Writing desk')
 
     def test_interlude_and_anda_di_sini_follow_the_site_theme(self):
-        for slug in ['interlude', 'anda-di-sini']:
+        for slug in ['interlude', 'anda-di-sini', 'giliran']:
             with self.subTest(slug=slug):
                 light, _ = self.context(scheme='light')
                 self.open(light, slug)
@@ -126,7 +126,7 @@ class BingkaiSmoke(unittest.TestCase):
                 self.assertIn('Georgia', page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--qm-read')"))
 
     def test_first_visit_guide_on_the_older_experiences(self):
-        for slug in ['anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi']:
+        for slug in ['anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi', 'giliran']:
             with self.subTest(slug=slug):
                 page, _ = self.context(seen=False)
                 page.goto(self.root + slug + '/', wait_until='domcontentloaded')

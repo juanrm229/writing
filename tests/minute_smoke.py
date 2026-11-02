@@ -598,7 +598,8 @@ class MinuteSmoke(unittest.TestCase):
     # Tema
 
     def paper(self):
-        return self.page.evaluate("getComputedStyle(document.body).backgroundColor")
+        # warna teks, bukan latar: latar di layar lebar adalah langit yang berganti menurut jam
+        return self.page.evaluate("getComputedStyle(document.body).color")
 
     def test_theme_follows_the_site_choice_then_the_device(self):
         self.open('#a')
