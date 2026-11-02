@@ -379,6 +379,23 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - *Jejakmu*: urutan bacamu digambar sebagai satu benang biru.
   - Tombol − dan + merapatkan atau merenggangkan waktu.
 - Banner di halaman Album dibuat tipis: satu baris berisi judul, garis kota, angka, dan panah.
+- **Ingatan yang memudar.**
+  - Di setiap catatan ada penggeser *Diingat pada*, dari tahun catatan ditulis sampai tahun terakhir dunia ini. Kalimat yang dilupakan penulisnya pada tahun itu memudar menjadi kabut.
+  - Kalimat `@protected` tetap tajam, dan tahun catatan ditulis menampilkan teks utuh.
+  - Rumusnya R = e^(−t/S): t adalah hari sejak `memory.encodedAt` (atau tanggal catatan), S = `stability0` × (1 + `retrievalBonus` × `retrievals`). Catatan tanpa `memory` memakai ingatan bawaan `memory` di `_dunia.json`.
+  - Kalimat yang memudar dipilih secara tetap, jadi kalimat yang sama selalu hilang pada ingatan yang sama.
+  - Setiap kali pembaca kembali ke catatan yang sudah dibaca, `retrievals`-nya bertambah satu (`jm:simpul.recall`). Ingatan itu bertahan lebih lama karena dibaca ulang.
+- **Kota pada tahun tertentu.** Penggeser di bawah partitur menyembunyikan catatan yang belum ditulis pada tahun itu dan meredupkan sisanya sesuai ingatan penulisnya, disertai jumlah catatan dan rata-rata yang masih diingat.
+- **Kesaksian.** Di *Yang kamu tahu*, fakta yang ditulis lebih dari satu kali punya tombol *n kesaksian*. Isinya:
+  - semua kalimat yang menyatakan fakta itu, dari siapa pun (yang belum kamu kenal tampil sebagai *seseorang*);
+  - kalimat-kalimat yang berubah karenanya.
+  - Halaman tidak pernah memutuskan siapa yang benar.
+- **Sudut.** Tab *Sudut* menampilkan kota dari satu orang, dengan Sukrim sebagai bawaan: catatannya sendiri diselingi kalimat orang lain yang menyebutnya, lengkap dengan jumlahnya.
+- **Suntinganmu.** Tab *Suntingan* adalah buku yang disusun pembaca sendiri.
+  - Tambahkan catatan lewat *＋ Masukkan ke suntinganmu* di kaki setiap catatan, atau sekaligus dari *Jejakmu* dan *Rantai yang disarankan* (`spine` di `_dunia.json`).
+  - Urutannya bisa digeser.
+  - *Baca suntinganmu* menampilkannya sebagai satu buku. *Unduh .md* memberi berkas Markdown berisi teks catatan tanpa tanda.
+  - *Salin tautan* membuat `#suntingan=id,id,…`. Penerima membaca suntingan itu sebagai satu buku dan bisa menyimpannya sebagai suntingannya sendiri.
 - Semua tersimpan di `jm:simpul`. *Mulai dari nol* di Aa menghapusnya. Pratinjau (`?preview=1`) tidak menyimpan apa pun.
 
 ```bash

@@ -1,10 +1,35 @@
 {
   "title": "Salasimpul",
-  "aliases": { "sukrim": ["Krim"] },
+  "aliases": {
+    "sukrim": [
+      "Krim"
+    ]
+  },
   "start": "n1999",
   "keys": {
-    "h2025": ["p_lira_hilang", "p_lira_tak_terlihat"],
-    "el2026c": ["p_makam_kosong"],
-    "n2026f": ["p_karman_mati", "p_kotak_kuitansi"]
+    "h2025": [
+      "p_lira_hilang",
+      "p_lira_tak_terlihat"
+    ],
+    "el2026c": [
+      "p_makam_kosong"
+    ],
+    "n2026f": [
+      "p_karman_mati",
+      "p_kotak_kuitansi"
+    ]
+  },
+  "spine": [
+    "n2025",
+    "k2025b",
+    "k2026",
+    "ls2026d",
+    "n2026a",
+    "n2026f"
+  ],
+  "memory": {
+    "stability0": 5000,
+    "retrievalBonus": 0.25,
+    "retrievals": 0
   }
 }

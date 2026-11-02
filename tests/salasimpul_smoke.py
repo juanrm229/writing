@@ -283,6 +283,86 @@ class SalasimpulSmoke(unittest.TestCase):
         self.assertTrue(self.page.locator('.n-hour').inner_text().endswith('.00'))
         self.assertNotEqual(self.page.evaluate("getComputedStyle(document.getElementById('note')).getPropertyValue('--nb').trim()"), '')
 
+    # ---------- stage two ----------
+    def seed_state(self, **kw):
+        st = {'v': 1, 'read': {}, 'early': {}, 'known': {}, 'last': None, 'open': True, 'recall': {}, 'book': []}
+        st.update(kw)
+        self.page.evaluate(f"localStorage.setItem('jm:simpul', {json.dumps(json.dumps(st))})")
+        self.page.reload(); self.page.wait_for_selector('#coverAct .win, #coverAct .go, #nBody > *, #city:not([hidden])')
+
+    def test_memory_fades_but_protected_sentences_stay(self):
+        self.go()
+        self.seed_state(read={'r1983': 1})
+        self.open_note('r1983')
+        self.assertEqual(self.page.locator('.sn.fog').count(), 0)
+        self.page.evaluate("(() => { const r = document.getElementById('memRange'); r.value = r.max; r.dispatchEvent(new Event('input')); })()")
+        self.assertGreater(self.page.locator('.sn.fog').count(), 0)
+        self.assertEqual(self.page.locator('.sn.prot.fog').count(), 0)
+        self.assertGreater(self.page.locator('.sn.prot').count(), 0)
+        self.assertRegex(self.page.locator('#memNote').inner_text(), r'Rasmi masih mengingat \d+%')
+        # back to the year it was written: nothing is forgotten
+        self.page.evaluate("(() => { const r = document.getElementById('memRange'); r.value = r.min; r.dispatchEvent(new Event('input')); })()")
+        self.assertEqual(self.page.locator('.sn.fog').count(), 0)
+
+    def test_coming_back_strengthens_a_memory(self):
+        self.go()
+        self.seed_state(read={'r1983': 1, 'n1999': 2})
+        self.open_note('n1999'); self.open_note('r1983')
+        self.assertEqual(self.state()['recall'].get('r1983'), 1)
+
+    def test_the_city_in_a_given_year(self):
+        self.go('#kota')
+        self.page.evaluate("(() => { const r = document.getElementById('cityRange'); r.value = 1999; r.dispatchEvent(new Event('input')); })()")
+        later = sum(1 for e in self.W['entries'] if e['at']['y'] > 1999)
+        self.assertEqual(self.page.locator('#scoreSvg .nt.later').count(), later)
+        self.assertIn(f"{len(self.W['entries']) - later} catatan sudah ditulis", self.page.locator('#cityNote').inner_text())
+
+    def test_testimonies_of_one_fact(self):
+        p, ids = next((p, ids) for p, ids in self.W['props'].items() if len({self.BY[i]['owner'] for i in ids}) > 1)
+        self.go()
+        self.seed_state(read={i: n for n, i in enumerate(ids)}, known={p: ids[0]})
+        self.page.locator('#openKnow').click()
+        self.page.locator(f'.k-wit[data-p="{p}"]').click()
+        self.assertEqual(self.page.locator('#knowBody .kl.wt li').count(), len(ids))
+        self.assertIn('Tidak ada yang diputuskan benar', self.page.locator('#knowBody').inner_text())
+
+    def test_the_city_from_someones_angle(self):
+        self.go('#sudut')
+        self.assertEqual(self.page.locator('#angleSel').input_value(), 'sukrim')
+        own = sum(1 for e in self.W['entries'] if e['owner'] == 'sukrim')
+        self.assertEqual(self.page.locator('#paneAngle .ang.own').count(), own)
+        self.assertGreater(self.page.locator('#paneAngle .ang:not(.own)').count(), 0)
+        self.page.locator('#angleSel').select_option('nara')
+        self.assertEqual(self.page.locator('#paneAngle .ang.own').count(), sum(1 for e in self.W['entries'] if e['owner'] == 'nara'))
+
+    def test_your_edit(self):
+        self.go()
+        self.seed_state(read={'n1999': 1})
+        self.open_note('n1999')
+        self.page.locator('#toBook').click()
+        self.assertEqual(self.state()['book'], ['n1999'])
+        self.page.evaluate("location.hash = 'sunting'")
+        self.page.wait_for_selector('#paneBook .bk li')
+        self.page.locator('#bkSpine').click()
+        self.assertEqual(self.state()['book'], ['n1999'] + self.W['spine'])
+        # move the second note up
+        self.page.locator('#paneBook .bk li').nth(1).locator('[data-mv="-1"]').click()
+        self.assertEqual(self.state()['book'][0], self.W['spine'][0])
+        with self.page.expect_download() as dl:
+            self.page.locator('#bkMd').click()
+        text = Path(dl.value.path()).read_text()
+        self.assertIn(self.BY['n1999']['title'], text)
+        self.assertNotIn('@claims', text)
+        # read it as one book
+        self.page.locator('#paneBook .go').click()
+        self.page.wait_for_selector('#bkRead .bk-note')
+        self.assertEqual(self.page.locator('#bkRead .bk-note').count(), len(self.state()['book']))
+        # a shared edit opens for someone else, and can be kept
+        ids = ','.join(self.W['spine'][:2])
+        self.page.evaluate(f"location.hash = 'suntingan={ids}'")
+        self.page.wait_for_selector('#bkKeep')
+        self.assertEqual(self.page.locator('#bkRead .bk-note').count(), 2)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
