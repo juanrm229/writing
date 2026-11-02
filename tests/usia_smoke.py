@@ -409,7 +409,7 @@ class UsiaSmoke(unittest.TestCase):
         self.page.locator('#begin').click()
         self.page.wait_for_function(STATE)
         self.assertIn('Monday, 9 November', self.page.locator('#ckWhen').inner_text())
-        self.assertIn('Where does Laras go tonight?', self.page.locator('.ch-q').inner_text())
+        self.assertIn('Where does Laras go tonight?', self.page.locator('.ch-q').text_content())
         self.assertIn('Day 1 of 7', self.page.locator('#stepChip').inner_text())
 
     # ---------- the immersive layer ----------
@@ -454,7 +454,7 @@ class UsiaSmoke(unittest.TestCase):
         self.page.locator('#begin').click()
         self.play(self.route_to(['H2A_1']), until='C03')
         card = self.page.locator('.node[data-id="C02"] .bd-card')
-        self.assertIn('Kartu Identitas Sementara', card.inner_text())
+        self.assertIn('Kartu Identitas Sementara', card.text_content())
         self.assertEqual(card.locator('.bd-empty').count(), 1)
         self.assertIn('Ratna', self.page.locator('.node[data-id="C02"] .bd-phone .bd-bar').inner_text())
         letter = self.page.locator('.node[data-id="C03"] .bd-letter')
