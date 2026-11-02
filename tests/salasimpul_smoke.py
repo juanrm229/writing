@@ -478,6 +478,123 @@ class SalasimpulSmoke(unittest.TestCase):
         rooms = {'malam', 'radio', 'jam', 'ruang', 'angin', 'jalan', 'hujan'}
         self.assertTrue(all(v.get('room') in rooms for v in self.W['persona'].values()))
 
+    # ---------- stage five: the tools of the town ----------
+    def test_the_map_fills_in_as_you_read(self):
+        P = self.W['peta']
+        self.assertTrue(all(pl['notes'] for pl in P['places']))
+        self.go()
+        self.seed_state(open=False, read={})
+        self.page.evaluate("location.hash = 'peta'")
+        self.page.wait_for_selector('#mapSvg')
+        self.assertEqual(self.page.locator('#mapPins .pin[data-place]').count(), 0)
+        # reading the cemetery keeper's first note puts the cemetery on the map
+        self.seed_state(open=False, read={'el1996': 1})
+        self.page.evaluate("location.hash = ''"); self.page.evaluate("location.hash = 'peta'")
+        self.page.wait_for_selector('#mapPins .pin[data-place="pekuburan"]')
+        self.page.locator('#mapPins .pin[data-place="pekuburan"]').click()
+        card = self.page.locator('#mapCard')
+        self.assertTrue(card.is_visible())
+        self.assertIn('Pekuburan tua', card.text_content())
+        self.assertEqual(card.locator('.mc-row').count(), len(next(pl for pl in P['places'] if pl['id'] == 'pekuburan')['notes']))
+        # the other map, 85 km away
+        self.page.locator('#paneMap [data-map="sela"]').first.click()
+        self.assertIn('Kampung Sela', self.page.locator('#mapSvg').get_attribute('aria-label'))
+        self.assertGreater(self.page.locator('.map-legend span').count(), len(P['kinds']))
+
+    def test_tying_two_facts_finds_a_knot(self):
+        groups = {}
+        for e in self.W['entries']:
+            for p in e['p']:
+                for a in p['a']:
+                    for g in a.get('irony', []):
+                        ps = sorted(set(x for x in g if x in self.W['props']))
+                        if len(ps) == 2: groups['+'.join(ps)] = ps
+        key, (a, b) = next(iter(groups.items()))
+        known = {a: self.W['props'][a][0], b: self.W['props'][b][0]}
+        self.go()
+        self.seed_state(known=known)
+        self.page.evaluate("location.hash = 'papan'")
+        self.page.wait_for_selector('#bd .bd-card')
+        self.assertIn('1', self.page.locator('.bd-score').text_content())
+        self.page.locator(f'#bd .bd-card[data-p="{a}"]').click()
+        self.page.locator(f'#bd .bd-card[data-p="{b}"]').click()
+        self.page.wait_for_selector('#bdFound:not([hidden])')
+        self.assertIn('Kamu menemukan simpul ini sendiri', self.page.locator('#bdFound').text_content())
+        self.assertIn(key, self.state()['board']['found'])
+
+    def test_a_chain_between_two_people(self):
+        self.go('#rantai')
+        self.page.wait_for_selector('#chFrom')
+        self.page.locator('#chFrom').select_option('rasmi')
+        self.page.locator('#chTo').select_option('nara')
+        nodes = self.page.locator('.chain .ch-node a')
+        self.assertGreaterEqual(nodes.count(), 2)
+        first, last = nodes.first.get_attribute('href')[3:], nodes.last.get_attribute('href')[3:]
+        self.assertEqual(self.BY[first]['owner'], 'rasmi')
+        self.assertEqual(self.BY[last]['owner'], 'nara')
+        self.assertEqual(self.page.locator('.chain .ch-via').count(), nodes.count() - 1)
+
+    def test_things_that_change_hands(self):
+        self.go('#benda')
+        self.page.wait_for_selector('#paneThings [data-thing]')
+        self.assertEqual(self.page.locator('#paneThings [data-thing]').count(), len(self.W['benda']))
+        self.page.locator('#paneThings [data-thing="gelang"]').click()
+        gelang = next(b for b in self.W['benda'] if b['id'] == 'gelang')
+        self.assertEqual(self.page.locator('.th-list li').count(), len(gelang['notes']))
+        self.assertGreaterEqual(len({self.BY[i]['owner'] for i in gelang['notes']}), 3)
+
+    def test_calendar_and_the_town_in_a_year(self):
+        self.go()
+        self.seed_state(read={'n1999': 1})
+        self.page.evaluate("location.hash = 'waktu'")
+        self.page.wait_for_selector('#calHost')
+        shared = self.page.locator('#calHost a[href^="#malam-"]')
+        self.assertGreater(shared.count(), 0)
+        self.assertGreater(self.page.locator('#calHost .cl-c.rd').count(), 0)
+        self.page.evaluate("location.hash = 'orang'")
+        self.page.wait_for_selector('#townRange')
+        self.page.evaluate("(() => { const r = document.getElementById('townRange'); r.value = 1999; r.dispatchEvent(new Event('input')); })()")
+        self.assertEqual(self.page.locator('#townY').text_content(), '1999')
+        self.assertIn('5', self.page.locator('.tw-t[data-who="nara"] .tw-age').text_content())
+        self.assertIn('belum lahir', self.page.locator('.tw-t[data-who="bayu"]').text_content())
+
+    def test_know_their_voices(self):
+        self.go()
+        self.seed_state(read={'n1999': 1, 'k1987': 2, 'ls1990': 3})
+        self.page.evaluate("location.hash = 'orang'")
+        self.page.wait_for_selector('#quizGo')
+        self.page.locator('#quizGo').click()
+        self.assertTrue(self.page.locator('#quizDialog').is_visible())
+        self.assertGreaterEqual(self.page.locator('.qz-o').count(), 2)
+        self.page.locator('.qz-o').first.click()
+        self.assertEqual(sum(v[1] for v in self.state()['voice'].values()), 1)
+        self.assertEqual(self.page.locator('.qz-o.right').count(), 1)
+
+    def test_previously_loose_threads_and_their_eyes(self):
+        e = self.BY['k2010']
+        groups = [g for p in e['p'] for a in p['a'] for g in a.get('irony', []) if all(x in self.W['props'] for x in g)]
+        known = {x: self.W['props'][x][0] for x in groups[0]}
+        self.go()
+        self.seed_state(read={'n1999': 1, 'k2010': 2}, known=known, knownAt={x: 1 for x in known}, last='k2010', strand=[{'id': 'n1999'}, {'id': 'k2010', 'how': 'go'}])
+        self.page.evaluate("location.hash = ''")
+        self.page.wait_for_selector('#recap')
+        self.assertIn('Sebelumnya di Salasimpul', self.page.locator('#recap').text_content())
+        self.assertEqual(self.page.locator('#recap .rc-thread li').count(), 2)
+        # loose threads: knots from what you read to what you have not
+        self.assertTrue(self.page.locator('#openKnow').get_attribute('data-n'))
+        self.page.locator('#openKnow').click()
+        self.assertGreater(self.page.locator('#dangle .dg-row').count(), 0)
+        self.page.keyboard.press('Escape')
+        # reading with the writer's eyes
+        self.open_note('k2010')
+        if self.page.locator('#nBody .s.ir.lit').count():
+            self.page.locator('#eyes').click()
+            self.assertTrue(self.page.evaluate("document.getElementById('note').classList.contains('eyes')"))
+            self.assertTrue(self.page.locator('#eyesNote').is_visible())
+            self.assertGreater(self.page.locator('#nBody .s.ir.lit[data-eye]').count(), 0)
+        self.page.locator('.n-who a[data-who="karman"]').click()
+        self.assertIn('Apa yang ia tahu', self.page.locator('#whoBody').text_content())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

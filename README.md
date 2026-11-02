@@ -453,6 +453,43 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - Urutannya bisa digeser.
   - *Baca suntinganmu* menampilkannya sebagai satu buku. *Unduh .md* memberi berkas Markdown berisi teks catatan tanpa tanda.
   - *Salin tautan* membuat `#suntingan=id,id,…`. Penerima membaca suntingan itu sebagai satu buku dan bisa menyimpannya sebagai suntingannya sendiri.
+- **Peta** (tab *Peta*, `#peta`). Peta ini minimalis, seperti peta di ponsel, dan dibangun dari tempat-tempat yang disebut di catatan. Datanya ada di `content/salasimpul/_peta.json`.
+  - Ada dua peta:
+    - *Kota*: Jalan Kartini dan lorong toko bunga, pekuburan tua dengan pohon angsana dan pos jaga, terminal dan kali, Jalan Pelabuhan dan gudangnya, pasar dan pasar loak, museum, koran, klinik, kantor polisi, dan lapas;
+    - *Kampung Sela*, 85 km dari kota: komplek blok A–D, taman terbengkalai dengan dua ayunan, pematang yang belum dibangun, gang sebelah, pagar Bu Inah, rumah Bu Rasmi, warung Bu Tini, sumur, saluran air, jembatan, sungai, dan kebun belakang.
+  - Peta digambar dengan tanah, bangunan, jalan besar berwarna kuning, jalan dan gang, air, taman dengan pohon, petak-petak makam, dan pematang bergaris.
+  - Setiap tempat punya `match` (pola kata), boleh juga `by` (penulis yang dihitung). `node tools/salasimpul.js` mencari tempat itu di teks dan berhenti kalau ada tempat yang tidak pernah disebut.
+  - Penanda tempat baru muncul setelah kamu membaca catatan yang menyebutnya. Tempat yang belum dikenal tampil sebagai lingkaran putus-putus.
+  - Mengetuk penanda membuka kartunya: jenis, nama, keterangan, siapa yang menyebutnya, dan kalimat-kalimatnya.
+  - *Jejak* menyorot tempat-tempat yang disebut satu orang dan menyambungkannya menurut urutan ia menyebutnya.
+  - Peta bisa diperbesar, digeser, dan dilengkapi legenda.
+- **Papan** (`#papan`). Semua yang kamu tahu tersemat di papan sebagai kertas berpaku.
+  - Ketuk dua kertas untuk menyambungkannya dengan benang merah, dan seret kertas untuk memindahkannya. Ketuk benang untuk melepasnya.
+  - Kalau fakta-fakta yang tersambung bersama-sama mengubah makna sebuah kalimat (`@irony` dengan dua fakta atau lebih), benangnya menyala ungu dan muncul kartu *Kamu menemukan simpul ini sendiri* berisi kalimat-kalimat itu.
+  - Papan juga menghitung simpul yang masih tersembunyi di antara yang kamu tahu.
+  - Semuanya tersimpan di `jm:simpul.board`.
+- **Rantai** (`#rantai`). Pilih dua orang, lalu kota mencari jalan terpendek di antara mereka, lewat simpul, malam yang sama, atau buku yang sama.
+  - Simpul dan malam yang sama lebih diutamakan daripada buku yang sama.
+  - Hasilnya ditampilkan sebagai jumlah langkah, orang, dan tahun, beserta rantainya.
+  - *Baca rantai ini* membuka rantai itu sebagai satu buku.
+- **Benda** (`#benda`). Ada 15 benda yang berpindah dari buku ke buku, misalnya gelang, gorengan, radio, permen, ayunan, kuitansi, kancing, dan kelereng (`benda` di `_dunia.json`).
+  - Setiap benda punya garis perjalanan berwarna tinta penulisnya dan daftar kemunculannya.
+  - Kalimatnya hanya tampil kalau catatannya sudah kamu baca.
+- **Kalender malam** (di atas tab Waktu). Satu baris per tahun, 1983–2026, dan satu kotak per minggu.
+  - Kotak bergaris ungu menandai hari yang ditulis lebih dari satu orang, dan mengetuknya membuka malam itu menurut jam.
+  - Kotak biru berarti catatan itu sudah kamu baca.
+- **Kota pada satu tahun** (di atas tab Orang). Penggeser tahun menampilkan ke-18 orang beserta umurnya (kalau `born` diketahui) dan keadaannya: *belum lahir*, *menulis 2 catatan*, *mulai menulis 2019*, atau *terakhir menulis 1989*.
+- **Kenali suaranya** (tombol di tab Orang). Kamu diberi satu kalimat tanpa nama dari catatan yang sudah kamu baca, dengan pilihan orang-orang yang sudah kamu kenal.
+  - Hasilnya tersimpan di `jm:simpul.voice` dan tampil di kartu orang.
+- **Sebelumnya di Salasimpul.** Kalau kamu kembali, sampul menampilkan:
+  - tiga catatan terakhir di benangmu;
+  - hal terakhir yang kamu ketahui (`jm:simpul.knownAt`);
+  - jumlah benang yang menggantung dan kalimat yang masih menunggu sesuatu.
+- **Benang yang menggantung.** *Yang kamu tahu* dibuka dengan simpul dari catatan yang sudah dibaca ke catatan yang belum, dan menariknya menyambung benang bacamu. Ikon mata menampilkan jumlahnya.
+- **Apa yang mereka tahu.**
+  - Kartu orang membandingkan yang kamu tahu dengan yang pernah ia tuliskan sendiri, misalnya *Dari 73 hal yang kamu tahu, 20 pernah ia tuliskan sendiri*, dan menampilkan contoh hal yang tidak pernah muncul di bukunya.
+  - *Baca dengan mata …* di kaki catatan meredupkan kalimat lain dan menandai setiap kalimat yang menyala: *ia belum tahu* kalau penulisnya belum pernah menuliskan fakta itu sampai catatan ini, atau *ia sudah tahu*.
+- Alat-alat ini ada di `dunia/salasimpul/alat.js`, yang memakai `window.Simpul` dari `simpul.js`.
 - Semua tersimpan di `jm:simpul`. *Mulai dari nol* di Aa menghapusnya. Pratinjau (`?preview=1`) tidak menyimpan apa pun.
 
 ```bash

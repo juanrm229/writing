@@ -134,7 +134,32 @@ function build() {
     if (v.room && !ROOMS.includes(v.room)) throw new Error(`_dunia.json: persona "${o}": room harus salah satu dari ${ROOMS.join(', ')}`);
     if (v.since && !(Number.isInteger(v.since.y) && Number.isInteger(v.since.d))) throw new Error(`_dunia.json: persona "${o}": since butuh { y, d }`);
   });
-  const world = { title: config.title || 'Salasimpul', start: config.start || entries[0].id, people, entries, props, keys: config.keys || {}, spine: config.spine || [], persona: config.persona || {}, memory: config.memory || { stability0: 5000, retrievalBonus: 0.25, retrievals: 0 } };
+  // kata kunci (tempat di peta, benda yang berpindah tangan) dicari di teks catatan, bukan di tandanya
+  const wordRe = m => new RegExp(`(^|[^\\p{L}])(${m})(?![\\p{L}])`, 'iu');
+  const plainOf = e => e.p.map(p => p.t.replace(/\*/g, '')).join('\n');
+  function hits(item, where) {
+    const res = (item.match || []).map(m => { try { return wordRe(m); } catch (err) { throw new Error(`${where} "${item.id}": pola "${m}" tidak sah`); } });
+    if (!res.length) throw new Error(`${where} "${item.id}": butuh match`);
+    const ids = entries.filter(e => (!item.by || item.by.includes(e.owner)) && (!item.from || e.at.y >= item.from) && res.some(r => r.test(plainOf(e)))).map(e => e.id);
+    if (!ids.length) throw new Error(`${where} "${item.id}": tidak disebut di catatan mana pun`);
+    return ids;
+  }
+  const seen = new Set();
+  const benda = (config.benda || []).map(b => { if (seen.has('b:' + b.id)) throw new Error(`benda "${b.id}" ganda`); seen.add('b:' + b.id); return { ...b, notes: hits(b, 'benda') }; });
+  let peta = null;
+  const petaFile = path.join(SRC, '_peta.json');
+  if (fs.existsSync(petaFile)) {
+    const pc = JSON.parse(fs.readFileSync(petaFile, 'utf8'));
+    const places = (pc.places || []).map(pl => {
+      if (seen.has('p:' + pl.id)) throw new Error(`_peta.json: tempat "${pl.id}" ganda`); seen.add('p:' + pl.id);
+      if (!pc.maps[pl.map]) throw new Error(`_peta.json: tempat "${pl.id}": peta "${pl.map}" tidak ada`);
+      if (!pc.kinds[pl.kind]) throw new Error(`_peta.json: tempat "${pl.id}": jenis "${pl.kind}" tidak ada`);
+      (pl.by || []).forEach(o => { if (!owners.includes(o)) throw new Error(`_peta.json: tempat "${pl.id}": penulis "${o}" tidak ada`); });
+      return { ...pl, notes: hits(pl, '_peta.json: tempat') };
+    });
+    peta = { maps: pc.maps, kinds: pc.kinds, places };
+  }
+  const world = { title: config.title || 'Salasimpul', start: config.start || entries[0].id, people, entries, props, keys: config.keys || {}, spine: config.spine || [], persona: config.persona || {}, benda, peta, memory: config.memory || { stability0: 5000, retrievalBonus: 0.25, retrievals: 0 } };
   const meta = {
     title: world.title, people: people.length, entries: entries.length, words: entries.reduce((n, e) => n + e.words, 0), from: Math.min(...years), to: Math.max(...years),
     // satu baris per penulis: tahun-tahun catatannya, untuk garis-garis kecil di banner
