@@ -1,0 +1,10 @@
+{
+  "title": "Salasimpul",
+  "aliases": { "sukrim": ["Krim"] },
+  "start": "n1999",
+  "keys": {
+    "h2025": ["p_lira_hilang", "p_lira_tak_terlihat"],
+    "el2026c": ["p_makam_kosong"],
+    "n2026f": ["p_karman_mati", "p_kotak_kuitansi"]
+  }
+}

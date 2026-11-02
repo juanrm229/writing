@@ -335,6 +335,46 @@ Puisi ini dibaca di **aplikasi Rumah** (rumah pintar), tanpa ilustrasi: ringkasa
 python3 tests/room_smoke.py
 ```
 
+### Salasimpul (dunia/salasimpul/)
+
+Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu kota, 1983–2026, yang saling menyimpul tanpa disengaja. Dunia ini terus bertambah. Pintunya ada di halaman **Album**, berupa banner gelap di atas rak album (`showAlbum` dan `worldBanner` di `assets/app.js`). Angka dan garis kecil di banner dibaca dari `content/salasimpul.meta.json`.
+
+**Menambah catatan** (di masa lalu, masa depan, atau titik mana pun):
+
+1. Taruh berkasnya di `content/salasimpul/<penulis>/<tahun>-<hari>.md`. Folder baru berarti penulis baru dan garis baru di partitur.
+2. Isi frontmatter-nya seperti catatan lain: `id` (unik), `owner` (sama dengan nama folder), `at: { y, d, h }` (tahun, hari ke- dalam tahun itu, jam), `title`, dan `memory` (opsional).
+3. Tandai kalimat di ujungnya:
+   - `@claims(p_x)`: kalimat yang memberi tahu pembaca fakta `p_x`;
+   - `@irony(p_a, p_b)`: kalimat yang berubah makna setelah pembaca tahu fakta itu;
+   - `@node(penulis:id)` atau `@echo(penulis:id)`: simpul ke catatan lain;
+   - `@protected`: kalimat yang tidak ikut terlupa.
+4. Jalankan `node tools/salasimpul.js`. Skrip menyusun `content/salasimpul.json` dan `content/salasimpul.meta.json`. Ia berhenti dengan pesan yang jelas kalau ada id ganda, owner yang tidak cocok dengan foldernya, atau simpul ke catatan yang tidak ada.
+5. Commit catatan baru bersama dua berkas hasilnya. Tes `tests/salasimpul_smoke.py` gagal kalau berkas hasilnya tertinggal dari catatannya.
+
+`content/salasimpul/_dunia.json` memuat judul, nama panggilan (Sukrim juga disebut Krim), catatan pembuka (`start`), dan **catatan kunci** (`keys`): catatan yang baru terbuka setelah pembaca tahu fakta tertentu. Sekarang ada tiga: enam kata Hesti, petak sebelas Elmar, dan kuitansi Nara di makam.
+
+**Membaca:**
+
+- **Kenalan.** Pembaca orang baru di kota ini.
+  - Dua catatan pertama setiap orang terbuka.
+  - Setiap catatan orang lain yang menyebut namanya atau menyimpul ke bukunya membuka dua catatan berikutnya.
+  - Catatan yang disimpul langsung dari catatan yang sudah dibaca selalu terbuka.
+  - Halaman yang terkunci menunjukkan lewat siapa orang itu bisa dikenali, dan selalu punya tombol *Buka saja*.
+  - *Kota terbuka* di Aa membuka semuanya.
+- **Yang kamu tahu** (ikon mata). Setiap kalimat `@claims` yang terlihat di layar menjadi fakta yang diketahui pembaca.
+- **Kalimat yang menyala.** Kalimat `@irony` menyala setelah semua faktanya diketahui, juga di catatan yang dibaca lebih dulu. Saat diketuk, kalimat sumbernya muncul beserta penulis dan tanggalnya.
+- **Kota.** Ada tiga cara melihatnya:
+  - *Partitur*: satu garis per orang dan satu titik per catatan menurut urutan waktu, dengan benang di antara catatan yang menyimpul;
+  - *Orang*: buku tiap orang, dengan seberapa jauh kamu mengenalnya;
+  - *Waktu*: semua catatan, tahun demi tahun.
+- Di kaki setiap catatan ada simpul keluar dan masuk, catatan sebelum dan sesudahnya di buku yang sama, dan catatan sebelum dan sesudahnya di kota.
+- Semua tersimpan di `jm:simpul`. *Mulai dari nol* di Aa menghapusnya. Pratinjau (`?preview=1`) tidak menyimpan apa pun.
+
+```bash
+node tools/salasimpul.js
+python3 tests/salasimpul_smoke.py
+```
+
 ### Bingkai bersama (antologi/bingkai.css, antologi/panduan.js)
 
 Isi setiap pengalaman boleh berbeda (peta, obrolan, halaman lacak, kalender, arsip, aplikasi Rumah, Jam, layar kunci), tapi bagian yang milik situs sama di kedelapannya:
