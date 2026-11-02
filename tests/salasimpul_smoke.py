@@ -254,7 +254,7 @@ class SalasimpulSmoke(unittest.TestCase):
         banner = self.page.locator('.wd-banner')
         self.assertEqual(banner.get_attribute('href'), 'dunia/salasimpul/')
         self.assertIn('Salasimpul', banner.text_content())
-        self.assertIn('18 orang', banner.inner_text())
+        self.assertIn('18 orang', banner.text_content())
         self.assertLess(banner.bounding_box()['height'], 130)
         # the banner sits above the album shelf
         self.assertTrue(self.page.evaluate("document.querySelector('.wd-banner').compareDocumentPosition(document.querySelector('.al-grid')) & Node.DOCUMENT_POSITION_FOLLOWING"))
