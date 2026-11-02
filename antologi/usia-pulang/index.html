@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=2">
-<link rel="stylesheet" href="usia.css?v=3">
+<link rel="stylesheet" href="usia.css?v=4">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -74,17 +74,24 @@
   <div class="cd-body" id="cardBody"></div>
 </dialog>
 
+<dialog class="card-dialog share-dialog" id="shareDialog" aria-labelledby="shareTitle">
+  <header class="dialog-head"><div><p class="cd-k" id="shareKick">Kartu akhir</p><h2 id="shareTitle">Bagikan</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="sd-body"><div class="sd-img"><img id="shareImg" alt=""></div><div class="sd-act"><button class="go" id="shareGo" type="button" hidden>Bagikan</button><a class="ghost" id="shareSave" href="#" download>Unduh gambar</a></div></div>
+</dialog>
+
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body">
     <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
     <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+    <div class="setting-row"><span id="soundLabel">Suasana pelabuhan</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Nyalakan</button></div>
     <div class="setting-row"><span id="restartLabel">Perjalanan</span><button class="setting-button" id="restart" type="button">Mulai baru</button></div>
   </div>
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
 <script src="benda.js?v=2"></script>
-<script src="usia.js?v=3"></script>
+<script src="suara.js?v=1"></script>
+<script src="usia.js?v=4"></script>
 </body>
 </html>

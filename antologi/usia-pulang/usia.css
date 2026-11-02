@@ -496,3 +496,23 @@ g.st text { fill: var(--sheet); font: 900 10px var(--f-dot); text-anchor: middle
 /* gerak dikurangi */
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .surface .n-body { filter: none; } .bd.anim { opacity: 1; translate: none; } }
 @media (max-width: 380px) { .cv-top { grid-template-columns: 1fr; justify-items: center; } .cv-pill { display: none; } .cv-sheet { padding-left: 18px; padding-right: 18px; } }
+
+/* ---------- tahap 2: ingatan pembaca, kartu bagikan ---------- */
+.n-seen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: -12px 0 26px; font: 12.5px/1.4 var(--f-ui); color: var(--muted); }
+.n-seen > span { display: inline-flex; align-items: center; gap: 8px; }
+.n-seen > span::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .6; }
+.k-perspective .n-seen { color: color-mix(in srgb, var(--pv-ink) 60%, transparent); }
+.n-skip { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--btn); color: var(--ink); font: 500 12.5px var(--f-ui); cursor: pointer; }
+.k-perspective .n-skip { background: color-mix(in srgb, var(--pv-ink) 9%, transparent); color: var(--pv-ink); }
+.o-was { display: block; margin-top: 4px; font: 500 11.5px var(--f-ui); color: var(--muted); }
+.o-was::before { content: '↺ '; }
+.choose.done .opt.picked .o-was { color: color-mix(in srgb, var(--bg) 65%, transparent); }
+.after .ghost { background: transparent; color: var(--sheet-ink); box-shadow: inset 0 0 0 1.5px var(--sheet-dim); }
+.share-dialog { width: min(440px, calc(100% - 24px)); }
+.sd-body { display: grid; gap: 14px; padding: 6px 18px 18px; }
+.sd-img { display: grid; place-items: center; min-height: 200px; border-radius: 18px; background: var(--btn); overflow: hidden; }
+.sd-img img { display: block; width: 100%; height: auto; }
+.sd-img img:not([src]) { display: none; }
+.sd-img:has(img:not([src]))::after { content: '…'; color: var(--muted); }
+.sd-act { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.sd-act a.ghost { display: inline-flex; align-items: center; text-decoration: none; }

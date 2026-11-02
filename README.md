@@ -184,7 +184,7 @@ python3 tests/giliran_smoke.py
 
 Novel interaktif di antologi **Temusai**: 64 simpul, sekitar 51 ribu kata, delapan akhir. Tampilannya memakai bahasa visual situs utama: abu-abu dingin, kartu putih, Doto untuk judul dan angka besar, pil hitam, aksen biru, lencana navy, dan lembar hitam yang menjadi terang di tema gelap (sampul, akhir, Kartu yang naik sebentar). Yang khas cerita, yaitu kertas tiap tokoh di sela dan benda-benda, tetap punya teksturnya sendiri tapi memakai token yang sama. Laras kembali dua puluh sembilan tahun sesudah kematiannya dan punya 168 jam (Senin 9 November 18.40 sampai Senin 16 November 18.40) untuk memutuskan apakah akan menetap.
 
-- **Naskahnya** ada di `content/usia-pulang.json`: salinan apa adanya dari `build/Simpul-Cerita.json` di paket naskah pengarang (diperkecil, isinya tidak diubah). Kalau naskah diperbarui, bangun ulang paketnya, lalu salin berkas itu ke sini. Berkas ini tidak bisa diubah dari panel admin. Entri di `works.json` hanya memuat judul, ringkasan, dan pembuka (C01), sehingga mode baca biasa sementara ini hanya menampilkan pembukaan.
+- **Naskahnya** ada di `content/usia-pulang.json`: salinan apa adanya dari `build/Simpul-Cerita.json` di paket naskah pengarang (diperkecil, isinya tidak diubah). Kalau naskah diperbarui, bangun ulang paketnya, lalu salin berkas itu ke sini. Berkas ini tidak bisa diubah dari panel admin. Entri di `works.json` hanya memuat judul, ringkasan, dan pembuka (C01). Itulah yang tampil di mode baca biasa sampai pembaca memulai perjalanan; sesudahnya mode baca biasa menampilkan *Bukumu* (lihat di bawah).
 - **Mesin cerita** (`usia.js`) mengikuti kontrak naskah. Saat masuk simpul, simpul dicatat dan tanda `on_enter_flags` dipasang. Memilih memasang `set_flags`, mencabut `unset_flags`, lalu pindah ke `target`. Pilihan dengan `requires_flags` hanya muncul bila tandanya ada; begitulah pintu akhir E01 dan E04 terbuka atau tertutup lagi. Nama tanda tidak pernah ditampilkan, dan tidak ada skor.
 - **Waktu yang terasa.**
   - Jam menempel di bawah bilah atas: tanggal cerita, bagian hari, sisa jam, dan garis tujuh hari di tepi bawahnya. Jam pastinya hanya tampil di 18.40 (sisa 168 jam), 17.40 (sisa 1 jam), dan 18.40 di akhir.
@@ -218,6 +218,20 @@ Novel interaktif di antologi **Temusai**: 64 simpul, sekitar 51 ribu kata, delap
   - Perjalanan dijahit menjadi pola di atas kain: pagi, siang, dan sela tiap hari, lengkungan untuk gema, lalu pintu terakhir. Menetap diakhiri simpul; tidak menetap membuat benangnya keluar dari kain. Setiap rute menghasilkan pola yang berbeda.
   - Ada juga jumlah kata yang dibaca, akhir yang sudah ditemukan (`jm:usia:endings`), tombol **Pulang lagi**, dan *mulai lagi dari* hari tertentu.
 - Di layar dengan gerak dikurangi, layar malam, layar masuk sela, riak, air, dan ketikan dilewati. Semua informasinya tetap ada di halaman.
+- **Bukumu.** Setiap kali perjalanan tersimpan, jalan yang ditempuh dirakit menjadi buku di `jm:usia:book`. Isinya satu bab per hari, dari *Senin, 9 November* sampai *Senin, 16 November*.
+  - Setiap adegan diberi judul dan keterangan waktu. Sela diberi catatan *Laras tidak mengetahui…*, dan gema menyebut pilihan yang memicunya. Pilihan pembaca tampil sebagai kutipan *Pilihanmu: …*.
+  - Mode baca biasa di situs (`assets/app.js`, fungsi `withBook`) memakai buku itu sebagai bab-bab karya ini. Kalimat yang tampil tetap persis naskah.
+  - Kalau perjalanannya belum selesai, bab terakhir ditutup dengan catatan untuk melanjutkan di versi interaktif. Perjalanan lain menghasilkan buku yang lain.
+- **Ingatan pembaca, bukan ingatan Laras.** Saat pembaca memulai perjalanan baru (*Pulang lagi*, *Mulai dari awal*, atau *mulai lagi dari* hari tertentu), perjalanan sebelumnya dicatat di `jm:usia:memory`. Di perjalanan berikutnya:
+  - adegan yang pernah dibaca diberi tanda *Pernah kamu baca di perjalanan lain. Laras tidak mengingatnya.*, dengan tombol *Ke pilihan ↓*;
+  - pilihan yang pernah diambil diberi tanda *pernah kamu pilih*;
+  - sampul menunjukkan *Perjalanan ke-n*.
+- **Kartu akhir.** Di akhir, *Bagikan kartu akhir* membuat gambar PNG 1080×1350. Isinya judul USIA PULANG, akhir yang ditemukan (*Akhir n dari 8*), apakah Laras menetap, pola jahitan perjalanannya, jumlah pilihan, gema, dan kata yang dibaca, serta alamat situs. Gambarnya bisa diunduh, atau dibagikan langsung di perangkat yang mendukung.
+- **Suasana pelabuhan** (`suara.js`, sakelar di Aa, mati sampai dinyalakan, pilihannya diingat di `jm:usia:sound`).
+  - Semuanya dibuat dengan Web Audio, tanpa berkas suara: ombak Teluk Rantau yang naik turun, angin tipis, dan sesekali klakson kapal di kejauhan.
+  - Malam lebih sunyi. Saat sela, bunyinya teredam seperti dari ruangan lain.
+  - Ada bunyi kecil untuk cap pilihan, detak malam yang lewat, detak menit terakhir dengan lonceng 18.40, gema, dan masuk ke sela.
+  - Suara berhenti saat tab disembunyikan.
 - Perjalanan tersimpan otomatis di `jm:usia:run`. Saat dibuka lagi, sampul menawarkan *Lanjutkan · <hari>* atau *Mulai dari awal*. Pratinjau (`?preview=1`) tidak menyimpan apa pun. Naskahnya baru ada dalam bahasa Indonesia; dalam bahasa Inggris antarmukanya diterjemahkan, dan ada catatan bahwa ceritanya tampil dalam bahasa aslinya.
 
 ```bash
