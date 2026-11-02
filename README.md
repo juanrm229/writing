@@ -174,11 +174,31 @@ Cerpen kedua di antologi **Temusai** (*Your Turn* dalam bahasa Inggris). Bima be
 - Penanda di bawah layar mengikuti percakapan yang sedang terlihat (*Giliran Mira*, *Giliran Bima*, …). Bingkai, panduan, penanda bagian (*Bagian n dari 15*), mode baca biasa, tema, bahasa, pratinjau, dan riwayat baca sama dengan pengalaman lain.
 - Pembagian ucapan per orang dan per aplikasi ada di `VOICES` di `giliran.js`, berurutan per bagian. Kalau naskah diubah sampai susunannya berbeda, ceritanya tetap tampil utuh sebagai narasi dan balon biasa.
 
-Kartu *berikutnya* di akhir tulisan yang tergabung dalam antologi menunjuk tulisan berikutnya di antologi itu (Interlude ↔ Giliran).
+Kartu *berikutnya* di akhir tulisan yang tergabung dalam antologi menunjuk tulisan berikutnya di antologi itu (Interlude → Giliran → Usia Pulang → Interlude).
 
 ```bash
 python3 tests/giliran_smoke.py
 ```
+
+### Usia Pulang (antologi/usia-pulang/)
+
+Novel interaktif di antologi **Temusai**: 64 simpul, sekitar 51 ribu kata, delapan akhir. Laras kembali dua puluh sembilan tahun sesudah kematiannya dan punya 168 jam (Senin 9 November 18.40 sampai Senin 16 November 18.40) untuk memutuskan apakah akan menetap.
+
+- **Naskahnya** ada di `content/usia-pulang.json`: salinan apa adanya dari `build/Simpul-Cerita.json` di paket naskah pengarang (diperkecil, isinya tidak diubah). Kalau naskah diperbarui, bangun ulang paketnya, lalu salin berkas itu ke sini. Berkas ini tidak bisa diubah dari panel admin. Entri di `works.json` hanya memuat judul, ringkasan, dan pembuka (C01), sehingga mode baca biasa sementara ini hanya menampilkan pembukaan.
+- **Mesin cerita** (`usia.js`) mengikuti kontrak naskah. Saat masuk simpul, simpul dicatat dan tanda `on_enter_flags` dipasang. Memilih memasang `set_flags`, mencabut `unset_flags`, lalu pindah ke `target`. Pilihan dengan `requires_flags` hanya muncul bila tandanya ada; begitulah pintu akhir E01 dan E04 terbuka atau tertutup lagi. Nama tanda tidak pernah ditampilkan, dan tidak ada skor.
+- **Jam 168 jam** menempel di bawah bilah atas: tanggal cerita, bagian hari, tujuh segmen hari yang terisi, dan usia (*Laras 31 · Dian 37*). Jam pastinya hanya tampil di tiga titik: 18.40 (sisa 168 jam), 17.40 (sisa 1 jam), dan 18.40 di akhir. Langit situs mengikuti bagian hari, dan penanda bagian menjadi *Hari n dari 7*.
+- **Pilihan** tampil sebagai kartu: tujuan bersama tiap pagi (dengan inisial orang yang ditemui), tindakan di perjalanan siang, dan pintu terakhir di Senin sore (*menetap* atau *tidak menetap*). Pilihan tidak bisa ditarik kembali: yang tidak diambil hilang, yang diambil dicap *Tercatat di Kartu Kepulangan*.
+- **Sela** (P01 sampai P07) membawa pembaca ke pikiran Dian, Ratna, Tama, Sulastri, atau Hadi, masing-masing dengan kertasnya sendiri (kertas kotak, tenunan berjahit, lembar kontak, kertas lama, abu kebiruan), diberi keterangan *Laras tidak mengetahui apa yang … pikirkan di sini.* Sela menampilkan tepat satu varian, yaitu yang cocok dengan perjalanan siang yang ditempuh.
+- **Gema** (R01 sampai R13) adalah akibat yang datang belakangan. Gema mengutip pilihan pembaca sendiri (*Selasa siang, kamu memilih "…"*), diantrekan sesuai urutan pengarang, lalu cerita kembali ke hari berikutnya.
+- **Kartu Kepulangan** (ikon kartu di kanan atas) mencatat tujuan tiap hari sebagai cap, tindakan siangnya dengan tulisan tangan, jumlah gema, dan keputusan terakhir.
+- **Sesudah akhir**: peta perjalanan (simpul yang dilewati menyala), jumlah kata yang dibaca dari seluruh novel, akhir yang sudah ditemukan (`jm:usia:endings`), tombol **Pulang lagi**, dan *mulai lagi dari* hari tertentu (hari-hari sebelumnya tetap seperti yang sudah dipilih).
+- Perjalanan tersimpan otomatis di `jm:usia:run`. Saat dibuka lagi, sampul menawarkan *Lanjutkan · <hari>* atau *Mulai dari awal*. Pratinjau (`?preview=1`) tidak menyimpan apa pun. Naskahnya baru ada dalam bahasa Indonesia; dalam bahasa Inggris antarmukanya diterjemahkan, dan ada catatan bahwa ceritanya tampil dalam bahasa aslinya.
+
+```bash
+python3 tests/usia_smoke.py
+```
+
+Pemeriksaan ini mengikuti `verify_story.py` milik pengarang: setiap simpul, ke-125 pilihan, dan kedelapan akhir dicapai lewat halaman; jalan yang ditempuh halaman dicocokkan dengan model kontraknya; pintu akhir yang terbuka dan tertutup lagi; varian sela; urutan dan kutipan gema; tidak ada nama tanda di halaman; pilihan tidak bisa dibatalkan; lanjut setelah dimuat ulang; kartu, peta, mulai dari hari tertentu, jam, pratinjau, dan bahasa Inggris.
 
 ### Terlambat Satu Menit (antologi/terlambat-satu-menit/)
 
