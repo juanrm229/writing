@@ -185,7 +185,7 @@ class GiliranSmoke(unittest.TestCase):
 
     def test_english_labels(self):
         self.open('?lang=en')
-        self.assertEqual(self.page.locator('#title').inner_text(), 'Your Turn')
+        self.assertEqual(self.page.locator('#title').text_content(), 'Your Turn')
         self.assertIn('Rehearsal', self.page.locator('.w-tabs').first.inner_text())
         self.assertEqual(self.page.locator('.gate .g-send').inner_text(), 'Send')
         self.assertEqual(self.page.locator('.qm-back').inner_text().strip(), 'Writing desk')

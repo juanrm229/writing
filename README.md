@@ -339,6 +339,7 @@ python3 tests/room_smoke.py
 
 Isi setiap pengalaman boleh berbeda (peta, obrolan, halaman lacak, kalender, arsip, aplikasi Rumah, Jam, layar kunci), tapi bagian yang milik situs sama di kedelapannya:
 
+- **Judul cerita**: judul di sampul (Interlude, Giliran, Anda di Sini, Pabrik Mimpi, Trillions of Seconds, The Room, Usia Pulang) memakai Doto kapital, sama seperti judul di halaman awal situs (`--qm-dot` di `bingkai.css`). Kicker di atasnya kapital kecil dengan jarak huruf yang sama. Tiruan aplikasi di dalam cerita (kalender, halaman lacak, aplikasi Jam dan Rumah, layar kunci, berkas arsip) tetap memakai gaya aplikasinya sendiri.
 - **Satu tombol keluar**: pil **‹ Meja tulis** di kiri atas, sama persis dengan pil di pembaca situs utama (tinggi 38, kartu kaca, bayangan yang sama). Dalam bahasa Inggris: *Writing desk*.
 - **Tombol kanan atas**: **Aa** (pengaturan baca) dan **?** (cara membaca), bundar, di tempat yang sama.
 - **Dialog pengaturan baca** dengan tampilan yang sama: ukuran huruf, tampilan terang/gelap, dan pengaturan khusus pengalaman itu (gerak, bahasa, bunyi).

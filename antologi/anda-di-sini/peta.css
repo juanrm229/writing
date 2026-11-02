@@ -69,8 +69,8 @@ button { font: inherit; color: inherit; }
 .st-act svg:last-child { fill: currentColor; stroke: none; }
 
 /* ---------- bingkai: prolog dan epilog, di luar ponsel ---------- */
-.frame-h { margin: 18vh 0 6vh; text-align: center; font: italic 400 15px var(--f-read); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
-.title { margin: 14vh 0 2px; font: 500 clamp(44px, 6vw, 64px)/1 var(--f-read); letter-spacing: -.03em; }
+.frame-h { margin: 18vh 0 6vh; text-align: center; font: 600 12px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.title { margin: 14vh 0 10px; font: 900 clamp(54px, 16vw, 88px)/.86 var(--qm-dot); letter-spacing: -.03em; text-transform: uppercase; }
 .byline { margin: 0 0 8vh; font: 13px var(--f-ui); color: var(--muted); }
 
 /* ---------- bagian: interlude di atas peta ---------- */

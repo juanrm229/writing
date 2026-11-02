@@ -1,6 +1,6 @@
 /* Giliran: yang diucapkan menjadi balon kata, yang diketik tinggal di aplikasinya. */
 :root {
-  --bg: #F2F1EE; --paper: #FFFFFF; --ink: #17181B; --muted: #6E7076; --line: rgba(17, 18, 20, .09); --soft: rgba(17, 18, 20, .05);
+  --bg: #F6F6F7; --paper: #FFFFFF; --ink: #17181B; --muted: #6E7076; --line: rgba(17, 18, 20, .09); --soft: rgba(17, 18, 20, .05);
   --mira: #FBE3D6; --mira-ink: #3B2419; --mira-edge: #E9BFA8;
   --bima: #DCE6F6; --bima-ink: #18243A; --bima-edge: #B3C5E6;
   --kaca: #ECECEF; --kaca-ink: #1E1F23;
@@ -11,7 +11,7 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: #0F1013; --paper: #17181C; --ink: #ECEBE8; --muted: #8E9097; --line: rgba(255, 255, 255, .08); --soft: rgba(255, 255, 255, .05);
+  --bg: #0E0E0F; --paper: #161618; --ink: #ECEBE8; --muted: #8E9097; --line: rgba(255, 255, 255, .08); --soft: rgba(255, 255, 255, .05);
   --mira: #43291F; --mira-ink: #F6DED2; --mira-edge: #6A4535;
   --bima: #1F2C42; --bima-ink: #DCE6F6; --bima-edge: #34476A;
   --kaca: #25262B; --kaca-ink: #ECEBE8;
@@ -22,7 +22,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #0F1013; --paper: #17181C; --ink: #ECEBE8; --muted: #8E9097; --line: rgba(255, 255, 255, .08); --soft: rgba(255, 255, 255, .05);
+    --bg: #0E0E0F; --paper: #161618; --ink: #ECEBE8; --muted: #8E9097; --line: rgba(255, 255, 255, .08); --soft: rgba(255, 255, 255, .05);
     --mira: #43291F; --mira-ink: #F6DED2; --mira-edge: #6A4535;
     --bima: #1F2C42; --bima-ink: #DCE6F6; --bima-edge: #34476A;
     --kaca: #25262B; --kaca-ink: #ECEBE8;
@@ -50,7 +50,7 @@ button { font: inherit; color: inherit; }
 .read { max-width: 680px; margin: 0 auto; padding: 0 20px 18vh; }
 .cover { padding: 9vh 0 6vh; text-align: center; }
 .kick { margin: 0; font: 600 11.5px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.cover h1 { margin: 14px 0 6px; font: italic 400 clamp(52px, 13vw, 84px)/1 var(--f-text); letter-spacing: -.02em; }
+.cover h1 { margin: 16px 0 10px; font: 900 clamp(64px, 19vw, 104px)/.86 var(--qm-dot); letter-spacing: -.03em; text-transform: uppercase; }
 .by { margin: 0 0 30px; color: var(--muted); }
 .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 18px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--muted); }
 .legend li { display: inline-flex; align-items: center; gap: 8px; }
