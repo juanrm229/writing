@@ -1744,19 +1744,23 @@ button.pf-now-c:hover { transform: translateY(-3px); }
 .rd-body .rd-chat p { margin: 0; display: grid; gap: 1px; }
 .rd-body .rd-chat b { font-size: .72em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--rmut); }
 
-/* ---------- Dunia: rak di atas album untuk karya yang bukan album (Salasimpul) ---------- */
-.wd-banner { position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 10px 22px; max-width: 980px; margin: 0 auto 34px; padding: 22px 26px; border-radius: 34px; background: var(--t-sheet); color: var(--t-sheet-ink); text-decoration: none; overflow: hidden; transition: transform .35s var(--spring); }
-.wd-banner:hover { transform: translateY(-2px); }
+/* ---------- Dunia: rak tipis di atas album untuk karya yang bukan album (Salasimpul) ---------- */
+.wd-banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 16px; max-width: 980px; margin: 0 auto 26px; padding: 12px 12px 12px 20px; border-radius: 24px; background: var(--t-sheet); color: var(--t-sheet-ink); text-decoration: none; transition: transform .35s var(--spring); }
+.wd-banner:hover { transform: translateY(-1px); }
 .wd-banner:active { transform: scale(.985); }
 .wd-banner:focus-visible { outline: 2px solid var(--tk-blue); outline-offset: 3px; }
-.wd-t { display: grid; gap: 6px; min-width: 0; }
-.wd-banner .al-kicker { color: color-mix(in srgb, var(--t-sheet-ink) 60%, transparent); }
-.wd-t b { font: 900 clamp(38px, 5.4vw, 64px)/.88 "Doto", ui-monospace, monospace; letter-spacing: -.03em; text-transform: uppercase; overflow-wrap: anywhere; }
-.wd-sub { font: 400 16px/1.45 var(--f-read); color: color-mix(in srgb, var(--t-sheet-ink) 78%, transparent); }
-.wd-meta { font: 600 12.5px var(--f-ui); color: color-mix(in srgb, var(--t-sheet-ink) 60%, transparent); font-variant-numeric: tabular-nums; }
-.wd-lanes { display: block; width: 100%; height: auto; aspect-ratio: 400 / 140; }
-.wd-lanes line { stroke: color-mix(in srgb, var(--t-sheet-ink) 16%, transparent); stroke-width: .6; vector-effect: non-scaling-stroke; }
-.wd-lanes path { fill: none; stroke: var(--t-sheet-ink); stroke-width: .6; opacity: .35; vector-effect: non-scaling-stroke; }
-.wd-lanes circle { fill: var(--t-sheet-ink); opacity: .8; }
-.wd-go { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 20px; background: var(--t-sheet-ink); color: var(--t-sheet); font: 500 15px var(--f-ui); }
-@media (max-width: 640px) { .wd-banner { grid-template-columns: 1fr; padding: 20px 20px 22px; border-radius: 28px; } }
+.wd-t { display: grid; gap: 2px; }
+.wd-k { font: 600 10.5px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: color-mix(in srgb, var(--t-sheet-ink) 55%, transparent); }
+.wd-t b { font: 900 26px/.9 "Doto", ui-monospace, monospace; letter-spacing: -.03em; text-transform: uppercase; }
+.wd-lanes { display: block; width: 100%; height: 34px; }
+.wd-lanes line { stroke: color-mix(in srgb, var(--t-sheet-ink) 14%, transparent); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.wd-lanes path { fill: none; stroke: var(--t-sheet-ink); stroke-width: .5; opacity: .3; vector-effect: non-scaling-stroke; }
+.wd-lanes rect { fill: var(--t-sheet-ink); opacity: .85; }
+.wd-meta { font: 600 12px var(--f-ui); color: color-mix(in srgb, var(--t-sheet-ink) 60%, transparent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wd-go { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--t-sheet-ink); color: var(--t-sheet); font: 500 16px var(--f-ui); }
+@media (max-width: 640px) {
+  .wd-banner { grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 12px 12px 18px; border-radius: 22px; }
+  .wd-lanes { grid-column: 1 / -1; grid-row: 2; height: 26px; }
+  .wd-meta { display: none; }
+  .wd-go { width: 32px; height: 32px; }
+}

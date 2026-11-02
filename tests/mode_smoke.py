@@ -72,7 +72,7 @@ class ModeSmoke(unittest.TestCase):
         for slug in self.interactive:
             with self.subTest(slug=slug):
                 self.reader(slug)
-                self.page.wait_for_function("document.getElementById('rdBody').innerText.length > 200")
+                self.page.wait_for_function("document.getElementById('rdBody')?.innerText.length > 200")
                 self.assertEqual(self.page.evaluate('location.pathname'), '/')
                 card = self.page.locator('#rdIx')
                 self.assertTrue(card.is_visible())
@@ -80,14 +80,14 @@ class ModeSmoke(unittest.TestCase):
                 self.assertEqual(self.page.locator('#rdMeta .ix').count(), 1)
         # non-interactive pieces have neither the card nor the badge
         self.reader('di-dasar-rumah')
-        self.page.wait_for_function("document.getElementById('rdBody').innerText.length > 200")
+        self.page.wait_for_function("document.getElementById('rdBody')?.innerText.length > 200")
         self.assertTrue(self.page.locator('#rdIx').is_hidden())
         self.assertEqual(self.page.locator('#rdMeta .ix').count(), 0)
 
     def test_plain_reader_formats_markdown_blocks(self):
         self.context.add_init_script("localStorage.setItem('jm:mode', JSON.stringify('biasa'))")
         self.reader('anda-di-sini')
-        self.page.wait_for_function("document.getElementById('rdBody').innerText.length > 200")
+        self.page.wait_for_function("document.getElementById('rdBody')?.innerText.length > 200")
         body = self.page.locator('#rdBody')
         counts = self.page.evaluate("""() => ({ h2: document.querySelectorAll('#rdBody .rd-h2').length, h3: document.querySelectorAll('#rdBody .rd-h3').length,
           date: document.querySelectorAll('#rdBody .rd-dateline').length, table: document.querySelectorAll('#rdBody .rd-table td').length,
@@ -120,7 +120,7 @@ class ModeSmoke(unittest.TestCase):
         self.assertEqual(mode.get_attribute('aria-pressed'), 'false')
         self.assertEqual(self.page.evaluate("localStorage.getItem('jm:mode')"), '"biasa"')
         self.page.locator('#pkGo').click()
-        self.page.wait_for_function("location.hash.startsWith('#baca-') && document.getElementById('rdBody').innerText.length > 200")
+        self.page.wait_for_function("location.hash.startsWith('#baca-') && document.getElementById('rdBody')?.innerText.length > 200")
         self.assertEqual(self.page.evaluate('location.pathname'), '/')
 
     def test_plain_text_from_inside_an_experience_then_back(self):
@@ -130,7 +130,7 @@ class ModeSmoke(unittest.TestCase):
         link = self.page.locator('#plainLink')
         self.assertTrue(link.is_visible())
         link.click()
-        self.page.wait_for_function("location.pathname === '/' && document.getElementById('rdBody').innerText.length > 200")
+        self.page.wait_for_function("location.pathname === '/' && document.getElementById('rdBody')?.innerText.length > 200")
         self.assertEqual(self.page.evaluate("JSON.parse(sessionStorage.getItem('jm:plain'))"), ['interlude'])
         # the global choice is untouched; the card goes back to the experience
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:mode')"))
