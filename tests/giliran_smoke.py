@@ -179,7 +179,7 @@ class GiliranSmoke(unittest.TestCase):
         self.assertEqual(self.page.locator('.stumble').count(), 1)
         self.page.locator('#ytText').fill('Aku mau bilang sesuatu.')
         self.page.wait_for_function("document.querySelector('.jm-next[data-filled]')")
-        self.assertIn('Interlude', self.page.locator('.jm-next').inner_text())
+        self.assertIn('Usia Pulang', self.page.locator('.jm-next').inner_text())
         self.page.wait_for_function("(JSON.parse(localStorage.getItem('jm:stats') || '{}').done || []).includes('giliran')")
         self.assertEqual(self.page.evaluate("Object.keys(localStorage).filter(k => k.includes('ytText')).length"), 0)
 
