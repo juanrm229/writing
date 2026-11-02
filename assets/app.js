@@ -3089,6 +3089,20 @@
     });
   }
   const sleeve = (a, size, spin) => `<span class="al-sleeve${spin ? ' on' : ''}"><span class="al-rec${spin ? ' spin' : ''}" style="--lc:${catOf(a.tracks[0].cat).ink}" aria-hidden="true"><i></i></span><canvas data-cover="${esc(a.id)}" data-size="${size}"></canvas></span>`;
+  /* ---------- DUNIA: karya yang bukan album punya raknya sendiri di atas album (Salasimpul) ---------- */
+  const worldReady = fetch('content/salasimpul.meta.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+  const worldBanner = () => `<a class="wd-banner" href="dunia/salasimpul/${LANG === BASE ? '' : '?lang=' + LANG}"><span class="wd-t"><span class="al-kicker">${t('Dunia · catatan yang terus bertambah', 'A world · notes that keep growing')}</span><b>Salasimpul</b><span class="wd-sub">${t('Catatan-catatan sebuah kota yang saling menyimpul, tanpa disengaja.', 'The notes of a town, knotting into each other by accident.')}</span><span class="wd-meta" data-wd-meta>…</span></span><svg class="wd-lanes" data-wd-lanes viewBox="0 0 400 140" aria-hidden="true"></svg><span class="wd-go">${t('Masuki', 'Enter')} <span aria-hidden="true">→</span></span></a>`;
+  function fillWorld() {
+    worldReady.then(m => {
+      if (!m) { $$('.wd-banner').forEach(el => { el.hidden = true; }); return; }
+      $$('[data-wd-meta]').forEach(el => { el.textContent = `${m.people} ${t('orang', 'people')} · ${m.entries} ${t('catatan', 'notes')} · ${m.from}–${m.to}`; });
+      const X = y => 6 + (y - m.from) / Math.max(1, m.to + 1 - m.from) * 388, Y = i => 8 + i * (124 / Math.max(1, m.lanes.length - 1));
+      const svg = m.lanes.map((l, i) => `<line x1="0" x2="400" y1="${Y(i).toFixed(1)}" y2="${Y(i).toFixed(1)}"/>`).join('')
+        + m.knots.map(([a, ya, b, yb]) => { const x1 = X(ya), y1 = Y(a), x2 = X(yb), y2 = Y(b); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)}C${x1.toFixed(1)} ${((y1 + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${((y1 + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`; }).join('')
+        + m.lanes.map((l, i) => l.map(y => `<circle cx="${X(y).toFixed(1)}" cy="${Y(i).toFixed(1)}" r="1.7"/>`).join('')).join('');
+      $$('[data-wd-lanes]').forEach(el => { el.innerHTML = svg; });
+    });
+  }
   function showAlbum(id) {
     setView('album');
     const host = $('#alScroll'), now = playing();
@@ -3097,6 +3111,7 @@
       host.innerHTML = `${tm ? `<button type="button" class="al-daily" data-album="${esc(tm.id)}">${sleeve(tm, 220, tOn)}
           <span class="ad-t"><span class="al-kicker">${t("Racikan harian · berganti dalam", "Daily mix · changes in")} ${inHours(untilMidnight())}</span><b>${esc(tm.title)}</b><span class="ad-sub">${esc(tm.sub)}</span>
           <span class="ad-meta">${countOf(tm.tracks.length, 'sisi', 'side', 'sides')} · ${albumMins(tm)} ${t('menit', 'min')}${tOn ? t(' · sedang diputar', ' · playing') : ''}</span></span></button>` : ''}
+        ${worldBanner()}
         <header class="al-head"><p class="al-kicker">${t('Koleksi', 'Collection')}</p><h2>${t('Album', 'Albums')}</h2><p class="al-sub">${t('Sisi-sisi pilihan, disusun untuk didengar berurutan.', 'Hand-picked sides, ordered to be heard one after another.')}</p></header>
         <div class="al-grid">${ALBUMS.map((a, i) => `<button type="button" class="al-card" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
           <b>${esc(a.title)}</b><small>${trackCount(a)} · ${albumMins(a)} ${t('menit', 'min')}${now && now.id === a.id ? t(' · sedang diputar', ' · playing') : ''}</small></button>`).join('') || `<p class="al-empty">${t('Belum ada album. Buat yang pertama di panel admin.', 'No albums yet. Make the first one in the admin panel.')}</p>`}</div>
@@ -3104,6 +3119,7 @@
         <div class="al-grid">${MIXES.map(mixAlbum).filter(a => a.tracks.length).map((a, i) => `<button type="button" class="al-card mix" data-album="${esc(a.id)}" style="--k:${i}">${sleeve(a, 200, now && now.id === a.id)}
           <b>${esc(a.title)}</b><small>${a.mine ? t('Racikanmu', 'Your mix') : a.from ? t('dari ', 'from ') + esc(a.from) : t('dibagikan padamu', 'shared with you')} · ${countOf(a.tracks.length, 'sisi', 'side', 'sides')}</small></button>`).join('')}</div>` : ''}`;
       document.title = 'Album · ' + SITE.title;
+      fillWorld();
     } else {
       const a = albumOf(id), on = now && now.id === a.id;
       host.innerHTML = `<button type="button" class="al-back" data-album=""><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>Semua album</button>

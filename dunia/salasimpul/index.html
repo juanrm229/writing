@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id" class="qm-theme-auto qm-sky-wide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salasimpul · Quiet Margins</title>
+<meta name="description" content="Delapan belas orang menulis catatan, tanpa tahu tulisan mereka saling menyimpul. Dunia yang terus bertambah, dibaca dengan menarik benangnya sendiri.">
+<meta name="theme-color" content="#F6F6F7">
+<meta property="og:title" content="Salasimpul">
+<meta property="og:description" content="Delapan belas orang menulis catatan, tanpa tahu tulisan mereka saling menyimpul.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://quietmargins.site/dunia/salasimpul/">
+<meta property="og:site_name" content="Quiet Margins">
+<meta property="og:url" content="https://quietmargins.site/dunia/salasimpul/">
+<meta property="og:image" content="https://quietmargins.site/assets/og/cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../../antologi/panduan.css?v=1">
+<link rel="stylesheet" href="../../antologi/bingkai.css?v=3">
+<link rel="stylesheet" href="simpul.css?v=1">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+</head>
+<body>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openKnow" type="button" aria-label="Yang kamu tahu" aria-haspopup="dialog" aria-controls="knowDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12c3-5 11-5 14 0-3 5-11 5-14 0z"/><circle cx="12" cy="12" r="2.2"/></svg></button><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
+
+<main class="world" id="world">
+  <header class="cover" id="cover">
+    <div class="cv-sheet">
+      <div class="cv-status"><span id="cvYears">1983–2026</span><i aria-hidden="true"></i><span id="cvRead">0 dibaca</span></div>
+      <p class="kick" id="kick">Dunia · Catatan</p>
+      <h1 id="title">Salasimpul</h1>
+      <p class="lede" id="lede">Delapan belas orang menulis catatan, tanpa tahu tulisan mereka saling menyimpul.</p>
+      <svg class="cv-lanes" id="cvLanes" aria-hidden="true"></svg>
+      <ul class="rules" id="rules">
+        <li id="rule1">Kamu orang baru di sini. Setiap orang membuka bukunya sejauh kamu mengenalnya, dan kamu mengenal mereka lewat orang lain.</li>
+        <li id="rule2">Tarik benangnya. Catatan yang menyimpul ke catatan lain membawamu ke sana.</li>
+        <li id="rule3">Kalimat yang kamu pahami belakangan akan menyala, juga di halaman yang sudah kamu baca.</li>
+      </ul>
+      <p class="lost" id="lost" hidden></p>
+      <div class="cover-act" id="coverAct"><p class="loading">…</p></div>
+    </div>
+  </header>
+
+  <section class="city" id="city" hidden aria-label="Kota">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Cara melihat">
+      <button type="button" role="tab" data-tab="partitur" aria-selected="true" id="tabScore">Partitur</button>
+      <button type="button" role="tab" data-tab="orang" aria-selected="false" id="tabPeople">Orang</button>
+      <button type="button" role="tab" data-tab="waktu" aria-selected="false" id="tabTime">Waktu</button>
+    </nav>
+    <div class="pane" id="paneScore" role="tabpanel" aria-labelledby="tabScore">
+      <div class="score" id="score"><div class="score-names" id="scoreNames" aria-hidden="true"></div><div class="score-scroll" id="scoreScroll"><svg id="scoreSvg" role="group" aria-label="Partitur catatan"></svg></div></div>
+      <p class="legend" id="legend"></p>
+    </div>
+    <div class="pane" id="panePeople" role="tabpanel" aria-labelledby="tabPeople" hidden></div>
+    <div class="pane" id="paneTime" role="tabpanel" aria-labelledby="tabTime" hidden></div>
+  </section>
+
+  <article class="note" id="note" hidden aria-live="polite"></article>
+</main>
+
+<dialog class="sm-dialog" id="knowDialog" aria-labelledby="knowTitle">
+  <header class="dialog-head"><div><p class="cd-k" id="knowKick">Yang kamu tahu</p><h2 id="knowTitle">0 dari 144</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="know-body" id="knowBody"></div>
+</dialog>
+
+<div class="pop" id="pop" role="dialog" aria-labelledby="popTitle" hidden><button class="close" id="popClose" type="button" aria-label="Tutup">×</button><div id="popBody"></div></div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+    <div class="setting-row"><span id="openLabel">Kota terbuka</span><button class="setting-button" id="openAll" type="button" aria-pressed="false">Mati</button></div>
+    <div class="setting-row"><span id="resetLabel">Ingatanmu di kota ini</span><button class="setting-button" id="reset" type="button">Mulai dari nol</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../../antologi/panduan.js?v=4"></script>
+<script src="simpul.js?v=1"></script>
+</body>
+</html>
