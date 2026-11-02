@@ -216,3 +216,105 @@ a { color: inherit; }
   .score { grid-template-columns: 96px minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* =====================================================================
+   1.5: jendela, buku tiap orang, benang yang ditarik, dua buku, kilat balik, partitur hidup
+   ===================================================================== */
+
+/* jendela-jendela di sampul: orang asing, dikenali dari kalimat pertamanya */
+.cover-act { flex-direction: column; align-items: stretch; }
+.cover-act > .go { align-self: center; }
+.w-q { margin: 6px 0 0; text-align: center; font: 600 11.5px var(--f-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--sheet-mut); }
+.windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 700px) { .windows { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.win { position: relative; display: grid; align-content: space-between; gap: 14px; min-height: 150px; padding: 16px 14px 14px; border: 0; border-radius: 18px; background: color-mix(in srgb, var(--sheet-ink) 7%, var(--sheet)); color: var(--sheet-ink); text-align: left; cursor: pointer; overflow: hidden; box-shadow: inset 0 0 0 1px var(--sheet-dim); transition: transform .35s var(--spring), background-color .3s ease; animation: winIn .7s var(--ease-out) calc(var(--i) * 90ms) both; }
+@keyframes winIn { from { opacity: 0; transform: translateY(10px); } }
+.win:hover { transform: translateY(-3px); }
+.win:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.w-light { position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 0%, rgb(255 214 140 / .22), transparent 60%); opacity: .55; transition: opacity .5s ease; animation: flicker 6s ease-in-out calc(var(--i) * 1.3s) infinite; pointer-events: none; }
+:root[data-theme="dark"] .w-light { background: radial-gradient(120% 70% at 50% 0%, rgb(255 190 90 / .35), transparent 60%); }
+@keyframes flicker { 0%, 100% { opacity: .55; } 46% { opacity: .62; } 50% { opacity: .38; } 53% { opacity: .6; } }
+.win q { position: relative; font: 400 15.5px/1.4 var(--f-text); text-wrap: pretty; }
+.win q::before, .win q::after { content: none; }
+.win small { position: relative; font: 700 10px var(--f-dot); letter-spacing: .02em; text-transform: uppercase; color: var(--sheet-mut); }
+.win:hover .w-light { opacity: 1; }
+.win.chosen { background: var(--sheet-ink); color: var(--sheet); }
+.win.chosen small { color: var(--sheet); }
+.w-act { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
+
+/* catatan: halaman di buku milik seseorang, dengan warna penanda orang itu */
+.note { --nb: var(--ink); }
+.n-who a { color: var(--nb); }
+.n-date { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.n-hour { font: 900 18px/1 var(--f-dot); letter-spacing: -.02em; color: var(--ink); text-transform: none; }
+.n-body { position: relative; padding: 26px 22px 8px 30px; border-radius: 6px 24px 24px 6px; background: var(--paper); box-shadow: var(--shadow); }
+.n-body::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 6px 0 0 6px; background: var(--nb); opacity: .85; }
+.n-body:has(.locked) { padding: 0; background: none; box-shadow: none; }
+.n-body:has(.locked)::before { display: none; }
+/* beberapa buku punya kertas sendiri */
+.note[data-owner="karman"] .n-body, .note[data-owner="bagas"] .n-body, .note[data-owner="hesti"] .n-body { background-image: linear-gradient(90deg, transparent 22px, color-mix(in srgb, var(--nb) 18%, transparent) 22px 23px, transparent 23px); }
+.note[data-owner="ratih"] .n-body { background-image: linear-gradient(color-mix(in srgb, var(--nb) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--nb) 7%, transparent) 1px, transparent 1px); background-size: 22px 22px; }
+.note[data-owner="joni"] .n-body, .note[data-owner="bayu"] .n-body, .note[data-owner="lira"] .n-body { background-image: repeating-linear-gradient(transparent 0 calc(var(--size) * 1.72 - 1px), color-mix(in srgb, var(--nb) 12%, transparent) calc(var(--size) * 1.72 - 1px) calc(var(--size) * 1.72)); background-position: 0 30px; }
+.note[data-owner="elmar"] .n-body, .note[data-owner="rasmi"] .n-body, .note[data-owner="inah"] .n-body { background-image: radial-gradient(ellipse at 10% 0%, color-mix(in srgb, #A07A3A 10%, transparent), transparent 60%), radial-gradient(ellipse at 95% 100%, color-mix(in srgb, #A07A3A 9%, transparent), transparent 55%); }
+.note[data-owner="nara"] .n-body, .note[data-owner="lestari"] .n-body { background-image: linear-gradient(180deg, color-mix(in srgb, var(--nb) 5%, transparent), transparent 120px); }
+
+/* benang yang ditarik: dari mana kamu datang */
+.from { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 10px; margin: 0 0 22px; padding: 10px 14px 10px 10px; border-radius: 18px; background: var(--btn); text-decoration: none; font: 13px/1.35 var(--f-ui); animation: fromIn .7s var(--ease-out) both; }
+@keyframes fromIn { from { opacity: 0; transform: translateX(-16px); } }
+.from-th { grid-row: span 3; width: 46px; height: 22px; overflow: visible; }
+.from-th path { fill: none; stroke: var(--nb, var(--ink)); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 160; stroke-dashoffset: 160; animation: pull 1.2s var(--ease-out) .15s forwards; }
+@keyframes pull { to { stroke-dashoffset: 0; } }
+.from small { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.from b { font-weight: 600; }
+.from span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note.pulled.enter { animation: slideIn .7s var(--ease-out) both; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(28px); } }
+
+/* dua buku terbuka di layar lebar */
+.duo { position: fixed; z-index: 20; top: calc(var(--qm-top-h) + 12px); left: max(16px, calc(50% - 760px)); bottom: 16px; width: min(400px, calc(50% - 400px)); overflow: auto; padding: 18px 18px 22px 24px; border-radius: 6px 24px 24px 6px; background: var(--paper); box-shadow: var(--shadow); font: calc(var(--size) - 3px)/1.65 var(--f-text); opacity: .96; animation: duoIn .6s var(--ease-out) both; }
+.duo::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--nb); }
+@keyframes duoIn { from { opacity: 0; transform: translateX(-20px); } }
+.duo .n-who a { font: 900 22px/1 var(--f-dot); letter-spacing: -.02em; text-transform: uppercase; text-decoration: none; color: var(--nb); }
+.duo .n-who { display: flex; gap: 10px; align-items: baseline; margin: 0; }
+.duo .n-who span { color: var(--muted); font: 12px var(--f-ui); }
+.duo h3 { margin: 8px 0 14px; font: 500 20px/1.15 var(--f-text); }
+.duo-body > p { margin: 0 0 .9em; color: color-mix(in srgb, var(--ink) 80%, transparent); }
+.duo .knots.inline { margin: -4px 0 1em; }
+.here-knot { padding-left: 40px; background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.duo-th { position: fixed; z-index: 21; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+.duo-th path { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: pull 1.4s var(--ease-out) .2s forwards; }
+.duo-th circle { fill: var(--accent); }
+@media (min-width: 1100px) { body.duo-on .world { margin-left: max(430px, calc(50% - 340px)); max-width: 700px; } }
+
+/* kilat balik */
+.flash { position: fixed; z-index: 56; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); translate: -50% 0; width: min(440px, calc(100% - 24px)); padding: 16px 18px 14px; border-radius: 24px; background: var(--sheet); color: var(--sheet-ink); box-shadow: 0 30px 60px -20px rgb(0 0 0 / .5); }
+.flash.in { animation: flashIn .6s var(--spring); }
+@keyframes flashIn { from { opacity: 0; transform: translateY(20px) scale(.97); } }
+.flash .close { position: absolute; right: 10px; top: 10px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--sheet-dim); color: var(--sheet-ink); font: 300 18px var(--f-ui); cursor: pointer; }
+.flash .sh-k { color: var(--sheet-mut); margin-right: 44px; }
+.fl { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.fl a { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--lit) 22%, var(--sheet)); text-decoration: none; animation: litIn 1.6s ease both; }
+@keyframes litIn { 0% { background: var(--sheet); } 40% { background: color-mix(in srgb, var(--lit) 45%, var(--sheet)); } }
+.fl q { font: 400 15px/1.4 var(--f-text); }
+.fl small { color: var(--sheet-mut); font-size: 12px; font-weight: 600; }
+
+/* partitur hidup */
+.score-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 4px 10px; }
+.score-hint { margin: 0; color: var(--muted); font-size: 12.5px; }
+.zoom { display: inline-flex; gap: 4px; padding: 3px; border-radius: 16px; background: var(--btn); }
+.zoom button { width: 32px; height: 28px; border: 0; border-radius: 13px; background: transparent; color: var(--ink); font: 500 16px var(--f-ui); cursor: pointer; }
+.zoom button:hover { background: var(--paper); }
+.score-names button { display: flex; flex-direction: column; justify-content: center; padding: 0 10px; border: 0; background: transparent; color: var(--ink); text-align: left; line-height: 1.05; cursor: pointer; }
+.score-names button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.score-names button b { font-weight: 600; font-size: 12px; }
+.score-names button small { color: var(--muted); font: 700 9.5px var(--f-dot); }
+#scoreSvg .trail { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; opacity: .55; }
+#scoreSvg.focused .nt:not(.fx), #scoreSvg.focused .th:not(.fx) { opacity: .15; }
+#scoreSvg.focused .ln.fx { stroke: var(--accent); stroke-width: 1.5; }
+#scoreSvg.focused .th.fx { opacity: 1; stroke: var(--accent); stroke-dasharray: none; }
+#scoreSvg .nt.peek circle:not(.hit) { stroke: var(--accent); stroke-width: 3; }
+.lg.trail { width: 16px; height: 0; border-radius: 0; border-top: 1.6px solid var(--accent); }
+.pk-t { margin: 0 0 6px; font: 500 22px/1.2 var(--f-text); }
+.pk-q { margin: 0 0 14px; color: var(--muted); font: 400 16px/1.45 var(--f-text); }
+.pk-act { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .w-light { animation: none; } .from-th path, .duo-th path { stroke-dashoffset: 0; } }

@@ -368,6 +368,17 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - *Orang*: buku tiap orang, dengan seberapa jauh kamu mengenalnya;
   - *Waktu*: semua catatan, tahun demi tahun.
 - Di kaki setiap catatan ada simpul keluar dan masuk, catatan sebelum dan sesudahnya di buku yang sama, dan catatan sebelum dan sesudahnya di kota.
+- **Jendela-jendela.** Di sampul ada empat jendela berisi kalimat pertama orang-orang yang belum kamu kenal, tanpa nama ("seseorang · 1999"). Kamu memilih orang asing dari suaranya, dan namanya baru terungkap saat kamu masuk. *Jendela lain* mengacak ulang. Di kunjungan pertama, catatan pembuka (`start`) selalu ada di antaranya.
+- **Buku tiap orang.** Setiap penulis punya warna penanda sendiri di tepi halaman. Beberapa buku punya kertas sendiri: bergaris tepi untuk Karman, Bagas, dan Hesti; kotak untuk Ratih; bergaris untuk Joni, Bayu, dan Lira; kertas lama untuk Elmar, Rasmi, dan Inah.
+- **Langit mengikuti jam catatan ditulis.** Jam itu tampil dengan Doto, misalnya *23.00*.
+- **Menarik benang.** Mengikuti simpul membuka catatan tujuan dengan pita *Kamu menarik benang dari …*. Di layar lebar (≥1100px), catatan asal tetap terbuka di kiri dan benang biru digambar dari simpulnya ke judul catatan tujuan.
+- **Kilat balik.** Saat fakta yang baru kamu ketahui membuat kalimat di catatan yang *sudah* kamu baca berubah makna, muncul kartu *n kalimat yang pernah kamu baca berubah*, berisi kalimat-kalimat itu dan tautannya.
+- **Partitur yang hidup.**
+  - Ketuk nama orang untuk menyorot garis, titik, dan benangnya.
+  - Ketuk titik untuk mengintip judul dan kalimat pertamanya sebelum membaca.
+  - *Jejakmu*: urutan bacamu digambar sebagai satu benang biru.
+  - Tombol − dan + merapatkan atau merenggangkan waktu.
+- Banner di halaman Album dibuat tipis: satu baris berisi judul, garis kota, angka, dan panah.
 - Semua tersimpan di `jm:simpul`. *Mulai dari nol* di Aa menghapusnya. Pratinjau (`?preview=1`) tidak menyimpan apa pun.
 
 ```bash

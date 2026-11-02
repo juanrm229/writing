@@ -71,7 +71,7 @@ class SalasimpulSmoke(unittest.TestCase):
 
     def go(self, hash_=''):
         self.page.goto(self.url + hash_, wait_until='domcontentloaded')
-        self.page.wait_for_selector('#coverAct .go, #nBody > *, #city:not([hidden])')
+        self.page.wait_for_selector('#coverAct .win, #coverAct .go, #nBody > *, #city:not([hidden])')
 
     def open_note(self, nid):
         self.page.evaluate(f"location.hash = 'c-{nid}'")
@@ -105,13 +105,19 @@ class SalasimpulSmoke(unittest.TestCase):
                     self.assertEqual(self.BY[link['id']]['owner'], link['owner'])
 
     # ---------- page ----------
-    def test_cover_and_first_note(self):
+    def test_cover_windows_and_first_note(self):
         self.go()
         self.assertEqual(self.page.locator('#title').text_content(), 'Salasimpul')
         self.assertIn('0/187', self.page.locator('#cvRead').inner_text())
-        self.page.locator('#goStart').click()
-        self.page.wait_for_selector('#nBody p')
+        # windows: strangers' first lines, no names; the opening note is always among them on a first visit
+        wins = self.page.locator('#windows .win')
+        self.assertEqual(wins.count(), 4)
+        names = [p['name'] for p in self.W['people']]
+        for w in wins.all_inner_texts():
+            self.assertFalse(any(re.search(rf'\b{n}\b', w.split('\n')[-1]) for n in names))
         start = self.BY[self.W['start']]
+        self.page.locator(f'#windows .win[data-id="{start["id"]}"]').click()
+        self.page.wait_for_selector('#nBody p')
         self.assertEqual(self.page.locator('#note h2').inner_text(), start['title'])
         self.assertEqual(self.page.locator('#stepChip').inner_text(), '1/187')
         text = self.page.locator('#nBody').inner_text()
@@ -150,13 +156,15 @@ class SalasimpulSmoke(unittest.TestCase):
         e = next(x for x in self.W['entries'] if any(p.get('l') for p in x['p']) and x['owner'] == 'bagas')
         self.go()
         self.page.evaluate("localStorage.setItem('jm:simpul', JSON.stringify({ v: 1, read: {}, early: {}, known: {}, last: null, open: true }))")
-        self.page.reload(); self.page.wait_for_selector('#coverAct .go')
+        self.page.reload(); self.page.wait_for_selector('#coverAct .win')
         self.open_note(e['id'])
         self.page.evaluate("(() => { const s = JSON.parse(localStorage.getItem('jm:simpul')); s.open = false; localStorage.setItem('jm:simpul', JSON.stringify(s)); })()")
         self.page.reload(); self.page.wait_for_selector('#nBody')
         target = next(link for p in e['p'] for link in p.get('l', []))
-        self.page.locator(f'.knot[href="#c-{target["id"]}"]').first.click()
+        self.page.locator(f'.knots.inline .knot[href="#c-{target["id"]}"]').first.click()
         self.page.wait_for_function(f"document.querySelector('#note h2').textContent === {json.dumps(self.BY[target['id']]['title'])}")
+        # the pulled thread says where it came from
+        self.assertIn(self.BY[e['id']]['title'], self.page.locator('#fromStrip').inner_text())
         if target['id'] not in self.W['keys']:
             self.assertEqual(self.page.locator('.locked').count(), 0)
 
@@ -201,14 +209,21 @@ class SalasimpulSmoke(unittest.TestCase):
     def test_city_views(self):
         self.go('#kota')
         self.assertEqual(self.page.locator('#scoreSvg .nt').count(), len(self.W['entries']))
-        self.assertEqual(self.page.locator('#scoreNames span:not(.yrs)').count(), len(self.W['people']))
+        self.assertEqual(self.page.locator('#scoreNames button').count(), len(self.W['people']))
+        # a name highlights that person
+        self.page.locator('#scoreNames button').first.click()
+        self.assertTrue(self.page.evaluate("document.getElementById('scoreSvg').classList.contains('focused')"))
+        self.page.locator('#scoreNames button').first.click()
+        self.assertFalse(self.page.evaluate("document.getElementById('scoreSvg').classList.contains('focused')"))
         self.page.locator('#tabPeople').click()
         self.assertEqual(self.page.locator('.person').count(), len(self.W['people']))
         self.page.locator('#tabTime').click()
         self.assertEqual(self.page.locator('#paneTime .row').count(), len(self.W['entries']))
-        # a dot opens its note
+        # a dot peeks first, then reads
         self.page.locator('#tabScore').click()
         self.page.locator('#scoreSvg .nt.open').first.click()
+        self.assertTrue(self.page.locator('#pop').is_visible())
+        self.page.locator('#pop .pk-act .go').click()
         self.page.wait_for_selector('#note:not([hidden]) #nBody')
 
     def test_open_city_setting(self):
@@ -222,14 +237,14 @@ class SalasimpulSmoke(unittest.TestCase):
 
     def test_preview_writes_nothing(self):
         self.page.goto(self.url + '?preview=1', wait_until='domcontentloaded')
-        self.page.wait_for_selector('#goStart')
-        self.page.locator('#goStart').click()
+        self.page.wait_for_selector('#windows .win')
+        self.page.locator('#windows .win').first.click()
         self.page.wait_for_selector('#nBody p')
         self.assertIsNone(self.page.evaluate("localStorage.getItem('jm:simpul')"))
 
     def test_english_interface(self):
         self.page.goto(self.url + '?lang=en', wait_until='domcontentloaded')
-        self.page.wait_for_selector('#goStart')
+        self.page.wait_for_selector('#windows .win')
         self.assertIn('You are new here', self.page.locator('#rule1').inner_text())
         self.assertTrue(self.page.locator('#lost').is_visible())
 
@@ -240,9 +255,33 @@ class SalasimpulSmoke(unittest.TestCase):
         self.assertEqual(banner.get_attribute('href'), 'dunia/salasimpul/')
         self.assertIn('Salasimpul', banner.text_content())
         self.assertIn('18 orang', banner.inner_text())
+        self.assertLess(banner.bounding_box()['height'], 130)
         # the banner sits above the album shelf
         self.assertTrue(self.page.evaluate("document.querySelector('.wd-banner').compareDocumentPosition(document.querySelector('.al-grid')) & Node.DOCUMENT_POSITION_FOLLOWING"))
-        self.assertEqual(self.page.locator('.wd-lanes circle').count(), len(self.W['entries']))
+        self.assertEqual(self.page.locator('.wd-lanes rect').count(), len(self.W['entries']))
+
+    def test_flashback_when_old_sentences_change(self):
+        # read n1999 first; then learning what makes its sentence ironic shows the flashback card
+        e = self.BY['n1999']
+        g = next(g for p in e['p'] for a in p['a'] for g in a.get('irony', []) if all(x in self.W['props'] for x in g))
+        known = {x: self.W['props'][x][0] for x in g[1:]}
+        self.go()
+        self.page.evaluate(f"localStorage.setItem('jm:simpul', JSON.stringify({{ v: 1, read: {{ n1999: 1 }}, early: {{}}, known: {json.dumps(known)}, last: null, open: true }}))")
+        self.page.reload(); self.page.wait_for_selector('#coverAct .win, #coverAct .go')
+        source = self.W['props'][g[0]][0]
+        self.open_note(source)
+        span = self.page.locator(f'.s.cl[data-claims~="{g[0]}"]').first
+        span.scroll_into_view_if_needed()
+        self.page.wait_for_selector('#flash:not([hidden])')
+        self.assertIn('pernah kamu baca berubah', self.page.locator('#flash').text_content())
+        self.assertEqual(self.page.locator('#flash a[href="#c-n1999"]').count() >= 1, True)
+
+    def test_note_page_follows_the_hour_and_its_writer(self):
+        self.go()
+        self.open_note(self.W['start'])
+        self.assertEqual(self.page.evaluate("document.documentElement.dataset.backdrop"), 'malam' if (self.BY[self.W['start']]['at']['h'] >= 19 or self.BY[self.W['start']]['at']['h'] < 4) else self.page.evaluate("document.documentElement.dataset.backdrop"))
+        self.assertTrue(self.page.locator('.n-hour').inner_text().endswith('.00'))
+        self.assertNotEqual(self.page.evaluate("getComputedStyle(document.getElementById('note')).getPropertyValue('--nb').trim()"), '')
 
 
 if __name__ == '__main__':

@@ -36,7 +36,7 @@
     $('#rule2').textContent = 'Pull the thread. A note that knots into another one takes you there.';
     $('#rule3').textContent = 'Sentences you understand later will light up, even on pages you have already read.';
     $('#lost').hidden = false; $('#lost').textContent = 'These notes are not translated yet, so they are shown in the original Indonesian.';
-    $('#tabScore').textContent = 'Score'; $('#tabPeople').textContent = 'People'; $('#tabTime').textContent = 'Time';
+    $('#tabScore').textContent = 'Score'; $('#scoreHint').textContent = 'Tap a name to highlight someone. Tap a dot to peek.'; $('#tabPeople').textContent = 'People'; $('#tabTime').textContent = 'Time';
     $('#knowKick').textContent = 'What you know';
     $('#openLabel').textContent = 'Open city'; $('#resetLabel').textContent = 'Your memory of this city'; $('#reset').textContent = 'Start from zero';
   }
@@ -117,26 +117,38 @@
     cover.hidden = view !== 'cover'; city.hidden = view !== 'city'; note.hidden = view !== 'note';
     if (push) scrollTo({ top: 0, behavior: 'auto' });
   }
+  // jendela-jendela: kalimat pertama orang-orang yang belum kamu kenal, tanpa nama. Kamu memilih orang asing dari suaranya.
+  const firstLine = e => { const txt = plainOf(e.p[0]?.t || ''); const m = txt.match(/^.+?[.!?…](?=\s|$)/); return (m ? m[0] : txt).slice(0, 160); };
+  function windows(n = 4) {
+    const met = new Set(Object.keys(S.read).map(id => BY.get(id)?.owner));
+    const strangers = PEOPLE.filter(p => !met.has(p.id)).map(p => ofOwner[p.id][0]);
+    const start = BY.get(W.start);
+    const pool = strangers.filter(e => e !== start).sort(() => Math.random() - .5);
+    if (strangers.includes(start) && !Object.keys(S.read).length) pool.unshift(start);
+    return pool.slice(0, n).sort(() => Math.random() - .5);
+  }
   function coverActs() {
-    const last = S.last && BY.get(S.last), start = BY.get(W.start) || E[0];
-    $('#coverAct').innerHTML = (last
-      ? `<button type="button" class="go" id="goLast">${esc(t('Lanjutkan', 'Continue'))} · ${esc(NAME[last.owner])}</button>`
-      : `<button type="button" class="go" id="goStart">${esc(t(`Mulai dari ${NAME[start.owner]}, ${start.at.y}`, `Begin with ${NAME[start.owner]}, ${start.at.y}`))}</button>`) +
-      `<button type="button" class="ghost" id="goCity">${esc(t('Lihat kotanya', 'See the city'))}</button>`;
+    const last = S.last && BY.get(S.last), ws = windows();
+    $('#coverAct').innerHTML = `${last ? `<button type="button" class="go" id="goLast">${esc(t('Lanjutkan', 'Continue'))} · ${esc(NAME[last.owner])}</button>` : ''}
+      ${ws.length ? `<p class="w-q">${esc(last ? t('Atau temui orang lain', 'Or meet someone else') : t('Siapa yang kamu temui duluan?', 'Who do you meet first?'))}</p>
+      <div class="windows" id="windows">${ws.map((e, i) => `<button type="button" class="win" data-id="${e.id}" style="--i:${i}"><span class="w-light" aria-hidden="true"></span><q>${esc(firstLine(e))}</q><small>${esc(t(`seseorang · ${e.at.y}`, `someone · ${e.at.y}`))}</small></button>`).join('')}</div>
+      <div class="w-act"><button type="button" class="ghost" id="reroll">${esc(t('Jendela lain', 'Other windows'))}</button><button type="button" class="ghost" id="goCity">${esc(t('Lihat kotanya', 'See the city'))}</button></div>` : `<button type="button" class="ghost" id="goCity">${esc(t('Lihat kotanya', 'See the city'))}</button>`}`;
     $('#goLast')?.addEventListener('click', () => go(last.id));
-    $('#goStart')?.addEventListener('click', () => go(start.id));
+    $$('#windows .win').forEach(b => b.addEventListener('click', () => { b.classList.add('chosen'); setTimeout(() => go(b.dataset.id), reduced() ? 0 : 420); }));
+    $('#reroll')?.addEventListener('click', coverActs);
     $('#goCity').addEventListener('click', () => { location.hash = 'kota'; });
   }
 
   /* ---------- partitur ---------- */
-  const STEP = 18, LANE = 30, PAD = 18;
+  let STEP = +store.get('simpul:step', 18) || 18; const LANE = 30, PAD = 18;
+  let focus = null;
   const laneOrder = [...PEOPLE].sort((a, b) => E.findIndex(e => e.owner === a.id) - E.findIndex(e => e.owner === b.id));
   const laneOf = id => laneOrder.findIndex(p => p.id === id);
   function score() {
     const svg = $('#scoreSvg'), w = PAD * 2 + (E.length - 1) * STEP, h = 34 + laneOrder.length * LANE;
     svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     const X = i => PAD + i * STEP, Y = l => 34 + l * LANE + LANE / 2;
-    let s = laneOrder.map((p, l) => `<line class="ln" x1="0" x2="${w}" y1="${Y(l)}" y2="${Y(l)}"/>`).join('');
+    let s = laneOrder.map((p, l) => `<line class="ln" data-o="${p.id}" x1="0" x2="${w}" y1="${Y(l)}" y2="${Y(l)}"/>`).join('');
     // tahun
     let lastY = null, lastX = -99;
     E.forEach((e, i) => { if (e.at.y !== lastY) { const lab = X(i) - lastX >= 34; s += `${lab ? `<text class="yr" x="${X(i)}" y="14">${e.at.y}</text>` : ''}<line class="yt${lab ? '' : ' minor'}" x1="${X(i)}" x2="${X(i)}" y1="${lab ? 20 : 26}" y2="${h}"/>`; if (lab) lastX = X(i); lastY = e.at.y; } });
@@ -145,23 +157,45 @@
       if (!isRead(e.id) && !isRead(l.id)) return;
       const j = E.indexOf(BY.get(l.id)), a = [X(i), Y(laneOf(e.owner))], b = [X(j), Y(laneOf(BY.get(l.id).owner))];
       const both = isRead(e.id) && isRead(l.id);
-      s += `<path class="th${both ? ' tied' : ''}${l.kind === 'echo' ? ' echo' : ''}" d="M${a[0]} ${a[1]}C${a[0]} ${(a[1] + b[1]) / 2} ${b[0]} ${(a[1] + b[1]) / 2} ${b[0]} ${b[1]}"/>`;
+      s += `<path class="th${both ? ' tied' : ''}${l.kind === 'echo' ? ' echo' : ''}" data-o="${e.owner} ${BY.get(l.id).owner}" d="M${a[0]} ${a[1]}C${a[0]} ${(a[1] + b[1]) / 2} ${b[0]} ${(a[1] + b[1]) / 2} ${b[0]} ${b[1]}"/>`;
     }));
     // titik
     s += E.map((e, i) => {
       const st = state(e), cls = st.read ? 'read' : st.open ? 'open' : st.key ? 'key' : 'shut', cx = X(i), cy = Y(laneOf(e.owner));
       const label = `${NAME[e.owner]}, ${fmtDate(e.at, true)}: ${st.open ? e.title : t('terkunci', 'locked')}`;
-      return `<g class="nt ${cls}${S.last === e.id ? ' here' : ''}" data-id="${e.id}" tabindex="0" role="button" aria-label="${esc(label)}"><circle cx="${cx}" cy="${cy}" r="11" class="hit"/>${cls === 'shut' ? `<line x1="${cx - 3}" x2="${cx + 3}" y1="${cy}" y2="${cy}"/>` : `<circle cx="${cx}" cy="${cy}" r="${cls === 'key' ? 4 : 4.6}"/>`}<title>${esc(label)}</title></g>`;
+      return `<g class="nt ${cls}${S.last === e.id ? ' here' : ''}" data-id="${e.id}" data-o="${e.owner}" tabindex="0" role="button" aria-label="${esc(label)}"><circle cx="${cx}" cy="${cy}" r="11" class="hit"/>${cls === 'shut' ? `<line x1="${cx - 3}" x2="${cx + 3}" y1="${cy}" y2="${cy}"/>` : `<circle cx="${cx}" cy="${cy}" r="${cls === 'key' ? 4 : 4.6}"/>`}<title>${esc(label)}</title></g>`;
     }).join('');
+    // jejakmu: urutan bacamu sebagai satu benang biru
+    const trail = Object.entries(S.read).sort((a, b) => a[1] - b[1]).map(([id]) => BY.get(id)).filter(Boolean);
+    if (trail.length > 1) s += `<path class="trail" d="${trail.map((e, k) => `${k ? 'L' : 'M'}${X(E.indexOf(e))} ${Y(laneOf(e.owner))}`).join('')}"/>`;
     svg.innerHTML = s;
-    $('#scoreNames').innerHTML = `<span class="yrs"></span>` + laneOrder.map(p => { const n = ofOwner[p.id].length, r = ofOwner[p.id].filter(e => isRead(e.id)).length; return `<span><b>${esc(p.name)}</b><small>${r}/${n}</small></span>`; }).join('');
-    $('#legend').innerHTML = `<span><i class="lg read"></i>${esc(t('dibaca', 'read'))}</span><span><i class="lg open"></i>${esc(t('terbuka', 'open'))}</span><span><i class="lg shut"></i>${esc(t('belum kenal', 'not known yet'))}</span><span><i class="lg key"></i>${esc(t('menunggu sesuatu', 'waiting for something'))}</span><span><i class="lg th"></i>${esc(t('simpul', 'knot'))}</span>`;
+    $('#scoreNames').innerHTML = `<span class="yrs"></span>` + laneOrder.map(p => { const n = ofOwner[p.id].length, r = ofOwner[p.id].filter(e => isRead(e.id)).length; return `<button type="button" data-o="${p.id}" aria-pressed="${focus === p.id}"><b>${esc(p.name)}</b><small>${r}/${n}</small></button>`; }).join('');
+    paintFocus();
+    $('#legend').innerHTML = `<span><i class="lg trail"></i>${esc(t('jejakmu', 'your trail'))}</span><span><i class="lg read"></i>${esc(t('dibaca', 'read'))}</span><span><i class="lg open"></i>${esc(t('terbuka', 'open'))}</span><span><i class="lg shut"></i>${esc(t('belum kenal', 'not known yet'))}</span><span><i class="lg key"></i>${esc(t('menunggu sesuatu', 'waiting for something'))}</span><span><i class="lg th"></i>${esc(t('simpul', 'knot'))}</span>`;
     // gulir ke catatan terakhir
     const here = S.last ? E.findIndex(e => e.id === S.last) : 0;
     const sc = $('#scoreScroll'); sc.scrollLeft = Math.max(0, X(Math.max(0, here)) - sc.clientWidth / 2);
   }
-  $('#scoreSvg').addEventListener('click', e => { const g = e.target.closest('.nt'); if (g) go(g.dataset.id); });
-  $('#scoreSvg').addEventListener('keydown', e => { const g = e.target.closest('.nt'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go(g.dataset.id); } });
+  // menyorot satu orang: garisnya, titiknya, dan benang yang menyentuhnya
+  function paintFocus() {
+    const svg = $('#scoreSvg'); svg.classList.toggle('focused', !!focus);
+    $$('[data-o]', svg).forEach(el => el.classList.toggle('fx', !!focus && el.dataset.o.split(' ').includes(focus)));
+    $$('#scoreNames [data-o]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.o === focus)));
+  }
+  $('#scoreNames').addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (!b) return; focus = focus === b.dataset.o ? null : b.dataset.o; paintFocus(); });
+  // titik: pratinjau dulu, baru membaca
+  function peek(id) {
+    const e = BY.get(id), st = state(e);
+    $('#popBody').innerHTML = `<p class="sh-k" id="popTitle">${esc(st.open ? NAME[e.owner] : t('Seseorang', 'Someone'))} · ${esc(fmtDate(e.at))}</p>
+      <h3 class="pk-t">${esc(st.open ? e.title : t('Belum kamu kenal', 'Not known yet'))}</h3>${st.open ? `<p class="pk-q">${esc(firstLine(e))}</p>` : ''}
+      <div class="pk-act"><a class="go" href="#c-${e.id}">${esc(st.read ? t('Baca lagi', 'Read again') : t('Baca', 'Read'))}</a>${st.open ? `<button type="button" class="ghost" data-focus="${e.owner}">${esc(t(`Sorot ${NAME[e.owner]}`, `Highlight ${NAME[e.owner]}`))}</button>` : ''}</div>`;
+    pop.hidden = false; popFrom = $(`#scoreSvg .nt[data-id="${id}"]`);
+    $$('#scoreSvg .nt.peek').forEach(n => n.classList.remove('peek')); popFrom?.classList.add('peek');
+  }
+  $('#scoreSvg').addEventListener('click', e => { const g = e.target.closest('.nt'); if (g) { e.stopPropagation(); peek(g.dataset.id); } });
+  $('#scoreSvg').addEventListener('keydown', e => { const g = e.target.closest('.nt'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); peek(g.dataset.id); } });
+  $('#popBody').addEventListener('click', e => { const f = e.target.closest('[data-focus]'); if (f) { focus = f.dataset.focus; paintFocus(); closePop(); } if (e.target.closest('a[href^="#c-"]')) closePop(); });
+  $$('#zoom [data-z]').forEach(b => b.addEventListener('click', () => { STEP = Math.max(8, Math.min(34, STEP + +b.dataset.z)); store.set('simpul:step', STEP); score(); }));
 
   /* ---------- orang dan waktu ---------- */
   const row = e => { const st = state(e); return `<a class="row ${st.read ? 'read' : st.open ? 'open' : st.key ? 'key' : 'shut'}" href="#c-${e.id}"><span class="r-d">${esc(fmtDate(e.at, true))}</span><span class="r-t">${st.open ? esc(e.title) : esc(t('belum kamu kenal', 'not known yet'))}</span><span class="r-o">${esc(NAME[e.owner])}</span></a>`; };
@@ -182,6 +216,43 @@
     store.set('simpul:tab', b.dataset.tab);
   }));
   function paintCity() { score(); people(); timeline(); }
+
+  /* ---------- langit mengikuti jam catatan ditulis; warna penanda buku tiap orang ---------- */
+  const isDark = () => { const v = root.getAttribute('data-theme'); return v ? v === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  function sky(h) {
+    if (h == null) { root.removeAttribute('data-backdrop'); return; }
+    root.dataset.backdrop = isDark() ? 'malam' : h >= 4 && h < 10 ? 'fajar' : h >= 10 && h < 15 ? 'siang' : h >= 15 && h < 19 ? 'senja' : 'malam';
+  }
+  const INKS = ['#1F4E8C', '#9A3B2E', '#2F6B4F', '#6A3DFF', '#8A6A1F', '#0E7490', '#B4235A', '#4D5B2A', '#7C3A9E', '#A2541A', '#2B6CB0', '#5B5F66', '#8B2F2F', '#2E7D6B', '#6B4E9B', '#9C6B00', '#3B5BA9', '#7A4A3A'];
+  const inkOf = owner => INKS[PEOPLE.findIndex(p => p.id === owner) % INKS.length];
+  const wide = () => matchMedia('(min-width: 1100px)').matches;
+  // dua buku terbuka: catatan asal di kiri, benang dari simpulnya ke catatan tujuan di kanan
+  function duo(src, dst) {
+    $('#duo')?.remove(); $('#duoTh')?.remove();
+    const box = document.createElement('aside');
+    box.id = 'duo'; box.className = 'duo'; box.style.setProperty('--nb', inkOf(src.owner));
+    box.setAttribute('aria-label', t(`Catatan asal: ${NAME[src.owner]}`, `Where the thread came from: ${NAME[src.owner]}`));
+    box.innerHTML = `<p class="n-who"><a href="#c-${src.id}">${esc(NAME[src.owner])}</a><span>${esc(fmtDate(src.at, true))}</span></p><h3>${esc(src.title)}</h3><div class="duo-body"></div>`;
+    const body = $('.duo-body', box);
+    src.p.forEach((p, pi) => { body.append(para(p, src, pi)); if ((p.l || []).some(l => l.id === dst.id)) body.insertAdjacentHTML('beforeend', `<div class="knots inline"><span class="knot here-knot" data-to="${dst.id}"><small>${esc(t('Simpul ini', 'This knot'))}</small><b>${esc(NAME[dst.owner])}</b></span></div>`); });
+    document.body.append(box); document.body.classList.add('duo-on');
+    $('#duoTh')?.remove(); const th = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); th.id = 'duoTh'; th.setAttribute('class', 'duo-th'); th.setAttribute('aria-hidden', 'true'); document.body.append(th);
+    const k = $('.here-knot', box);
+    if (k) k.scrollIntoView({ block: 'center' });
+    drawDuo();
+  }
+  function drawDuo() {
+    const box = $('#duo'); if (!box) return;
+    const th = $('#duoTh'), k = $('.here-knot', box), head = $('#note .n-head h2');
+    if (!k || !head) { th.innerHTML = ''; return; }
+    const a = k.getBoundingClientRect(), b = head.getBoundingClientRect();
+    const x1 = a.right, y1 = a.top + a.height / 2, x2 = b.left - 10, y2 = b.top + b.height / 2;
+    th.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
+    th.innerHTML = `<path d="M${x1} ${y1}C${(x1 + x2) / 2} ${y1} ${(x1 + x2) / 2} ${y2} ${x2} ${y2}"/><circle cx="${x1}" cy="${y1}" r="4"/><circle cx="${x2}" cy="${y2}" r="4"/>`;
+  }
+  addEventListener('scroll', () => requestAnimationFrame(drawDuo), { passive: true });
+  addEventListener('resize', () => { if (!wide()) { $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on'); } requestAnimationFrame(drawDuo); });
+  document.addEventListener('scroll', e => { if (e.target && e.target.closest && e.target.closest('#duo')) requestAnimationFrame(drawDuo); }, true);
 
   /* ---------- catatan ---------- */
   const irLit = list => list.every(knows);
@@ -230,15 +301,20 @@
       ${via.length ? `<p class="lk-k">${esc(st.key ? t('Mungkin dimulai dari', 'Perhaps start with') : t(`Kenali ${owner} lewat`, `Get to know ${owner} through`))}</p><div class="knots">${via.map(x => knotCard(x.id, 'node', 'out').replace(/<small>[^<]*<\/small>/, '')).join('')}</div>` : ''}
       <div class="lk-act"><button type="button" class="ghost" id="early">${esc(t('Buka saja', 'Open anyway'))}</button></div></div>`;
   }
-  function open(id) {
+  let via = null;   // catatan asal saat pembaca menarik sebuah simpul
+  function open(id, from) {
     const e = BY.get(id); if (!e) return go(null);
     const st = state(e), i = E.indexOf(e), list = ofOwner[e.owner], r = rank.get(e.id);
     const prevO = list[r - 1], nextO = list[r + 1], prevT = E[i - 1], nextT = E[i + 1];
     note.dataset.owner = e.owner;
-    note.innerHTML = `<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date">${esc(fmtDate(e.at))}${e.at.h != null ? ' · ' + esc(fmtHour(e.at.h)) : ''}</p><h2>${esc(e.title)}</h2>${S.early[e.id] && !st.read ? '' : ''}</header>
+    note.style.setProperty('--nb', inkOf(e.owner));
+    sky(e.at.h);
+    const src = from && BY.get(from);
+    note.innerHTML = `${src ? `<a class="from" href="#c-${src.id}" id="fromStrip"><svg class="from-th" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true"><path d="M0 10C30 0 40 20 60 10S100 0 120 10"/></svg><small>${esc(t('Kamu menarik benang dari', 'You pulled a thread from'))}</small><b>${esc(NAME[src.owner])}</b><span>${esc(src.title)}</span></a>` : ''}<header class="n-head"><p class="n-who"><a href="#orang-${e.owner}">${esc(NAME[e.owner])}</a><span>${esc(t(`catatan ${r + 1} dari ${list.length}`, `note ${r + 1} of ${list.length}`))}</span></p><p class="n-date"><span>${esc(fmtDate(e.at))}</span>${e.at.h != null ? `<b class="n-hour">${String(e.at.h).padStart(2, '0')}.00</b>` : ''}</p><h2>${esc(e.title)}</h2>${S.early[e.id] && !st.read ? '' : ''}</header>
       <div class="n-body" id="nBody"></div>
       <footer class="n-foot" id="nFoot"></footer>`;
     const body = $('#nBody');
+    note.classList.toggle('pulled', !!src);
     if (!st.open) { body.innerHTML = lockedHTML(e, st); $('#early').onclick = () => { S.early[e.id] = 1; save(); open(id); }; }
     else {
       if (S.early[e.id] && !isRead(e.id)) body.insertAdjacentHTML('beforeend', `<p class="n-early">${esc(t('Kamu membacanya sebelum kenal.', 'You read this before you knew them.'))}</p>`);
@@ -255,25 +331,55 @@
       <p class="f-k">${esc(t(`Di buku ${NAME[e.owner]}`, `In ${NAME[e.owner]}’s notebook`))}</p><div class="nav2">${prevO ? `<a href="#c-${prevO.id}" class="nv"><small>← ${esc(t('sebelumnya', 'before'))}</small><span>${esc(state(prevO).open ? prevO.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}${nextO ? `<a href="#c-${nextO.id}" class="nv r"><small>${esc(t('berikutnya', 'after'))} →</small><span>${esc(state(nextO).open ? nextO.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}</div>
       <p class="f-k">${esc(t('Di kota, pada waktu yang sama', 'In the city, at the same time'))}</p><div class="nav2">${prevT ? `<a href="#c-${prevT.id}" class="nv"><small>← ${esc(NAME[prevT.owner])}, ${esc(fmtDate(prevT.at, true))}</small><span>${esc(state(prevT).open ? prevT.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}${nextT ? `<a href="#c-${nextT.id}" class="nv r"><small>${esc(NAME[nextT.owner])}, ${esc(fmtDate(nextT.at, true))} →</small><span>${esc(state(nextT).open ? nextT.title : t('belum kamu kenal', 'not known yet'))}</span></a>` : '<span></span>'}</div>
       <div class="f-act"><a class="ghost" href="#kota">${esc(t('Kembali ke kota', 'Back to the city'))}</a></div>`;
-    S.last = e.id; save();
-    show('note'); light(); paintCount();
+    S.last = e.id; save(); note.dataset.id = e.id;
+    show('note'); light(); paintCount(); requestAnimationFrame(learnSeen);
+    if (src && wide()) duo(src, e);
+    else { $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on'); }
     if (!reduced()) note.classList.remove('enter'), void note.offsetWidth, note.classList.add('enter');
     note.focus?.({ preventScroll: true });
   }
   // membaca: catatan dihitung dibaca saat dibuka; faktanya diketahui saat kalimatnya terlihat
-  let seenObs = null;
+  let pending = [], learnFrom = null;
   function markRead(e) {
     if (!isRead(e.id)) { S.read[e.id] = Date.now(); delete S.early[e.id]; save(); }
-    if (seenObs) seenObs.disconnect();
-    const learn = span => { const fresh = span.dataset.claims.split(' ').filter(p => !knows(p)); if (!fresh.length) return; fresh.forEach(p => { S.known[p] = e.id; }); save(); span.classList.add('learned'); light(); $('#announcement').textContent = t('Kamu tahu sesuatu yang baru.', 'You know something new.'); };
-    const claims = $$('.s.cl', note);
-    if ('IntersectionObserver' in window) { seenObs = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { seenObs.unobserve(x.target); learn(x.target); } }), { rootMargin: '0px 0px -15% 0px' }); claims.forEach(c => seenObs.observe(c)); }
-    else claims.forEach(learn);
+    pending = $$('.s.cl', note); learnFrom = e.id;
   }
+  // kalimat yang sudah masuk layar (atau sudah terlewati) menjadi yang kamu tahu
+  function learnSeen() {
+    if (note.hidden || !pending.length) return;
+    const line = innerHeight - 48;
+    pending = pending.filter(span => {
+      if (span.getBoundingClientRect().top > line) return true;
+      const fresh = span.dataset.claims.split(' ').filter(p => !knows(p));
+      if (fresh.length) { fresh.forEach(p => { S.known[p] = learnFrom; }); save(); span.classList.add('learned'); light(); flashback(fresh, learnFrom); $('#announcement').textContent = t('Kamu tahu sesuatu yang baru.', 'You know something new.'); }
+      return false;
+    });
+  }
+  let learnRaf = 0;
+  addEventListener('scroll', () => { if (!learnRaf) learnRaf = requestAnimationFrame(() => { learnRaf = 0; learnSeen(); }); }, { passive: true });
   // ironi: menyala kalau semua faktanya diketahui
   function light() {
     $$('.s.ir', note).forEach(s => { const lit = s.dataset.irony.split(' ').some(g => irLit(g.split('+'))); if (lit && !s.classList.contains('lit')) { s.classList.add('lit'); if (!reduced()) s.classList.add('glow'); } });
   }
+
+  /* ---------- kilat balik: kalimat yang sudah kamu baca berubah makna karena fakta yang baru kamu ketahui ---------- */
+  let flashTimer = 0;
+  function flashback(fresh, here) {
+    const hits = [];
+    for (const id in S.read) {
+      if (id === here) continue;
+      const e = BY.get(id); if (!e) continue;
+      e.p.forEach(p => p.a.forEach(a => { if ((a.irony || []).some(g => g.some(x => fresh.includes(x)) && g.every(knows))) hits.push({ e, txt: plainOf(p.t).slice(a.from, a.to) }); }));
+    }
+    if (!hits.length) return;
+    const box = $('#flash');
+    box.innerHTML = `<button class="close" type="button" aria-label="${esc(t('Tutup', 'Close'))}">×</button><p class="sh-k">${esc(t(`${hits.length} kalimat yang pernah kamu baca berubah`, `${hits.length} sentence${hits.length > 1 ? 's' : ''} you read before just changed`))}</p>
+      <ul class="fl">${hits.slice(0, 3).map(h => `<li><a href="#c-${h.e.id}"><q>${esc(h.txt)}</q><small>${esc(NAME[h.e.owner])}, ${esc(fmtDate(h.e.at, true))}</small></a></li>`).join('')}</ul>`;
+    box.hidden = false; box.classList.remove('in'); void box.offsetWidth; box.classList.add('in');
+    $('.close', box).onclick = () => { box.hidden = true; };
+    clearTimeout(flashTimer); flashTimer = setTimeout(() => { box.hidden = true; }, 12000);
+  }
+  $('#flash').addEventListener('click', e => { if (e.target.closest('a')) $('#flash').hidden = true; });
 
   /* ---------- sembulan: yang kamu tahu di balik kalimat yang menyala ---------- */
   const pop = $('#pop');
@@ -310,7 +416,8 @@
   function route() {
     const h = location.hash.slice(1);
     closePop();
-    if (h.startsWith('c-')) { open(h.slice(2)); return; }
+    if (h.startsWith('c-')) { const from = via; via = null; open(h.slice(2), from); return; }
+    $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on');
     if (h === 'kota' || h.startsWith('orang-')) {
       paintCity(); show('city');
       const tab = h.startsWith('orang-') ? 'orang' : store.get('simpul:tab', 'partitur');
@@ -318,9 +425,11 @@
       if (h.startsWith('orang-')) { const d = $(`.person[data-o="${h.slice(6)}"]`); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }
       return;
     }
-    coverActs(); lanes($('#cvLanes'), 320, 120); show('cover');
+    coverActs(); lanes($('#cvLanes'), 320, 120); show('cover'); sky(null);
   }
   addEventListener('hashchange', route);
+  // menarik simpul: catatan asal diingat supaya benangnya bisa digambar
+  document.addEventListener('click', e => { const k = e.target.closest('#nBody .knots.inline .knot'); if (k && !note.hidden) via = note.dataset.id || null; }, true);
 
   /* ---------- pengaturan ---------- */
   let size = Math.min(24, Math.max(15, +(store.get('rd', {}) || {}).size || 19));
