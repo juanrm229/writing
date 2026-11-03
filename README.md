@@ -209,12 +209,25 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
   - **Bab 5.** "Ren, aku sedang berubah…" dicoret saat narasinya sampai ke *Ia menghapus*.
   - **Bab 6.** Surat terakhir dibaca sendirian di dapur dan diberi cap *Tidak pernah dibacakan* saat Sarah tidak membacakannya. Amplop di pojok ikut terisi.
   - **Bab 8.** Kutipan surat ditandai *Dibacakan dengan benar · tak satu kata pun diubah*.
-- **Didengar dalam gelap.** *Dengarkan seperti Renjani* menggelapkan seluruh layar dan membacakan surat versi Sarah dengan suara peramban (pilih suaranya di Aa).
-  - Tombol *Teks* menampilkan kalimatnya. Tanpa suara peramban, kalimatnya muncul satu per satu.
+- **Didengar dalam gelap.** *Dengarkan seperti Renjani* menggelapkan seluruh layar, lalu surat versi Sarah datang kalimat demi kalimat, pelan, seperti dibacakan. Tidak ada suara buatan; hanya teks dalam gelap.
   - *Buka mata* atau `Esc` kembali ke cerita.
 - **Amplop.** Sejak Sarah menarik amplop dari bawah bantal, ada amplop *Untuk Renjani* di pojok yang tersegel dan belum boleh dibuka.
   - Di anak tangga terakhir, tepat setelah *Kirana membuka amplop itu*, pembaca sendiri yang membuka segelnya. Kertasnya terbuka dari lipatan tiga dan berisi surat terakhir dari bab 6, utuh.
   - *Pejamkan mata · dengarkan dengan telinga Renjani* membacakannya tanpa satu kata pun diubah. Sesudah kalimat yang berakhir dengan "siap", ada enam detik **keheningan sungguhan**, karena teksnya menyebut itu keheningan yang harus ada.
+- **Rasa baca.**
+  - *Lampu meja*: hanya paragraf yang sedang dibaca yang terang, di kolam cahaya kuning yang ikut bergerak. Paragraf lain meredup sedikit. Bisa dimatikan di Aa (*Lampu meja*).
+  - *Suara*: ucapan diberi warna menurut siapa yang bicara, tanpa mengubah satu kata pun. Sarah berwarna kuning lampu, Kirana biru, Renjani hijau dan miring. Penuturnya dikenali dari *kata Sarah*, *bisik Kirana*, dan semacamnya; ucapan tanpa nama dianggap suara Sarah.
+  - *Ketukan*: kalimat pendek yang berdiri sendiri (*Sarah bukan orang jahat.*, *Dan Damar berubah.*, *Ia lega.*) tampil besar dan di tengah.
+  - Judul setiap bab berupa pijakan yang makin gelap dan makin bergeser ke kanan, dengan garis kuning yang makin panjang.
+- **Apa yang kau lakukan?** Tepat setelah narator bertanya di bab 4, pembaca memilih *Biarkan suratnya sampai apa adanya* atau *Saring durinya*. Setelah *Kau bisa menebak apa yang terjadi pada kalimat-kalimat itu* di bab 5, pembaca memilih lagi: *Berhenti menyaring* atau *Terus menyaring*. Setiap pilihan dijawab *Sarah memilih hal yang sama* atau *Sarah tidak*.
+- **Tahun kedelapan.** Setelah Renjani bertanya *"Apa aku gila, Bu?"*, pembaca diberi dua jawaban yang keduanya ada di teks: yang seharusnya diucapkan Sarah, dan yang benar-benar ia ucapkan.
+  - Paragraf-paragraf sesudahnya tersamar sampai pembaca menjawab atau melewati.
+  - Kalau pembaca memilih jujur, jawabannya dicoret pena biru Sarah dan jawaban Sarah menyala sebagai penggantinya.
+- **Gema.** Bisikan ibu Sarah di bab 7 ditandai, dan kata-kata akarnya diberi garis kuning.
+  - *Lihat gemanya* menyalakan setiap kalimat di bab-bab sebelumnya yang memuat dua akar kata atau lebih dari bisikan itu (*aman*, *marah*, *cepat*, *berubah*, *hancur*, *selamat*, *badai*, *bahaya*, *dalam*), dan mendaftarnya beserta nomor anak tangganya. Kalimat di daftar itu bisa diketuk untuk melompat ke sana.
+- **Kotak surat.** Saat Sarah berkata kepada Renjani bahwa tidak ada surat minggu itu, sebuah kotak surat kosong menempel di atas dan menghitung minggu demi minggu (lalu tahun) selama pembaca menggulir.
+- **Diceritakan turun, terjadi naik.** Di akhir cerita ada garis dari setiap anak tangga ke kejadian yang diceritakannya, dengan kejadian disusun menurut waktu terjadinya: Sarah sembilan belas tahun, pasar malam, tahun kedelapan, surat terakhir, Pram, sampai Kirana membacakannya kepada anaknya. Garis-garisnya kusut karena kebenaran datang terbalik. Setiap kejadian bisa diketuk untuk kembali ke paragrafnya.
+- Jejak timbangan juga menyandingkan pilihan-pilihan pembaca dengan pilihan Sarah, misalnya *Kau bersamanya 2 kali*.
 - **Timbangan.** Di akhir setiap anak tangga, pembaca menimbang Sarah: *Kubenci*, *Kumengerti*, atau *Kumaafkan*.
   - Di akhir cerita, **jejak timbanganmu** digambar sebagai garis per anak tangga, beserta catatannya: di anak tangga mana kau memaafkannya (dan bahwa ia memintamu menunggu sampai ia selesai), apakah kau setuju dengannya di anak tangga keempat seperti kata narator, berapa kali penilaianmu berubah, dan berapa duri yang kau cabut sendiri di dapur.
 - **Rantai.** Di akhir bab 7 rantainya terlihat: ibu Sarah, lalu Sarah, Renjani, Kirana, dan anak Kirana. Rantai itu memisahkan, lalu menyunting, lalu putus di Pram yang *membacakan yang sebenarnya*. Di akhir cerita, mata rantai terakhir (*dibacakan dengan benar*) ikut putus.
