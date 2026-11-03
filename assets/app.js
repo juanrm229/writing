@@ -364,7 +364,7 @@
   /* ======================================================================
      JENDELA, TAMPILAN, TEMA
      ====================================================================== */
-  const VIEWS = ['putar', 'pilih', 'album', 'tentang', 'sapa'];
+  const VIEWS = ['putar', 'pilih', 'album', 'katalog', 'tentang', 'sapa'];
   let view = 'putar', prevView = 'putar';
 
   function setView(v) {
@@ -374,6 +374,7 @@
     syncPill();
     if (v === 'sapa' && typeof renderGreet === 'function') { renderGreet(true); if (feedMode !== 'search') renderFeed(false); }
     if (v === 'tentang' && typeof renderProfile === 'function') renderProfile();
+    if (v === 'katalog' && typeof renderCatalog === 'function') renderCatalog();
     if (v !== 'baca') { if (typeof Lyr !== 'undefined') Lyr.hide(); if (typeof hideUpNext === 'function') hideUpNext(); stopSpeech(); releaseLock(); setSheet(false); stopReplay(false); Amb.set('hening'); hideQuotePop(); document.title = SITE.title; }
   }
   function syncPill() {
@@ -3271,7 +3272,7 @@
         </div>
       </header>
 
-      <section class="pf-sec"><h2 class="pf-h">Sorotan</h2>
+      <section class="pf-sec"><h2 class="pf-h">Sorotan <a class="pf-all" href="#katalog">${t('Semua karya', 'All works')} →</a></h2>
         <ol class="al-tracks pf-hl">${highlights.map((x, i) => `<li style="--k:${i}"><button type="button" data-pick="${x.key}">
           <span class="al-no">${i + 1}</span>${mdisc(x)}<span class="sg-t"><b>${esc(x.title)}${badge(x)}</b><span>${x.title !== x.A.title ? esc(x.A.title) + ' · ' : ''}${esc(catOf(x.cat).label)} · ${fmtLong(x.date)}${x.A.CH && x.ch === 1 ? ' · ' + x.A.CH.length + t(' bab', ' chapters') : multi(x.A) && x.side === 'a' ? ' · ' + x.A.S.length + t(' sisi', ' sides') : ''}</span></span>
           <span class="al-len">${fmtMS(secsOf(x))}</span>${sideRing(x, ringLabel(x))}</button></li>`).join('')}</ol></section>
@@ -3326,6 +3327,125 @@
       catch (err) { if (err.name !== 'AbortError') toast(t('Tautan: ', 'Link: ') + url); }
     }
   });
+  /* ======================================================================
+     KATALOG: semua karya dalam satu etalase.
+     Tiga cara melihat: Rak (daftar menurut bulan, dengan catatan sampul yang bisa dibuka),
+     Kalimat pertama (dinding kalimat pembuka; judulnya baru terlihat saat disentuh), dan
+     Peta karya (setiap karya sebagai titik: kapan terbit, berapa lama dibaca, berapa sisinya).
+     Saringan: jenis, interaktif, belum kubaca, waktu yang kamu punya, dan cari. Urutan bisa diganti atau dikocok.
+     ====================================================================== */
+  const KT = Object.assign({ lens: 'rak', cat: '', ix: false, unread: false, time: 0, sort: 'baru', q: '' }, store.get('katalog', {}));
+  let ktOpen = null, ktSeed = Math.random();
+  const ktSave = () => store.set('katalog', { lens: KT.lens, sort: KT.sort });
+  const wDone = w => (w.CH || w.S).filter(d => ST.done.includes(d.key)).length;
+  const wParts = w => (w.CH || w.S).length;
+  const wStarted = w => (w.CH || w.S).some(d => readSet.has(d.key) || ST.done.includes(d.key));
+  function ktList() {
+    const q = fold(KT.q.trim());
+    let list = WORKS.filter(w => (!KT.cat || w.cat === KT.cat) && (!KT.ix || w.experience) && (!KT.unread || !wStarted(w))
+      && (!KT.time || (KT.time > 0 ? w.minutes <= KT.time : w.minutes > 30))
+      && (!q || fold([w.title, w.excerpt, w.line, catOf(w.cat).label].join(' ')).includes(q)));
+    const by = { baru: (a, b) => (b.date + b.time).localeCompare(a.date + a.time), lama: (a, b) => (a.date + a.time).localeCompare(b.date + b.time), pendek: (a, b) => a.minutes - b.minutes, panjang: (a, b) => b.minutes - a.minutes, acak: (a, b) => (Math.sin((a.no * 97 + ktSeed * 1e4)) % 1) - (Math.sin((b.no * 97 + ktSeed * 1e4)) % 1) };
+    return list.sort(by[KT.sort] || by.baru);
+  }
+  const hm = min => (min < 60 ? `${min} ${t('menit', 'min')}` : `${Math.floor(min / 60)} ${t('jam', 'h')} ${min % 60 ? (min % 60) + ' ' + t('menit', 'min') : ''}`.trim());
+  function ktRow(w, i) {
+    const open = ktOpen === w.slug, parts = wParts(w), done = wDone(w), ex = w.experience;
+    const sub = [esc(catOf(w.cat).label), w.form && w.form !== 'prosa' ? esc(w.form) : '', fmtLong(w.date), w.CH ? `${w.CH.length} ${t('bab', 'chapters')}` : parts > 1 ? `${parts} ${t('sisi', 'sides')}` : ''].filter(Boolean).join(' · ');
+    return `<li class="kt-row${open ? ' open' : ''}" style="--k:${i};--lc:${catOf(w.cat).ink}" data-slug="${esc(w.slug)}">
+      <button type="button" class="kt-main" data-kt-toggle="${esc(w.slug)}" aria-expanded="${open}">
+        <span class="kt-no">QM·${esc(w.no)}</span>${mdisc(w, 'kt-disc')}
+        <span class="kt-t"><b>${esc(w.title)}</b><small>${sub}</small></span>
+        <span class="kt-len">${w.minutes}<small>${t('mnt', 'min')}</small></span>
+        <span class="kt-ring" aria-label="${t(`${done} dari ${parts} selesai`, `${done} of ${parts} finished`)}">${(w.CH || w.S).slice(0, 6).map(d => sideRing(d, ringLabel(d))).join('')}</span>
+      </button>
+      <div class="kt-liner"${open ? '' : ' hidden'}>
+        <p class="kt-line">${esc(w.line)}</p>
+        ${w.excerpt && w.excerpt !== w.line ? `<p class="kt-ex">${esc(w.excerpt)}</p>` : ''}
+        <p class="kt-facts"><span><b>${num(w.words)}</b> ${t('kata', 'words')}</span><span><b>${hm(w.minutes)}</b></span>${ex ? `<span class="ix">${IX_ICON}${t('Interaktif', 'Interactive')}: ${esc(ixWhere(w))}</span>` : ''}${w.bilingual ? `<span>ID / EN</span>` : ''}</p>
+        <div class="kt-act"><button type="button" class="kt-go" data-kt-play="${esc(w.key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M8 5.5v13l10.5-6.5z"/></svg>${done ? t('Putar lagi', 'Play again') : wStarted(w) ? t('Lanjutkan', 'Continue') : t('Putar', 'Play')}</button>${ex ? `<a class="kt-ghost" href="${esc(ex)}">${IX_ICON}${t('Buka pengalamannya', 'Open the experience')}</a>` : ''}<button type="button" class="kt-ghost" data-kt-read="${esc(w.key)}">${t('Baca biasa', 'Plain reading')}</button></div>
+      </div></li>`;
+  }
+  function ktShelf(list) {
+    if (!list.length) return `<p class="kt-empty">${t('Tidak ada karya yang cocok. Coba lepas satu saringan.', 'Nothing matches. Try removing a filter.')}</p>`;
+    let html = '', mo = null, i = 0;
+    const byMonth = KT.sort === 'baru' || KT.sort === 'lama';
+    list.forEach(w => {
+      const m = w.date.slice(0, 7);
+      if (byMonth && m !== mo) { if (mo) html += '</ol></section>'; mo = m; const n = list.filter(x => x.date.startsWith(m)).length; html += `<section class="kt-month"><h3><span>${fmt(m + '-01', { month: 'long', year: 'numeric' })}</span><small>${n} ${t('karya', n > 1 ? 'works' : 'work')}</small></h3><ol class="kt-rows">`; }
+      if (!byMonth && i === 0) html += '<ol class="kt-rows">';
+      html += ktRow(w, i++);
+    });
+    return html + (byMonth ? '</ol></section>' : '</ol>');
+  }
+  function ktWall(list) {
+    if (!list.length) return ktShelf(list);
+    return `<p class="kt-hint">${t('Setiap kartu adalah kalimat pertama sebuah karya. Sentuh untuk melihat judulnya, sentuh lagi untuk memutarnya.', 'Each card is the first line of a work. Touch to see its title, touch again to play it.')}</p><div class="kt-wall">${list.map((w, i) => `<button type="button" class="kt-card" data-kt-card="${esc(w.key)}" aria-expanded="false" style="--k:${i};--lc:${catOf(w.cat).ink}"><q>${esc(w.line)}</q><span class="kt-who"><b>${esc(w.title)}</b><small>${esc(catOf(w.cat).label)} · ${w.minutes} ${t('menit', 'min')}</small></span></button>`).join('')}</div>`;
+  }
+  function ktMap(list) {
+    if (!list.length) return ktShelf(list);
+    const order = [...WORKS].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)), n = order.length;
+    const W0 = Math.max(640, n * 46 + 90), H0 = 400, P0 = { l: 56, r: 40, t: 110, b: 46 }, mx = Math.max(...WORKS.map(w => w.minutes));
+    const X = w => P0.l + (order.indexOf(w) + .5) / n * (W0 - P0.l - P0.r), Y = m => H0 - P0.b - Math.sqrt(m / mx) * (H0 - P0.t - P0.b);
+    const ticks = [1, 5, 15, 30, 60].filter(m => m <= mx * 1.05);
+    const months = []; order.forEach((w, i) => { const m = w.date.slice(0, 7); if (!months.length || months[months.length - 1].m !== m) months.push({ m, i }); });
+    return `<p class="kt-hint">${t('Dari kiri ke kanan: urutan terbit. Ke atas: makin lama dibaca. Besar lingkaran: banyaknya sisi atau bab.', 'Left to right: order of publication. Up: longer to read. Circle size: how many sides or chapters.')}</p>
+      <div class="kt-plot"><svg viewBox="0 0 ${W0} ${H0}" width="${W0}" height="${H0}" role="group" aria-label="${t('Peta karya', 'Map of works')}">
+      ${ticks.map(m => `<line class="gl" x1="${P0.l}" x2="${W0 - P0.r}" y1="${Y(m).toFixed(1)}" y2="${Y(m).toFixed(1)}"/><text class="ax" x="${P0.l - 10}" y="${Y(m).toFixed(1)}" dy=".35em" text-anchor="end">${m}′</text>`).join('')}
+      ${months.map(({ m, i }) => { const x = P0.l + i / n * (W0 - P0.l - P0.r); return `<line class="ml" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${P0.t - 10}" y2="${H0 - P0.b + 6}"/><text class="ax mo" x="${(x + 6).toFixed(1)}" y="${H0 - 18}">${fmt(m + '-01', { month: 'long' })}</text>`; }).join('')}
+      ${order.filter(w => list.includes(w)).map((w, i) => { const x = X(w), y = Y(w.minutes), r = 7 + Math.sqrt(wParts(w)) * 4, lab = w.title.length > 24 ? w.title.slice(0, 23) + '…' : w.title; return `<g class="kt-pt${wDone(w) ? ' done' : ''}" data-kt-play="${esc(w.key)}" tabindex="0" role="button" aria-label="${esc(w.title)}, ${w.minutes} ${t('menit', 'min')}" style="--lc:${catOf(w.cat).ink};--k:${i}"><line class="stem" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${(y + r).toFixed(1)}" y2="${H0 - P0.b}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}"/>${w.experience ? `<circle class="ixr" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r + 4).toFixed(1)}"/>` : ''}<text transform="translate(${(x + 4).toFixed(1)} ${(y - r - 8).toFixed(1)}) rotate(-38)">${esc(lab)}</text></g>`; }).join('')}
+      </svg></div><p class="kt-legend">${[...new Set(list.map(w => w.cat))].map(c => `<span><i style="--lc:${catOf(c).ink}"></i>${esc(catOf(c).label)}</span>`).join('')}<span><i class="ixl"></i>${t('Interaktif', 'Interactive')}</span><span><i class="dn"></i>${t('Sudah kamu selesaikan', 'Finished')}</span></p>`;
+  }
+  function renderCatalog() {
+    const host = $('#ktScroll'); if (!host) return;
+    const list = ktList(), allMin = WORKS.reduce((n, w) => n + w.minutes, 0), allWords = WORKS.reduce((n, w) => n + w.words, 0);
+    const cats = [...new Set(WORKS.map(w => w.cat))].map(c => ({ c, n: WORKS.filter(w => w.cat === c).length }));
+    const parts = DOCS.length, done = DOCS.filter(d => ST.done.includes(d.key)).length;
+    const nIx = WORKS.filter(w => w.experience).length;
+    const chip = (attr, val, label, on, extra = '') => `<button type="button" class="kt-chip" ${attr}="${val}" aria-pressed="${on}"${extra}>${label}</button>`;
+    host.innerHTML = `
+      <header class="kt-head">
+        <p class="al-kicker">${t('Etalase', 'Showcase')} · ${esc(SITE.author)}</p>
+        <h2>${t('Katalog', 'Catalogue')}</h2>
+        <p class="kt-stats"><span><b>${WORKS.length}</b> ${t('karya', 'works')}</span><span><b>${parts}</b> ${t('sisi & bab', 'sides & chapters')}</span><span><b>${num(allWords)}</b> ${t('kata', 'words')}</span><span><b>${hm(allMin)}</b> ${t('membaca', 'of reading')}</span><span><b>${nIx}</b> ${t('interaktif', 'interactive')}</span></p>
+        <div class="kt-bar" role="group" aria-label="${t('Jenis karya', 'Kinds of work')}">${cats.map(({ c, n }) => `<button type="button" data-kt-cat="${esc(c)}" aria-pressed="${KT.cat === c}" style="flex:${n};--lc:${catOf(c).ink}" title="${esc(catOf(c).label)}: ${n}"><span>${esc(catOf(c).label)} ${n}</span></button>`).join('')}</div>
+        <p class="kt-you">${done ? t(`Kamu sudah menyelesaikan <b>${done} dari ${parts}</b> sisi dan bab.`, `You have finished <b>${done} of ${parts}</b> sides and chapters.`) : t('Belum ada yang kamu selesaikan. Semuanya masih menunggu.', 'Nothing finished yet. Everything is still waiting.')}</p>
+      </header>
+      <a class="kt-world" href="dunia/salasimpul/${LANG === BASE ? '' : '?lang=' + LANG}"><span class="kt-wk">${t('Dunia', 'A world')}</span><b>Salasimpul</b><span class="kt-ws">${t('187 catatan dari 18 orang, 1983–2026, yang saling menyimpul.', '187 notes by 18 people, 1983–2026, knotted into each other.')}</span><span class="kt-wgo" aria-hidden="true">→</span></a>
+      <div class="kt-top">
+        <div class="kt-seg" role="group" aria-label="${t('Cara melihat', 'View')}">${[['rak', t('Rak', 'Shelf')], ['kalimat', t('Kalimat pertama', 'First lines')], ['peta', t('Peta karya', 'Map')]].map(([k, v]) => `<button type="button" data-kt-lens="${k}" aria-pressed="${KT.lens === k}">${v}</button>`).join('')}</div>
+        <label class="kt-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" id="ktQ" placeholder="${t('Cari judul, kalimat, jenis', 'Search titles, lines, kinds')}" value="${esc(KT.q)}" aria-label="${t('Cari karya', 'Search works')}"></label>
+      </div>
+      <div class="kt-tools">
+        <div class="kt-chips">
+          <span class="kt-lab">${t('Waktu yang kamu punya', 'Time you have')}</span>${[[5, '≤ 5′'], [15, '≤ 15′'], [30, '≤ 30′'], [-1, t('lebih lama', 'longer')]].map(([v, l]) => chip('data-kt-time', v, l, KT.time === v)).join('')}
+          ${chip('data-kt-flag', 'ix', IX_ICON + t('Interaktif', 'Interactive'), KT.ix)}${chip('data-kt-flag', 'unread', t('Belum kubaca', 'Not read yet'), KT.unread)}
+        </div>
+        <div class="kt-sort"><span class="kt-lab">${t('Urut', 'Sort')}</span>${[['baru', t('Terbaru', 'Newest')], ['lama', t('Terlama', 'Oldest')], ['pendek', t('Terpendek', 'Shortest')], ['panjang', t('Terpanjang', 'Longest')]].map(([k, v]) => chip('data-kt-sort', k, v, KT.sort === k)).join('')}<button type="button" class="kt-chip kt-shuffle" data-kt-sort="acak" aria-pressed="${KT.sort === 'acak'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.5c4 0 5 10 9 10H20M17 14l3 3-3 3M4 17h3.5c1.4 0 2.4-1.2 3.3-2.8M13.2 9.8C14.1 8.2 15 7 16.5 7H20M17 4l3 3-3 3"/></svg>${t('Kocok rak', 'Shuffle')}</button></div>
+      </div>
+      <p class="kt-count" aria-live="polite">${list.length === WORKS.length ? t(`Semua ${list.length} karya`, `All ${list.length} works`) : t(`${list.length} dari ${WORKS.length} karya`, `${list.length} of ${WORKS.length} works`)} · ${hm(list.reduce((n, w) => n + w.minutes, 0))}${list.length && list.length < WORKS.length ? ` <button type="button" class="kt-reset" data-kt-reset>${t('Lepas saringan', 'Clear filters')}</button>` : ''}</p>
+      <div class="kt-body kt-${KT.lens}" id="ktBody">${KT.lens === 'kalimat' ? ktWall(list) : KT.lens === 'peta' ? ktMap(list) : ktShelf(list)}</div>`;
+    document.title = `${t('Katalog', 'Catalogue')} · ${SITE.title}`;
+    worldReady.then(m => { const el = $('#ktScroll .kt-ws'); if (!m) { $('#ktScroll .kt-world')?.remove(); return; } if (el) el.textContent = t(`${m.entries} catatan dari ${m.people} orang, ${m.from}–${m.to}, yang saling menyimpul.`, `${m.entries} notes by ${m.people} people, ${m.from}–${m.to}, knotted into each other.`); });
+  }
+  $('#ktScroll').addEventListener('click', e => {
+    const tg = e.target.closest('[data-kt-toggle]');
+    if (tg) { const slug = tg.dataset.ktToggle, row = tg.closest('.kt-row'), open = ktOpen !== slug; $$('#ktScroll .kt-row.open').forEach(r => { r.classList.remove('open'); $('.kt-liner', r).hidden = true; $('.kt-main', r).setAttribute('aria-expanded', 'false'); }); ktOpen = open ? slug : null; if (open) { row.classList.add('open'); $('.kt-liner', row).hidden = false; tg.setAttribute('aria-expanded', 'true'); } return; }
+    const pl = e.target.closest('[data-kt-play]'); if (pl) { const d = docByKey(pl.dataset.ktPlay); if (d) openPicker(d.slug, d.side, d.ch); return; }
+    const rd = e.target.closest('[data-kt-read]'); if (rd) { const d = docByKey(rd.dataset.ktRead); if (d) { setPlainOnce(d.slug, true); location.hash = hrefOf(d).slice(1); } return; }
+    const cd = e.target.closest('[data-kt-card]');
+    if (cd) { if (cd.getAttribute('aria-expanded') === 'true') { const d = docByKey(cd.dataset.ktCard); if (d) openPicker(d.slug, d.side, d.ch); } else { $$('#ktScroll .kt-card[aria-expanded="true"]').forEach(x => x.setAttribute('aria-expanded', 'false')); cd.setAttribute('aria-expanded', 'true'); } return; }
+    const ln = e.target.closest('[data-kt-lens]'); if (ln) { KT.lens = ln.dataset.ktLens; ktSave(); renderCatalog(); return; }
+    const ct = e.target.closest('[data-kt-cat]'); if (ct) { KT.cat = KT.cat === ct.dataset.ktCat ? '' : ct.dataset.ktCat; renderCatalog(); return; }
+    const tm = e.target.closest('[data-kt-time]'); if (tm) { const v = +tm.dataset.ktTime; KT.time = KT.time === v ? 0 : v; renderCatalog(); return; }
+    const fl = e.target.closest('[data-kt-flag]'); if (fl) { KT[fl.dataset.ktFlag] = !KT[fl.dataset.ktFlag]; renderCatalog(); return; }
+    const so = e.target.closest('[data-kt-sort]'); if (so) { KT.sort = so.dataset.ktSort; if (KT.sort === 'acak') ktSeed = Math.random(); ktSave(); renderCatalog(); return; }
+    if (e.target.closest('[data-kt-reset]')) { Object.assign(KT, { cat: '', ix: false, unread: false, time: 0, q: '' }); renderCatalog(); }
+  });
+  $('#ktScroll').addEventListener('keydown', e => { const g = e.target.closest('.kt-pt'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+  let ktT = 0;
+  $('#ktScroll').addEventListener('input', e => { if (e.target.id !== 'ktQ') return; KT.q = e.target.value; clearTimeout(ktT); ktT = setTimeout(() => { const pos = e.target.selectionStart; renderCatalog(); const q = $('#ktQ'); q.focus(); try { q.setSelectionRange(pos, pos); } catch (err) { /* */ } }, 180); });
+
   avatarInto($('#pillAva'), 22);
   $('#thTitle').addEventListener('click', () => go('tentang'));
 
