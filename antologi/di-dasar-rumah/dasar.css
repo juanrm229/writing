@@ -190,20 +190,16 @@ figcaption { margin-top: 10px; color: var(--muted); font: 13px/1.45 var(--f-ui);
 .bill.vanished .bill-mom b { color: transparent; text-shadow: 0 0 0 color-mix(in srgb, var(--ink) 40%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent 72%, #000 74%); mask-image: linear-gradient(90deg, transparent 72%, #000 74%); }
 .bill figcaption { margin-top: 12px; }
 
-.house { text-align: center; }
-.house svg { width: 100%; max-width: 420px; overflow: visible; }
-.house svg * { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.house .home rect, .house .home path:last-child { fill: color-mix(in srgb, var(--ink) 88%, var(--bg)); }
-.house .door rect { fill: color-mix(in srgb, #8A5A2B 60%, var(--paper)); }
-.house .mist { stroke: var(--muted); stroke-dasharray: 2 5; }
-.house .home { transform-box: view-box; transform-origin: 160px 122px; transform: scaleY(-1) translateY(8px); transition: transform 1.4s var(--ease); }
-.house .door { transform-box: view-box; transform-origin: 160px 127px; transition: transform 1.4s var(--ease); }
-.house .trees { transform-box: view-box; transform-origin: 160px 48px; transition: transform 1.4s var(--ease); }
-.house.righted .home { transform: none; }
-.house.righted .door { transform: scaleY(-1); }
-.house.righted .trees { transform: scaleY(-1) translateY(-28px); }
-.house figcaption { display: grid; justify-items: center; gap: 10px; }
 
+.house { text-align: center; }
+.hs { display: grid; justify-items: center; gap: 10px; padding: 8px 0 14px; }
+.hs-trees, .hs-word, .hs-door { transition: transform 1.4s var(--ease); }
+.hs-trees { color: var(--muted); font: 22px/1 var(--f-text); letter-spacing: .5em; }
+.hs-word { font: 900 clamp(56px, 16vw, 96px)/.9 var(--f-dot); letter-spacing: -.02em; transform: rotate(180deg); }
+.hs-door { width: 22px; height: 32px; border-radius: 2px; background: radial-gradient(circle at 78% 52%, var(--ink) 0 1.6px, transparent 2px), color-mix(in srgb, #8A5A2B 60%, var(--paper)); }
+.house.righted .hs-word { transform: none; }
+.house.righted .hs-door, .house.righted .hs-trees { transform: rotate(180deg); }
+.house figcaption { display: grid; justify-items: center; gap: 10px; }
 .coin-ask { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 1.6em 0; }
 .coin-ask .cr { font: 22px var(--f-text); color: var(--muted); }
 .coin-done { color: var(--muted); font: italic 15px var(--f-text); }

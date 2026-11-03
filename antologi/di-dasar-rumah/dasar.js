@@ -117,13 +117,7 @@
       ${gone ? `<figcaption><button type="button" class="lt-btn ghost" data-tilt>${esc(t('Miringkan ke arah jendela', 'Tilt it toward the window'))}</button></figcaption>` : ''}
     </figure>`;
   const houseHTML = () => `<figure class="house" data-house aria-label="${esc(t('Rumah panggung yang terbalik', 'The upside-down stilt house'))}">
-      <svg viewBox="0 0 320 200" aria-hidden="true">
-        <path class="rim" d="M0 34 C 70 22, 250 22, 320 34"/>
-        <g class="trees"><path d="M28 34 V 62 M18 62 L28 40 L38 62 Z M292 34 V 62 M282 62 L292 40 L302 62 Z M62 34 V 54 M54 54 L62 38 L70 54 Z M258 34 V 54 M250 54 L258 38 L266 54 Z"/></g>
-        <g class="home"><path d="M118 60 V 100 M202 60 V 100 M140 60 V 100 M180 60 V 100"/><rect x="112" y="100" width="96" height="44"/><path d="M104 144 L160 184 L216 144 Z"/></g>
-        <g class="door"><rect x="150" y="112" width="20" height="30" rx="1.5"/><circle cx="165" cy="128" r="1.6"/></g>
-        <path class="mist" d="M0 190 C 60 176, 120 198, 180 186 S 290 178, 320 190"/>
-      </svg>
+      <div class="hs" aria-hidden="true"><span class="hs-trees">⊥ ⊥ ⊥ ⊥ ⊥ ⊥ ⊥</span><span class="hs-word">${esc(t('RUMAH', 'HOUSE'))}</span><span class="hs-door"></span></div>
       <figcaption><span data-house-cap>${esc(t('Rumahnya terbalik. Pintunya tidak.', 'The house is upside down. Its door is not.'))}</span><button type="button" class="lt-btn ghost" data-flip>${esc(t('Betulkan letaknya', 'Set it right'))}</button></figcaption>
     </figure>`;
   const coinHTML = () => `<div class="coin-ask"><span class="cr" aria-hidden="true">☾</span><button type="button" class="lt-btn ghost" data-coin>${esc(t('Selipkan satu koin ke goresan itu', 'Slip a coin into the mark'))}</button></div>`;
