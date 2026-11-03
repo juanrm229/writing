@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=3">
-<link rel="stylesheet" href="dibacakan.css?v=5">
+<link rel="stylesheet" href="dibacakan.css?v=7">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -33,7 +33,7 @@
 <header class="qm-top" id="qmTop">
   <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
   <span id="stepChip" hidden></span>
-  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openLaci" type="button" aria-label="Laci Sarah" aria-haspopup="dialog" aria-controls="laci"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M3.5 12.5h17M10 15.5h4"/></svg></button><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
 </header>
 
 <nav class="stairs" id="stairs" aria-label="Anak tangga"></nav>
@@ -71,6 +71,11 @@
   <div class="dark-act"><button type="button" class="dark-btn open" id="darkOpen">Buka mata</button></div>
 </div>
 
+<dialog class="laci" id="laci" aria-labelledby="laciTitle">
+  <header class="laci-head"><div><p class="laci-k" id="laciKick">Laci Sarah</p><h2 id="laciTitle">Surat-surat</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="laci-body" id="laciBody"></div>
+</dialog>
+
 <dialog id="settingsDialog" aria-labelledby="settingsTitle">
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body">
@@ -84,6 +89,7 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
-<script src="dibacakan.js?v=3"></script>
+<script src="surat.js?v=2"></script>
+<script src="dibacakan.js?v=5"></script>
 </body>
 </html>

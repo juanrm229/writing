@@ -58,7 +58,7 @@
 
   /* ---------- ingatan pembaca ---------- */
   const blank = () => ({ v: 1, verdict: {}, mine: 0, opened: false, heard: {} });
-  let S = store.get('ytpd', null); if (!S || S.v !== 1) S = blank();
+  let S = store.get('ytpd', null); S = S && S.v === 1 ? { ...blank(), ...S } : blank();
   const save = () => store.set('ytpd', S);
 
   /* ---------- surat-surat di teks ----------
@@ -245,13 +245,104 @@
     const steps = $$('.step'), mid = innerHeight * .4;
     let c = -1; steps.forEach((s, i) => { if (s.getBoundingClientRect().top < mid) c = i; });
     if (c !== cur) {
-      cur = c; $$('#stairs a').forEach((a, i) => { a.classList.toggle('on', i === c); a.classList.toggle('past', i < c); });
+      cur = c; if (c > (S.reached ?? -1)) { S.reached = c; save(); laciBadge(); laciNotes(); }
+      $$('#stairs a').forEach((a, i) => { a.classList.toggle('on', i === c); a.classList.toggle('past', i < c); });
       const k = Math.max(0, c); root.style.setProperty('--depth', (k / Math.max(1, CH.length - 1)).toFixed(3)); root.style.setProperty('--rain', RAIN[Math.min(k, RAIN.length - 1)]); root.style.setProperty('--lamp', LAMP[Math.min(k, LAMP.length - 1)]);
       Rain.level(c < 0 ? .5 : RAIN[Math.min(k, RAIN.length - 1)]);
       $('#stepChip').hidden = c < 0; if (c >= 0 && G) G.step(c + 1, CH.length, t('Anak tangga', 'Step'));
       $('#tray').hidden = c < 0 || S.opened && c === CH.length - 1;
     }
   }
+
+  /* ---------- laci Sarah: semua surat, dengan dua lapis: yang ditulis dan yang sampai ---------- */
+  const orangeTxt = (() => { for (const c of CH) for (const p of c.body) if (isItalicPara(p) && L.orange.test(plain(p))) return plain(p); return ''; })();
+  const angryTxt = (() => { for (const c of CH) for (const p of c.body) if (isItalicPara(p) && L.angry.test(plain(p))) return plain(p); return ''; })();
+  const fromText = { angry: [angryTxt, softText], orange: [orangeTxt, orangeTxt.replace(L.orangeCut, ' ').replace(/\s+/g, ' ').trim()], last: [LAST, null] };
+  const LETTERS = (window.YTPD_SURAT || []).map(x => {
+    if (x.teks) { const [a, b] = fromText[x.teks] || ['', null]; return a ? { ...x, tulis: a, sampai: b, dariTeks: true } : null; }
+    return { ...x, sampai: x.sampai === 'sama' ? x.tulis : x.sampai };
+  }).filter(Boolean);
+  const tokens = s => s.replace(/\s*\n\s*\n\s*/g, ' ¶ ').trim();
+  // di laci, sisa satu-dua kata yang terjepit di antara dua suntingan ikut tercoret, supaya kalimat baru Sarah terbaca utuh
+  function coalesce(ops) {
+    const out = [];
+    for (let i = 0; i < ops.length; i++) {
+      const o = ops[i];
+      if (o.eq == null) { const prev = out[out.length - 1]; if (prev && prev.eq == null) { prev.del.push(...o.del); prev.add.push(...o.add); } else out.push({ del: [...o.del], add: [...o.add] }); continue; }
+      let k = i; while (k < ops.length && ops[k].eq != null) k++;
+      const run = ops.slice(i, k).map(x => x.eq), prev = out[out.length - 1];
+      if (run.length <= 2 && prev && prev.eq == null && k < ops.length && !run.includes('¶')) { prev.del.push(...run); prev.add.push(...run); i = k - 1; continue; }
+      run.forEach(w => out.push({ eq: w })); i = k - 1;
+    }
+    return out;
+  }
+  LETTERS.forEach(x => { x.ops = x.sampai && x.sampai !== x.tulis ? coalesce(diff(tokens(x.tulis), tokens(x.sampai))) : null; x.n = x.ops ? x.ops.filter(o => o.eq == null).length : 0; x.words = x.ops ? x.ops.reduce((n, o) => n + (o.eq == null ? o.del.filter(w => w !== '¶').length : 0), 0) : 0; });
+  const unlocked = x => Math.max(0, S.reached ?? -1) >= x.bab || S.allLetters;
+  const sealedNow = x => x.teks === 'last' && !S.opened;
+  // menyusun paragraf dari token; pena sudah menyunting k suntingan pertama
+  function letterHTML(x, k) {
+    const out = []; let h = 0;
+    const push = (w, cls) => out.push([w, cls]);
+    if (!x.ops) tokens(x.tulis).split(/\s+/).forEach(w => push(w, ''));
+    else x.ops.forEach(o => { if (o.eq != null) { push(o.eq, ''); return; } const done = h++ < k; if (done) { o.del.forEach(w => w === '¶' ? push('¶', '') : push(w, 'lw-gone')); o.add.forEach(w => w === '¶' ? push('¶', '') : push(w, 'lw-pen')); } else o.del.forEach(w => push(w, w === '¶' ? '' : 'lw-thorn')); });
+    let html = '<p>', cls = null, buf = [];
+    const flush = () => { if (buf.length) { html += cls ? `<span class="${cls}">${esc(buf.join(' '))}</span> ` : esc(buf.join(' ')) + ' '; buf = []; } };
+    out.forEach(([w, c]) => { if (w === '¶') { flush(); html = html.trimEnd() + '</p><p>'; cls = null; return; } if (c !== cls) { flush(); cls = c; } buf.push(w); });
+    flush(); html = html.trimEnd() + '</p>';
+    (x.tanda || []).forEach(([frag, kind]) => { const e = esc(frag); html = html.replace(e, `<span class="tanda ${kind}" data-tanda="${kind === 'benar' ? t('benar', 'true') : t('bohong', 'a lie')}">${e}</span>`); });
+    return html.replace(/<p><\/p>/g, '');
+  }
+  const status = x => (sealedNow(x) ? ['sealed', t('tersegel', 'sealed')] : x.sampai == null ? ['never', t('tidak pernah sampai', 'never arrived')] : x.n ? ['edited', t(`${x.words} kata diubah`, `${x.words} words changed`)] : x.tanda ? ['lie', t('satu kalimat bohong', 'one sentence a lie')] : ['whole', t('sampai utuh', 'arrived whole')]);
+  let laciAt = null;
+  function laciList() {
+    const list = LETTERS.filter(unlocked), locked = LETTERS.length - list.length, total = list.reduce((n, x) => n + x.words, 0);
+    $('#laciTitle').textContent = t(`${list.length} surat`, `${list.length} letters`);
+    $('#laciBody').innerHTML = `<p class="laci-lede">${esc(t('Semua surat lewat satu pintu. Yang ditulis, dan yang sampai.', 'Every letter passed through one door. What was written, and what arrived.'))}${total ? ` <b>${esc(t(`Pena Sarah mengubah ${total} kata`, `Sarah’s pen changed ${total} words`))}</b>${esc(t(' di surat-surat ini.', ' in these letters.'))}` : ''}</p>
+      <ol class="laci-list">${list.map(x => { const [k, l] = status(x); return `<li><button type="button" class="lc ${k}" data-letter-open="${x.id}"><span class="lc-env" aria-hidden="true"></span><span class="lc-t"><small>${esc(x.kapan)}</small><b>${esc(x.dari)} → ${esc(x.untuk)}</b><span class="lc-q">${esc(sealedNow(x) ? t('Untuk Renjani', 'For Renjani') : x.tulis.split(/\n/).find(l2 => l2.trim().length > 14) || '')}</span></span><span class="lc-s">${esc(l)}</span>${x.dariTeks ? `<span class="lc-src">${esc(t('dari novel', 'from the novel'))}</span>` : ''}</button></li>`; }).join('')}</ol>
+      ${locked ? `<p class="laci-more">${esc(t(`${locked} surat lagi masih di bagian laci yang lebih dalam. Turunlah lebih jauh.`, `${locked} more letters are deeper in the drawer. Go further down.`))}</p>` : ''}
+      <p class="laci-note">${esc(t('Surat yang tidak bertanda "dari novel" ditulis untuk laci ini, mengikuti apa yang diceritakan novelnya.', 'Letters not marked "from the novel" were written for this drawer, following what the novel tells.'))}</p>`;
+    laciAt = null; S.seen = list.map(x => x.id); save(); laciBadge();
+  }
+  function laciLetter(id) {
+    const x = LETTERS.find(y => y.id === id); if (!x) return;
+    laciAt = id;
+    const [k, l] = status(x), toRenjani = x.untuk === 'Renjani', sealed = sealedNow(x);
+    $('#laciBody').innerHTML = `<button type="button" class="laci-back" data-laci-back>← ${esc(t('Semua surat', 'All letters'))}</button>
+      <article class="lt-paper ${k}" data-paper="${x.id}"><header><small>${esc(x.kapan)}</small><b>${esc(x.dari)} → ${esc(x.untuk)}</b>${x.dikte ? `<span>${esc(t('didiktekan, ditulis tangan Sarah', 'dictated, written in Sarah’s hand'))}</span>` : ''}</header>
+      ${sealed ? `<div class="lp-sealed"><span class="env-mini" aria-hidden="true"><i></i></span><p>${esc(t('Tersegel. Amplop ini baru boleh dibuka di anak tangga terakhir.', 'Sealed. This envelope may only be opened on the last step.'))}</p></div>` : `<div class="lp-body" id="lpBody">${letterHTML(x, x.n)}</div>`}</article>
+      ${!sealed && x.ops ? `<div class="pen-ctl"><span>${esc(t('Yang ditulis', 'As written'))}</span><input type="range" id="penRange" min="0" max="${x.n}" step="1" value="${x.n}" aria-label="${esc(t('Pena Sarah', 'Sarah’s pen'))}"><span>${esc(toRenjani ? t('Yang dibacakan', 'As read aloud') : t('Yang dikirim', 'As sent'))}</span></div><div class="pen-act"><button type="button" class="lt-btn ghost" data-pen-play>${esc(t('Gerakkan penanya', 'Move her pen'))}</button>${toRenjani ? `<button type="button" class="lt-btn" data-laci-listen="${x.id}">${ear()}${esc(t('Dengarkan seperti Renjani', 'Hear it as Renjani did'))}</button>` : ''}</div>` : ''}
+      ${!sealed && !x.ops && x.sampai != null && toRenjani ? `<div class="pen-act"><button type="button" class="lt-btn" data-laci-listen="${x.id}">${ear()}${esc(t('Dengarkan seperti Renjani', 'Hear it as Renjani did'))}</button></div>` : ''}
+      <p class="lp-note">${esc(x.catatan || '')}${!sealed && !x.ops && x.sampai != null && !x.tanda ? ' ' + esc(t('Tidak ada satu kata pun yang diubah.', 'Not a single word was changed.')) : ''}${!sealed && x.sampai == null ? ' ' + esc(t('Renjani tidak pernah mendengarnya.', 'Renjani never heard it.')) : ''}</p>`;
+    $('#penRange')?.addEventListener('input', e => { $('#lpBody').innerHTML = letterHTML(x, +e.target.value); });
+    $('#laci .laci-body').scrollTop = 0;
+  }
+  let penT = 0;
+  function penPlay() {
+    const r = $('#penRange'); if (!r) return; clearInterval(penT);
+    const x = LETTERS.find(y => y.id === laciAt), max = +r.max; let v = 0; r.value = 0; $('#lpBody').innerHTML = letterHTML(x, 0);
+    penT = setInterval(() => { v++; r.value = v; $('#lpBody').innerHTML = letterHTML(x, v); if (v >= max) clearInterval(penT); }, calm() ? 40 : 650);
+  }
+  function laciBadge() { const n = LETTERS.filter(x => unlocked(x) && !(S.seen || []).includes(x.id)).length, b = $('#openLaci'); if (b) { if (n) b.dataset.n = n; else delete b.dataset.n; } }
+  // di akhir setiap anak tangga: surat baru di laci
+  function laciNotes() {
+    $$('.laci-hint').forEach(x => x.remove());
+    CH.forEach((c, ci) => {
+      const fresh = LETTERS.filter(x => x.bab === ci); if (!fresh.length || (S.reached ?? -1) < ci) return;
+      const sec = $(`#bab-${ci + 1}`), anchor = sec && ($('.scale', sec) || $('.chain', sec)); if (!sec) return;
+      const el = document.createElement('aside'); el.className = 'laci-hint';
+      el.innerHTML = `<span class="lc-env" aria-hidden="true"></span><p>${esc(t(`${fresh.length} surat dari masa ini sekarang ada di laci Sarah.`, `${fresh.length} letter${fresh.length > 1 ? 's' : ''} from this time are now in Sarah’s drawer.`))}</p><button type="button" class="lt-btn ghost" data-laci-open>${esc(t('Buka laci', 'Open the drawer'))}</button>`;
+      if (anchor) anchor.before(el); else sec.append(el);
+    });
+  }
+  const laci = $('#laci');
+  $('#openLaci').onclick = () => { laciList(); laci.showModal(); };
+  laci.addEventListener('click', e => {
+    if (e.target === laci || e.target.closest('[data-close]')) { clearInterval(penT); laci.close(); return; }
+    const o = e.target.closest('[data-letter-open]'); if (o) { laciLetter(o.dataset.letterOpen); return; }
+    if (e.target.closest('[data-laci-back]')) { clearInterval(penT); laciList(); return; }
+    if (e.target.closest('[data-pen-play]')) { penPlay(); return; }
+    const ls = e.target.closest('[data-laci-listen]'); if (ls) { const x = LETTERS.find(y => y.id === ls.dataset.laciListen); laci.close(); listen(sentences(x.sampai.replace(/\n+/g, ' ')), { who: t('Suara Sarah, membacakan surat Damar', 'Sarah’s voice, reading Damar’s letter'), onEnd: () => {} }); }
+  });
 
   /* ---------- pena di dapur (bab kedua) ---------- */
   function applyThorn(b, byReader) {
@@ -268,6 +359,7 @@
     const vw = e.target.closest('[data-view] [data-v]'); if (vw) { const card = vw.closest('.letter'); card.classList.toggle('show-orig', vw.dataset.v === 'tulis'); $$('[data-view] [data-v]', card).forEach(x => x.setAttribute('aria-pressed', String(x === vw))); return; }
     const ls = e.target.closest('[data-listen]'); if (ls) { listenTo(ls.dataset.listen); return; }
     const sc = e.target.closest('.scale [data-v]'); if (sc) { const ci = +sc.closest('.scale').dataset.scale, v = +sc.dataset.v; S.verdict[ci] = S.verdict[ci] === v ? undefined : v; if (S.verdict[ci] === undefined) delete S.verdict[ci]; save(); $$('[data-v]', sc.closest('.scale')).forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.v === S.verdict[ci]))); return; }
+    if (e.target.closest('[data-laci-open]')) { $('#openLaci').click(); return; }
     const sl = e.target.closest('[data-seal]'); if (sl) { openEnvelope(sl.closest('[data-opener]')); return; }
     const pk = e.target.closest('[data-ask] [data-pick]'); if (pk) { const box = pk.closest('[data-ask]'), n = box.dataset.ask, sarah = n === '4' ? 'saring' : 'terus'; S['c' + n] = pk.dataset.pick; save(); $$('[data-pick]', box).forEach(x => x.setAttribute('aria-pressed', String(x === pk))); $('[data-after]', box).textContent = pk.dataset.pick === sarah ? t('Sarah memilih hal yang sama.', 'Sarah chose the same.') : t('Sarah tidak.', 'Sarah did not.'); return; }
     const an = e.target.closest('[data-chance] [data-ans]'); if (an) { answer(an.dataset.ans); return; }
@@ -528,6 +620,7 @@
       ] });
     G.settings();
   }
+  laciBadge(); laciNotes();
   frame();
   if (location.hash.startsWith('#bab-')) setTimeout(() => $(location.hash)?.scrollIntoView(), 60);
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
