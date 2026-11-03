@@ -1,6 +1,4 @@
 /* Salasimpul: alat-alat kota. Dimuat sebelum simpul.js dan mulai bekerja saat simpul.js siap (simpul:ready).
-   - Peta: kota dan Kampung Sela, dibangun dari tempat-tempat yang disebut di catatan (content/salasimpul/_peta.json).
-     Tempat muncul di peta setelah kamu membaca catatan yang menyebutnya.
    - Papan: sematkan fakta yang kamu tahu, sambungkan dengan benang. Dua fakta yang bersama-sama mengubah makna sebuah
      kalimat (@irony) menjadi simpul yang kamu temukan sendiri.
    - Rantai: jalur terpendek di antara dua orang, lewat simpul, malam yang sama, dan buku yang sama.
@@ -21,122 +19,7 @@
     const yearsAgo = (a, b) => Math.abs(b.at.y - a.at.y);
     const metPeople = () => A.laneOrder.filter(p => A.met(p.id));
 
-    /* ================= PETA ================= */
-    const P = W.peta;
-    let mapId = store.get('simpul:map', 'kota'), mapWho = null, mapPick = null, mapZoom = +store.get('simpul:mapzoom', 0) || 0;
-    const placeRes = new Map((P ? P.places : []).map(pl => [pl.id, pl.match.map(wordRe)]));
-    const knownPlace = pl => S().open || pl.notes.some(id => A.isRead(id));
-    function inPoly(x, y, pts) { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
-    const polyOf = d => (d.match(/-?\d+(\.\d+)?/g) || []).map(Number).reduce((a, v, i, arr) => (i % 2 ? a : a.concat([[v, arr[i + 1]]])), []);
-    function trees(park, k) {
-      const pts = polyOf(park.d), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-      let out = '', n = 0, tries = 0;
-      while (n < park.trees && tries++ < park.trees * 30) {
-        const x = x0 + 10 + seeded(`${k}x${tries}`) * (x1 - x0 - 20), y = y0 + 10 + seeded(`${k}y${tries}`) * (y1 - y0 - 20);
-        if (!inPoly(x, y, pts)) continue;
-        const r = 5 + seeded(`${k}r${tries}`) * 5;
-        out += `<circle class="tree" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}"/>`; n++;
-      }
-      return out;
-    }
-    function graves(park) {
-      const pts = polyOf(park.d), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-      let out = '';
-      for (let y = Math.min(...ys) + 16; y < Math.max(...ys) - 8; y += 16) for (let x = Math.min(...xs) + 14; x < Math.max(...xs) - 10; x += 14) if (inPoly(x, y, pts) && seeded(`${x}:${y}`) > .35) out += `<rect class="grave" x="${x - 2}" y="${y - 3}" width="4" height="6" rx="1"/>`;
-      return out;
-    }
-    function drawMap(m) {
-      const M = P.maps[m];
-      let s = `<rect class="land" width="${M.w}" height="${M.h}"/>`;
-      s += `<defs><pattern id="field" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)"><path d="M0 5H10" class="furrow"/></pattern></defs>`;
-      M.parks.forEach((pk, k) => {
-        s += `<path class="park ${pk.kind}" d="${pk.d}"/>`;
-        if (pk.kind === 'pematang') s += `<path class="field" d="${pk.d}"/>`;
-        if (pk.kind === 'makam') s += graves(pk);
-        if (pk.trees) s += trees(pk, `${m}${k}`);
-      });
-      M.water.forEach(wt => { s += wt.river ? `<path class="river${wt.ditch ? ' ditch' : ''}" d="${wt.d}" style="stroke-width:${wt.w || 14}px"/>` : `<path class="sea" d="${wt.d}"/>`; });
-      (M.blocks || []).forEach(b => { s += `<rect class="bld${b[4] ? ' blok' : ''}" x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="${b[4] ? 10 : 4}"/>`; if (b[4]) { for (let yy = b[1] + 14; yy < b[1] + b[3] - 14; yy += 22) for (let xx = b[0] + 12; xx < b[0] + b[2] - 16; xx += 24) s += `<rect class="house" x="${xx}" y="${yy}" width="16" height="13" rx="2"/>`; s += `<text class="blok-l" x="${b[0] + b[2] / 2}" y="${b[1] + b[3] / 2 + 14}">${esc(b[4])}</text>`; } });
-      M.roads.forEach((r, k) => { s += `<path id="rd-${m}-${k}" class="road-c${r.major ? ' major' : ''}${r.lane ? ' lane' : ''}" d="${r.d}"/>`; });
-      M.roads.forEach((r, k) => { s += `<path class="road${r.major ? ' major' : ''}${r.lane ? ' lane' : ''}" d="${r.d}"/>`; });
-      (M.bridges || []).forEach(([x, y]) => { s += `<rect class="bridge" x="${x - 26}" y="${y - 9}" width="52" height="18" rx="3"/>`; });
-      M.roads.forEach((r, k) => { if (r.name) s += `<text class="road-n${r.lane ? ' lane' : ''}"><textPath href="#rd-${m}-${k}" startOffset="${r.lane ? '50%' : '62%'}" text-anchor="middle">${esc(r.name)}</textPath></text>`; });
-      M.water.forEach(wt => { if (wt.name && !wt.ditch) { const pts = polyOf(wt.d), [x, y] = pts[Math.floor(pts.length / 2)] || [0, 0]; s += `<text class="water-n" x="${x + (wt.river ? 16 : 40)}" y="${y - (wt.river ? 0 : 30)}">${esc(wt.name)}</text>`; } });
-      M.exits.forEach(x => { const left = x.x < M.w / 2, bottom = x.y >= M.h - 1; const tx = bottom ? x.x : left ? x.x + 10 : x.x - 10, ty = bottom ? x.y - 14 : x.y - 14; s += `<g class="exit"${x.to ? ` data-map="${x.to}" role="button" tabindex="0"` : ''}${x.place ? ` data-place="${x.place}"` : ''}><text x="${tx}" y="${ty}" text-anchor="${bottom ? 'middle' : left ? 'start' : 'end'}">${esc(bottom ? '↓ ' + x.label : left ? '← ' + x.label : x.label + ' →')}</text></g>`; });
-      return s;
-    }
-    function pinsSVG(m) {
-      const places = P.places.filter(pl => pl.map === m && !pl.off);
-      const whoSet = mapWho ? new Set(P.places.filter(pl => pl.notes.some(id => BY.get(id).owner === mapWho)).map(pl => pl.id)) : null;
-      let s = '';
-      if (mapWho) {
-        // jejak seseorang: tempat-tempat yang ia sebut, menurut urutan pertama kali ia menyebutnya
-        const firstAt = pl => Math.min(...pl.notes.filter(id => BY.get(id).owner === mapWho).map(id => E.indexOf(BY.get(id))));
-        const route = places.filter(pl => whoSet.has(pl.id) && knownPlace(pl)).sort((a, b) => firstAt(a) - firstAt(b));
-        if (route.length > 1) s += `<path class="trail" style="stroke:${A.inkOf(mapWho)}" d="${route.map((pl, i) => `${i ? 'L' : 'M'}${pl.x} ${pl.y}`).join('')}"/>`;
-      }
-      places.forEach(pl => {
-        const k = P.kinds[pl.kind], known = knownPlace(pl), dim = whoSet && !whoSet.has(pl.id);
-        if (!known) { s += `<g class="pin unk${dim ? ' dim' : ''}" transform="translate(${pl.x} ${pl.y})" aria-hidden="true"><circle r="5"/></g>`; return; }
-        s += `<g class="pin${dim ? ' dim' : ''}${mapPick === pl.id ? ' on' : ''}" data-place="${pl.id}" transform="translate(${pl.x} ${pl.y})" role="button" tabindex="0" aria-label="${esc(pl.name)}" style="--k:${k.color}"><path class="drop" d="M0 0C-5 -9 -13 -14 -13 -23A13 13 0 1 1 13 -23C13 -14 5 -9 0 0Z"/><circle class="eye" cy="-23" r="5"/><text class="pin-l" y="18">${esc(pl.name)}</text></g>`;
-      });
-      return s;
-    }
-    function mapCard(id) {
-      const pl = P.places.find(x => x.id === id); if (!pl) return '';
-      const k = P.kinds[pl.kind], res = placeRes.get(pl.id), owners = [...new Set(pl.notes.map(n => BY.get(n).owner))];
-      const rows = pl.notes.map(n => BY.get(n)).map(e => {
-        const st = A.state(e), read = A.isRead(e.id), q = read ? snippet(e, res) : '';
-        return `<a class="mc-row ${read ? 'read' : st.open ? 'open' : 'shut'}" href="#c-${e.id}" style="--fk:${A.inkOf(e.owner)}"><small>${esc(st.open ? NAME[e.owner] : t('Seseorang', 'Someone'))} · ${esc(A.fmtDate(e.at, true))}</small>${q ? `<q>${esc(q)}</q>` : `<span>${esc(st.open ? t('Belum kamu baca', 'Not read yet') : t('Belum kamu kenal', 'Not known yet'))}</span>`}</a>`;
-      }).join('');
-      return `<div class="mc" style="--k:${k.color}"><button type="button" class="close" data-mc-close aria-label="${esc(t('Tutup', 'Close'))}">×</button><p class="mc-k"><i></i>${esc(k.name)}</p><h3>${esc(pl.name)}</h3>${pl.sub ? `<p class="mc-sub">${esc(pl.sub)}</p>` : ''}
-        <p class="mc-n">${esc(t(`Disebut di ${pl.notes.length} catatan, oleh ${owners.filter(o => A.met(o)).map(o => NAME[o]).join(', ') || 'orang yang belum kamu kenal'}${owners.some(o => !A.met(o)) && owners.some(o => A.met(o)) ? ' dan orang lain' : ''}.`, `Mentioned in ${pl.notes.length} notes.`))}</p><div class="mc-rows">${rows}</div></div>`;
-    }
-    function mapPane() {
-      const pane = $('#paneMap'); if (!pane) return;
-      if (!P) { pane.innerHTML = ''; $('#tabMap')?.remove(); return; }
-      if (!P.maps[mapId]) mapId = Object.keys(P.maps)[0];
-      const M = P.maps[mapId], all = P.places.filter(pl => !pl.off), knownN = all.filter(knownPlace).length;
-      const ppl = metPeople();
-      pane.innerHTML = `<div class="map-bar"><div class="seg" role="group" aria-label="${esc(t('Peta', 'Map'))}">${Object.entries(P.maps).map(([k, v]) => `<button type="button" data-map="${k}" aria-pressed="${k === mapId}">${esc(v.name)}</button>`).join('')}</div>
-        <span class="map-n"><b>${knownN}</b>/${all.length} ${esc(t('tempat kamu kenal', 'places you know'))}</span>
-        <label class="map-who"><span>${esc(t('Jejak', 'Trail'))}</span><select id="mapWho"><option value="">${esc(t('semua orang', 'everyone'))}</option>${ppl.map(p => `<option value="${p.id}"${mapWho === p.id ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
-        <span class="zoom" id="mapZoom"><button type="button" data-mz="-1" aria-label="${esc(t('Perkecil peta', 'Zoom out'))}">−</button><button type="button" data-mz="1" aria-label="${esc(t('Perbesar peta', 'Zoom in'))}">+</button></span></div>
-        <div class="map-wrap" id="mapWrap"><div class="map-scroll" id="mapScroll"><svg class="map" id="mapSvg" viewBox="0 0 ${M.w} ${M.h}" role="group" aria-label="${esc(t(`Peta ${M.name}`, `Map of ${M.name}`))}">${drawMap(mapId)}<g id="mapPins">${pinsSVG(mapId)}</g></svg></div>
-        <div class="map-card" id="mapCard"${mapPick ? '' : ' hidden'}>${mapPick ? mapCard(mapPick) : ''}</div></div>
-        <div class="map-legend">${Object.entries(P.kinds).map(([k, v]) => `<span><i style="--k:${v.color}"></i>${esc(v.name)}</span>`).join('')}<span><i class="lg-park"></i>${esc(t('Pohon & rumput', 'Trees & grass'))}</span><span><i class="lg-water"></i>${esc(t('Kali, sungai, laut', 'River & sea'))}</span><span><i class="lg-major"></i>${esc(t('Jalan besar', 'Main road'))}</span><span><i class="lg-unk"></i>${esc(t('Belum kamu kenal', 'Not known yet'))}</span></div>
-        <p class="map-off">${P.places.filter(pl => pl.map === mapId && pl.off && knownPlace(pl)).map(pl => `<button type="button" class="ghost sm" data-place="${pl.id}">${esc(pl.name)}${pl.sub ? ' · ' + esc(pl.sub) : ''}</button>`).join('')}</p>`;
-      sizeMap();
-    }
-    function sizeMap() {
-      const sc = $('#mapScroll'), svg = $('#mapSvg'); if (!sc || !svg) return;
-      const base = Math.max(sc.clientWidth, 1), z = Math.max(0, Math.min(2, mapZoom));
-      const w = base < 600 ? 760 * [1.15, 1.6, 2.3][z] : base * [1, 1.45, 2.1][z];
-      svg.style.width = Math.round(Math.max(base, w)) + 'px';
-    }
-    addEventListener('resize', () => requestAnimationFrame(sizeMap));
-    // menyeret peta dengan tetikus
-    let drag = null;
-    document.addEventListener('pointerdown', e => { const sc = e.target.closest('#mapScroll'); if (!sc || e.pointerType !== 'mouse' || e.target.closest('.pin, .exit')) return; drag = { sc, x: e.clientX, y: e.clientY, l: sc.scrollLeft, t: sc.scrollTop, moved: false }; sc.classList.add('grab'); });
-    document.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; drag.sc.scrollLeft = drag.l - dx; drag.sc.scrollTop = drag.t - dy; });
-    document.addEventListener('pointerup', () => { if (drag) drag.sc.classList.remove('grab'); drag = null; });
-    function pickPlace(id) {
-      mapPick = id;
-      $$('#mapPins .pin').forEach(g => g.classList.toggle('on', g.dataset.place === id));
-      const card = $('#mapCard'); card.innerHTML = mapCard(id); card.hidden = false;
-      const pl = P.places.find(x => x.id === id), sc = $('#mapScroll'), svg = $('#mapSvg');
-      if (pl && !pl.off && sc && svg) { const k = svg.clientWidth / P.maps[pl.map].w; sc.scrollTo({ left: pl.x * k - sc.clientWidth / 2, top: pl.y * k - sc.clientHeight / 2, behavior: A.reduced() ? 'auto' : 'smooth' }); }
-    }
-    document.addEventListener('click', e => {
-      const pane = e.target.closest('#paneMap'); if (!pane) return;
-      const mb = e.target.closest('[data-map]'); if (mb) { mapId = mb.dataset.map; mapPick = null; store.set('simpul:map', mapId); mapPane(); return; }
-      const pin = e.target.closest('[data-place]'); if (pin) { pickPlace(pin.dataset.place); return; }
-      if (e.target.closest('[data-mc-close]')) { mapPick = null; $('#mapCard').hidden = true; $$('#mapPins .pin.on').forEach(g => g.classList.remove('on')); return; }
-      const z = e.target.closest('[data-mz]'); if (z) { mapZoom = Math.max(0, Math.min(2, mapZoom + +z.dataset.mz)); store.set('simpul:mapzoom', mapZoom); sizeMap(); }
-    });
-    document.addEventListener('keydown', e => { const g = e.target.closest && e.target.closest('#mapSvg [data-place], #mapSvg [data-map]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
-    document.addEventListener('change', e => { if (e.target.id === 'mapWho') { mapWho = e.target.value || null; $('#mapPins').innerHTML = pinsSVG(mapId); } });
+    /* Peta ada di peta.js. */
 
     /* ================= PAPAN SIMPUL ================= */
     // kelompok ironi: fakta-fakta yang bersama-sama mengubah makna sebuah kalimat
@@ -334,8 +217,8 @@
       });
     }
 
-    function paintAll() { mapPane(); boardPane(); chainPane(); thingsPane(); calendar(); town(); }
+    function paintAll() { boardPane(); chainPane(); thingsPane(); calendar(); town(); }
     document.addEventListener('simpul:city', paintAll);
-    document.addEventListener('simpul:tab', e => { if (e.detail === 'peta') requestAnimationFrame(sizeMap); if (e.detail === 'papan') requestAnimationFrame(drawTies); });
+    document.addEventListener('simpul:tab', e => { if (e.detail === 'papan') requestAnimationFrame(drawTies); });
   }, { once: true });
 })();

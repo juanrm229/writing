@@ -479,27 +479,101 @@ class SalasimpulSmoke(unittest.TestCase):
         self.assertTrue(all(v.get('room') in rooms for v in self.W['persona'].values()))
 
     # ---------- stage five: the tools of the town ----------
+    def open_map(self, **state):
+        self.go()
+        self.seed_state(**state)
+        self.page.evaluate("location.hash = ''"); self.page.evaluate("location.hash = 'peta'")
+        self.page.wait_for_selector('#mapSvg[viewBox]')
+
+    def click_svg(self, selector):
+        self.page.evaluate(f"document.querySelector({json.dumps(selector)}).dispatchEvent(new MouseEvent('click', {{ bubbles: true }}))")
+
     def test_the_map_fills_in_as_you_read(self):
         P = self.W['peta']
         self.assertTrue(all(pl['notes'] for pl in P['places']))
-        self.go()
-        self.seed_state(open=False, read={})
-        self.page.evaluate("location.hash = 'peta'")
-        self.page.wait_for_selector('#mapSvg')
+        self.assertTrue(all(0 <= pl['x'] <= P['world']['w'] and 0 <= pl['y'] <= P['world']['h'] for pl in P['places']))
+        self.open_map(open=False, read={})
         self.assertEqual(self.page.locator('#mapPins .pin[data-place]').count(), 0)
         # reading the cemetery keeper's first note puts the cemetery on the map
-        self.seed_state(open=False, read={'el1996': 1})
-        self.page.evaluate("location.hash = ''"); self.page.evaluate("location.hash = 'peta'")
+        self.open_map(open=False, read={'el1996': 1})
         self.page.wait_for_selector('#mapPins .pin[data-place="pekuburan"]')
-        self.page.locator('#mapPins .pin[data-place="pekuburan"]').click()
+        self.click_svg('#mapPins .pin[data-place="pekuburan"]')
         card = self.page.locator('#mapCard')
         self.assertTrue(card.is_visible())
         self.assertIn('Pekuburan tua', card.text_content())
-        self.assertEqual(card.locator('.mc-row').count(), len(next(pl for pl in P['places'] if pl['id'] == 'pekuburan')['notes']))
-        # the other map, 85 km away
-        self.page.locator('#paneMap [data-map="sela"]').first.click()
-        self.assertIn('Kampung Sela', self.page.locator('#mapSvg').get_attribute('aria-label'))
+        self.assertIn('Jam ramai', card.text_content())
+        self.assertGreaterEqual(card.locator('.rv').count(), len(next(pl for pl in P['places'] if pl['id'] == 'pekuburan')['notes']))
+        # one world: the town, the 85 km road, Kampung Sela
+        self.assertEqual(self.page.locator('#paneMap [data-region]').count(), len(P['regions']))
+        self.page.locator('#paneMap [data-region="sela"]').click()
+        self.page.wait_for_timeout(50)
+        vb = [float(x) for x in self.page.locator('#mapSvg').get_attribute('viewBox').split()]
+        self.assertGreater(vb[0] + vb[2] / 2, 2500)
+        self.assertGreater(self.page.locator('#mapSvg .road-n').count(), 20)
         self.assertGreater(self.page.locator('.map-legend span').count(), len(P['kinds']))
+
+    def test_map_zoom_layers_and_time(self):
+        self.open_map(open=True)
+        svg = self.page.locator('#mapSvg')
+        self.page.locator('#paneMap [data-region="semua"]').click()
+        self.assertIn('z0', svg.get_attribute('class'))
+        for _ in range(5): self.page.locator('#paneMap [data-mz="1"]').click()
+        self.assertIn('z2', svg.get_attribute('class'))
+        # layers
+        self.page.locator('#wmLayersB').click()
+        self.page.locator('[data-layer="salah"]').check()
+        self.assertGreater(self.page.locator('#wmHeat .heat').count(), 0)
+        self.page.locator('[data-layer="nama"]').uncheck()
+        self.assertIn('no-names', svg.get_attribute('class'))
+        self.assertGreater(self.page.locator('#wmThreads .arc').count(), 0)
+        # the time machine: the clinic opens in 2005 and closes in 2019
+        set_year = lambda y: self.page.evaluate(f"(() => {{ const r = document.getElementById('wmYear'); r.value = {y}; r.dispatchEvent(new Event('input', {{ bubbles: true }})); }})()")
+        set_year(2000)
+        self.assertEqual(self.page.locator('#mapPins .pin[data-place="klinik"]').count(), 0)
+        set_year(2010)
+        self.assertEqual(self.page.locator('#mapPins .pin[data-place="klinik"]').count(), 1)
+        set_year(2022)
+        self.assertEqual(self.page.locator('#mapPins .pin[data-place="klinik"]').count(), 0)
+        self.assertEqual(self.page.locator('#wmBig').text_content(), '2022')
+        # 43 years in a minute
+        self.page.locator('#wmPlay').click()
+        self.page.wait_for_selector('#wmCap .cap-y')
+        self.page.wait_for_function("document.querySelectorAll('#fxArcs .fx-arc').length > 0 || document.querySelector('#wmCap .cap-n').textContent.split('/')[0] > 3")
+        self.page.locator('#wmPlay').click()
+        self.assertEqual(self.page.locator('#wmPlay').get_attribute('aria-pressed'), 'false')
+
+    def test_journeys_reviews_directions_and_streets(self):
+        self.open_map(open=False, read={'s2023d': 1, 'el1996': 2, 'ls2016': 3, 'n2016': 4})
+        js = self.page.locator('#wmJourneys [data-journey]')
+        self.assertEqual(js.count(), 2)
+        self.page.locator('[data-journey="gendong_sukrim"]').click()
+        cap = self.page.locator('#wmCap')
+        self.assertIn('Tiga kilometer dalam gelap', cap.text_content())
+        self.assertIn('puskesmas', cap.text_content())
+        self.assertIn('night', self.page.locator('#mapSvg').get_attribute('class'))
+        self.assertEqual(self.page.locator('#jPath').count(), 1)
+        # directions from the cemetery to the flower shop
+        self.page.locator('#paneMap [data-region="kota"]').click()
+        self.click_svg('#mapPins .pin[data-place="pekuburan"]')
+        self.page.locator('#mapCard select[data-arah]').select_option('toko_bunga')
+        self.assertRegex(self.page.locator('#mcRoute').text_content(), r'km|m ·')
+        self.assertEqual(self.page.locator('#wmRoute').count(), 1)
+        # a street card
+        self.click_svg('#mapSvg .road-hit[data-road="0"]')
+        self.assertIn('Jalan Kartini', self.page.locator('#mapCard').text_content())
+
+    def test_map_editing_mode(self):
+        self.page.goto(self.url + '?sunting=1#peta', wait_until='domcontentloaded')
+        self.page.wait_for_selector('#wmEdit')
+        # everything is shown for the author
+        self.assertEqual(self.page.locator('#mapPins .pin[data-place]').count(), len(self.W['peta']['places']))
+        box = self.page.locator('#mapSvg').bounding_box()
+        self.page.mouse.click(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+        self.assertRegex(self.page.locator('#edXY').text_content(), r'x \d+ · y \d+')
+        with self.page.expect_download() as dl:
+            self.page.locator('#edSave').click()
+        data = json.loads(Path(dl.value.path()).read_text())
+        self.assertEqual(len(data['places']), len(self.W['peta']['places']))
 
     def test_tying_two_facts_finds_a_knot(self):
         groups = {}

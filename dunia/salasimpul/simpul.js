@@ -589,7 +589,7 @@
       $('#forkHost').outerHTML = forkHTML(e, prev?.id);
     }
     $('#forkHost')?.remove();
-    $('#nFoot').innerHTML = `<div class="f-row">${prevO ? `<a class="ghost sm" href="#c-${prevO.id}" data-how="back">← ${esc(t(`Sebelumnya di buku ${NAME[e.owner]}`, `Earlier in ${NAME[e.owner]}’s notebook`))}</a>` : ''}${$('#nMem') ? `<button type="button" class="ghost sm" id="memToggle" aria-pressed="false" aria-controls="nMem">${esc(t('Ingat dari tahun lain', 'Remember from another year'))}</button>` : ''}${st.open ? `<button type="button" class="ghost sm" id="toBook" aria-pressed="${S.book.includes(e.id)}">${esc(S.book.includes(e.id) ? t('Ada di suntinganmu', 'In your edit') : t('＋ Suntinganmu', '＋ Your edit'))}</button>` : ''}${st.open ? `<button type="button" class="ghost sm" id="eyes" aria-pressed="false">${esc(t(`Baca dengan mata ${NAME[e.owner]}`, `Read with ${NAME[e.owner]}’s eyes`))}</button>` : ''}<a class="ghost sm" href="#peta">${esc(t('Peta kota', 'Town map'))}</a></div><p class="eyes-note" id="eyesNote" hidden></p>`;
+    $('#nFoot').innerHTML = `<div class="f-row">${prevO ? `<a class="ghost sm" href="#c-${prevO.id}" data-how="back">← ${esc(t(`Sebelumnya di buku ${NAME[e.owner]}`, `Earlier in ${NAME[e.owner]}’s notebook`))}</a>` : ''}${$('#nMem') ? `<button type="button" class="ghost sm" id="memToggle" aria-pressed="false" aria-controls="nMem">${esc(t('Ingat dari tahun lain', 'Remember from another year'))}</button>` : ''}${st.open ? `<button type="button" class="ghost sm" id="toBook" aria-pressed="${S.book.includes(e.id)}">${esc(S.book.includes(e.id) ? t('Ada di suntinganmu', 'In your edit') : t('＋ Suntinganmu', '＋ Your edit'))}</button>` : ''}${st.open ? `<button type="button" class="ghost sm" id="eyes" aria-pressed="false">${esc(t(`Baca dengan mata ${NAME[e.owner]}`, `Read with ${NAME[e.owner]}’s eyes`))}</button>` : ''}<a class="ghost sm" href="#peta-${e.id}">${esc(t('Di peta', 'On the map'))}</a></div><p class="eyes-note" id="eyesNote" hidden></p>`;
     $('#eyes')?.addEventListener('click', () => {
       const on = !note.classList.contains('eyes'); note.classList.toggle('eyes', on); $('#eyes').setAttribute('aria-pressed', String(on));
       const at = E.indexOf(e), knewIt = p => (PROPS[p] || []).some(id => { const x = BY.get(id); return x.owner === e.owner && E.indexOf(x) <= at; });
@@ -804,10 +804,11 @@
     if (h.startsWith('suntingan=')) { readBook(h.slice(10).split(',').filter(id => BY.has(id)), true); return; }
     $('#duo')?.remove(); $('#duoTh')?.remove(); document.body.classList.remove('duo-on');
     const TABS = $$('#tabs [data-tab]').map(b => b.dataset.tab);
-    if (h === 'kota' || h.startsWith('orang-') || TABS.includes(h)) {
+    if (h === 'kota' || h.startsWith('orang-') || h.startsWith('peta-') || TABS.includes(h)) {
       paintCity(); show('city'); sound(null);
-      const kept = store.get('simpul:tab', 'partitur'), tab = h.startsWith('orang-') ? 'orang' : TABS.includes(h) ? h : TABS.includes(kept) ? kept : 'partitur';
+      const kept = store.get('simpul:tab', 'partitur'), tab = h.startsWith('orang-') ? 'orang' : h.startsWith('peta-') ? 'peta' : TABS.includes(h) ? h : TABS.includes(kept) ? kept : 'partitur';
       $(`#tabs [data-tab="${tab}"]`).click();
+      if (h.startsWith('peta-')) document.dispatchEvent(new CustomEvent('simpul:mapfocus', { detail: h.slice(5) }));
       if (h.startsWith('orang-')) { const d = $(`.person[data-o="${h.slice(6)}"]`); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }
       return;
     }
