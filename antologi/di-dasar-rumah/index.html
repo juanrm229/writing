@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id" class="qm-theme-auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Di Dasar Rumah · Quiet Margins</title>
+<meta name="description" content="Seorang gadis dengan tangan yang selalu dingin menerima pekerjaan yang hangat: menjaga sebuah nyala kecil di dasar rumah. Dibaca turun, musim dingin demi musim dingin.">
+<meta name="theme-color" content="#F2F2F4">
+<meta property="og:title" content="Di Dasar Rumah">
+<meta property="og:description" content="Tugasmu hanya menjaganya. Duduk di sampingnya, menyayanginya, dan tidak membiarkannya tidur.">
+<meta property="og:type" content="article">
+<link rel="canonical" href="https://quietmargins.site/antologi/di-dasar-rumah/">
+<meta property="og:site_name" content="Quiet Margins">
+<meta property="og:url" content="https://quietmargins.site/antologi/di-dasar-rumah/">
+<meta property="og:image" content="https://quietmargins.site/assets/og/di-dasar-rumah.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Di Dasar Rumah">
+<meta name="twitter:description" content="Seorang gadis dengan tangan yang selalu dingin menerima pekerjaan yang hangat: menjaga sebuah nyala kecil di dasar rumah.">
+<meta name="twitter:image" content="https://quietmargins.site/assets/og/di-dasar-rumah.png">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=3">
+<link rel="stylesheet" href="dasar.css?v=1">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+</head>
+<body>
+<div class="air" aria-hidden="true"><i class="frost"></i><i class="warmth"></i><i class="dark-in"></i></div>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openMem" type="button" aria-label="Yang masih kuingat" aria-haspopup="dialog" aria-controls="mem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.3 5 5.4.5-4.1 3.6 1.2 5.3L12 15.3 7.2 18l1.2-5.3-4.1-3.6 5.4-.5z"/></svg></button><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
+
+<nav class="depth" id="depth" aria-label="Kedalaman"></nav>
+
+<main class="read" id="read">
+  <header class="cover" id="cover">
+    <p class="kick" id="kick">Koda · Cerpen</p>
+    <h1 id="title">Di Dasar Rumah</h1>
+    <p class="by">Juan</p>
+    <p class="lede" id="lede"></p>
+    <ul class="legend" id="legend" aria-label="Cara membaca">
+      <li><span class="lg lg-topi" aria-hidden="true"></span><span id="lgTopi">Suara perempuan bertopi</span></li>
+      <li><span class="lg lg-head" aria-hidden="true"></span><span id="lgHead">Suara di dalam kepala</span></li>
+      <li><span class="lg lg-hand" aria-hidden="true"></span><span id="lgHand">Tulisan tangannya</span></li>
+      <li><span class="lg lg-flame" aria-hidden="true"></span><span id="lgFlame">Nyala kecil</span></li>
+    </ul>
+    <form class="sign" id="sign" autocomplete="off">
+      <label for="signName" id="signLabel">Tulis namamu di halaman kosong</label>
+      <span class="sign-row"><input id="signName" maxlength="24" spellcheck="false" placeholder="nama"><small id="signNote">Hanya tersimpan di perangkatmu.</small></span>
+    </form>
+    <div class="cover-act" id="coverAct"></div>
+    <p class="lost" id="lost" hidden></p>
+  </header>
+  <div class="story" id="story"><p class="loading">…</p></div>
+  <footer class="end" id="end" hidden></footer>
+</main>
+
+<button class="flame" id="flame" type="button" hidden aria-describedby="flameTip"><span class="fl-glow" aria-hidden="true"></span><span class="fl-body" aria-hidden="true"><i class="fl-core"></i><i class="fl-palms"></i></span><span class="sr-only" id="flameLabel">Temani nyala itu</span></button>
+<p class="flame-tip" id="flameTip" role="status" hidden></p>
+<div class="counter" id="counter" hidden aria-hidden="true"><b id="counterN">101</b><span id="counterMark"></span></div>
+<div class="coinfall" id="coinfall" hidden aria-hidden="true"><i></i></div>
+<div class="palm" id="palm" hidden aria-hidden="true"><svg viewBox="0 0 120 160"><path d="M38 150c-10-18-24-40-28-58-3-12 9-15 15-6l10 16V30c0-9 12-9 12 0v42-56c0-9 12-9 12 0v56-50c0-9 12-9 12 0v54-38c0-9 12-9 12 0v66c0 26-10 40-22 46z"/></svg></div>
+
+<dialog class="mem" id="mem" aria-labelledby="memTitle">
+  <header class="mem-head"><div><p class="mem-k" id="memKick">Yang masih kuingat</p><h2 id="memTitle">Bintang</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="mem-body" id="memBody"></div>
+</dialog>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="soundLabel">Suara (angin, denyut)</span><button class="setting-button" id="sound" type="button" aria-pressed="false">Mati</button></div>
+    <div class="setting-row"><span id="motionLabel">Gerak dan kejutan</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+    <div class="setting-row"><span id="resetLabel">Jejakmu di cerita ini</span><button class="setting-button" id="reset" type="button">Lupakan</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../panduan.js?v=4"></script>
+<script src="dasar.js?v=1"></script>
+</body>
+</html>

@@ -16,7 +16,7 @@ from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SLUG = 'di-dasar-rumah'
+SLUG = 'di-waktu-yang-tepat'
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):

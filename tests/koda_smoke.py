@@ -1,5 +1,5 @@
 """Browser checks for the Koda anthology: python3 tests/koda_smoke.py.
-Two short stories read in the plain reader, with the anthology's own cover.
+Two short stories with the anthology's own cover; both can be read in the plain reader.
 Uses the cloud environment's Python Playwright and system Chromium. No external assets are needed.
 """
 import functools
@@ -63,22 +63,28 @@ class KodaSmoke(unittest.TestCase):
             w = self.works[slug]
             self.assertEqual(w['cat'], 'cerpen')
             self.assertFalse(w.get('draft'))
-            self.assertNotIn('experience', w)
             self.assertTrue((ROOT / 'baca' / slug / 'index.html').exists())
             self.assertTrue((ROOT / 'assets/og' / f'{slug}.png').exists())
         self.assertEqual(self.works[SLUGS[0]]['en']['title'], 'A Cold Head, A Warm City')
+        self.assertNotIn('experience', self.works[SLUGS[0]])
+        self.assertEqual(self.works[SLUGS[1]]['experience'], 'antologi/di-dasar-rumah/index.html')
         # the two stories keep each other's things
         self.assertIn('nama sungai yang diberikan seorang anak agar nyalanya tidak padam', ' '.join(self.works[SLUGS[0]]['body']))
         self.assertIn('laut yang disembunyikan di bawah kota', ' '.join(self.works[SLUGS[1]]['body']))
 
     def test_both_read_as_plain_text(self):
+        # Di Dasar Rumah has its own experience; in plain mode both are read as text
+        self.context.add_init_script("localStorage.setItem('jm:mode', JSON.stringify('biasa'))")
         for slug, first, last in [(SLUGS[0], 'Orang memanggilnya Sang Mahkota.', 'Botak.'), (SLUGS[1], 'Rumah kembali besar.', 'Dengar bagaimana ia berdetak.')]:
             self.page.goto(self.root + '#baca-' + slug, wait_until='domcontentloaded')
             self.page.wait_for_function("document.getElementById('rdBody')?.innerText.length > 2000")
             text = self.page.locator('#rdBody').inner_text()
             self.assertIn(first, text)
             self.assertIn(last, text)
-            self.assertTrue(self.page.locator('#rdIx').is_hidden())
+            if slug == SLUGS[0]:
+                self.assertTrue(self.page.locator('#rdIx').is_hidden())
+            else:
+                self.assertIn('/antologi/di-dasar-rumah/', self.page.locator('#rdIx').get_attribute('href'))
 
     def test_the_cover_is_not_the_blue_dot(self):
         self.page.goto(self.root + '#album-koda', wait_until='domcontentloaded')

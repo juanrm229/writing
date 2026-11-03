@@ -62,7 +62,7 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
     - urutan *Terbaru*, *Terlama*, *Terpendek*, *Terpanjang*, atau **Kocok rak**;
     - *Lepas saringan* mengembalikan semuanya.
 - **Antologi Titik Biru.** Album di `albums.json` dengan `"kind": "antologi"` tampil di rak Album sebagai antologi. Sampul Titik Biru adalah ikon aplikasi tanpa nama (persegi putih dengan satu titik biru); antologi lain memakai sampul sendiri (lihat `paintCover` di `assets/app.js`) atau mosaik seni benang. Hitungannya per cerita, dan nama antologinya muncul di atas judul cerita di halaman pengalaman. Tambah cerita berikutnya lewat panel admin seperti menyusun album biasa.
-- **Antologi Koda.** Album `koda` berisi dua cerpen yang saling menyimpan benda satu sama lain: *Kepala yang Dingin, Kota yang Hangat* (*A Cold Head, A Warm City*) lalu *Di Dasar Rumah* (revisi). Sampulnya gelap, dengan satu nyala kecil di dasar dan sehelai rambut di atasnya. Untuk sekarang keduanya dibaca di mode baca biasa, tanpa pengalaman interaktif. *Kepala yang Dingin* belum punya terjemahan; terjemahan Inggris *Di Dasar Rumah* masih mengikuti versi sebelum revisi.
+- **Antologi Koda.** Album `koda` berisi dua cerpen yang saling menyimpan benda satu sama lain: *Kepala yang Dingin, Kota yang Hangat* (*A Cold Head, A Warm City*) lalu *Di Dasar Rumah* (revisi). Sampulnya gelap, dengan satu nyala kecil di dasar dan sehelai rambut di atasnya. *Di Dasar Rumah* punya pengalaman interaktif (lihat di bawah); *Kepala yang Dingin* dibaca di mode baca biasa dan belum punya terjemahan; terjemahan Inggris *Di Dasar Rumah* masih mengikuti versi sebelum revisi.
 - **Anda di Sini: mode peta.** Karya yang punya `experience` di `works.json` dibuka di halamannya sendiri. *Anda di Sini*, pembuka antologi, tinggal di `antologi/anda-di-sini/`: catatan-catatan si analis peta dibaca utuh dan berurutan, sementara peta Saujana di belakangnya mengikuti posisi baca. Setiap kalimat penting punya "ketukan" di `peta.js` (daftar `BEATS`) yang mengubah peta: lingkaran 1,4 km yang petaknya menjadi abu-abu satu per satu, rute tanpa nama ke jalan buntu, gang yang 62 meter lebih panjang dari petanya, garis kapur yang dilewati, peta yang diperkecil sampai Bumi menjadi titik dan lingkaran akurasi lenyap, layar yang menghitam, dan stiker merah di terminal. Sesudah prolog, aplikasinya bertanya *Dari mana?*; jawaban pembaca hanya disimpan di perangkatnya dan muncul lagi di kalimat terakhir. Bilah status menunjukkan jam catatan dan baterai yang pelan-pelan habis. Bisa dibacakan, ukuran huruf mengikuti pengaturan baca, dan semua gerak berhenti kalau pembaca memilih mengurangi animasi. Catatan-catatannya tampil seperti aplikasi Catatan di ponselnya: bilah status (jam, sinyal, baterai), bilah aplikasi dengan judul catatan yang sedang dibuka, daftar folder di awal setiap bagian (ketuk untuk melompat), jumlah kata di kaki setiap catatan, dan kursor yang masih berkedip di dua catatan yang ditulis di dermaga. Notifikasi muncul saat kalimatnya terbaca: izin WhatsApp, lokasi yang dipakai aplikasi tanpa nama, panggilan dan pesan Wulan saat ia terlambat bangun, pengingat 9 Agustus, sinyal GPS lemah, baterai menipis, alarm yang terlewat, aplikasi yang dihapus, dan di akhir satu notifikasi untuk pembaca sendiri: *Dari mana?* (daftar `NOTIFS` di `peta.js`). Setiap jeda bagian punya satu alat kecil (`IL` di `peta.js`, dipilih dari judul bagiannya): *Hipotesis*, lingkaran 68% yang petaknya bisa diperiksa satu per satu; *Variabel*, pertanyaan "semalam kamu tidur berapa lama?" yang jawabannya masuk sebagai satu baris di tabel Catatan 6; *Tiba*, titik biru yang tidak mau ditarik keluar dari garis kapur sampai Catatan 7 menuntunnya; *Kabar*, layar utama ponselnya dengan ikon tanpa nama di halaman ketiga yang hilang sesudah Catatan 11. Semuanya boleh dilewati dengan terus menggulir. Naskahnya tetap disunting dari admin seperti tulisan lain (`##` bagian, `###` catatan, `---` jeda, tabel, daftar, `~~coret~~`); kalau kalimat yang dijadikan ketukan diubah, perbarui juga ketukannya.
 - **Saringan.** Tombol corong di sebelah *Acak* (juga di Sapa → Koleksi dan perintah *Saring koleksi* di `⌘K`) membuka satu saringan untuk seluruh meja: **jenis** karya, panjang **sekali duduk** (rata-rata satu sisi atau satu bab), **bagimu** (belum diputar, di tengah jalan, selesai), **bentuk** (bersisi banyak, berbab, satu sisi, dua bahasa), dan **benang**: kata-kata khas yang menghubungkan tulisan. Dalam satu kelompok pilihannya *atau*, antarkelompok *dan*. Setiap pilihan menunjukkan berapa piringan yang tersisa kalau ia ikut dipilih, pilihan yang tak dimiliki satu karya pun disembunyikan, dan kalau hasilnya kosong saringan menawarkan satu pilihan yang paling layak dilepas. Hasilnya langsung berlaku di tumpukan piringan, carousel pemilih, dan koleksi, diingat di perangkat, dan bisa diputar berurutan lewat *Putar hasilnya*.
 - **Dua bahasa.** Tombol **ID/EN** di pojok kanan atas mengganti seluruh antarmuka dan isi tulisan ke bahasa Inggris (atau kembali). Pilihan itu diingat; tautan dengan `?lang=en` selalu membuka versi Inggris. Teks antarmuka berbahasa Inggris ada di `assets/i18n.js`.
@@ -241,6 +241,50 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
   - Tiap surat bertanda: *sampai utuh*, *N kata diubah*, *satu kalimat bohong*, atau *tersegel*. Surat terakhir tetap tersegel sampai amplopnya dibuka di anak tangga terakhir. Di balasan Sarah kepada Damar, *Renjani bahagia* ditandai **benar**, dan *Ia sudah melupakanmu* ditandai **bohong**.
   - Tiga surat (yang marah, yang oranye, dan yang terakhir) diambil dari novelnya. Sembilan lainnya ditulis untuk laci ini, mengikuti apa yang diceritakan novelnya: sebelum pasar malam Sarah membacakan apa adanya, sesudahnya ia mencabut ketakutan Damar, sejak Damar berubah ia menghapus perubahannya, ia juga menyunting surat Renjani, dan sesudah tahun kesepuluh Damar menulis kepada Sarah. Isinya ada di `surat.js` dan bisa disunting di sana.
 - Semua tersimpan di `jm:ytpd`. *Mulai dari atas* di Aa menghapusnya. *Baca biasa* di Aa membuka novelnya di pembaca situs.
+
+### Di Dasar Rumah (antologi/di-dasar-rumah/)
+
+Cerpen kedua di antologi **Koda**. Teksnya dimuat utuh dari `content/works.json`; yang ditambahkan hanya antarmukanya (`dasar.js`, `dasar.css`). Semua yang muncul di luar teks mengikuti kalimat yang sedang dibaca, dan dicari lewat kalimatnya (daftar `I` di `dasar.js`). Kalau kalimat itu diubah di admin, perbarui juga polanya.
+
+- **Kedalaman.** Delapan bagian cerita (dipisah `***`) adalah delapan lantai yang turun: *Angka-angka, Tangga, Musim dingin pertama, Musim dingin ketiga, Pintu, Musim dingin berikutnya, Boleh pulang, Dongeng*. Nama-nama lantai ini hanya label antarmuka.
+  - Di layar lebar ada rel kedalaman di kiri; di ponsel ada penanda *Lantai N dari 8* di bar atas.
+- **Udara di tepi layar.**
+  - Embun beku menempel di musim dingin.
+  - Kehangatan yang terlalu dekat bernapas di tepi layar saat perempuan bertopi mendekat, pada pagi yang hangat, dan di balik pintu.
+  - Gelap mendekat saat denyutnya terlambat dan saat wajah Ibu hilang.
+- **Siapa yang bicara.** Kalimat perempuan bertopi berwarna kuning madu. Tulisan tangan gadis itu berwarna biru tinta dan miring ke kiri. *Mari.* tampil sebagai suara di dalam kepala.
+- **Benda-benda.**
+  - Lembar tagihan: angkanya hilang saat narasinya sampai ke sana, dan kertasnya bisa dimiringkan ke jendela untuk melihat bekas tekanan pena. Angka-angka di tagihan adalah tambahan antarmuka.
+  - Rumah panggung yang terbalik: *Betulkan letaknya* membalikkan rumahnya, tetapi lalu pohon-pohonlah yang tumbuh ke arah yang salah.
+  - Hitungan undakan di tepi layar, dengan goresan bulan sabit yang lewat lagi dan lagi. Koin yang diselipkan pembaca sudah ada di sana, dan koin yang jatuh tak pernah menyentuh dasar.
+  - Benang yang mengukur kamar.
+  - Rak buku yang punggungnya menghadap dinding. Buku tentang laut di bawah kota menunjuk ke *Kepala yang Dingin, Kota yang Hangat*.
+  - Toples dengan label *Nama sungai yang diberikan seorang anak agar nyalanya tidak padam*.
+- **Nyala kecil.** Nyala itu turun dari halaman ke sudut layar.
+  - Kalau pembaca diam lebih dari 14 detik di kamar itu (lantai 3–6), nyalanya meredup dan tepi layar menggelap. Ketuk untuk menemaninya.
+  - Sesudah *Nyala itu berdetak.* ia berdetak, dan telapak tangan kecil menekan dari dalamnya.
+- **Bintang.** Tombol bintang di bar atas menyimpan isi tas, lalu yang masih diingat: wajah Ibu, bau hujan, rasa garam, nama sungai, bunyi gunting.
+  - Setiap ingatan hilang tepat saat ceritanya memberikannya. Hurufnya masih terbaca, tetapi tidak lagi berarti apa-apa.
+  - Sesudah ia diceritakan pulang, isinya diganti dengan yang diceritakan kepadanya.
+- **Nama dan sungai.** Pembaca boleh menulis namanya di sampul dan memberi nyala itu nama sungai di dekat rumahnya. Keduanya hanya tersimpan di perangkat (`jm:dasar`).
+  - Namanya ikut tertulis di halaman kosong itu, kehilangan bunyinya, lalu menjadi *Ibu*.
+  - Sungainya masuk ke toples.
+- **Buku yang belum pernah dibuka.**
+  - Sesudah ia menemukan tulisannya sendiri, catatan tangannya muncul di tepi halaman-halaman sebelumnya. Catatan-catatan ini diambil dari kalimat cerita: *Aku masih ingat wajah Ibu*, *pintunya terbuka ke dalam*, *aku tidak mau*, dan seterusnya.
+  - Buku yang dimulai dengan musim-musim lembut membuka halaman pertama cerita ini.
+  - Sesudah *Ibu* dan *penjaga* ternyata ditulis dengan huruf yang sama, setiap *Ibu* di atas menyimpan kata *penjaga*.
+- **Ceritakan lagi.** Di akhir, kartu sesudah dongeng mencatat:
+  - nama pembaca, sekarang *Ibu*;
+  - berapa yang masih diingat;
+  - berapa kali pembaca menemani nyala itu;
+  - sungainya.
+  
+  *Ceritakan lagi* kembali ke atas dengan sampul *Maka begini, anakku.*
+- **Pengaturan.**
+  - Suara angin dan denyut disintesis di perangkat dan mati secara bawaan.
+  - *Gerak dan kejutan* bisa dimatikan; mati juga kalau perangkat meminta gerak dikurangi.
+  - *Baca biasa* membuka teksnya di pembaca situs.
+- Terjemahan Inggrisnya masih mengikuti versi sebelum revisi, jadi momen-momen di atas hanya ada di teks Indonesia.
 
 ### Usia Pulang (antologi/usia-pulang/)
 
