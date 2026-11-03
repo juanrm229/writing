@@ -255,7 +255,7 @@ Cerpen kedua di antologi **Koda**. Teksnya dimuat utuh dari `content/works.json`
 - **Siapa yang bicara.** Kalimat perempuan bertopi berwarna kuning madu. Tulisan tangan gadis itu berwarna biru tinta dan miring ke kiri. *Mari.* tampil sebagai suara di dalam kepala.
 - **Benda-benda.**
   - Lembar tagihan: angkanya hilang saat narasinya sampai ke sana, dan kertasnya bisa dimiringkan ke jendela untuk melihat bekas tekanan pena. Angka-angka di tagihan adalah tambahan antarmuka.
-  - Rumah panggung yang terbalik: *Betulkan letaknya* membalikkan rumahnya, tetapi lalu pohon-pohonlah yang tumbuh ke arah yang salah.
+  - Rumah panggung yang terbalik, sebagai tipografi saja (kata RUMAH terbalik, pintu tegak, deretan ⊥ sebagai pohon): *Betulkan letaknya* membalikkan rumahnya, tetapi lalu pohon-pohonlah yang tumbuh ke arah yang salah.
   - Hitungan undakan di tepi layar, dengan goresan bulan sabit yang lewat lagi dan lagi. Koin yang diselipkan pembaca sudah ada di sana, dan koin yang jatuh tak pernah menyentuh dasar.
   - Benang yang mengukur kamar.
   - Rak buku yang punggungnya menghadap dinding. Buku tentang laut di bawah kota menunjuk ke *Kepala yang Dingin, Kota yang Hangat*.
