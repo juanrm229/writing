@@ -25,5 +25,18 @@
     "en": {
       "note": "Juan's anthology, opening with Interlude."
     }
+  },
+  {
+    "id": "koda",
+    "title": "Koda",
+    "kind": "antologi",
+    "note": "Antologi Juan, dibuka dengan Kepala yang Dingin, Kota yang Hangat.",
+    "tracks": [
+      "kepala-yang-dingin-kota-yang-hangat",
+      "di-dasar-rumah"
+    ],
+    "en": {
+      "note": "Juan's anthology, opening with A Cold Head, A Warm City."
+    }
   }
 ]
