@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id" class="qm-theme-auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yang Tidak Pernah Dibacakan · Quiet Margins</title>
+<meta name="description" content="Selama sepuluh tahun, setiap surat Damar untuk Renjani yang buta harus lewat satu pintu: suara ibunya. Dibaca turun, anak tangga demi anak tangga, dengan surat-surat yang bisa didengar dan disunting.">
+<meta name="theme-color" content="#F2F2F4">
+<meta property="og:title" content="Yang Tidak Pernah Dibacakan">
+<meta property="og:description" content="Sarah punya suara paling menenangkan yang pernah didengar siapa pun. Suara itulah yang menyunting cinta anaknya selama sepuluh tahun.">
+<meta property="og:type" content="article">
+<link rel="canonical" href="https://quietmargins.site/antologi/yang-tidak-pernah-dibacakan/">
+<meta property="og:site_name" content="Quiet Margins">
+<meta property="og:url" content="https://quietmargins.site/antologi/yang-tidak-pernah-dibacakan/">
+<meta property="og:image" content="https://quietmargins.site/assets/og/yang-tidak-pernah-dibacakan.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Yang Tidak Pernah Dibacakan">
+<meta name="twitter:description" content="Selama sepuluh tahun, setiap surat Damar untuk Renjani yang buta harus lewat satu pintu: suara ibunya.">
+<meta name="twitter:image" content="https://quietmargins.site/assets/og/yang-tidak-pernah-dibacakan.png">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=3">
+<link rel="stylesheet" href="dibacakan.css?v=2">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+</head>
+<body>
+<div class="room" aria-hidden="true"><i class="lamp"></i><i class="rain"></i></div>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight"><button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca" aria-haspopup="dialog" aria-controls="settingsDialog"><span aria-hidden="true">Aa</span></button></span>
+</header>
+
+<nav class="stairs" id="stairs" aria-label="Anak tangga"></nav>
+
+<main class="read" id="read">
+  <header class="cover" id="cover">
+    <p class="kick" id="kick">Temusai · Novel</p>
+    <h1 id="title">Yang Tidak Pernah Dibacakan</h1>
+    <p class="by">Juan</p>
+    <p class="lede" id="lede"></p>
+    <ul class="legend" id="legend" aria-label="Cara membaca">
+      <li><span class="lg-written" aria-hidden="true"></span><span id="lgWritten">Yang ditulis Damar</span></li>
+      <li><span class="lg-read" aria-hidden="true"></span><span id="lgRead">Yang dibacakan Sarah</span></li>
+      <li><span class="lg-dark" aria-hidden="true"></span><span id="lgDark">Didengar dalam gelap</span></li>
+    </ul>
+    <div class="cover-act" id="coverAct"></div>
+    <p class="lost" id="lost" hidden></p>
+  </header>
+  <div class="story" id="story"><p class="loading">…</p></div>
+  <footer class="end" id="end" hidden></footer>
+</main>
+
+<button class="envelope-tray" id="tray" type="button" hidden aria-describedby="trayTip"><span class="env-mini" aria-hidden="true"><i></i></span><span class="tray-t" id="trayT">Untuk Renjani</span></button>
+<p class="tray-tip" id="trayTip" role="status" hidden></p>
+
+<div class="dark" id="dark" hidden role="dialog" aria-modal="true" aria-labelledby="darkTitle">
+  <p class="sr-only" id="darkTitle">Didengar dalam gelap</p>
+  <div class="dark-glow" aria-hidden="true"></div>
+  <p class="dark-who" id="darkWho"></p>
+  <p class="dark-cap" id="darkCap" aria-live="polite"></p>
+  <div class="dark-wave" id="darkWave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="dark-act"><button type="button" class="dark-btn" id="darkCapToggle" aria-pressed="false">Teks</button><button type="button" class="dark-btn open" id="darkOpen">Buka mata</button></div>
+</div>
+
+<dialog id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
+  <div class="settings-body">
+    <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="rainLabel">Hujan di luar jendela</span><button class="setting-button" id="rain" type="button" aria-pressed="false">Mati</button></div>
+    <div class="setting-row" id="voiceRow"><span id="voiceLabel">Suara pembaca</span><select class="setting-button" id="voice" aria-labelledby="voiceLabel"></select></div>
+    <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
+    <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
+    <div class="setting-row"><span id="resetLabel">Jejakmu di cerita ini</span><button class="setting-button" id="reset" type="button">Mulai dari atas</button></div>
+  </div>
+</dialog>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../panduan.js?v=4"></script>
+<script src="dibacakan.js?v=1"></script>
+</body>
+</html>

@@ -194,6 +194,35 @@ Kartu *berikutnya* di akhir tulisan yang tergabung dalam antologi menunjuk tulis
 python3 tests/giliran_smoke.py
 ```
 
+### Yang Tidak Pernah Dibacakan (antologi/yang-tidak-pernah-dibacakan/)
+
+Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya ini masuk antologi **Temusai** (`albums.json`) dan punya `experience` di `works.json`. Teksnya dimuat utuh dari `works.json`, bab demi bab, dan yang ditambahkan hanya antarmukanya (`dibacakan.js`, `dibacakan.css`).
+
+- **Turun tangga.** Delapan bab adalah delapan anak tangga.
+  - Di layar lebar, tangga di tepi kanan menunjukkan posisi dan bisa diketuk. Di ponsel, posisinya ditunjukkan oleh *Anak tangga n/8* di atas.
+  - Makin ke bawah, kamar makin gelap dan lampu makin kuning.
+  - Hujan di jendela mengikuti teks: menebal di bab pertama, reda di bab keempat, tinggal tetes di bab kelima.
+  - *Hujan di luar jendela* di Aa menyalakan suaranya (Web Audio, mati sampai dinyalakan).
+- **Surat dua lapis.** Surat-surat Damar tampil sebagai kertas. Garis merah menandai yang ditulis Damar, dan tinta biru tua menandai pena Sarah.
+  - **Bab 2: pena Sarah di tanganmu.** Surat yang marah tampil seperti ditulis, dengan *duri* yang bisa diketuk satu per satu. Setiap ketukan menggeser kata Damar menjadi kata Sarah. Bedanya dihitung kata demi kata dari dua versi surat yang memang ada di teks, jadi tidak ada yang dikarang. *Biar Sarah saja* menyelesaikan sisanya. Setelah bersih, pembaca bisa membandingkan *Yang ditulis* dan *Yang dibacakan*, lalu *Bacakan kepada Renjani*.
+  - **Bab 3.** Saat narasinya sampai ke kalimat Sarah *menghilangkan satu kalimat*, kalimat "kau tidak bisa melihat oranye" di surat di atasnya dicoret pelan dan memudar.
+  - **Bab 5.** "Ren, aku sedang berubah…" dicoret saat narasinya sampai ke *Ia menghapus*.
+  - **Bab 6.** Surat terakhir dibaca sendirian di dapur dan diberi cap *Tidak pernah dibacakan* saat Sarah tidak membacakannya. Amplop di pojok ikut terisi.
+  - **Bab 8.** Kutipan surat ditandai *Dibacakan dengan benar · tak satu kata pun diubah*.
+- **Didengar dalam gelap.** *Dengarkan seperti Renjani* menggelapkan seluruh layar dan membacakan surat versi Sarah dengan suara peramban (pilih suaranya di Aa).
+  - Tombol *Teks* menampilkan kalimatnya. Tanpa suara peramban, kalimatnya muncul satu per satu.
+  - *Buka mata* atau `Esc` kembali ke cerita.
+- **Amplop.** Sejak Sarah menarik amplop dari bawah bantal, ada amplop *Untuk Renjani* di pojok yang tersegel dan belum boleh dibuka.
+  - Di anak tangga terakhir, tepat setelah *Kirana membuka amplop itu*, pembaca sendiri yang membuka segelnya. Kertasnya terbuka dari lipatan tiga dan berisi surat terakhir dari bab 6, utuh.
+  - *Pejamkan mata · dengarkan dengan telinga Renjani* membacakannya tanpa satu kata pun diubah. Sesudah kalimat yang berakhir dengan "siap", ada enam detik **keheningan sungguhan**, karena teksnya menyebut itu keheningan yang harus ada.
+- **Timbangan.** Di akhir setiap anak tangga, pembaca menimbang Sarah: *Kubenci*, *Kumengerti*, atau *Kumaafkan*.
+  - Di akhir cerita, **jejak timbanganmu** digambar sebagai garis per anak tangga, beserta catatannya: di anak tangga mana kau memaafkannya (dan bahwa ia memintamu menunggu sampai ia selesai), apakah kau setuju dengannya di anak tangga keempat seperti kata narator, berapa kali penilaianmu berubah, dan berapa duri yang kau cabut sendiri di dapur.
+- **Rantai.** Di akhir bab 7 rantainya terlihat: ibu Sarah, lalu Sarah, Renjani, Kirana, dan anak Kirana. Rantai itu memisahkan, lalu menyunting, lalu putus di Pram yang *membacakan yang sebenarnya*. Di akhir cerita, mata rantai terakhir (*dibacakan dengan benar*) ikut putus.
+- **Bacakan kepada seseorang.**
+  - *Rekam suaramu* merekam pembaca membacakan surat Damar, dengan teks suratnya sebagai panduan. Rekamannya hanya ada di perangkat: bisa diputar dan disimpan, tidak dikirim ke mana pun.
+  - *Kirim amplopnya* membagikan `#surat`, yang membuka halaman ini dengan amplop tersegel di sampul untuk orang lain. Membuka amplop kiriman tidak membuka amplopmu sendiri.
+- Semua tersimpan di `jm:ytpd`. *Mulai dari atas* di Aa menghapusnya. *Baca biasa* di Aa membuka novelnya di pembaca situs.
+
 ### Usia Pulang (antologi/usia-pulang/)
 
 Novel interaktif di antologi **Temusai**: 64 simpul, sekitar 51 ribu kata, delapan akhir. Tampilannya memakai bahasa visual situs utama: abu-abu dingin, kartu putih, Doto untuk judul dan angka besar, pil hitam, aksen biru, lencana navy, dan lembar hitam yang menjadi terang di tema gelap (sampul, akhir, Kartu yang naik sebentar). Yang khas cerita, yaitu kertas tiap tokoh di sela dan benda-benda, tetap punya teksturnya sendiri tapi memakai token yang sama. Laras kembali dua puluh sembilan tahun sesudah kematiannya dan punya 168 jam (Senin 9 November 18.40 sampai Senin 16 November 18.40) untuk memutuskan apakah akan menetap.
