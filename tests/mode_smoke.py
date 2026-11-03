@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GUIDES = ['arsip', 'the-room', 'the-moon-behind-my-eyes', 'trillions-of-seconds', 'anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi']
+GUIDES = ['arsip', 'di-dasar-rumah', 'the-room', 'the-moon-behind-my-eyes', 'trillions-of-seconds', 'anda-di-sini', 'interlude', 'terlambat-satu-menit', 'pabrik-mimpi']
 SEEN = "try { %s } catch (e) {}" % ' '.join(f"localStorage.setItem('jm:guide:{g}', '1');" for g in GUIDES)
 
 
@@ -79,7 +79,7 @@ class ModeSmoke(unittest.TestCase):
                 self.assertIn('/antologi/', card.get_attribute('href'))
                 self.assertEqual(self.page.locator('#rdMeta .ix').count(), 1)
         # non-interactive pieces have neither the card nor the badge
-        self.reader('di-dasar-rumah')
+        self.reader('di-waktu-yang-tepat')
         self.page.wait_for_function("document.getElementById('rdBody')?.innerText.length > 200")
         self.assertTrue(self.page.locator('#rdIx').is_hidden())
         self.assertEqual(self.page.locator('#rdMeta .ix').count(), 0)
