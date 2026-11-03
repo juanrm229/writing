@@ -3069,8 +3069,19 @@
       });
       return;
     }
+    // antologi Koda: gelap, satu nyala kecil di dasar, dan sehelai rambut hitam berkilau di atasnya
+    if (a.kind === 'antologi' && a.id === 'koda') {
+      ctx.fillStyle = '#121113'; ctx.fillRect(0, 0, S, S);
+      const fx = S / 2, fy = S * .66, g = ctx.createRadialGradient(fx, fy, 0, fx, fy, S * .22);
+      g.addColorStop(0, 'rgba(255,190,92,.42)'); g.addColorStop(1, 'rgba(255,190,92,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx, fy, S * .22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFC25C'; ctx.beginPath(); ctx.ellipse(fx, fy, S * .026, S * .044, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#E9E6DF'; ctx.lineWidth = Math.max(1, S * .007); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(S * .45, S * .4); ctx.bezierCurveTo(S * .47, S * .3, S * .53, S * .36, S * .55, S * .27); ctx.stroke();
+      return;
+    }
     // antologi Titik Biru: sampulnya ikon aplikasi tanpa nama itu, persegi putih dengan satu titik biru
-    if (a.kind === 'antologi') {
+    if (a.kind === 'antologi' && a.id === 'titik-biru') {
       ctx.fillStyle = '#F7F7F5'; ctx.fillRect(0, 0, S, S);
       const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S * .3);
       g.addColorStop(0, 'rgba(26,115,232,.2)'); g.addColorStop(1, 'rgba(26,115,232,0)');
