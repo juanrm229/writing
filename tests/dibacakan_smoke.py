@@ -246,6 +246,65 @@ class DibacakanSmoke(unittest.TestCase):
         target = self.page.locator('#chrono [data-goto]').first.get_attribute('data-goto')
         self.assertLess(abs(self.page.evaluate(f"document.getElementById('{target}').getBoundingClientRect().top")), 900)
 
+    # ---------- Sarah's drawer ----------
+    def test_sarahs_drawer_opens_by_the_step(self):
+        self.go()
+        self.page.locator('#openLaci').click()
+        self.page.wait_for_selector('#laci[open] .lc')
+        first = self.page.locator('#laci .lc').count()
+        self.assertGreater(first, 0)
+        self.assertLess(first, 12)
+        self.assertGreater(self.page.locator('#laci .laci-more').count(), 0)
+        self.page.locator('#laci [data-close]').click()
+        self.to('#bab-6', 0)
+        self.page.wait_for_function("document.querySelector('#openLaci').dataset.n")
+        self.assertGreater(self.page.locator('.laci-hint').count(), 1)
+        self.page.locator('#bab-5 .laci-hint [data-laci-open]').click()
+        self.page.wait_for_selector('#laci[open]')
+        self.assertGreater(self.page.locator('#laci .lc').count(), first)
+        self.assertIsNone(self.page.get_attribute('#openLaci', 'data-n'))
+        self.assertIn('kursi-yang-sama', self.state()['seen'])
+
+    def test_her_pen_moves_through_a_letter(self):
+        self.go()
+        self.page.evaluate("localStorage.setItem('jm:ytpd', JSON.stringify({v: 1, reached: 7}))")
+        self.go()
+        self.page.locator('#openLaci').click()
+        self.page.locator('[data-letter-open="angin-barat"]').click()
+        body = self.page.locator('#lpBody')
+        self.assertIn('Pekerjaan sepi', body.locator('.lw-pen').first.text_content())
+        self.assertIn('aku sedang berubah', body.locator('.lw-gone').all_text_contents()[1] if body.locator('.lw-gone').count() > 1 else body.text_content())
+        self.page.locator('#penRange').fill('0')
+        self.page.locator('#penRange').dispatch_event('input')
+        self.assertEqual(body.locator('.lw-pen, .lw-gone').count(), 0)
+        self.assertIn('Aku diam. Aku pulang.', body.locator('.lw-thorn').all_text_contents()[-1])
+        # the last letter stays sealed until it is opened on the last step
+        self.page.locator('[data-laci-back]').click()
+        self.page.locator('[data-letter-open="terakhir"]').click()
+        self.assertEqual(self.page.locator('#laci .lp-sealed').count(), 1)
+        self.assertEqual(self.page.locator('#lpBody').count(), 0)
+        # what Sarah wrote herself: one true, one a lie
+        self.page.locator('[data-laci-back]').click()
+        self.page.locator('[data-letter-open="balasan-sarah"]').click()
+        self.assertIn('Renjani bahagia', self.page.locator('.tanda.benar').text_content())
+        self.assertIn('melupakanmu', self.page.locator('.tanda.bohong').text_content())
+
+    def test_the_drawer_reads_the_letters_from_the_novel(self):
+        self.go()
+        self.page.evaluate("localStorage.setItem('jm:ytpd', JSON.stringify({v: 1, reached: 7, opened: true}))")
+        self.go()
+        self.page.locator('#openLaci').click()
+        self.assertEqual(self.page.locator('#laci .lc').count(), 12)
+        self.assertEqual(self.page.locator('#laci .lc-src').count(), 3)
+        self.page.locator('[data-letter-open="terakhir"]').click()
+        text = norm(self.page.locator('#lpBody').text_content())
+        self.assertGreater(len(text), 200)
+        self.page.locator('[data-laci-back]').click()
+        self.page.locator('[data-letter-open="marah"]').click()
+        self.assertGreater(self.page.locator('#lpBody .lw-pen').count(), 0)
+        self.page.locator('[data-laci-listen]').click()
+        self.page.wait_for_selector('#dark:not([hidden])')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

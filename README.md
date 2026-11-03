@@ -234,6 +234,11 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
 - **Bacakan kepada seseorang.**
   - *Rekam suaramu* merekam pembaca membacakan surat Damar, dengan teks suratnya sebagai panduan. Rekamannya hanya ada di perangkat: bisa diputar dan disimpan, tidak dikirim ke mana pun.
   - *Kirim amplopnya* membagikan `#surat`, yang membuka halaman ini dengan amplop tersegel di sampul untuk orang lain. Membuka amplop kiriman tidak membuka amplopmu sendiri.
+- **Laci Sarah.** Tombol laci di bar atas membuka arsip semua surat selama sepuluh tahun dan sesudahnya, dua belas surat: Damar kepada Renjani, Renjani (didiktekan, ditulis tangan Sarah) kepada Damar, Damar kepada Sarah, dan balasan Sarah.
+  - Surat-surat terbuka mengikuti anak tangga. Dua surat tahun pertama ada sejak awal; sisanya masuk ke laci ketika pembaca sampai di anak tangga masanya. Di anak tangga itu muncul catatan *surat dari masa ini sekarang ada di laci Sarah*, dan tombol laci memberi angka untuk surat yang belum dilihat.
+  - Setiap surat punya dua lapis: yang ditulis, dan yang sampai (dibacakan kepada Renjani atau dikirim ke kota pelabuhan). Penggeser **pena Sarah** menyunting surat itu satu potongan demi satu potongan. Duri yang dicabut berwarna merah muda, coretannya biru, dan kalimat pengganti Sarah tertulis dengan tinta pena. *Gerakkan penanya* memutarnya sendiri, dan *Dengarkan seperti Renjani* memutar versi yang sampai dalam gelap.
+  - Tiap surat bertanda: *sampai utuh*, *N kata diubah*, *satu kalimat bohong*, atau *tersegel*. Surat terakhir tetap tersegel sampai amplopnya dibuka di anak tangga terakhir. Di balasan Sarah kepada Damar, *Renjani bahagia* ditandai **benar**, dan *Ia sudah melupakanmu* ditandai **bohong**.
+  - Tiga surat (yang marah, yang oranye, dan yang terakhir) diambil dari novelnya. Sembilan lainnya ditulis untuk laci ini, mengikuti apa yang diceritakan novelnya: sebelum pasar malam Sarah membacakan apa adanya, sesudahnya ia mencabut ketakutan Damar, sejak Damar berubah ia menghapus perubahannya, ia juga menyunting surat Renjani, dan sesudah tahun kesepuluh Damar menulis kepada Sarah. Isinya ada di `surat.js` dan bisa disunting di sana.
 - Semua tersimpan di `jm:ytpd`. *Mulai dari atas* di Aa menghapusnya. *Baca biasa* di Aa membuka novelnya di pembaca situs.
 
 ### Usia Pulang (antologi/usia-pulang/)
