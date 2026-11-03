@@ -209,8 +209,7 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
   - **Bab 5.** "Ren, aku sedang berubah…" dicoret saat narasinya sampai ke *Ia menghapus*.
   - **Bab 6.** Surat terakhir dibaca sendirian di dapur dan diberi cap *Tidak pernah dibacakan* saat Sarah tidak membacakannya. Amplop di pojok ikut terisi.
   - **Bab 8.** Kutipan surat ditandai *Dibacakan dengan benar · tak satu kata pun diubah*.
-- **Didengar dalam gelap.** *Dengarkan seperti Renjani* menggelapkan seluruh layar dan membacakan surat versi Sarah dengan suara peramban (pilih suaranya di Aa).
-  - Tombol *Teks* menampilkan kalimatnya. Tanpa suara peramban, kalimatnya muncul satu per satu.
+- **Didengar dalam gelap.** *Dengarkan seperti Renjani* menggelapkan seluruh layar, lalu surat versi Sarah datang kalimat demi kalimat, pelan, seperti dibacakan. Tidak ada suara buatan; hanya teks dalam gelap.
   - *Buka mata* atau `Esc` kembali ke cerita.
 - **Amplop.** Sejak Sarah menarik amplop dari bawah bantal, ada amplop *Untuk Renjani* di pojok yang tersegel dan belum boleh dibuka.
   - Di anak tangga terakhir, tepat setelah *Kirana membuka amplop itu*, pembaca sendiri yang membuka segelnya. Kertasnya terbuka dari lipatan tiga dan berisi surat terakhir dari bab 6, utuh.

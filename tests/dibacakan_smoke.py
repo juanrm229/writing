@@ -120,7 +120,6 @@ class DibacakanSmoke(unittest.TestCase):
         dark = self.page.locator('#dark')
         self.assertTrue(dark.is_visible())
         self.assertIn('Suara Sarah', self.page.locator('#darkWho').text_content())
-        self.page.locator('#darkCapToggle').click()
         self.page.wait_for_function("document.getElementById('darkCap').textContent.length > 5")
         self.page.locator('#darkOpen').click()
         self.assertFalse(dark.is_visible())

@@ -5,8 +5,7 @@
    - Surat dua lapis: surat Damar yang ada di teks tampil sebagai kertas. Di bab kedua pembaca memegang pena Sarah dan
      mencabut sendiri duri-durinya (bedanya dihitung dari dua versi surat yang memang ada di teks). Di bab ketiga satu
      kalimat hilang saat narasinya sampai ke sana, di bab kelima "aku sedang berubah" dicoret.
-   - Didengar dalam gelap: surat bisa didengar seperti Renjani mendengarnya, dengan layar gelap dan suara peramban.
-     Tanpa suara, kalimatnya muncul satu per satu.
+   - Didengar dalam gelap: layar menjadi gelap dan surat datang kalimat demi kalimat, seperti Renjani menerimanya.
    - Amplop: tersegel sejak bab pertama, berisi surat terakhir sejak bab keenam, dan baru dibuka pembaca sendiri di bab
      kedelapan. Surat itu dibacakan tanpa satu kata pun diubah, dengan keheningan sungguhan sesudah "siap".
    - Timbangan: di setiap anak tangga pembaca menimbang Sarah (benci, mengerti, memaafkan); di akhir jejaknya terlihat.
@@ -233,38 +232,26 @@
   }
 
   /* ---------- suara: dibacakan oleh peramban, atau muncul kalimat demi kalimat ---------- */
-  const SS = 'speechSynthesis' in window ? speechSynthesis : null;
-  let voices = [];
-  const pickVoices = () => { voices = SS ? SS.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith(EN ? 'en' : 'id')) : []; const sel = $('#voice'); const keep = store.get('ytpd:voice', ''); sel.innerHTML = voices.length ? voices.map(v => `<option value="${esc(v.name)}"${v.name === keep ? ' selected' : ''}>${esc(v.name)}</option>`).join('') : `<option value="">${esc(t('Tanpa suara: teks saja', 'No voice: text only'))}</option>`; };
-  if (SS) { pickVoices(); SS.addEventListener?.('voiceschanged', pickVoices); } else pickVoices();
-  $('#voice').onchange = e => store.set('ytpd:voice', e.target.value);
+  // dalam gelap, kalimat-kalimatnya muncul satu per satu, sepelan orang membacakan; tanpa suara buatan
   const dark = $('#dark');
-  let session = 0, capsOn = !!store.get('ytpd:caps', false);
-  const paintCaps = () => { $('#darkCapToggle').setAttribute('aria-pressed', String(capsOn)); dark.classList.toggle('caps', capsOn || !voices.length); };
-  $('#darkCapToggle').onclick = () => { capsOn = !capsOn; store.set('ytpd:caps', capsOn); paintCaps(); };
-  function sayOne(text, my) {
+  let session = 0;
+  function sayOne(text) {
     return new Promise(res => {
-      $('#darkCap').textContent = text;
-      const words = text.split(/\s+/).length, est = Math.max(1600, words * 340);
-      if (!SS || !voices.length) { setTimeout(res, est); return; }
-      const u = new SpeechSynthesisUtterance(text); u.lang = EN ? 'en-US' : 'id-ID'; u.rate = .9; u.pitch = 1.02;
-      const v = voices.find(x => x.name === store.get('ytpd:voice', '')) || voices[0]; if (v) u.voice = v;
-      let done = false; const fin = () => { if (!done) { done = true; res(); } };
-      u.onend = fin; u.onerror = fin; setTimeout(fin, est * 2.2);
-      SS.speak(u);
+      const cap = $('#darkCap'); cap.classList.remove('in'); void cap.offsetWidth; cap.textContent = text; cap.classList.add('in');
+      setTimeout(res, Math.max(2200, text.split(/\s+/).length * 380));
     });
   }
   const pause = ms => new Promise(r => setTimeout(r, ms));
   async function listen(lines, { who = '', silenceAfter = null, onEnd = null } = {}) {
     const my = ++session;
-    dark.hidden = false; document.body.classList.add('eyes-closed'); paintCaps();
+    dark.hidden = false; document.body.classList.add('eyes-closed');
     $('#darkWho').textContent = who; $('#darkCap').textContent = '';
     $('#darkOpen').focus({ preventScroll: true });
     await pause(calm() ? 200 : 1400);
     for (const s of lines) {
       if (my !== session) return;
       dark.classList.add('speaking');
-      await sayOne(s, my);
+      await sayOne(s);
       dark.classList.remove('speaking');
       if (my !== session) return;
       // keheningan yang harus ada: tidak diisi apa pun
@@ -275,7 +262,7 @@
     $('#darkCap').textContent = ''; dark.classList.add('ended');
     if (onEnd) onEnd();
   }
-  function closeDark() { session++; SS && SS.cancel(); dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
+  function closeDark() { session++; dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
   $('#darkOpen').onclick = closeDark;
   dark.addEventListener('keydown', e => { if (e.key === 'Escape') closeDark(); });
   function listenTo(k) {
@@ -384,8 +371,8 @@
   paintMotion();
   $('#reset').onclick = () => { if (!confirm(t('Lupakan timbangan, duri yang kau cabut, dan amplop yang sudah dibuka?', 'Forget your scale, the thorns you pulled, and the opened envelope?'))) return; S = blank(); save(); store.set('ytpd:place', 0); location.hash = ''; location.reload(); };
   if (EN) {
-    $('#sizeLabel').textContent = 'Text size'; $('#rainLabel').textContent = 'Rain outside the window'; $('#voiceLabel').textContent = 'Reading voice'; $('#motionLabel').textContent = 'Motion'; $('#themeLabel').textContent = 'Appearance'; $('#resetLabel').textContent = 'Your trail in this story'; $('#reset').textContent = 'Start from the top';
-    $('#darkCapToggle').textContent = 'Text'; $('#darkOpen').textContent = 'Open your eyes'; $('#trayT').textContent = 'For Renjani';
+    $('#sizeLabel').textContent = 'Text size'; $('#rainLabel').textContent = 'Rain outside the window'; $('#motionLabel').textContent = 'Motion'; $('#themeLabel').textContent = 'Appearance'; $('#resetLabel').textContent = 'Your trail in this story'; $('#reset').textContent = 'Start from the top';
+    $('#darkOpen').textContent = 'Open your eyes'; $('#trayT').textContent = 'For Renjani';
   }
 
   /* ---------- bingkai situs ---------- */
@@ -395,7 +382,7 @@
       steps: [
         t('Ceritanya turun, anak tangga demi anak tangga. Makin ke bawah, kamarnya makin gelap. Tangga di tepi layar membawamu ke bab mana pun.', 'The story descends, one step at a time. The lower you go, the darker the room. The stairs at the edge take you to any chapter.'),
         t('Surat-surat Damar tampil sebagai kertas. Di bab kedua, pena Sarah ada di tanganmu.', 'Damar’s letters appear as paper. In the second chapter, Sarah’s pen is in your hand.'),
-        t('"Dengarkan seperti Renjani" menggelapkan layar dan membacakan suratnya, seperti Renjani mendengarnya. Tombol Teks menampilkan kalimatnya.', '"Hear it as Renjani did" darkens the screen and reads the letter aloud, the way Renjani heard it. The Text button shows the sentences.'),
+        t('"Dengarkan seperti Renjani" menggelapkan layar. Suratnya datang kalimat demi kalimat, dalam versi yang Renjani dengar.', '"Hear it as Renjani did" darkens the screen. The letter arrives sentence by sentence, in the version Renjani heard.'),
         t('Amplop di pojok tersegel sampai anak tangga terakhir. Di setiap anak tangga, timbanglah Sarah; jangan memaafkannya terlalu cepat.', 'The envelope in the corner stays sealed until the last step. On every step, weigh Sarah; do not forgive her too soon.')
       ] });
     G.settings();
