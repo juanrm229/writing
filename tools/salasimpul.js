@@ -150,14 +150,28 @@ function build() {
   const petaFile = path.join(SRC, '_peta.json');
   if (fs.existsSync(petaFile)) {
     const pc = JSON.parse(fs.readFileSync(petaFile, 'utf8'));
+    if (!pc.world || !pc.regions) throw new Error('_peta.json: butuh world dan regions');
+    const where = (pl, what) => `_peta.json: ${what} "${pl.id}"`;
     const places = (pc.places || []).map(pl => {
-      if (seen.has('p:' + pl.id)) throw new Error(`_peta.json: tempat "${pl.id}" ganda`); seen.add('p:' + pl.id);
-      if (!pc.maps[pl.map]) throw new Error(`_peta.json: tempat "${pl.id}": peta "${pl.map}" tidak ada`);
-      if (!pc.kinds[pl.kind]) throw new Error(`_peta.json: tempat "${pl.id}": jenis "${pl.kind}" tidak ada`);
-      (pl.by || []).forEach(o => { if (!owners.includes(o)) throw new Error(`_peta.json: tempat "${pl.id}": penulis "${o}" tidak ada`); });
+      if (seen.has('p:' + pl.id)) throw new Error(`${where(pl, 'tempat')} ganda`); seen.add('p:' + pl.id);
+      if (!pc.regions[pl.area]) throw new Error(`${where(pl, 'tempat')}: wilayah "${pl.area}" tidak ada`);
+      if (!pc.kinds[pl.kind]) throw new Error(`${where(pl, 'tempat')}: jenis "${pl.kind}" tidak ada`);
+      if (!(pl.x >= 0 && pl.x <= pc.world.w && pl.y >= 0 && pl.y <= pc.world.h)) throw new Error(`${where(pl, 'tempat')}: koordinat di luar peta`);
+      (pl.by || []).forEach(o => { if (!owners.includes(o)) throw new Error(`${where(pl, 'tempat')}: penulis "${o}" tidak ada`); });
       return { ...pl, notes: hits(pl, '_peta.json: tempat') };
     });
-    peta = { maps: pc.maps, kinds: pc.kinds, places };
+    const ids = new Set(places.map(pl => pl.id));
+    Object.entries(pc.homes || {}).forEach(([o, list]) => {
+      if (!owners.includes(o)) throw new Error(`_peta.json: rumah untuk "${o}", yang bukan penulis`);
+      list.forEach(h => { const id = typeof h === 'string' ? h : h.place; if (!ids.has(id)) throw new Error(`_peta.json: rumah ${o}: tempat "${id}" tidak ada`); });
+    });
+    (pc.journeys || []).forEach(j => {
+      const e = byId.get(j.note); if (!e) throw new Error(`${where(j, 'perjalanan')}: catatan "${j.note}" tidak ada`);
+      if (j.who !== e.owner) throw new Error(`${where(j, 'perjalanan')}: ${j.note} ditulis ${e.owner}, bukan ${j.who}`);
+      (j.path || []).forEach(w => { if (typeof w === 'string' && !ids.has(w)) throw new Error(`${where(j, 'perjalanan')}: tempat "${w}" tidak ada`); });
+      if (j.quote && !wordRe(j.quote).test(plainOf(e))) throw new Error(`${where(j, 'perjalanan')}: "${j.quote}" tidak ada di ${j.note}`);
+    });
+    peta = { world: pc.world, regions: pc.regions, kinds: pc.kinds, homes: pc.homes || {}, journeys: pc.journeys || [], places };
   }
   const world = { title: config.title || 'Salasimpul', start: config.start || entries[0].id, people, entries, props, keys: config.keys || {}, spine: config.spine || [], persona: config.persona || {}, benda, peta, memory: config.memory || { stability0: 5000, retrievalBonus: 0.25, retrievals: 0 } };
   const meta = {

@@ -453,16 +453,43 @@ Sebuah dunia, bukan album dan bukan antologi: catatan-catatan 18 orang di satu k
   - Urutannya bisa digeser.
   - *Baca suntinganmu* menampilkannya sebagai satu buku. *Unduh .md* memberi berkas Markdown berisi teks catatan tanpa tanda.
   - *Salin tautan* membuat `#suntingan=id,id,…`. Penerima membaca suntingan itu sebagai satu buku dan bisa menyimpannya sebagai suntingannya sendiri.
-- **Peta** (tab *Peta*, `#peta`). Peta ini minimalis, seperti peta di ponsel, dan dibangun dari tempat-tempat yang disebut di catatan. Datanya ada di `content/salasimpul/_peta.json`.
-  - Ada dua peta:
-    - *Kota*: Jalan Kartini dan lorong toko bunga, pekuburan tua dengan pohon angsana dan pos jaga, terminal dan kali, Jalan Pelabuhan dan gudangnya, pasar dan pasar loak, museum, koran, klinik, kantor polisi, dan lapas;
-    - *Kampung Sela*, 85 km dari kota: komplek blok A–D, taman terbengkalai dengan dua ayunan, pematang yang belum dibangun, gang sebelah, pagar Bu Inah, rumah Bu Rasmi, warung Bu Tini, sumur, saluran air, jembatan, sungai, dan kebun belakang.
-  - Peta digambar dengan tanah, bangunan, jalan besar berwarna kuning, jalan dan gang, air, taman dengan pohon, petak-petak makam, dan pematang bergaris.
-  - Setiap tempat punya `match` (pola kata), boleh juga `by` (penulis yang dihitung). `node tools/salasimpul.js` mencari tempat itu di teks dan berhenti kalau ada tempat yang tidak pernah disebut.
-  - Penanda tempat baru muncul setelah kamu membaca catatan yang menyebutnya. Tempat yang belum dikenal tampil sebagai lingkaran putus-putus.
-  - Mengetuk penanda membuka kartunya: jenis, nama, keterangan, siapa yang menyebutnya, dan kalimat-kalimatnya.
-  - *Jejak* menyorot tempat-tempat yang disebut satu orang dan menyambungkannya menurut urutan ia menyebutnya.
-  - Peta bisa diperbesar, digeser, dan dilengkapi legenda.
+- **Peta dunia** (tab *Peta*, `#peta`; dari catatan: *Di peta*, `#peta-<id>`). Satu peta untuk kota, Jalan Raya Sela sepanjang 85 km, dan Kampung Sela. Mesinnya di `dunia/salasimpul/peta.js`, datanya di `content/salasimpul/_peta.json`.
+  - **Bentuk.** Peta ini minimalis seperti peta di ponsel, dan mengikuti mode terang dan gelap:
+    - tanah dan bangunan dengan rumah-rumah kecil;
+    - jalan besar kuning dan gang;
+    - kali, sungai, dan laut sepanjang pantai selatan;
+    - taman, hutan, dan Bukit Watu dengan garis kontur;
+    - petak makam, sawah dan pematang bergaris;
+    - jembatan, penanda KM 0 dan KM 85, dan tanda ≈ karena jalan 85 km diringkas.
+  - **Nama jalan.** Nama yang disebut di catatan dipakai apa adanya: Jalan Kartini, Jalan Pelabuhan, lorong, gang sebelah. Nama lainnya rekaan dan ditandai `rekaan: true`, misalnya Jalan Raya Sela, Jalan Angsana, Jalan Merdeka, Gang Terminal, Jalan Griya Utama, dan Jalan Puskesmas. Nama kelurahan juga rekaan: Pasar Lama, Tanjung, Sukamaju, Kampung Baru, Griya Sela.
+  - **Gerak.** Peta bisa digeser, dicubit, digulir, atau diperbesar dengan + dan −. Tombol wilayah (*Semua*, *Kota*, *Jalan Raya Sela*, *Kampung Sela*) terbang ke wilayah itu, dan skala jarak ada di pojok.
+    - Label muncul sesuai jarak pandang. Dari jauh hanya nama wilayah dan jalan besar. Lebih dekat, tempat dan nama jalan. Dari dekat sekali, gang dan petak makam.
+  - **Di mana setiap catatan ditulis.** Sebuah catatan ditempatkan di rumah penulisnya kalau rumah itu disebut di catatannya. Kalau tidak, catatan itu ditempatkan di tempat pertama yang disebutnya, atau di rumah penulisnya (`homes`, dengan `from` dan `until` untuk orang yang pindah, seperti Elian dan Ratih di 2024).
+  - **Lapisan** (ikon tumpukan): tempat; benang di atas kota (simpul antara tempat catatan-catatan yang sudah kamu baca); kesalahpahaman (ironi yang tersimpan di tiap tempat, lebih terang kalau sudah menyala); linimasamu (jalur bacamu); nama jalan.
+  - **Kamu di sini.** Titik biru berdenyut di tempat catatan terakhirmu. Tombol ⌖ membukanya.
+  - **Mesin waktu.** Penggeser tahun 1983–2026 menyembunyikan tempat yang belum ada (`since`, `until`: klinik 2005–2019, toko bunga sejak 2016, rumah Elian dan Ratih 2020–2024) dan catatan yang belum ditulis. Tahunnya tampil besar di peta.
+  - **Putar 43 tahun.** Ke-187 catatan diputar menurut waktu, sekitar satu menit.
+    - Setiap catatan menyala sebagai cahaya jendela di tempatnya: biru kalau sudah kamu baca, abu-abu kalau belum kamu kenal.
+    - Simpulnya terbang sebagai benang ke tempat catatan tujuan.
+    - Langit menggelap mengikuti jam catatan, dan tahun, jam, serta penulisnya tampil di bawah.
+  - **Perjalanan** (`journeys`). Ada 10 perjalanan dari teks, dan setiap perjalanan dicocokkan dengan kalimat di catatannya (`quote`):
+    - Bu Rasmi naik bus delapan jam ke kota, dua kali;
+    - Sukrim menggendong ibunya tiga kilometer ke puskesmas dalam gelap, dan pulang dari lapas;
+    - Elian dan Ratih pindah 85 km tanpa pamit;
+    - Karman dua puluh kali ke pekuburan tua;
+    - Lestari berjalan dua kilometer ke toko bunga;
+    - Bagas ke Kampung Sela;
+    - tas di terminal;
+    - gudang Jalan Pelabuhan.
+    - Perjalanan baru muncul setelah catatannya dibaca. Jalurnya digambar sepanjang jalan dengan titik yang bergerak, kalimatnya tampil, dan peta menggelap untuk perjalanan malam.
+  - **Kartu tempat.**
+    - *Ulasan*, yaitu kalimat orang-orang tentang tempat itu, berinisial dan berwarna tinta penulisnya.
+    - *Jam ramai*: grafik 24 jam saat tempat itu ditulis.
+    - *Buka* dan *tutup* (`open`, `close`).
+    - *Arah ke…*: jarak dan waktu jalan kaki atau naik motor. Antarwilayah, jaraknya lewat Jalan Raya Sela. Kalau catatan Bu Rasmi sudah dibaca, kartu itu juga mengingatkan bahwa ia menempuhnya delapan jam naik bus.
+  - **Kartu jalan.** Mengetuk sebuah jalan menampilkan namanya (*nama rekaan* kalau rekaan), tempat-tempat di sepanjangnya, dan siapa saja yang pernah lewat, tahun demi tahun.
+  - **Mode sunting** (`?sunting=1`). Semua tempat tampil. Seret penanda untuk memindahkannya, dan ketuk peta untuk melihat dan menyalin koordinatnya. *＋ Tempat di sini* menambah tempat, dan *Unduh _peta.json* memberi berkas baru dengan koordinat yang sudah dipindah. Taruh berkas itu di `content/salasimpul/`, lalu jalankan `node tools/salasimpul.js`.
+  - `node tools/salasimpul.js` memeriksa tempat (wilayah, jenis, koordinat, dan pola yang benar-benar ada di teks), rumah, dan perjalanan (catatan, penulis, tempat, dan kutipan).
 - **Papan** (`#papan`). Semua yang kamu tahu tersemat di papan sebagai kertas berpaku.
   - Ketuk dua kertas untuk menyambungkannya dengan benang merah, dan seret kertas untuk memindahkannya. Ketuk benang untuk melepasnya.
   - Kalau fakta-fakta yang tersambung bersama-sama mengubah makna sebuah kalimat (`@irony` dengan dua fakta atau lebih), benangnya menyala ungu dan muncul kartu *Kamu menemukan simpul ini sendiri* berisi kalimat-kalimat itu.
