@@ -184,6 +184,68 @@ class DibacakanSmoke(unittest.TestCase):
         self.page.locator('#openSettings').click()
         self.assertTrue(self.page.locator('#plainLink').get_attribute('href').endswith(f'#baca-{SLUG}'))
 
+    # ---------- the reading, deeper ----------
+    def test_voices_beats_and_the_lamp(self):
+        self.go()
+        self.assertGreater(self.page.locator('.v-sarah').count(), 10)
+        self.assertGreater(self.page.locator('.v-kirana').count(), 2)
+        self.assertIn('Sarah bukan orang jahat.', self.page.locator('p.beat').all_text_contents())
+        self.to('#bab-2', 200)
+        self.page.wait_for_timeout(150)
+        self.assertIn('lamp-on', self.page.locator('body').get_attribute('class'))
+        self.assertEqual(self.page.locator('.step > .lit').count(), 1)
+        self.page.locator('#openSettings').click()
+        self.page.locator('#lamp').click()
+        self.assertNotIn('lamp-on', self.page.locator('body').get_attribute('class') or '')
+
+    def test_what_you_do_in_the_kitchen(self):
+        self.go()
+        self.to('[data-ask="4"]', -300)
+        self.page.locator('[data-ask="4"] [data-pick="saring"]').click()
+        self.assertIn('Sarah memilih hal yang sama', self.page.locator('[data-ask="4"]').text_content())
+        self.to('[data-ask="5"]', -300)
+        self.page.locator('[data-ask="5"] [data-pick="henti"]').click()
+        self.assertIn('Sarah tidak', self.page.locator('[data-ask="5"]').text_content())
+        st = self.state()
+        self.assertEqual((st['c4'], st['c5']), ('saring', 'henti'))
+
+    def test_the_eighth_year(self):
+        self.go()
+        box = self.page.locator('[data-chance]')
+        self.assertEqual(box.locator('.ch-o').count(), 2)
+        self.assertIn('Kau tidak gila', box.locator('[data-ans="jujur"]').text_content())
+        self.assertIn('Kau gila sedikit', box.locator('[data-ans="sarah"]').text_content())
+        self.assertGreater(self.page.locator('[data-veil]').count(), 0)
+        self.to('[data-chance]', -150)
+        box.locator('[data-ans="jujur"]').click()
+        self.page.wait_for_function("!document.querySelector('[data-veil]')")
+        self.assertIn('answered', box.get_attribute('class'))
+        self.assertEqual(self.state()['chance'], 'jujur')
+
+    def test_the_echo_of_the_mother(self):
+        self.go()
+        self.to('[data-echo]', -200)
+        self.page.locator('[data-echo]').click()
+        echoes = self.page.locator('.ec').count()
+        self.assertGreater(echoes, 3)
+        self.assertEqual(self.page.locator('.ec-list button').count(), echoes)
+        self.assertIn('echoing', self.page.locator('body').get_attribute('class'))
+        self.assertGreater(self.page.locator('em.whisper mark').count(), 2)
+
+    def test_weeks_without_a_letter_and_the_order_of_time(self):
+        self.go()
+        self.to('[data-mailbox]', -300)
+        self.page.wait_for_timeout(150)
+        self.page.evaluate("scrollBy(0, 1400)")
+        self.page.wait_for_function("+document.querySelector('[data-weeks]').textContent > 10")
+        self.page.evaluate("scrollTo(0, document.documentElement.scrollHeight)")
+        self.page.wait_for_selector('#chrono')
+        self.assertGreaterEqual(self.page.locator('#chrono .el').count(), 12)
+        self.page.locator('#chrono [data-goto]').first.click()
+        self.page.wait_for_timeout(200)
+        target = self.page.locator('#chrono [data-goto]').first.get_attribute('data-goto')
+        self.assertLess(abs(self.page.evaluate(f"document.getElementById('{target}').getBoundingClientRect().top")), 900)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

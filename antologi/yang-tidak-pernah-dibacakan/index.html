@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=3">
-<link rel="stylesheet" href="dibacakan.css?v=4">
+<link rel="stylesheet" href="dibacakan.css?v=5">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -48,6 +48,9 @@
       <li><span class="lg-written" aria-hidden="true"></span><span id="lgWritten">Yang ditulis Damar</span></li>
       <li><span class="lg-read" aria-hidden="true"></span><span id="lgRead">Yang dibacakan Sarah</span></li>
       <li><span class="lg-dark" aria-hidden="true"></span><span id="lgDark">Didengar dalam gelap</span></li>
+      <li><span class="lg-v lg-sarah" aria-hidden="true"></span><span id="lgSarah">Suara Sarah</span></li>
+      <li><span class="lg-v lg-kirana" aria-hidden="true"></span><span id="lgKirana">Kirana</span></li>
+      <li><span class="lg-v lg-renjani" aria-hidden="true"></span><span id="lgRenjani">Renjani</span></li>
     </ul>
     <div class="cover-act" id="coverAct"></div>
     <p class="lost" id="lost" hidden></p>
@@ -72,6 +75,7 @@
   <header class="dialog-head"><h2 id="settingsTitle">Pengaturan baca</h2><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
   <div class="settings-body">
     <div class="setting-row"><span id="sizeLabel">Ukuran huruf</span><span><button class="setting-button" id="smaller" type="button" aria-label="Perkecil huruf">A−</button><button class="setting-button" id="bigger" type="button" aria-label="Perbesar huruf">A+</button></span></div>
+    <div class="setting-row"><span id="lampLabel">Lampu meja</span><button class="setting-button" id="lamp" type="button" aria-pressed="true">Hidup</button></div>
     <div class="setting-row"><span id="rainLabel">Hujan di luar jendela</span><button class="setting-button" id="rain" type="button" aria-pressed="false">Mati</button></div>
     <div class="setting-row"><span id="motionLabel">Gerak</span><button class="setting-button" id="motion" type="button" aria-pressed="true">Aktif</button></div>
     <div class="setting-row"><span id="themeLabel">Tampilan</span><button class="setting-button" id="theme" type="button">Terang</button></div>
@@ -80,6 +84,6 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
-<script src="dibacakan.js?v=2"></script>
+<script src="dibacakan.js?v=3"></script>
 </body>
 </html>
