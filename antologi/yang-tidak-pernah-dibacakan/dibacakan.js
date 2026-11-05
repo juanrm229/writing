@@ -241,6 +241,17 @@
   /* ---------- tangga ---------- */
   $('#stairs').innerHTML = CH.map((c, i) => `<a href="#bab-${i + 1}" style="--i:${i}" data-go="${i}"><i aria-hidden="true"></i><span><b>${i + 1}</b>${esc(c.title || '')}</span></a>`).join('');
   let cur = -1;
+  /* malam turun bersama ceritanya: anak tangga 5–7 dibaca dalam gelap seperti dunia Renjani,
+     dan di anak tangga terakhir, ketika surat dibacakan dengan benar, terang kembali. Pilihan tema gelap pembaca tetap dihormati. */
+  const NIGHT = [4, 6];
+  function nightfall(c) {
+    const chosen = store.get('theme', null); if (chosen === 'dark') return;
+    const night = c >= NIGHT[0] && c <= NIGHT[1], was = root.hasAttribute('data-night');
+    if (night === was) return;
+    root.classList.add('shift'); setTimeout(() => root.classList.remove('shift'), 1800);
+    if (night) { root.setAttribute('data-night', ''); root.setAttribute('data-theme', 'dark'); announce(t('Malam turun. Mulai di sini, ceritanya dibaca dalam gelap.', 'Night falls. From here, the story is read in the dark.')); }
+    else { root.removeAttribute('data-night'); chosen === 'light' ? root.setAttribute('data-theme', 'light') : root.removeAttribute('data-theme'); if (c > NIGHT[1]) announce(t('Terang kembali.', 'The light comes back.')); }
+  }
   function where() {
     const steps = $$('.step'), mid = innerHeight * .4;
     let c = -1; steps.forEach((s, i) => { if (s.getBoundingClientRect().top < mid) c = i; });
@@ -248,6 +259,7 @@
       if (c > (S.reached ?? -1)) { const was = S.reached ?? -1; S.reached = c; save(); laciBadge(); laciNotes(); collect(was, c); }
       cur = c;
       $$('#stairs a').forEach((a, i) => { a.classList.toggle('on', i === c); a.classList.toggle('past', i < c); });
+      nightfall(c);
       const k = Math.max(0, c); root.style.setProperty('--depth', (k / Math.max(1, CH.length - 1)).toFixed(3)); root.style.setProperty('--rain', RAIN[Math.min(k, RAIN.length - 1)]); root.style.setProperty('--lamp', LAMP[Math.min(k, LAMP.length - 1)]);
       Rain.level(c < 0 ? .5 : RAIN[Math.min(k, RAIN.length - 1)]);
       $('#stepChip').hidden = c < 0; if (c >= 0 && G) G.step(c + 1, CH.length, t('Anak tangga', 'Step'));
@@ -337,14 +349,14 @@
   const pocket = $('#pocket');
   function pocketCount() {
     const n = inPocket().reduce((a, u) => a + words(u.w), 0);
-    pocket.hidden = !n; $('#pocketN').textContent = n;
+    pocket.hidden = !n; $('#pocketN').textContent = n; $('#pocketT').textContent = t('kata tak dibacakan', 'words unread');
     pocket.setAttribute('aria-label', t(`${n} kata yang tidak pernah dibacakan`, `${n} words never read aloud`));
   }
   function collect(from, to) {
     const fresh = UNREAD.filter(u => u.bab > from && u.bab <= to);
     if (!fresh.length) return pocketCount();
     const pr = pocket.getBoundingClientRect();
-    fresh.slice(0, 4).forEach((u, i) => {
+    fresh.filter(u => u.bab === to).slice(0, 3).forEach((u, i) => { // hanya dari anak tangga yang baru dicapai
       if (calm()) return;
       const s = document.createElement('span'); s.className = 'strip'; s.textContent = u.w.length > 46 ? u.w.slice(0, 44) + '…' : u.w;
       s.style.cssText = `left:${innerWidth / 2}px;top:${innerHeight * .45 + i * 34}px;--dx:${pr.left + pr.width / 2 - innerWidth / 2}px;--dy:${pr.top + pr.height / 2 - innerHeight * .45 - i * 34}px;animation-delay:${i * .35}s`;
