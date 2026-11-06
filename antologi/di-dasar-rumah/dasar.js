@@ -66,6 +66,49 @@
     'Di luar ada yang jatuh dari langit. Ibu tidak menyebut namanya.', 'Malam terakhir. Ibu duduk lebih dekat dari biasanya.'
   ];
   const ASK = EN ? ['And then?', 'Go on.', 'What happened?', 'Mm-hm.', 'And then, Mother?'] : ['Lalu?', 'Terus, Bu?', 'Lalu bagaimana?', 'Hm-hm.', 'Lanjut, Bu.'];
+  // sela anak menurut suasana kalimat yang baru diceritakan; Ibu membalas menurut nadanya
+  const MOODS = EN ? {
+    on: ['And then?', 'Go on.', 'What happened next?', 'Mm-hm.', 'I am still awake.', 'Then what?', 'Keep going, Mother.', 'Not sleepy yet.'],
+    scared: ['Hold my hand, Mother.', 'Do not go so fast.', 'Leave the lamp on.', 'I am pulling the blanket up.', 'That is scary…', 'I am closing my eyes, but I am listening.'],
+    curious: ['What did she say then?', 'Why, Mother?', 'Who is she really?', 'How do you know that?', 'Is it true?', 'How old was the girl?'],
+    warm: ['Like you, Mother.', 'Your hands are cold too.', 'Poor girl.', 'Can I hug you?', 'I want a sweater like that.'],
+    cold: ['Was it very cold?', 'I am cold too.', 'Can you warm my hands?'],
+    sleepy: ['My eyes are heavy… but go on.', 'One more bit, Mother.', 'Do not stop yet.', 'I am not asleep, I promise.']
+  } : {
+    on: ['Lalu?', 'Terus, Bu?', 'Lalu bagaimana?', 'Hm-hm.', 'Lanjut, Bu.', 'Habis itu?', 'Terus terus?', 'Aku masih bangun, Bu.', 'Belum ngantuk.', 'Terus dia ngapain?'],
+    scared: ['Bu, pegang tanganku.', 'Jangan cepat-cepat, Bu.', 'Lampunya jangan dimatikan.', 'Aku tarik selimut, ya.', 'Seram…', 'Aku tutup mata, tapi aku dengar.', 'Bu, ada suara di bawah ranjang?'],
+    curious: ['Dia bilang apa lagi?', 'Kenapa begitu, Bu?', 'Perempuan itu siapa sebenarnya?', 'Ibu tahu dari mana?', 'Itu benar terjadi, Bu?', 'Gadis itu umur berapa?', 'Kenapa dia tidak lari?'],
+    warm: ['Seperti Ibu.', 'Tangan Ibu juga dingin.', 'Kasihan dia.', 'Aku peluk Ibu, ya.', 'Aku mau dirajutkan juga.', 'Ibunya baik, ya?'],
+    cold: ['Dingin sekali, ya, Bu?', 'Aku juga kedinginan.', 'Hangatkan tanganku, Bu.'],
+    sleepy: ['Mataku berat, Bu… tapi lanjut.', 'Sedikit lagi, Bu.', 'Jangan berhenti dulu.', 'Aku belum tidur, sungguh.', 'Ibu jangan pergi dulu.', 'Satu bagian lagi, ya?'],
+    early: ['Ceritakan dari awal, Bu.', 'Yang ada gadisnya, kan?', 'Aku sudah di bawah selimut.', 'Hari ini yang panjang, ya, Bu.']
+  };
+  const REPLY = EN ? {
+    scared: ['“I am here.”', 'Mother holds your hand. Her hand is cold.', 'Mother lowers her voice, as if that could make it less frightening.', '“The lamp stays on.”'],
+    curious: ['“Patience, love. We will get there.”', 'Mother smiles and does not answer.', '“From a book. Where else?”', '“You always ask that one.”'],
+    warm: ['Mother kisses your forehead.', '“Yes. Like me.”', 'Mother tucks the blanket up to your chin.'],
+    cold: ['Mother breathes into your hands. Her breath is not warm.', '“Colder than this.”'],
+    quiet: ['Mother goes on, thinking you are asleep.', 'Mother waits a moment, then goes on more softly.']
+  } : {
+    scared: ['“Ibu di sini.”', 'Ibu menggenggam tanganmu. Tangannya dingin.', 'Ibu memelankan suaranya, seolah itu bisa membuatnya kurang menakutkan.', '“Lampunya tetap menyala.”', 'Ibu melirik ke bawah ranjang, lalu tersenyum kepadamu.'],
+    curious: ['“Sabar, sayang. Nanti juga sampai.”', 'Ibu tersenyum, tidak menjawab.', '“Dari buku. Dari mana lagi?”', '“Kau selalu menanyakan yang itu.”', '“Nanti kau tahu sendiri.”'],
+    warm: ['Ibu mencium keningmu.', '“Iya. Seperti Ibu.”', 'Ibu merapatkan selimut sampai ke dagumu.', 'Ibu tertawa kecil, lalu suaranya menjadi pelan lagi.'],
+    cold: ['Ibu meniup kedua tanganmu. Napasnya tidak hangat.', '“Lebih dingin dari ini.”', 'Ibu menggosok tanganmu di antara tangannya sendiri.'],
+    quiet: ['Ibu melanjutkan, mengira kau sudah tidur.', 'Ibu menunggu sebentar, lalu bercerita lebih pelan.']
+  };
+  const MOOD_RE = EN ? {
+    scared: /\b(dark|silent|silence|door|breath|abyss|fog|crawl|scream|cried|fear|afraid|shadow|knock|locked)\w*/i,
+    curious: /[“"]|\b(why|who|asked|question)\b/i,
+    warm: /\b(mother|warm|hand|knit|sweater|smile|hug)\w*/i,
+    cold: /\b(cold|frost|freez|winter|ice)\w*/i
+  } : {
+    scared: /\b(gelap|sunyi|pintu|napas|jurang|kabut|merangkak|menangis|takut|bayang|mendobrak|menggedor|palang|padam|terlambat)\w*/i,
+    curious: /[“"]|\b(mengapa|kenapa|siapa|bertanya|tanya)\b/i,
+    warm: /\b(ibunya|hangat|rajutan|wol|memeluk)\w*/i,
+    cold: /\b(dingin|beku|embun|musim dingin)\w*/i
+  };
+  const recent = [];
+  const pickFrom = list => { const fresh = list.filter(x => !recent.includes(x)); const x = (fresh.length ? fresh : list)[Math.floor(Math.random() * (fresh.length || list.length))]; recent.push(x); if (recent.length > 14) recent.shift(); return x; };
   // saat-saat anak menyela: [penanda kalimat, sela anak, bisikan Ibu sesudahnya]
   const MOMENTS = EN ? [] : [
     [/^Maka ketika, pada suatu sore/, 'Siapa dia, Bu?', 'Ssst. Orang yang tersenyum terlalu lama.'],
@@ -84,7 +127,7 @@
   const FLAME_AT = at(EN ? /^Look at your hands/ : /^Lihat tanganmu, sayang/);
 
   /* ---------- ingatan ---------- */
-  const blank = () => ({ v: 1, night: 0, k: 0, res: {}, said: [], retold: 0, voice: false });
+  const blank = () => ({ v: 1, night: 0, k: 0, res: {}, said: [], retold: 0, voice: false, mood: { scared: 0, curious: 0, warm: 0, cold: 0, quiet: 0 } });
   let S = store.get('dongeng', null); S = S && S.v === 1 ? { ...blank(), ...S } : blank();
   const save = () => store.set('dongeng', S);
 
@@ -154,8 +197,20 @@
     const k = S.k - 1;
     if (k >= LAST) return finale();
     if (k === lastOf(S.night)) return chips([{ label: t('Selamat malam, Bu.', 'Good night, Mother.'), go: goodNight }]);
-    const a = ASK[askI++ % ASK.length];
-    chips([{ label: a, go: () => { add('child', esc(a)); tell(); } }]);
+    // dua atau tiga pilihan: satu yang melanjutkan, satu atau dua yang mengikuti suasana kalimat terakhir, kadang diam saja
+    const last = P[k], moods = Object.keys(MOOD_RE).filter(m => MOOD_RE[m].test(last)).sort(() => Math.random() - .5);
+    // di awal malam anak masih segar; menjelang akhir malam ia mulai mengantuk
+    const span = lastOf(S.night) - FIRST[S.night] + 1, pos = (k - FIRST[S.night]) / Math.max(1, span);
+    const pool = MOODS.on.concat(pos > .65 && MOODS.sleepy ? MOODS.sleepy : [], pos < .2 && MOODS.early ? MOODS.early : []);
+    const opts = [{ label: pickFrom(pool), mood: null }];
+    moods.slice(0, 2).forEach(m => opts.push({ label: pickFrom(MOODS[m]), mood: m }));
+    if (opts.length === 1 && Math.random() < .5) { const m = ['curious', 'warm'][askI++ % 2]; opts.push({ label: pickFrom(MOODS[m]), mood: m }); }
+    if (Math.random() < .1) opts.push({ label: t('(diam saja)', '(say nothing)'), mood: 'quiet', cls: 'soft' });
+    chips(opts.map((o, i) => ({ label: o.label, cls: o.cls || (i === 0 ? 'main' : ''), go: () => {
+      if (o.mood) S.mood[o.mood] = (S.mood[o.mood] || 0) + 1; save();
+      if (o.mood !== 'quiet') add('child', esc(o.label));
+      if (o.mood) { add('aside', esc(pickFrom(REPLY[o.mood]))); setTimeout(tell, calm() ? 0 : 750); } else tell();
+    } })));
   }
   function remind(f, yes) {
     S.res[f.id] = yes ? 'given' : 'left'; save();
@@ -184,7 +239,14 @@
     root.classList.add('flame');
     const given = FORGET.filter(f => S.res[f.id] === 'given'), left = FORGET.filter(f => S.res[f.id] === 'left');
     const words = given.map(f => (f.id === 'angka' ? t('angka-angka', 'the numbers') : f.id));
-    add('end', `<p class="big">${esc(given.length ? t(`Kau mengingatkan Ibu ${given.length} kata.`, `You reminded Mother of ${given.length} words.`) : t('Kau tidak mengingatkan Ibu satu kata pun.', 'You did not remind Mother of a single word.'))}</p>
+    const top = Object.entries(S.mood || {}).filter(([m]) => m !== 'quiet').sort((a, b) => b[1] - a[1])[0];
+    const who = !top || !top[1] ? '' : {
+      scared: t('Kau penakut, tapi kau tidak pernah menutup telingamu.', 'You were frightened, but you never covered your ears.'),
+      curious: t('Kau bertanya terlalu banyak. Anak seperti itu biasanya ingin turun sendiri.', 'You asked too many questions. Children like that usually want to go down themselves.'),
+      warm: t('Kau menggenggam tangannya hampir setiap malam. Tangannya tidak pernah menghangat.', 'You held her hand almost every night. It never got warm.'),
+      cold: t('Kau selalu bertanya tentang dingin. Kau sudah tahu rasanya.', 'You kept asking about the cold. You already know how it feels.')
+    }[top[0]];
+    add('end', `${who ? `<p class="small">${esc(who)}</p>` : ''}<p class="big">${esc(given.length ? t(`Kau mengingatkan Ibu ${given.length} kata.`, `You reminded Mother of ${given.length} words.`) : t('Kau tidak mengingatkan Ibu satu kata pun.', 'You did not remind Mother of a single word.'))}</p>
       ${given.length ? `<p class="words">${esc(words.join(', '))}</p><p>${esc(t('Sekarang kata-kata itu milikmu. Simpan baik-baik. Di bawah ranjang ada yang lapar.', 'Those words are yours now. Keep them well. Something under the bed is hungry.'))}</p>` : `<p>${esc(t('Lubang-lubangnya akan kau ceritakan juga, suatu hari, kepada seseorang yang tangannya dingin.', 'You will tell its holes too, one day, to someone whose hands are cold.'))}</p>`}
       ${left.length ? `<p class="small">${esc(t(`${left.length} kata tetap kosong.`, `${left.length} words stayed empty.`))}</p>` : ''}
       ${G ? G.next(SLUG) : ''}`, 'section');
