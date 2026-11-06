@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=3">
-<link rel="stylesheet" href="dibacakan.css?v=9">
+<link rel="stylesheet" href="dibacakan.css?v=10">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -69,7 +69,8 @@
   <p class="dark-who" id="darkWho"></p>
   <p class="dark-cap" id="darkCap" aria-live="polite"></p>
   <div class="dark-wave" id="darkWave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-  <div class="dark-act"><button type="button" class="dark-btn" id="darkVoice" aria-pressed="false" hidden>Suara: mati</button><button type="button" class="dark-btn open" id="darkOpen">Buka mata</button></div>
+  <p class="dark-hint" id="darkHint" hidden></p>
+  <div class="dark-act"><button type="button" class="dark-btn" id="darkHand" hidden>Tanpa genggam</button><button type="button" class="dark-btn" id="darkVoice" aria-pressed="false" hidden>Suara: mati</button><button type="button" class="dark-btn open" id="darkOpen">Buka mata</button></div>
 </div>
 
 <dialog class="laci" id="laci" aria-labelledby="laciTitle">
@@ -95,6 +96,6 @@
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
 <script src="surat.js?v=2"></script>
-<script src="dibacakan.js?v=7"></script>
+<script src="dibacakan.js?v=8"></script>
 </body>
 </html>
