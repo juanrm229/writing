@@ -52,8 +52,8 @@ body.big { --band: 66svh; }
 .bn.out { animation: bnOut .35s ease forwards; }
 @keyframes bnIn { from { opacity: 0; transform: translateY(-16px) scale(.96); } }
 @keyframes bnOut { to { opacity: 0; transform: translateY(-12px); } }
-.screen.other { --scr: #F4EFE6; }
-.screen.other[data-dev="pc"] { --scr: #EEF1F4; }
+/* layar orang lain memakai warna yang sama dengan ponsel Elias; pembedanya hanya label pemilik di bilah status */
+.screen.other .owner { background: var(--blue); color: #fff; }
 
 /* ---------- ikon aplikasi ---------- */
 .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; position: relative; flex: none; color: #fff; }
