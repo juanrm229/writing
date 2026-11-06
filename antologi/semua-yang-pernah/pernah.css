@@ -413,6 +413,7 @@ div.row { cursor: default; }
 .ly:hover { color: rgb(255 255 255 / .7); }
 .ly.past { color: rgb(255 255 255 / .62); }
 .ly.on { color: #fff; transform: scale(1.02); }
+.ly.ad { font-size: .78em; font-style: italic; font-weight: 600; }
 .ly-sec { margin: 1em 0 .35em; font: 600 10.5px var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: rgb(255 255 255 / .45); }
 .ly-sec:first-child { margin-top: 0; }
 .ly-end { color: rgb(255 255 255 / .4); font-size: 20px; }
