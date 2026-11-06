@@ -148,11 +148,13 @@
       if (!seen && !c.quiet) sheet();
     },
     // Penanda "Bait 3 dari 7" dengan titik-titik kecil.
-    step(n, total, word) {
+    // label: teks pengganti untuk bagian tanpa nomor, mis. "Prolog"
+    step(n, total, word, label) {
       const el = cfg.stepInto && document.querySelector(cfg.stepInto); if (!el) return;
       const dots = total <= 14 ? `<i aria-hidden="true">${Array.from({ length: total }, (_, i) => `<b class="${i < n ? 'on' : ''}"></b>`).join('')}</i>` : '';
-      el.className = 'jm-step'; el.innerHTML = `${esc(word || t('Bait', 'Stanza'))} ${n} ${esc(t('dari', 'of'))} ${total}${dots}`;
-      el.setAttribute('aria-label', `${word || t('Bait', 'Stanza')} ${n} ${t('dari', 'of')} ${total}`);
+      const txt = label || `${word || t('Bait', 'Stanza')} ${n} ${t('dari', 'of')} ${total}`;
+      el.className = 'jm-step'; el.innerHTML = `${esc(txt)}${dots}`;
+      el.setAttribute('aria-label', txt);
     },
     // Tombol berikutnya yang ditunggu; null kalau tidak ada.
     want(sel, text) { target = sel; label = text || ''; arm(); },

@@ -715,7 +715,7 @@
       cur = k; show(k, anim, f);
     } else if (BEATS[k] && (BEATS[k].span || BEATS[k].walk)) show(k, false, f);
     const c = g >= 0 ? PARA[g].c : 0;
-    if (c !== chNow) { chNow = c; $('#barTitle').textContent = CH[c].num === 'Prolog' ? 'Prolog' : `Bab ${CH[c].num}`; G?.step?.(c + 1, CH.length, 'Bagian'); paintFolder(); }
+    if (c !== chNow) { chNow = c; $('#barTitle').textContent = CH[c].num === 'Prolog' ? 'Prolog' : `Bab ${CH[c].num}`; G?.step?.(+CH[c].num || 0, CH.filter(x => x.num !== 'Prolog').length, 'Bab', CH[c].num === 'Prolog' ? 'Prolog' : ''); paintFolder(); }
     $('#nbar').classList.toggle('scrolled', read.scrollTop > 60);
     if (g > S.max) S.max = g;
     S.at = Math.max(0, g);
