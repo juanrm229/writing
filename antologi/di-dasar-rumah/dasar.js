@@ -83,6 +83,8 @@
   const MEM = [['wajah', t('Wajah Ibu', 'Mother’s face'), 'faceGone'], ['hujan', t('Bau hujan di tanah', 'The smell of rain on earth'), 'given3'], ['garam', t('Rasa garam', 'The taste of salt'), 'given3'], ['sungai', t('Nama sungai di dekat rumah', 'The name of the river near home'), 'riverLost'], ['gunting', t('Bunyi gunting ketika memotong wol', 'The sound of scissors cutting wool'), 'given3']];
   const BAG = [t('Pakaian', 'Clothes'), t('Jarum', 'Needles'), t('Sisa benang', 'Leftover thread'), t('Sisir ibunya yang patah satu gigi', 'Her mother’s comb with one broken tooth')];
   const TOLD = [t('Jalan pulang', 'The way home'), t('Letak dapur', 'Where the kitchen is'), t('Kamar mana yang harus dimasuki sebelum pagi', 'Which room to enter before morning')];
+  // pembaca boleh mengganti daftar itu dengan ingatannya sendiri; hilangnya tetap di kalimat yang sama
+  const memLabel = (k, l) => (S.mine && S.mine[k]) || l;
   const memLeft = () => (reached('mem') ? MEM.filter(m => !reached(m[2])).length : 0);
 
   /* ---------- menyusun teks ---------- */
@@ -116,21 +118,16 @@
       <p class="bill-mom"><span>${esc(t('ditulis tangan Ibu', 'in Mother’s hand'))}</span><b data-n="38.000">38.000</b></p>
       ${gone ? `<figcaption><button type="button" class="lt-btn ghost" data-tilt>${esc(t('Miringkan ke arah jendela', 'Tilt it toward the window'))}</button></figcaption>` : ''}
     </figure>`;
-  const houseHTML = () => `<figure class="house" data-house aria-label="${esc(t('Rumah panggung yang terbalik', 'The upside-down stilt house'))}">
-      <svg viewBox="0 0 320 200" aria-hidden="true">
-        <path class="rim" d="M0 34 C 70 22, 250 22, 320 34"/>
-        <g class="trees"><path d="M28 34 V 62 M18 62 L28 40 L38 62 Z M292 34 V 62 M282 62 L292 40 L302 62 Z M62 34 V 54 M54 54 L62 38 L70 54 Z M258 34 V 54 M250 54 L258 38 L266 54 Z"/></g>
-        <g class="home"><path d="M118 60 V 100 M202 60 V 100 M140 60 V 100 M180 60 V 100"/><rect x="112" y="100" width="96" height="44"/><path d="M104 144 L160 184 L216 144 Z"/></g>
-        <g class="door"><rect x="150" y="112" width="20" height="30" rx="1.5"/><circle cx="165" cy="128" r="1.6"/></g>
-        <path class="mist" d="M0 190 C 60 176, 120 198, 180 186 S 290 178, 320 190"/>
-      </svg>
+  // rumah terbalik, ditulis terbalik: kalimatnya sendiri yang berdiri di atas kepala sampai diketuk
+  const houseHTML = () => `<figure class="house typo" data-house aria-label="${esc(t('Rumah panggung yang terbalik', 'The upside-down stilt house'))}">
+      <p class="upside" aria-hidden="true">${esc(t('rumah panggung dari kayu hitam', 'a stilt house of black wood'))}</p>
       <figcaption><span data-house-cap>${esc(t('Rumahnya terbalik. Pintunya tidak.', 'The house is upside down. Its door is not.'))}</span><button type="button" class="lt-btn ghost" data-flip>${esc(t('Betulkan letaknya', 'Set it right'))}</button></figcaption>
     </figure>`;
   const coinHTML = () => `<div class="coin-ask"><span class="cr" aria-hidden="true">☾</span><button type="button" class="lt-btn ghost" data-coin>${esc(t('Selipkan satu koin ke goresan itu', 'Slip a coin into the mark'))}</button></div>`;
   const landHTML = () => `<div class="fl-land" id="flLand" aria-hidden="true"><span class="fl-body"><i class="fl-core"></i></span></div>`;
-  const threadHTML = () => `<figure class="thread" data-thread aria-label="${esc(t('Benang yang mengukur kamar', 'The thread that measures the room'))}">
-      <svg viewBox="0 0 220 220" aria-hidden="true"><g class="walls"><rect x="30" y="30" width="160" height="160" rx="2"/><rect class="door" x="34" y="150" width="4" height="26"/></g>
-        <circle class="seat" cx="110" cy="110" r="5"/><path class="yarn" pathLength="100" d="M36 163 V 34 H 186 V 186 H 34 V 172 M36 163 V 120"/></svg>
+  // benang: satu garis yang memanjang lalu berhenti di tempat yang sama
+  const threadHTML = () => `<figure class="thread typo" data-thread aria-label="${esc(t('Benang yang mengukur kamar', 'The thread that measures the room'))}">
+      <p class="yarn" aria-hidden="true"><i></i></p>
       <figcaption><button type="button" class="lt-btn ghost" data-measure>${esc(t('Ukur dindingnya', 'Measure the walls'))}</button></figcaption>
     </figure>`;
   const SPINES = [
@@ -143,15 +140,15 @@
       <div class="spines">${SPINES.map(([s, k], i) => `<button type="button" class="spine${k ? ' ' + k : ''}" data-spine="${i}" style="--h:${78 + (i * 37) % 26}%" aria-label="${esc(t('Balik bukunya', 'Turn the book around'))}"><span>${esc(s)}</span></button>`).join('')}</div>
       <figcaption>${esc(t('Punggungnya menghadap dinding. Ketuk untuk membaliknya.', 'Their spines face the wall. Tap to turn one around.'))}</figcaption>
     </figure>`;
-  const memCardHTML = () => `<figure class="stars" data-stars aria-label="${esc(t('Yang masih diingat', 'What she still remembers'))}"><ol>${MEM.map(([k, l]) => `<li data-m="${k}"><i aria-hidden="true">✦</i><span>${esc(l)}</span></li>`).join('')}</ol><figcaption>${esc(t('Disimpan seperti orang menyimpan bintang. Ada di tombol bintang di atas.', 'Kept the way one keeps stars. Also behind the star button above.'))}</figcaption></figure>`;
+  const memCardHTML = () => `<figure class="stars" data-stars aria-label="${esc(t('Yang masih diingat', 'What she still remembers'))}"><ol>${MEM.map(([k, l]) => `<li data-m="${k}"><i aria-hidden="true">✦</i><span data-mine="${k}" data-ph="${esc(l)}">${esc(memLabel(k, l))}</span></li>`).join('')}</ol><p class="mine-act"><button type="button" class="lt-btn ghost" data-mine-edit>${esc(t('Ganti dengan ingatanku sendiri', 'Use my own memories'))}</button></p><figcaption>${esc(t('Disimpan seperti orang menyimpan bintang. Ada di tombol bintang di atas.', 'Kept the way one keeps stars. Also behind the star button above.'))}</figcaption></figure>`;
   const signName = () => esc(S.name || '');
   const noteHTML = () => `<figure class="note" data-note aria-label="${esc(t('Halaman kosong yang ditulisinya', 'The blank page she wrote on'))}"><p class="hand">${esc(t('Aku berada di dasar rumah.', 'I am at the bottom of the house.'))}<br>${esc(t('Aku datang untuk bekerja.', 'I came here to work.'))}<br>${esc(t('Aku harus pulang.', 'I must go home.'))}</p><p class="hand sig" data-sig>${signName() || '<span class="nm-blank"></span>'}</p></figure>`;
   const riverHTML = () => `<figure class="river" data-river><p>${esc(t('Nyala itu hampir separuh padam. Ia memberinya nama sungai di dekat rumah. Kau juga punya sungai?', 'The flame is almost half gone. She gives it the name of the river near home. Do you have a river too?'))}</p>
       <form data-river-form><input name="r" maxlength="28" spellcheck="false" placeholder="${esc(t('nama sungai di dekat rumahmu', 'the river near your home'))}" aria-label="${esc(t('Nama sungai di dekat rumahmu', 'The river near your home'))}"><button type="submit" class="lt-btn">${esc(t('Berikan', 'Give it'))}</button></form>
       <p class="river-given" data-river-word></p></figure>`;
-  const jarHTML = () => `<figure class="jar" data-jar aria-label="${esc(t('Toples', 'A jar'))}"><span class="jar-glass" aria-hidden="true"><i class="lid"></i></span><figcaption><em class="label">${esc(t('Nama sungai yang diberikan seorang anak agar nyalanya tidak padam.', 'The name of a river, given by a child so her flame would not go out.'))}</em><b data-jar-word></b></figcaption></figure>`;
-  const doorsHTML = () => `<figure class="doors" data-doors aria-hidden="true"><svg viewBox="0 0 360 140">${Array.from({ length: 9 }, (_, r) => Array.from({ length: 26 }, (_, c) => { const x = 6 + c * 13.6, y = 10 + r * 14 + Math.sin(c / 3 + r) * 4 - Math.abs(c - 12.5) * .5; return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(7 - r * .4).toFixed(1)}" height="${(10 - r * .5).toFixed(1)}" rx="1" style="--d:${((c * 7 + r * 3) % 17) / 10}s"/>`; }).join('')).join('')}</svg></figure>`;
-  const bookHTML = () => `<figure class="book" data-book><span class="book-cov" aria-hidden="true"><i></i></span><figcaption><p>${esc(t('Tak ada nama di sana. Hanya gadis, Ibu, dan perempuan bertopi.', 'No name in it. Only a girl, a mother, and a woman in a hat.'))}</p><button type="button" class="lt-btn ghost" data-open-book>${esc(t('Buka halaman pertamanya', 'Open it to the first page'))}</button></figcaption></figure>`;
+  const jarHTML = () => `<figure class="jar typo" data-jar aria-label="${esc(t('Toples', 'A jar'))}"><figcaption><em class="label">${esc(t('Nama sungai yang diberikan seorang anak agar nyalanya tidak padam.', 'The name of a river, given by a child so her flame would not go out.'))}</em><b data-jar-word></b></figcaption></figure>`;
+  const doorsHTML = () => '';
+  const bookHTML = () => `<figure class="book typo" data-book><figcaption><p>${esc(t('Tak ada nama di sana. Hanya gadis, Ibu, dan perempuan bertopi.', 'No name in it. Only a girl, a mother, and a woman in a hat.'))}</p><button type="button" class="lt-btn ghost" data-open-book>${esc(t('Buka halaman pertamanya', 'Open it to the first page'))}</button></figcaption></figure>`;
   const ghostHTML = () => `<div class="ghost-ask"><button type="button" class="lt-btn ghost" data-look-up>${esc(t('Lihat setiap Ibu di atas', 'Look at every Mother above'))}</button></div>`;
   const INSERTS = [['bill', billHTML(false)], ['billGone', billHTML(true)], ['house', houseHTML()], ['crescent', coinHTML()], ['nyala', landHTML()], ['thread', threadHTML()], ['shelf', shelfHTML()], ['mem', memCardHTML()], ['note', noteHTML()], ['river', riverHTML()], ['jar', jarHTML()], ['out', doorsHTML()], ['book', bookHTML()], ['penjaga', ghostHTML()]];
   // catatan tangannya, di tepi halaman-halaman yang ia baca sebelum kau
@@ -200,6 +197,22 @@
   $('#signName').addEventListener('blur', paintName);
 
   /* ---------- bintang: yang masih diingat ---------- */
+  function mineEdit(on) {
+    const f = $('[data-stars]'); if (!f) return;
+    $$('[data-mine]', f).forEach(sp => {
+      const li = sp.closest('li'), open = on && !li.classList.contains('lost');
+      sp.contentEditable = open ? 'plaintext-only' : 'false'; sp.classList.toggle('editing', open);
+    });
+    f.classList.toggle('editing', on);
+    $('[data-mine-edit]', f).textContent = on ? t('Selesai', 'Done') : t('Ganti dengan ingatanku sendiri', 'Use my own memories');
+    const first = on && $('[data-mine].editing', f); if (first) { first.focus(); const r = document.createRange(); r.selectNodeContents(first); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  }
+  document.addEventListener('input', e => {
+    const sp = e.target.closest && e.target.closest('[data-mine]'); if (!sp) return;
+    const v = sp.textContent.replace(/\s+/g, ' ').trim().slice(0, 48);
+    S.mine = { ...(S.mine || {}) }; if (v) S.mine[sp.dataset.mine] = v; else delete S.mine[sp.dataset.mine]; save();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.closest && e.target.closest('[data-mine]')) { e.preventDefault(); e.target.blur(); } });
   function memPaint() {
     $$('[data-stars] li').forEach(li => { const m = MEM.find(x => x[0] === li.dataset.m); li.classList.toggle('lost', !!m && reached(m[2])); });
     const n = memLeft(), b = $('#openMem');
@@ -209,7 +222,7 @@
     const lostTip = t('Kau bisa membacanya. Ia tidak lagi berarti apa-apa.', 'You can read it. It no longer means anything.');
     const parts = [];
     if (reached('told')) parts.push(`<section class="mem-sec told"><h3>${esc(t('Yang diceritakan kepadanya', 'What she was told'))}</h3><ol>${TOLD.map(x => `<li><i aria-hidden="true">✦</i><span>${esc(x)}</span></li>`).join('')}</ol><p class="mem-n">${esc(t('Ia tidak mengingat pernah berada di sana.', 'She does not remember ever being there.'))}</p></section>`);
-    if (reached('mem')) parts.push(`<section class="mem-sec"><h3>${esc(t('Yang masih kuingat dari atas', 'What I still remember from above'))}</h3><ol>${MEM.map(([k, l, when]) => `<li class="${reached(when) ? 'lost' : ''}"${reached(when) ? ` title="${esc(lostTip)}"` : ''}><i aria-hidden="true">✦</i><span>${esc(l)}</span>${k === 'sungai' && S.river ? `<small>${reached(when) ? [...S.river].map(c => `<i>${esc(c)}</i>`).join('') : esc(S.river)}</small>` : ''}</li>`).join('')}</ol>${memLeft() === 0 ? `<p class="mem-n">${esc(lostTip)}</p>` : ''}</section>`);
+    if (reached('mem')) parts.push(`<section class="mem-sec"><h3>${esc(t('Yang masih kuingat dari atas', 'What I still remember from above'))}</h3><ol>${MEM.map(([k, l0, when], _, __, l = memLabel(k, l0)) => `<li class="${reached(when) ? 'lost' : ''}"${reached(when) ? ` title="${esc(lostTip)}"` : ''}><i aria-hidden="true">✦</i><span>${esc(l)}</span>${k === 'sungai' && S.river ? `<small>${reached(when) ? [...S.river].map(c => `<i>${esc(c)}</i>`).join('') : esc(S.river)}</small>` : ''}</li>`).join('')}</ol>${memLeft() === 0 ? `<p class="mem-n">${esc(lostTip)}</p>` : ''}</section>`);
     if (reached('bag')) parts.push(`<section class="mem-sec"><h3>${esc(t('Di dalam tas', 'In the bag'))}</h3><ol>${BAG.map(x => `<li><i aria-hidden="true">·</i><span>${esc(x)}</span></li>`).join('')}</ol></section>`);
     $('#memTitle').textContent = reached('mother') ? t('Ibu', 'Mother') : reached('mem') ? t(`${memLeft()} bintang`, `${memLeft()} stars`) : t('Bintang', 'Stars');
     $('#memBody').innerHTML = parts.join('') || `<p class="mem-empty">${esc(t('Belum ada yang perlu dihitung. Turunlah.', 'Nothing to count yet. Go down.'))}</p>`;
@@ -261,7 +274,24 @@
     say(wasDim ? t('Ia kembali terang.', 'It burns bright again.') : reached('beat') ? t('Ia berdetak sedikit lebih kuat.', 'It beats a little stronger.') : t('Kau menemaninya.', 'You keep it company.'), 2400);
     announce(t('Nyala itu kembali terang.', 'The flame burns bright again.'));
   });
+  // di kamar tanpa jendela halaman menjadi gelap; huruf hanya diterangi nyala, dan membeku kalau nyalanya meredup
+  let warmT = 0, warmAt = 0;
+  function startWarm(e) {
+    if (!roomOn() || calm() || e.target.closest('button, a, input, [contenteditable="plaintext-only"], .flame')) return;
+    clearInterval(warmT); warmAt = Date.now();
+    warmT = setInterval(() => {
+      if (Date.now() - warmAt < 450) return;
+      root.classList.add('warming');
+      if (dim > 0) { dim = Math.max(0, dim - .035); idleAt = Date.now(); paintFlame(); }
+      else if (!root.classList.contains('warm-done')) { root.classList.add('warm-done'); S.kept++; save(); }
+    }, 90);
+  }
+  const stopWarm = () => { clearInterval(warmT); root.classList.remove('warming', 'warm-done'); };
+  story.addEventListener('pointerdown', startWarm);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => story.addEventListener(ev, stopWarm));
+  addEventListener('scroll', () => { if (Date.now() - warmAt < 450) stopWarm(); }, { passive: true });
   function paintFlame() {
+    root.toggleAttribute('data-room', roomOn());
     flame.hidden = !(roomOn() || flame.classList.contains('docking'));
     flame.classList.toggle('heart', reached('beat'));
     flame.classList.toggle('palms', reached('palms'));
@@ -291,6 +321,7 @@
 
   /* ---------- benda-benda yang bisa disentuh ---------- */
   story.addEventListener('click', e => {
+    if (e.target.closest('[data-mine-edit]')) { mineEdit(!$('[data-stars]').classList.contains('editing')); return; }
     const tilt = e.target.closest('[data-tilt]');
     if (tilt) { const f = tilt.closest('.bill'); f.classList.toggle('tilted'); tilt.textContent = f.classList.contains('tilted') ? t('Kembalikan', 'Put it back') : t('Miringkan ke arah jendela', 'Tilt it toward the window'); return; }
     const flip = e.target.closest('[data-flip]');
@@ -432,7 +463,14 @@
   /* ---------- akhir: ceritakan lagi ---------- */
   function endHTML() {
     const nm = S.name;
-    return `<div class="end-card">
+    // dongengnya mulai lagi, kali ini diceritakan kepadamu
+    const first = P[0] ? plain(P[0].text) : '';
+    return `<div class="again" aria-label="${esc(t('Dongengnya mulai lagi', 'The tale begins again'))}">
+      <p class="again-k">${esc(t('Ibu bercerita', 'Mother is telling it'))}</p>
+      <p class="again-t">${esc(first)}</p>
+      <p class="again-you">${esc(t('Kau baru saja mendengarnya dari awal sampai akhir, sayang. Tanganmu dingin sekali.', 'You have just heard it from beginning to end, sweetheart. Your hands are so cold.'))}</p>
+    </div>
+    <div class="end-card">
       <p class="end-k">${esc(t('Sesudah dongengnya', 'After the tale'))}</p>
       <ul class="end-list">
         <li><span>${esc(t('Namamu', 'Your name'))}</span><b>${nm ? `<s>${esc(nm)}</s> ` : ''}${esc(t('Ibu', 'Mother'))}</b></li>
