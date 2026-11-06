@@ -134,8 +134,8 @@
   };
   const APPS = [
     ['pesan', 'Pesan'], ['telepon', 'Telepon'], ['web', 'Peramban'], ['musik', 'Musik'],
-    ['foto', 'Foto'], ['surel', 'Surel'], ['kalender', 'Kalender'], ['rekaman', 'Rekaman'],
-    ['kontak', 'Kontak'], ['catatan', 'Catatan'], ['setel', 'Pengaturan']
+    ['foto', 'Foto'], ['kontak', 'Kontak'], ['surel', 'Surel'], ['kalender', 'Kalender'],
+    ['rekaman', 'Rekaman'], ['catatan', 'Catatan'], ['setel', 'Pengaturan']
   ];
   const icon = (id, extra = '') => id === 'tb' ? `<span class="ic tb${extra}" aria-hidden="true"></span>`
     : id === 'kalender' ? (() => { const m = /^(\w{3})\w*,\s*(\d+)/.exec(TODAY || ''); return `<span class="ic kalender${extra}" aria-hidden="true"><small>${esc(m ? m[1].toUpperCase() : 'SEL')}</small><b>${esc(m ? m[2] : '3')}</b></span>`; })()
@@ -347,9 +347,11 @@
 
   H.home = (b, st) => {
     const page = b.page || 1;
-    const p1 = APPS.map(([id, nm]) => `<button type="button" class="app-i" data-nav="${id}">${icon(id)}<small>${esc(nm)}</small></button>`).join('');
+    // beranda tiga halaman yang bisa diusap: delapan aplikasi utama, sisanya, lalu ikon tanpa nama
+    const btn = ([id, nm]) => `<button type="button" class="app-i" data-nav="${id}">${icon(id)}<small>${esc(nm)}</small></button>`;
+    const p1 = APPS.slice(0, 8).map(btn).join(''), p2 = APPS.slice(8).map(btn).join('');
     const p3 = (b.dev ? b.tb : (st.tb || b.tb)) ? `<button type="button" class="app-i${b.glow ? ' glow' : ''}" data-nav="peta">${icon('tb')}<small>&nbsp;</small></button>` : '';
-    return `<div class="ap home"><div class="hm-pages" data-page="${page}"><div class="hm-g">${p1}</div><div class="hm-g"></div><div class="hm-g">${p3}</div></div><div class="hm-dots" aria-hidden="true">${[1, 2, 3].map(n => `<i class="${n === page ? 'on' : ''}"></i>`).join('')}</div>${b.cap ? `<p class="hm-cap">${inline(b.cap)}</p>` : ''}</div>`;
+    return `<div class="ap home"><div class="hm-pages" data-page="${page}"><div class="hm-g">${p1}</div><div class="hm-g">${p2}</div><div class="hm-g">${p3}</div></div><div class="hm-dots" aria-hidden="true">${[1, 2, 3].map(n => `<i class="${n === page ? 'on' : ''}"></i>`).join('')}</div>${b.cap ? `<p class="hm-cap">${inline(b.cap)}</p>` : ''}</div>`;
   };
 
   // daftar per aplikasi (dibuka dari beranda)
@@ -438,6 +440,13 @@
     app.innerHTML = html;
     app.classList.remove('in'); if (swap) { void app.offsetWidth; app.classList.add('in'); }
     $$('[data-scroll-end]', app).forEach(el => { el.scrollTop = el.scrollHeight; });
+    const hp = $('.hm-pages', app);
+    if (hp) {
+      const dots = $$('.hm-dots i', app), go = n => { hp.scrollLeft = (n - 1) * hp.clientWidth; };
+      requestAnimationFrame(() => { hp.style.scrollBehavior = 'auto'; go(+hp.dataset.page || 1); requestAnimationFrame(() => { hp.style.scrollBehavior = ''; }); });
+      hp.addEventListener('scroll', () => { const n = Math.round(hp.scrollLeft / Math.max(1, hp.clientWidth)); dots.forEach((d, i) => d.classList.toggle('on', i === n)); hp.dataset.page = n + 1; }, { passive: true });
+      dots.forEach((d, i) => { d.style.cursor = 'pointer'; d.addEventListener('click', () => go(i + 1)); });
+    }
     if (b && b.jump) { const wb = $('.web-b', app), t = wb && $$('h4, p, blockquote, li', wb).find(x => x.textContent.includes(b.jump)); if (t) { wb.scrollTop = Math.max(0, t.offsetTop - 8); t.classList.add('mark-jump'); } }
     lyOn = -2;
     // baris lirik yang sedang dibicarakan cerita (selama lagu belum diputar)
@@ -658,7 +667,7 @@
     open('musik'); const a = songEl(); if (a && a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => {}); }
   });
   const homebar = $('#homebar');
-  homebar.addEventListener('click', () => open(manual === 'home' && fold(cur).tb ? 'home3' : 'home'));
+  homebar.addEventListener('click', () => { const hp = $('.hm-pages', app); if (hp && (manual === 'home' || manual === 'home3')) { const n = +hp.dataset.page || 1; hp.scrollTo({ left: n === 1 && fold(cur).tb ? hp.clientWidth * 2 : 0, behavior: calm() ? 'auto' : 'smooth' }); return; } open('home'); });
   $('#follow').addEventListener('click', () => setFollow(true));
 
   // notifikasi selama menjelajah
