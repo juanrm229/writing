@@ -1,0 +1,297 @@
+/* Isi layar ponsel untuk Semua yang Pernah.
+   Setiap ketukan menempel pada paragraf pertama di bab c yang memuat teks `at`. Pesan, unggahan, dan halaman di sini
+   ditulis untuk versi interaktif ini; kalimat yang dikutip novella dipakai persis, sisanya elaborasi yang tidak
+   mengubah cerita.
+   v: chat | web | map | lock | call | music | mail | doc | photo | rec | cal | home
+   dev: layar milik orang lain (bab dari sisi mereka). silent: hanya menambah isi ponsel, layar tidak berganti. */
+window.LAYAR = {
+  start: { t: '20.51', date: 'Selasa, 3 November' },
+  day: 'SEL', date: '3',
+  beats: [
+    /* ---------- Prolog: Hal yang Tidak Tersimpan ---------- */
+    { c: 0, at: 'Orang terakhir yang memanggilku dengan nama asliku', v: 'lock', t: '20.51', n: [['surel', 'Soren', 'Re: tur lanjutan. Tolong dibaca sebelum Jumat.', '3 j']] },
+    { c: 0, at: 'Ponselku bergetar.', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', t: '21.04', msgs: [['sys', 'Hari ini 21.04'], ['in', "Please tell me you've eaten."]] },
+    { c: 0, at: 'lalu menghapusnya. Aku belum makan.', v: 'chat', with: 'Mara', draft: 'yes', erase: 1 },
+    { c: 0, at: 'Aku menaruh ponsel di meja.', v: 'lock', t: '21.05', n: [['pesan', 'Mara', "Please tell me you've eaten.", '1 mnt']], keep: 1 },
+    { c: 0, at: 'Yang akan mati adalah Elias Venn.', v: 'web', t: '21.12', url: 'hollowatlas.wiki/Elias_Venn', page: { kind: 'wiki', title: 'Elias Venn', meta: 'Dari Hollow Atlas Wiki, ensiklopedia penggemar', box: [['Nama', 'Elias Venn'], ['Usia', '41 (lihat pembicaraan)'], ['Asal', '"Utara," katanya dalam satu wawancara'], ['Band', 'Hollow Atlas: gitar ritme, penulis lagu'], ['Ukuran sepatu', '44 (disengketakan)']], body: ['Elias Venn adalah gitaris dan penulis lagu Hollow Atlas. Hampir tidak ada catatan tentang masa kecilnya.', 'Halaman ini dikunci sementara karena perang suntingan tentang foto tahun 1903.'] } },
+    { c: 0, at: 'Kemudian aku membayangkan Mara membaca kabarnya.', v: 'chat', with: 'Mara', sub: 'terakhir dilihat 21.04' },
+    { c: 0, at: 'Ada ketukan pada pintu.', v: 'lock', t: '21.40', n: [] , keep: 1 },
+
+    /* ---------- 1: Tepuk Tangan yang Sudah Pernah Kudengar ---------- */
+    { c: 1, at: 'Konser terakhirku diadakan enam hari', v: 'photo', photo: { title: 'Foto', meta: 'Enam hari lalu · dari kru', cap: 'Panggung dari belakang. Puluhan ribu layar ponsel menyala ke arah kami.', tone: 'night' } },
+    { c: 1, at: 'Thirty-four pages', v: 'web', url: 'hollowatlas.wiki/Elias_Venn', page: { meta: 'Pembicaraan: 34 halaman · ukuran sepatu masih disengketakan' } },
+    { c: 1, at: 'Lalu kami memainkan lagu berjudul', v: 'music', track: { title: 'The Harbor Has No Memory', artist: 'Hollow Atlas', album: 'Low Tide Hymns', p: .44, note: 'Musiknya datang setelah mesin cuci berhenti.' } },
+    { c: 1, at: 'Pagi setelah konser, sebuah video muncul', v: 'web', url: 'putar.video/w/venn-timeline', page: { kind: 'video', title: 'THE ELIAS VENN TIMELINE CANNOT BE REAL', meta: '2,4 jt x ditonton · 1 hari yang lalu', by: 'deepfold', subs: '312 rb pelanggan', dur: '23:41', count: '18.204', body: ['Foto 1903. Lukisan pelabuhan 1761. Wawancara 2019. Saya tidak bilang dia abadi. Saya cuma bilang: lihat sendiri. (teori, bukan tuduhan)'], comments: [['marisol.k', 'The answer is simpler. Rich guy, very good skincare.', '41 rb'], ['tobi_wan', 'foto ketiga itu dari film, bro. dari FILM.', '9 rb'], ['nightjar', 'the 1761 painting is literally a smudge', '6 rb'], ['harbor_kid', 'mara would never let a vampire into the band', '5 rb'], ['quietwren', 'ok but the 1903 one tho', '2 rb']] } },
+    { c: 1, at: 'Mara mengirim tangkapan layar itu dengan pesan', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', msgs: [['sys', 'Enam hari lalu'], ['in', 'ph', 'Tangkapan layar: komentar teratas, 41 ribu suka.', 'paper'], ['in', 'Congratulations on your skincare routine.']] },
+    { c: 1, at: 'Aku menjawab dengan gambar sabun hotel.', v: 'chat', with: 'Mara', msgs: [['out', 'ph', 'Sabun hotel, masih terbungkus.', 'cool']] },
+    { c: 1, at: 'Pada siang hari manajer kami, Soren, menelepon.', v: 'call', with: 'Soren', state: 'live' },
+    { c: 1, at: 'Ia tertawa, lalu kembali membicarakan jadwal.', v: 'call', with: 'Soren', state: 'ended', dur: '41 menit' },
+    { c: 1, at: 'Aku ingin mengatakan kepada Mara bahwa aku mungkin akan mengambil cuti', v: 'chat', with: 'Mara', draft: "Mara, I think I need to take a long break. It isn't because of you, or the band. I just need" },
+    { c: 1, at: 'Aku menghapus pesan itu untuk ketiga kalinya.', v: 'chat', with: 'Mara', draft: "Mara, I think I need to take a long break. It isn't because of you, or the band. I just need", erase: 1 },
+    { c: 1, at: 'Beberapa hari kemudian aku tiba di Saujana.', v: 'mail', mail: { from: 'Hotel Pelabuhan Saujana', subj: 'Konfirmasi pemesanan: 3 malam, kamar 1107', when: 'Selasa', body: ['Yth. Bapak E. Ven,', 'Terima kasih telah memesan. Kamar 1107 berada di lantai sebelas dan menghadap pelabuhan.', 'Check-in pukul 14.00. Sarapan disajikan pukul 06.00 sampai 10.00 di lantai dua.', 'Salam hangat,<br>Meja depan'] } },
+    { c: 1, at: 'Jaket itu ditemukan dua hari kemudian', v: 'chat', with: 'Hollow Atlas', sub: 'Mara, Jonah, Yuna, kamu', msgs: [['sys', 'Bertahun-tahun lalu'], ['in', 'ph', 'Jaket Jonah di lengan kursi kabin. Foto ibunya terlipat di sudut, utuh.', 'cool'], ['in', 'Jonah: FOUND IT'], ['in', 'Mara: Marry the cleaner.'], ['in', 'Yuna: The cleaner deserves better than a man who keeps leaving things behind.']] },
+    { c: 1, at: 'Sekarang, di Saujana, aku masih memiliki foto lama kami', v: 'photo', photo: { title: 'Foto', meta: 'Glasgow · tangga toko musik', cap: 'Empat orang di tangga toko musik, dengan rambut yang belum tahu akan menjadi seperti apa.', tone: 'warm' } },
+
+    /* ---------- 2: Anak yang Menyimpan Batu ---------- */
+    { c: 2, at: 'Ingatan tertuaku bukan tentang kelahiranku.', v: 'lock', t: '23.48', date: 'Selasa, 3 November', dim: 1, n: [['pesan', 'Mara', "I'll take the silence as a no. Eat something, Eli.", '2 j']], keep: 1 },
+    { c: 2, at: 'Beberapa hari berikutnya kami membagi pekerjaan.', v: 'lock', t: '00.31', date: 'Rabu, 4 November', dim: 1, n: [['pesan', 'Jonah', 'mara says you went quiet. blink twice if you need fries', 'sekarang']], keep: 1 },
+    { c: 2, at: 'Aku duduk di samping tempatnya berbaring sampai hari berganti.', v: 'lock', t: '00.58', date: 'Rabu, 4 November', dim: 1, n: [], keep: 1 },
+
+    /* ---------- 3: Kata-Kata yang Tidak Bisa Kutelan Kembali ---------- */
+    { c: 3, at: 'Aku menjadi nabi tanpa bermaksud menjadi nabi.', v: 'lock', t: '00.36', date: 'Rabu, 4 November', dim: 1, n: [['kalender', 'Kalender', 'Check-out: Jumat 12.00', 'besok']], keep: 1 },
+    { c: 3, at: 'Seorang pemuda menanyakan apakah aku berani', v: 'lock', t: '01.03', date: 'Rabu, 4 November', dim: 1, n: [['surel', 'Hotel Pelabuhan Saujana', 'Ingin memperpanjang masa menginap? Balas surel ini.', 'sekarang']], keep: 1 },
+
+    /* ---------- 4: Mereka Menyebutku Adil ---------- */
+    { c: 4, at: 'Aku pernah menjadi penguasa yang dicintai.', v: 'lock', t: '01.22', date: 'Rabu, 4 November', dim: 1, n: [], keep: 1 },
+    { c: 4, at: 'Kiran datang membawa salinan daftar keluarga.', v: 'lock', t: '01.47', date: 'Rabu, 4 November', dim: 1, n: [['pesan', 'Yuna', 'Mara says call her. I say sleep. Your pick.', 'sekarang']], keep: 1 },
+
+    /* ---------- 5: Harga Satu Malam ---------- */
+    { c: 5, at: 'Pukul dua pagi di Saujana, aku memesan makanan', v: 'lock', t: '02.00', date: 'Kamis, 5 November', n: [['pesan', 'Mara', 'Eli.', '9 mnt'], ['pesan', 'Mara', 'ELI.', '4 mnt'], ['pesan', 'Mara', 'I can see you were online.', 'sekarang']] },
+    { c: 5, at: 'Setelah pintu tertutup, aku mengirim foto makanan', v: 'chat', with: 'Mara', sub: 'online', t: '02.21', msgs: [['sys', 'Kamis 01.51'], ['in', 'Eli.'], ['in', 'ELI.'], ['in', 'I can see you were online.'], ['sys', '02.21'], ['out', 'ph', 'Nasi, sup, telur. Sup sedikit tumpah di sisi wadah.', 'food']] },
+    { c: 5, at: 'Elias: Evidence.', v: 'chat', with: 'Mara', msgs: [['out', 'Evidence.']] },
+    { c: 5, at: 'Mara: Is that breakfast or dinner?', v: 'chat', with: 'Mara', msgs: [['in', 'Is that breakfast or dinner?']] },
+    { c: 5, at: 'Elias: Yes.', v: 'chat', with: 'Mara', msgs: [['out', 'Yes.']] },
+    { c: 5, at: 'Mara: Idiot.', v: 'chat', with: 'Mara', msgs: [['in', 'Idiot.']] },
+    { c: 5, at: 'Aku pernah menghabiskan satu dekade sebagai pengemis.', v: 'lock', t: '02.30', date: 'Kamis, 5 November', dim: 1, n: [] },
+    { c: 5, at: 'Ponselku berbunyi lagi. Kali ini dari Soren.', v: 'chat', with: 'Soren', sub: 'Manajer', t: '03.07', msgs: [['sys', '03.07'], ['in', 'We need to talk about the photo.']] },
+    { c: 5, at: 'Aku membuka pesan berikutnya. Tautan menuju sebuah forum.', v: 'chat', with: 'Soren', msgs: [['in', 'link', 'Foto pekerja percetakan 1903 dan sebuah catatan pemakaman', 'silsilahterbuka.net']] },
+    { c: 5, at: 'Dalam satu komentar ia menulis', v: 'web', url: 'silsilahterbuka.net/t/1903', page: { kind: 'forum', crumb: 'Silsilah Terbuka › Pertanyaan', title: 'Foto pekerja percetakan 1903 dan sebuah catatan pemakaman', meta: 'dibuka oleh edwin.r · 214 balasan', body: ['Saya menelusuri daftar pekerja percetakan untuk keluarga saya sendiri. Seorang lelaki tercatat pindah kota beberapa kali dengan usia yang hampir tidak berubah. Lalu ada catatan pemakaman dengan nama yang sama.', 'Saya tidak menyimpulkan apa-apa. Mohon jangan menambahkan teori di utas ini.'], comments: [['zz_orbit', 'ALIEN. sudah kubilang.', '5 j'], ['wren.h', 'tunggu, ini gitaris hollow atlas??', '4 j'], ['edwin.r', "I don't think he is immortal. I think the public record has been tampered with.", '3 j']] } },
+    { c: 5, at: 'Soren menambahkan bahwa tim hukum akan menghubungi', v: 'chat', with: 'Soren', msgs: [['in', 'Legal wants to contact the forum owner this morning.'], ['out', "Please don't."], ['out', 'Not yet.']] },
+    { c: 5, at: 'Di luar, hujan mulai turun.', v: 'lock', t: '03.26', date: 'Kamis, 5 November', n: [['web', 'Cuaca', 'Hujan ringan di Saujana sampai pukul 05.00.', 'sekarang']] },
+
+    /* ---------- 6: Berapa Banyak yang Bisa Ditampung Sebuah Kepala ---------- */
+    { c: 6, at: 'Aku menemukan namanya setelah membaca sebuah artikel', v: 'web', url: 'sainsterbuka.org/2012/ingatan-dan-energi', page: { kind: 'article', kicker: 'Sains · 2012', title: 'Seberapa banyak yang bisa diingat sebuah benda?', meta: 'Wawancara dengan Dr. Alma Riedel', body: ['Setiap ingatan memerlukan tempat, dan setiap tempat memerlukan energi. Pertanyaannya bukan apakah kita bisa menyimpan semuanya, kata Riedel, tetapi apa yang harus dibayar untuk itu.', '"Kalau seseorang mengaku mengingat segalanya," katanya sambil tertawa, "saya akan meminta dia mengisi formulir panjang dulu."'] } },
+    { c: 6, at: 'Tujuh tahun kemudian aku membaca artikel Alma', v: 'web', url: 'sainsterbuka.org/2020/batas-fisik', page: { kind: 'article', kicker: 'Fisika · 2020', title: 'Batas fisik pemrosesan informasi', meta: 'A. Riedel', body: ['Komputer, sistem termal, dan beberapa model teoretis. Tidak ada klaim tentang ingatan manusia.', 'Di catatan kaki terakhir: "Terima kasih kepada seorang relawan yang meminta tidak disebutkan."'] } },
+    { c: 6, at: 'You still owe me a proper explanation of that first test', v: 'chat', with: 'Alma Riedel', sub: 'pesan lama', msgs: [['sys', '2020'], ['out', 'I read your paper. It is very good.'], ['sys', 'dua hari kemudian'], ['in', 'You still owe me a proper explanation of that first test.']] },
+    { c: 6, at: 'Aku menjawab: You still owe me the recipe', v: 'chat', with: 'Alma Riedel', msgs: [['out', 'You still owe me the recipe for your terrible soup.']] },
+    { c: 6, at: 'Ia menulis bahwa supnya bukan buatannya', v: 'chat', with: 'Alma Riedel', msgs: [['in', 'It was the canteen soup. Sue the canteen.']] },
+
+    /* ---------- 7: Dari Mana? ---------- */
+    { c: 7, at: 'Aplikasi itu muncul pada pukul tiga lewat dua belas.', v: 'lock', t: '03.12', date: 'Senin, 9 November', n: [] },
+    { c: 7, at: 'Di halaman ketiga terdapat ikon putih dengan sebuah titik biru.', v: 'home', page: 3, tb: 1, glow: 1 },
+    { c: 7, at: 'Aku cukup mengenal ponsel untuk mengetahui', v: 'doc', doc: { title: 'Info aplikasi', sub: '(tanpa nama)', back: 'setel', lines: [['Nama', 'h'], '(kosong)', ['Pengembang', 'h'], '(kosong)', ['Ukuran', 'h'], '2,4 MB', ['Izin', 'h'], ['Lokasi: selalu', 'mark'], ['Dipasang', 'h'], 'Tidak tercatat'] } },
+    { c: 7, at: 'Saujana muncul di layar.', v: 'map', map: { ask: 'Dari mana?' } },
+    { c: 7, at: 'Aku memasukkan alamat hotel.', v: 'map', typeIn: 1, map: { input: 'Hotel Pelabuhan Saujana' } },
+    { c: 7, at: 'Muncul garis biru menuju sisi lain kota.', v: 'map', map: { input: 'Hotel Pelabuhan Saujana', route: 'hotel', instr: 'Lurus 300 m' } },
+    { c: 7, at: 'Pada pukul tiga lewat empat puluh aku turun ke lobi.', v: 'map', t: '03.40', map: { input: 'Hotel Pelabuhan Saujana', route: 'hotel', instr: 'Lurus 300 m' } },
+    { c: 7, at: 'Aplikasi menuntunku melalui jalan yang kukenal', v: 'map', map: { input: 'Hotel Pelabuhan Saujana', route: 'hotel', instr: 'Belok kanan, lalu 180 m' } },
+    { c: 7, at: 'Rute berakhir pada jalan buntu', v: 'map', map: { input: 'Hotel Pelabuhan Saujana', route: 'hotel', arrive: 'Jalan buntu, belakang bekas gudang' } },
+    { c: 7, at: 'Keesokan harinya aku mencoba aplikasi itu lagi.', v: 'map', typeIn: 1, map: { input: 'Jl. Juragan 9 (dulu)', route: 'halte', instr: 'Lurus 650 m' } },
+    { c: 7, at: 'Halte tersebut mempunyai atap yang bocor.', v: 'map', map: { input: 'Jl. Juragan 9 (dulu)', route: 'halte', arrive: 'Halte. Jadwalnya berakhir tiga tahun lalu.' } },
+    { c: 7, at: 'Pada malam ketiga aku memasukkan kata', v: 'map', typeIn: 1, map: { input: 'tidak tahu' } },
+    { c: 7, at: 'Di samping titik biru hanya ada tulisan kecil', v: 'map', map: { input: 'tidak tahu', here: 1 } },
+    { c: 7, at: 'Pada hari kelima aku membawa kamera kecil', v: 'map', map: { input: 'Kampung Bandeng', route: 'gang', len: .7, instr: 'Lurus 140 m' } },
+    { c: 7, at: 'Aku memeriksa jam.', v: 'photo', photo: { title: 'Foto', meta: 'Kampung Bandeng · 05.41', cap: 'Gang sempit, jemuran melintang. Jam di alat ukur dan jam di ponsel tidak sama.', tone: 'cool' } },
+    { c: 7, at: 'Aku mengambil ponsel dan menelepon Soren.', v: 'call', with: 'Soren', state: 'live' },
+    { c: 7, at: 'Ia meminta foto paket dan amplop.', v: 'chat', with: 'Soren', msgs: [['out', 'ph', 'Amplop tanpa nama pengirim. Tertulis: E. Ven, kamar 1107.', 'paper'], ['out', 'ph', 'Di belakang foto: Do you know who this man was?', 'sepia'], ['in', 'Thank you. Do not open anything else that arrives.']] },
+    { c: 7, at: 'Pada malam itu Mara menelepon.', v: 'call', with: 'Mara', state: 'live' },
+    { c: 7, at: 'Aku tertawa. Ia mengenaliku dengan baik.', v: 'call', with: 'Mara', state: 'ended', dur: '26 menit' },
+    { c: 7, at: 'Aku memasukkan foto ke map bersama dokumen lain.', v: 'lock', t: '08.04', date: 'Senin, 9 November', n: [['pesan', 'Mara', 'Sleep. Then breakfast. In that order.', '9 j']] },
+
+    /* ---------- 8: Surat yang Tidak Dibaca ---------- */
+    { c: 8, at: 'Aku bertemu Ibu Lela karena salah membeli baterai.', v: 'web', url: 'cari.web/?q=baterai+jam+saujana', page: { kind: 'search', title: 'baterai jam dekat Jalan Kenari', body: [['Peta · 0,4 km', 'Toko Jam & Perlengkapan Kenari', 'Jl. Kenari ujung · Buka · "rak baterai sering kosong"'], ['Peta · 1,1 km', 'Elektronik Sumber Terang', 'Pasar Lama blok C · Buka'], ['forumwarga-saujana.net', 'Tukang servis jam yang masih buka?', 'Coba tanya Ibu-ibu di gang belakang Kenari, mereka tahu semua.']] } },
+    { c: 8, at: 'Malamnya aku membuka aplikasi. Tidak ada rute baru.', v: 'map', map: { ask: 'Dari mana?' } },
+
+    /* ---------- 9: Bagian Wajah yang Hilang ---------- */
+    { c: 9, at: 'Pada hari ketujuh, aplikasi membawaku', v: 'map', map: { input: '(rute baru)', route: 'suri', instr: 'Lurus 90 m, masuk gang' } },
+    { c: 9, at: 'Aku tiba pukul sebelas. Menurut aplikasi', v: 'map', t: '11.00', map: { input: '(rute baru)', route: 'suri', arrive: 'Ujung gang, belakang bengkel bingkai' } },
+    { c: 9, at: 'Aku kembali dua hari kemudian membawa sebuah foto.', v: 'photo', photo: { title: 'Foto', meta: '1936 · dipindai di hotel', cap: 'Foto keluarga, 1936. Tepinya rusak air. Aku tahu semua wajahnya.', tone: 'sepia' } },
+    { c: 9, at: 'Suri menawarkan dua hasil', v: 'doc', doc: { title: 'Tanda terima · Restorasi Suri', lines: [['Pesanan keluarga, foto pernikahan 1978', 'h'], 'Pilihan 1: pemulihan konservatif. Bagian yang hilang dipertahankan.', 'Pilihan 2: rekonstruksi ilustratif. Ditandai sebagai rekonstruksi.', ['Dipilih: pilihan 1', 'mark']], foot: 'Mereka berhak punya foto yang mereka mau.' } },
+    { c: 9, at: 'Keesokan harinya Suri mengirim pesan', v: 'chat', with: 'Suri', sub: 'Restorasi foto', msgs: [['in', 'Pak, foto pernikahan yang 1978 mau saya pamerkan sebagai contoh pemulihan. Keluarganya sudah mengizinkan.']] },
+    { c: 9, at: 'Suri membalas dengan ucapan terima kasih', v: 'chat', with: 'Suri', msgs: [['in', 'Makasih, Pak.'], ['in', 'ph', 'Printer macet lagi. Kertasnya terlipat di tengah.', 'studio']] },
+    { c: 9, at: 'Aku mengirim gambar pena yang kemarin tidak cocok.', v: 'chat', with: 'Suri', msgs: [['out', 'ph', 'Pena yang kemarin tidak cocok.', 'paper']] },
+    { c: 9, at: 'Ketika mengambil foto yang telah diperbaiki', v: 'photo', photo: { title: 'Foto', meta: '1936 · dipulihkan oleh Suri', cap: 'Garis retak di wajah lelaki itu dibiarkan, dengan keterangan.', tone: 'sepia', half: 'retak dibiarkan' } },
+    { c: 9, at: 'Ponselku berbunyi. Mara kembali menanyakan', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', msgs: [['in', 'When are you calling me?']] },
+    { c: 9, at: 'Aku mengetik bahwa malam ini aku bisa.', v: 'chat', with: 'Mara', msgs: [['out', 'Tonight. 8?'], ['in', 'Deal.']] },
+
+    /* ---------- 10: Orang-Orang yang Belum Kuberitahu ---------- */
+    { c: 10, at: 'Mara menelepon pukul delapan lewat tujuh.', v: 'call', with: 'Mara', state: 'live', video: 1, t: '20.07', self: 'kamera mati' },
+    { c: 10, at: 'Aku melihat layar ponsel. Ada gambar kecil wajahnya', v: 'call', with: 'Mara', state: 'live', video: 1, from: 812, self: 'kamera mati', line: 'Ruang kerja. Sebuah gitar bersandar di dinding.' },
+    { c: 10, at: 'Panggilan berakhir ketika kami masih tertawa.', v: 'call', with: 'Mara', state: 'ended', dur: '43 menit', video: 1 },
+    { c: 10, at: 'Siapa yang akan menganggap dirinya gagal?', v: 'lock', t: '21.06', date: 'Kamis, 12 November', n: [['pesan', 'Mara', "Call tomorrow. I mean it.", '6 mnt']] },
+
+    /* ---------- 11: Notulen Rapat yang Tidak Pernah Disahkan (ponsel Mara) ---------- */
+    { c: 11, at: 'Mara datang ke studio empat puluh menit', dev: 'Ponsel Mara', v: 'lock', t: '09.20', date: 'Jumat, 13 November', n: [['kalender', 'Kalender', 'Rapat band · 10.00 · Studio', '40 mnt'], ['pesan', 'Eli', "I'm okay. Talk soon.", 'semalam']] },
+    { c: 11, at: 'Ia kemudian memeriksa pesan dari Elias.', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'terakhir dilihat semalam', msgs: [['sys', 'Kemarin'], ['out', 'Call tomorrow.'], ['in', 'I will.'], ['sys', '23.58'], ['in', "I'm okay. Talk soon."]] },
+    { c: 11, at: 'Mereka membuka tiga kalender di layar', dev: 'Ponsel Mara', v: 'cal', cal: { title: 'Tur · draf Soren', sub: 'tiga kalender, tidak ada yang lengkap', rows: [['12 Mar', 'Rotterdam'], ['14 Mar', 'Hamburg dan Kopenhagen, digabung'], ['15 Mar', 'Libur', 'u'], ['19 Mar', 'Oslo'], ['22 Mar', 'Libur', 'u'], ['2 Apr', 'Glasgow, dua malam'], ['5 Apr', 'Libur', 'u'], ['?', 'Jadwal sekolah anak Yuna', 'dim']], foot: 'Garis merah dari Mara: hari-hari Jonah biasanya menjenguk ibunya.' } },
+    { c: 11, at: 'Soren mencatat kalimat tersebut.', dev: 'Ponsel Mara', v: 'doc', doc: { title: 'Notulen rapat · draf', sub: 'Soren sedang mengedit', who: ['Soren', 'Mara', 'Jonah'], lines: [['Hadir: Mara, Soren, Jonah. Yuna menyusul sore. Elias: tidak hadir.', ''], ['Arsip foto yang beredar', 'h'], 'Akun penggemar menemukan catatan pemakaman yang namanya mirip. Tim hukum: tunggu.', ['Kelanjutan band', 'h'], ['Mara: "Ya. Tapi mungkin tidak dengan cara yang sama." Jonah: "Aku juga."', 'del', 'Soren menghapus kalimat ini atas permintaan Mara · belum menjadi keputusan']], foot: 'Draf. Belum disahkan.' } },
+    { c: 11, at: 'Setelah semua rincian disepakati, Yuna bertanya', dev: 'Ponsel Mara', v: 'doc', doc: { title: 'Notulen rapat · draf', sub: 'Yuna bergabung', who: ['Soren', 'Mara', 'Jonah', 'Yuna'], lines: [['Kelanjutan band', 'h'], ['(dihapus)', 'del'], ['Lagu Elias untuk album baru', 'h'], ['Tidak diubah sebelum bicara dengan orang yang menulisnya.', 'mark'], ['Hak cipta', 'h'], 'Ketidakhadiran Elias tidak dianggap sebagai persetujuan.'], foot: 'Draf. Belum disahkan.' } },
+    { c: 11, at: 'Di ponsel muncul pesan Elias yang mengatakan', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'online', t: '23.31', msgs: [['sys', 'Kemarin'], ['out', 'Call tomorrow.'], ['in', 'I will.'], ['in', "I'm okay. Talk soon."], ['sys', '23.31'], ['in', 'I might need more time. Longer than I said.']] },
+    { c: 11, at: 'Di ponsel muncul pesan Elias yang mengatakan', silent: 1, v: 'chat', with: 'Mara', msgs: [['sys', 'Jumat 23.31'], ['out', 'I might need more time. Longer than I said.']] },
+    { c: 11, at: 'Akhirnya ia menulis: We had a terrible meeting.', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'online', msgs: [['in', 'I might need more time. Longer than I said.']], draft: 'We had a terrible meeting. Jonah ate your breakfast. Please call when you can.' },
+    { c: 11, at: 'Ia mengirim pesannya juga.', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'online', msgs: [['in', 'I might need more time. Longer than I said.'], ['out', 'We had a terrible meeting. Jonah ate your breakfast. Please call when you can.']], read: 'Terkirim' },
+    { c: 11, at: 'Ia mengirim pesannya juga.', silent: 1, v: 'chat', with: 'Mara', msgs: [['in', 'We had a terrible meeting. Jonah ate your breakfast. Please call when you can.']] },
+
+    /* ---------- 12: Seorang Lelaki dari Saujana ---------- */
+    { c: 12, at: 'Dua tahun sebelum kembali ke Saujana', v: 'lock', t: '01.14', date: 'Sabtu, 14 November', dim: 1, n: [['pesan', 'Mara', 'We had a terrible meeting. Jonah ate your breakfast. Please call when you can.', '1 j']] },
+    { c: 12, at: 'Kini, pada 2026, aku mulai membaca tentang legenda', v: 'web', url: 'cari.web/?q=aplikasi+peta+tanpa+nama', page: { kind: 'search', title: 'aplikasi peta tanpa nama titik biru', body: [['forumwarga-saujana.net', 'Peta yang bertanya "dari mana?" (kumpulan cerita)', '…ikonnya putih, ada titik biru. Tidak ada nama pengembang…'], ['kotaurban.net', 'Legenda urban: aplikasi yang tidak bisa dibagikan', 'Laporan dari Saujana, kota-kota pesisir lain, dan beberapa tempat…'], ['putar.video', 'I got the blue dot app (not clickbait)', '1,1 jt x ditonton'], ['arsipnol.net', '(tautan rusak)', 'Halaman ini tidak tersedia.']] } },
+    { c: 12, at: 'Pada salah satu unggahan, seorang pengguna menyebut', v: 'web', url: 'kotaurban.net/t/lelaki-peta', page: { kind: 'forum', crumb: 'Kota Urban › Saujana', title: 'Lelaki yang memetakan lingkaran', meta: '87 balasan', body: ['Katanya dulu dia kerja di sistem informasi geografis. Adiknya hilang. Bertahun-tahun dia memetakan kemungkinan lokasinya, mengikuti titik terakhir ponselnya.'], comments: [['an0n_42', 'dia nemu adiknya di tempat yang ga pernah dicari', '2025'], ['laut_tenang', 'bukan. adiknya sudah meninggal.', '2025'], ['ikanasin', 'yang pasti dia jadi bisa tidur lagi. itu yang aku dengar.', '2024']] } },
+    { c: 12, at: 'Ia hanya menanyakan dari mana aku berasal.', v: 'map', map: { ask: 'Dari mana?' } },
+
+    /* ---------- 13: Arsip Nol ---------- */
+    { c: 13, at: 'Pada halaman utama terdapat sejumlah kategori', v: 'web', url: 'arsipnol.net', page: { kind: 'forum', crumb: 'Arsip Nol', title: 'Indeks', meta: 'Diarsipkan oleh ZERO dan para pengelola', body: ['Sightings · 1.204 laporan', 'Routes · 388', 'Aftermath · 731', 'False Positives · 96', 'Debunking · 152'] } },
+    { c: 13, at: 'Ada utas panjang berjudul THE FIRST WITNESS', v: 'web', url: 'arsipnol.net/t/first-witness', page: { kind: 'forum', crumb: 'Arsip Nol › Sightings', title: 'THE FIRST WITNESS', meta: '2.906 balasan', body: ['Who is ZERO? Oldest archivist of the legend. Some say he made the app.'], comments: [['halcyon', 'pioneer. nothing less.', '2018'], ['moth_e', 'Nabi Nol. say it with me.', '2019'], ['calendrist', 'Z-E-R-O = the four seasons. thread below ↓', '2019']] } },
+    { c: 13, at: "Don't confuse a testimony with a guarantee.", v: 'web', url: 'arsipnol.net/t/first-witness', more: [['ZERO', "Don't confuse a testimony with a guarantee.", '2011', 1]] },
+    { c: 13, at: 'Lokasi: Kampung Bandeng, Saujana.', v: 'web', url: 'arsipnol.net/r/kampung-bandeng', page: { kind: 'forum', crumb: 'Arsip Nol › Routes', title: 'Kampung Bandeng, Saujana', meta: 'laporan #0412', body: ['Lokasi: Kampung Bandeng, Saujana.', 'Klaim: sebuah gang lurus diukur lebih dari dua ratus meter; jarak dua jalan yang dihubungkannya sekitar seratus empat puluh meter.', 'Dapat dipastikan: letak gang, lebar, jemuran. Tidak diketahui: alat ukur, kalibrasi.', 'Pelapor: petak2463'] } },
+    { c: 13, at: 'Aku membuka profilnya.', v: 'web', url: 'arsipnol.net/u/petak2463', page: { kind: 'forum', crumb: 'Arsip Nol › Pengguna', title: 'petak2463', meta: 'Foto profil: kosong · aktivitas terakhir 2 tahun lalu', body: [], comments: [['petak2463', 'lingkaran ketidakpastian bukan tempat. itu cuma seberapa yakin ponselnya.', '2019'], ['petak2463', 'titik terakhir ponsel bukan tempat terakhir seseorang.', '2020'], ['petak2463', 'dermaga 7. jangan tanya kenapa.', '2024']] } },
+    { c: 13, at: 'Aku menuliskan balasan.', v: 'web', url: 'arsipnol.net/r/kampung-bandeng', draft: 'Pengukuranku menghasilkan angka yang serupa: 203 m. Variasinya bisa dari alat.' },
+    { c: 13, at: 'Aku mengirim pesan tersebut juga.', v: 'web', url: 'arsipnol.net/r/kampung-bandeng', more: [['pejalan_1107', 'Pengukuranku menghasilkan angka yang serupa: 203 m. Variasinya bisa dari alat.', 'baru saja']] },
+    { c: 13, at: 'Di bagian arsip yang lebih tua ada kumpulan laporan', v: 'web', url: 'arsipnol.net/t/empat-kota', page: { kind: 'forum', crumb: 'Arsip Nol › Debunking', title: 'Lonjura, Uzakova, Tanaw, Miharashi', meta: 'ZERO · 2014', body: ['Empat kota, empat nama yang berarti jauh atau pandangan. Nama seperti itu juga lebih mudah diingat orang yang sedang bercerita. Cerita yang menyebar bisa memengaruhi cerita yang datang sesudahnya.'] } },
+    { c: 13, at: 'If you always explain everything away', v: 'web', url: 'arsipnol.net/t/empat-kota', more: [['k_ruin', 'If you always explain everything away, why do you even keep this archive?', '2014']] },
+    { c: 13, at: 'Nol menjawab beberapa hari kemudian', v: 'web', url: 'arsipnol.net/t/empat-kota', more: [['ZERO', "Because people told me something happened to them. That's worth recording even when the explanation is uncertain.", '2014', 1]] },
+    { c: 13, at: 'Malam berikutnya aku membuka utas berjudul', v: 'web', url: 'arsipnol.net/t/never-promised', page: { kind: 'forum', crumb: 'Arsip Nol › Debunking', title: 'THE MAP NEVER PROMISED ANYTHING', meta: 'ZERO', body: ['In almost every report we can check, the app only asks where you are from and gives a route.', 'It does not promise recovery. The promises come from the people who tell stories about it.'] } },
+    { c: 13, at: 'Ada ratusan komentar.', v: 'web', url: 'arsipnol.net/t/never-promised', more: [['tamar_', 'so he doubts his own archive now?', '', 0], ['h.ory', 'this is the most important thing on this site.', ''], ['lumen.k', 'So does it mean the app is useless?', ''], ['moth_e', 'he is testing us.', '']] },
+    { c: 13, at: 'Aku menutup laptop.', v: 'lock', t: '02.48', date: 'Minggu, 15 November', n: [] },
+
+    /* ---------- 14: Musik yang Dibeli dengan Uang Kecil ---------- */
+    { c: 14, at: 'Sebuah rute baru muncul pada hari ketika Soren', v: 'mail', mail: { from: 'Soren', subj: 'Opsi penundaan. Bukan surat pengunduran diri.', body: ['Eli,', 'Ini bukan dokumen keluar dari band. Ini pilihan kalau suatu saat kita harus menunda rekaman atau tur: biaya, hak atas lagu, kewajiban pemberitahuan.', 'Baca dulu sebelum kita bicara. Kau akan hafal semuanya. Bukan itu yang kuminta.', 'S.'], att: ['Opsi_penundaan_v3.pdf', 'Lampiran_B_hak_lagu.pdf'] } },
+    { c: 14, at: 'Aku membuka aplikasi tanpa memasukkan alamat.', v: 'map', typeIn: 1, map: { input: 'The Lantern, Glasgow' } },
+    { c: 14, at: 'Garis biru muncul menuju bawah jalan layang tua', v: 'map', map: { input: 'The Lantern, Glasgow', route: 'layang', len: 1.2, instr: 'Lurus 1,2 km' } },
+    { c: 14, at: 'Aku pergi sore hari.', v: 'map', t: '16.40', map: { input: 'The Lantern, Glasgow', route: 'layang', len: 1.2, arrive: 'Bawah jalan layang tua, sisi selatan' } },
+    { c: 14, at: 'Di layar tertulis nama yang baru kusimpan', v: 'doc', doc: { title: 'Kontak baru', lines: [['Tio Jalan Layang', 'h'], 'seluler · 0812 ···· 2731', ['Catatan', 'h'], 'Gitar. Bawah jalan layang. Lagu sendiri jarang dimainkan.'] } },
+    { c: 14, at: 'Di hotel aku mendengarkan rekaman lagu Tio', v: 'rec', rec: { title: 'Tio · bawah jalan layang', sub: 'direkam dengan izin', dur: '03:48', pos: '01:10', state: 'play' } },
+    { c: 14, at: 'Aku menahan diri beberapa menit', v: 'chat', with: 'Mara', msgs: [['out', 'vo', 'Tio', '3:48']] },
+    { c: 14, at: 'Mara membalas: I like his voice.', v: 'chat', with: 'Mara', msgs: [['in', 'I like his voice. Who is he?']] },
+    { c: 14, at: 'Aku mengatakan musisi yang kutemui', v: 'chat', with: 'Mara', msgs: [['out', 'A musician I met under an old flyover.']] },
+    { c: 14, at: 'Did he know?', v: 'chat', with: 'Mara', msgs: [['in', 'Did he know?'], ['out', 'No.'], ['in', 'Good for him.']] },
+    { c: 14, at: 'Tio mengundangku datang ke sebuah pertunjukan kecil', v: 'chat', with: 'Tio Jalan Layang', msgs: [['in', 'Bang, Sabtu malam saya main di warung dekat pasar. Kalau sempat mampir.'], ['in', 'Ga usah bawa gitar. Nanti disuruh main.']] },
+    { c: 14, at: 'Malam berikutnya Farah menghubungiku.', v: 'call', with: 'Farah (istri Tio)', state: 'live' },
+    { c: 14, at: 'Ia mengirim foto selembar undangan', v: 'chat', with: 'Farah (istri Tio)', msgs: [['in', 'ph', 'Undangan acara sekolah. Bunga-bunga gambar anak.', 'paper'], ['in', 'Tio disuruh main musik pengiring. Jangan dikasih ide aneh-aneh ya, Bang.']] },
+    { c: 14, at: 'Farah membalas bahwa ia sudah melarang Tio', v: 'chat', with: 'Farah (istri Tio)', msgs: [['in', 'Pengeras suara tambahan sudah saya larang.']] },
+
+    /* ---------- 15: Lelaki yang Dipanggil Nol (komputer Damar) ---------- */
+    { c: 15, at: 'Damar mematikan komputer ketika ketel air berbunyi.', dev: 'Komputer Damar', devKind: 'pc', v: 'web', url: 'arsipnol.net/moderasi', page: { kind: 'forum', crumb: 'Arsip Nol › Moderasi', title: 'Antrean', meta: 'masuk sebagai ZERO', body: ['14 laporan menunggu pemeriksaan.', '3 pesan: "bagaimana cara mendapatkan aplikasinya?"', 'Templat balasan: Saya tidak bisa memberikannya. Kalau Anda sedang dalam bahaya, ini nomor yang bisa dihubungi.'] } },
+    { c: 15, at: 'Ia tidak pernah menerima aplikasi itu.', dev: 'Ponsel Damar', v: 'home', page: 3, cap: 'Halaman ketiga. Kosong.' },
+    { c: 15, at: 'Damar menyimpan foto-foto mereka dalam folder', dev: 'Komputer Damar', devKind: 'pc', v: 'doc', doc: { title: 'Arsip/pribadi', sub: 'tidak disinkronkan', lines: ['▸ 2011-03-14', '▸ 2011-09-02', '▸ 2013-01-27', '▸ 2016-06-30', '▸ 2019-11-11', '▸ 2022-04-08'], foot: 'Tidak pernah diunggah.' } },
+    { c: 15, at: 'Pada siang hari ia menemukan sebuah komentar baru', dev: 'Komputer Damar', devKind: 'pc', v: 'web', url: 'arsipnol.net/r/kampung-bandeng', page: { kind: 'forum', crumb: 'Arsip Nol › Routes', title: 'Kampung Bandeng, Saujana', meta: 'laporan #0412 · 1 komentar baru', body: ['Klaim: sebuah gang lurus diukur lebih dari dua ratus meter; jarak dua jalan yang dihubungkannya sekitar seratus empat puluh meter.', 'Pelapor: petak2463'], comments: [['pejalan_1107', 'Pengukuranku menghasilkan angka yang serupa: 203 m. Variasinya bisa dari alat.', 'baru']] } },
+
+    /* ---------- 16: Perempuan yang Menolak Dikenang dengan Benar ---------- */
+    { c: 16, at: 'Aku pernah menikah dengan perempuan yang menganggap', v: 'lock', t: '00.52', date: 'Senin, 16 November', dim: 1, n: [] },
+    { c: 16, at: 'Aku nggak bilang kamu salah', v: 'lock', t: '01.12', date: 'Senin, 16 November', dim: 1, n: [], keep: 1 },
+    { c: 16, at: 'Kemudian ia menemukan sebuah foto yang memperlihatkan wajahku', v: 'photo', photo: { title: 'Foto', meta: '1903 · cetakan dari amplop tanpa nama', cap: 'Pekerja percetakan, baris belakang. Wajahku.', tone: 'sepia' } },
+
+    /* ---------- 17: Buku Belanja Ada ---------- */
+    { c: 17, at: 'Dari sebuah buku bersampul kain', v: 'lock', t: '01.40', date: 'Senin, 16 November', dim: 1, n: [] },
+
+    /* ---------- 18: Sebuah Undangan yang Tidak Dikirim ---------- */
+    { c: 18, at: 'Aku sudah menelepon seperti diminta.', v: 'call', with: 'Rumah Bu Lela', state: 'ended', dur: '1 menit', t: '11.02' },
+    { c: 18, at: 'Di layar ponsel ada pesan dari Tio', v: 'chat', with: 'Tio Jalan Layang', msgs: [['in', 'Bang, bagian akor kemarin aku udah bisa. Kalau sempat lewat, dengerin ya.']] },
+    { c: 18, at: 'Ia mengirim ikon jempol dan sebuah rekaman', v: 'chat', with: 'Tio Jalan Layang', msgs: [['in', '👍'], ['in', 'vo', 'Tio 2', '1:57']] },
+
+    /* ---------- 19: Batu yang Tidak Pernah Kutemukan Lagi ---------- */
+    { c: 19, at: 'Ada satu benda yang telah kucari sepanjang hidup', v: 'lock', t: '23.20', date: 'Rabu, 18 November', dim: 1, n: [] },
+    { c: 19, at: 'Pada malam berikutnya aku memasukkan sebuah frasa', v: 'map', typeIn: 1, map: { input: 'tempat batu itu hilang' } },
+    { c: 19, at: 'Aku mencoba koordinat geografis', v: 'map', typeIn: 1, map: { input: '−2.9113, 36.4402', here: 1 } },
+    { c: 19, at: 'Aku memandang titik biru.', v: 'map', map: { input: '−2.9113, 36.4402', here: 1 } },
+    { c: 19, at: 'Aku mencoba sekali lagi, kali ini hanya menulis satu kata', v: 'map', map: { input: '', here: 1 } },
+    { c: 19, at: 'Layar tetap diam.', v: 'map', typeIn: 1, map: { input: 'Iru', here: 1 } },
+    { c: 19, at: 'Di warung dekat hotel, seorang anak', v: 'lock', t: '08.15', date: 'Kamis, 19 November', n: [] },
+
+    /* ---------- 20: Orang yang Pernah Bekerja dengan Peta ---------- */
+    { c: 20, at: 'Aku mengunjungi sebuah kantor pemetaan tanpa janji.', v: 'web', url: 'cari.web/?q=kantor+pemetaan+saujana', page: { kind: 'search', title: 'kantor pemetaan saujana', body: [['Peta · 2,3 km', 'Kantor Pemetaan dan Survei Wilayah', 'Ruko Simpang, lantai 2 · Buka 08.00–16.00'], ['saujanakini.id', 'Warga tanya: kapan jalan baru masuk peta?', 'Petugas: survei lapangan berbeda dengan citra satelit.']] } },
+    { c: 20, at: 'Malamnya aku menulis catatan tentang Wulan', v: 'web', url: 'arsipnol.net/r/kampung-bandeng', draft: 'Kantor pemetaan setempat menjelaskan: ada gang yang pernah disurvei tetapi belum masuk peta umum karena administrasi bidangnya belum selesai. Jarak di lapangan berbeda dengan jarak di citra.' },
+
+    /* ---------- 21: Wulan dan Peta yang Belum Selesai (komputer Wulan) ---------- */
+    { c: 21, at: 'Wulan tidak menyukai cara orang-orang di internet', dev: 'Komputer Wulan', devKind: 'pc', v: 'web', url: 'forumwarga-saujana.net/t/gang-bandeng', page: { kind: 'forum', crumb: 'Forum Warga Saujana › Jalan & Lingkungan', title: 'GANG BANDENG LEBIH PANJANG DARI PETA??', meta: '322 balasan', comments: [['bandeng_asli', 'kantor pemetaan pasti tahu sesuatu', ''], ['wulan.s', 'Sebelum membandingkan angka, periksa alat, metode, dan titik awal pengukuran.', ''], ['r4h4s14', 'nah ini jawaban orang dalam', ''], ['wulan.s', 'Saya cuma pegawai survei.', '']] } },
+    { c: 21, at: 'Aku mengambil foto papan itu setelah meminta izin.', v: 'photo', photo: { title: 'Foto', meta: 'Kantor pemetaan · diambil dengan izin', cap: 'Peta lama di dekat pintu. Satu garis bertanda: akan diperbaiki. Sudah dua tahun.', tone: 'paper' } },
+    { c: 21, at: 'Wulan membuka berkas survei yang belum selesai.', dev: 'Komputer Wulan', devKind: 'pc', v: 'doc', doc: { title: 'Survei bidang · belum selesai', who: ['Wulan'], lines: [['Petak 114, 115, 117', 'h'], ['Nomor bidang tertukar', 'mark'], 'Minta petugas periksa ulang sebelum sertifikat berikutnya dicetak.', ['Jalan baru, sisi timur', 'h'], 'Belum masuk peta. Menunggu anggaran.'] } },
+
+    /* ---------- 22: Lagu yang Salah Digunakan ---------- */
+    { c: 22, at: 'Pada suatu malam di abad yang baru lewat', v: 'lock', t: '00.18', date: 'Sabtu, 21 November', dim: 1, n: [] },
+    { c: 22, at: 'Sekarang, pada 2026, Hollow Atlas mempunyai lagu', v: 'music', track: { title: 'The Harbor Has No Memory', artist: 'Hollow Atlas', album: 'Low Tide Hymns', p: .58, note: '48.211.907 kali diputar.' } },
+    { c: 22, at: 'Seorang anak perempuan memainkan lagu kami', v: 'web', url: 'putar.video/w/harbor-piano', page: { kind: 'video', title: 'anakku main The Harbor Has No Memory (beberapa nada salah, kami tidak peduli)', meta: '4,1 rb x ditonton · 2 minggu lalu', by: 'ayah.nadira', subs: '38 pelanggan', dur: '3:12', count: '96', body: ['Latihan tiga minggu. Nada ketujuh masih bandel.'], comments: [['ayah.nadira', 'dia minta jangan diulang bagian yang salah. jadi tidak diulang.', ''], ['k.lee', 'the dad nodding before she finishes 😭', ''], ['tanjung', 'versi ini lebih jujur dari aslinya', '']] } },
+
+    /* ---------- 23: Ruang Arsip yang Mempunyai Pengunjung ---------- */
+    { c: 23, at: 'Tiga hari kemudian unggahannya disalin ke forum penggemar.', v: 'web', url: 'hollowatlas-fans.net/t/1903', page: { kind: 'forum', crumb: 'HA Fans › Teori', title: 'ARCHIVIST CONFIRMS: THE 1903 PHOTO IS ELIAS', meta: '1.877 balasan', body: ['(bagian "mungkin kesalahan identitas" dipotong)'], comments: [['venn_ultra', 'apparently the archivist is in a secret society??', ''], ['wren.h', 'source??', ''], ['quietwren', 'guys there is a whole family in that photo', '']] } },
+    { c: 23, at: 'Soren mengirim tautan artikel tersebut kepadaku', v: 'chat', with: 'Soren', msgs: [['in', 'link', 'Arsiparis amatir "membongkar" rahasia gitaris Hollow Atlas', 'kabarmusik.co'], ['in', 'One advisor wants a warning letter so he takes it down. The other says stay quiet. Your call.']] },
+    { c: 23, at: 'Edwin akhirnya mengunggah klarifikasi.', v: 'web', url: 'silsilahterbuka.net/t/1903', more: [['edwin.r', 'Klarifikasi: nama dalam catatan makam kemungkinan tertukar dengan nama paman saya. Saya tidak dapat membuktikan lelaki di foto adalah orang yang sama. Mohon jangan menghubungi keluarga dalam foto.', 'baru']] },
+
+    /* ---------- 24: Dermaga Tujuh ---------- */
+    { c: 24, at: 'Aku pergi ke Dermaga 7 pada hari Jumat.', v: 'web', url: 'cari.web/?q=dermaga+7+saujana', page: { kind: 'search', title: 'dermaga 7 saujana', body: [['arsipnol.net', 'Dermaga 7: 41 laporan', 'Sightings, Aftermath, False Positives…'], ['saujanakini.id', '"Bukan tempat wisata," kata nelayan Dermaga 7', 'Warga meminta pengunjung tidak berdiri di ujung dermaga.'], ['putar.video', 'I followed the blue dot to Pier 7', '820 rb x ditonton']] } },
+    { c: 24, at: 'Ketika matahari hampir tenggelam, aku memperbesar peta', v: 'map', t: '17.41', map: { place: 'Dermaga 7', dark: 1, tag: 'Dermaga 7' } },
+    { c: 24, at: 'Aku mencoba memperkecil peta hingga seluruh Saujana', span: 'Lingkaran pucat di sekitar titik biru mengecil.', v: 'map', map: { place: 'Dermaga 7', dark: 1 } },
+    { c: 24, at: 'Aku berhenti memperkecil.', v: 'map', map: { place: 'Dermaga 7', dark: 1, zoom: 1, acc: 0, here: 1 } },
+    { c: 24, at: 'Aku mengunci layar.', v: 'lock', t: '18.02', date: 'Jumat, 27 November', n: [] },
+
+    /* ---------- 25: Di Mana Aku Berada pada Hari Itu ---------- */
+    { c: 25, at: 'Sebagian kisah tentang Nico baru kuketahui', v: 'lock', t: '22.10', date: 'Sabtu, 28 November', dim: 1, n: [] },
+    { c: 25, at: 'Ia mengirim foto studio. Drum sudah dipindahkan.', v: 'chat', with: 'Jonah', sub: 'Hollow Atlas', msgs: [['in', 'ph', 'Studio. Drum sudah dipindah. Kardus kabel di sudut.', 'studio'], ['in', 'do u remember which cables we keep for the next tour']] },
+    { c: 25, at: 'Kemudian aku menulis satu pertanyaan', v: 'chat', with: 'Jonah', msgs: [['out', 'Do you want the full list or just the ones you need tomorrow?']] },
+    { c: 25, at: 'Jonah membalas: I have never loved you more', v: 'chat', with: 'Jonah', msgs: [['in', 'I have never loved you more than right now. Just tomorrow.']] },
+    { c: 25, at: 'Aku mengirim tiga nomor seri.', v: 'chat', with: 'Jonah', msgs: [['out', 'XLR 4471-B\nXLR 0923-K\nDI 1180-A'], ['in', 'ph', 'Wajah Jonah, lega secara berlebihan.', 'warm']] },
+    { c: 25, at: 'Beberapa menit kemudian Jonah menelepon.', v: 'call', with: 'Jonah', state: 'live' },
+    { c: 25, at: 'Saat panggilan selesai, aku membuka kembali pesannya', v: 'chat', with: 'Jonah', msgs: [['in', "Whatever happens, don't make us learn it from strangers."]] },
+
+    /* ---------- 26: Sebuah Kota yang Tidak Berutang Penjelasan ---------- */
+    { c: 26, at: 'Aku menerima pesan dari Suri bahwa sebuah arsip foto', v: 'chat', with: 'Suri', msgs: [['in', 'Pak, foto-foto yang pernah dititipkan dipamerkan di gedung kesenian sampai Minggu. Punya Bapak juga, kalau boleh. Datang ya.']] },
+    { c: 26, at: 'Aku berdiri agak lama di depan foto yang kutitipkan.', v: 'photo', photo: { title: 'Foto', meta: '1936 · pameran, gedung kesenian', cap: 'Istriku tersenyum tipis. Saudara perempuannya melihat ke kiri. Retaknya diberi keterangan.', tone: 'sepia', half: 'retak dibiarkan' } },
+    { c: 26, at: 'Malamnya aku membuka situs forum lagi.', v: 'web', url: 'arsipnol.net/t/nothing-happened', page: { kind: 'forum', crumb: 'Arsip Nol › Aftermath', title: 'i followed the route exactly and nothing happened', meta: '64 balasan', body: ['Three nights. Every turn. I arrived. Nothing.'], comments: [['seeker_77', 'you weren\'t ready.', ''], ['moth_e', 'did you do the steps in order?', ''], ['h.ory', 'the next one might be different, hang in there', '']] } },
+    { c: 26, at: 'Aku mulai mengetik.', v: 'web', url: 'arsipnol.net/t/nothing-happened', draft: "You don't owe anyone an explanation. A bad experience doesn't have to be a stage before something better. No result isn't proof that you failed. You don't have to try again if you don't want to." },
+    { c: 26, at: 'Kemudian kuhapus semuanya, menyisakan satu kalimat.', v: 'web', url: 'arsipnol.net/t/nothing-happened', draft: "You don't owe anyone an explanation. A bad experience doesn't have to be a stage before something better. No result isn't proof that you failed. You don't have to try again if you don't want to.", erase: 1, keep: "You don't have to try again if you don't want to." },
+    { c: 26, at: 'Aku mengirimkannya.', v: 'web', url: 'arsipnol.net/t/nothing-happened', more: [['pejalan_1107', "You don't have to try again if you don't want to.", 'baru saja']] },
+    { c: 26, at: 'Seorang pengguna membalas bahwa aku pasti belum memahami', v: 'web', url: 'arsipnol.net/t/nothing-happened', more: [['seeker_77', "you clearly don't understand what the app is for.", 'baru saja', 1]] },
+
+    /* ---------- 27: Empat Ketukan tanpa Gitar (ponsel Mara) ---------- */
+    { c: 27, at: 'Pada sore ketika Elias mengunjungi pameran foto', dev: 'Ponsel Mara', v: 'lock', t: '15.00', date: 'Minggu, 29 November', n: [['kalender', 'Kalender', 'Latihan · Ruang B · 3 jam (dipesan Soren)', 'sekarang']] },
+    { c: 27, at: 'Ketika jam latihan selesai, Mara mendengarkan rekamannya.', dev: 'Ponsel Mara', v: 'rec', rec: { title: 'Ruang B · lagu baru · take 4', sub: 'Mara, Jonah, Yuna', dur: '06:12', pos: '02:20', state: 'play' } },
+    { c: 27, at: 'Mara ingin mengirim rekamannya kepada Elias.', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'terakhir dilihat 2 j lalu', msgs: [['sys', 'Kemarin'], ['in', "I'll call before bed."], ['out', 'You better.']] },
+    { c: 27, at: 'Ia menulis: We played today.', dev: 'Ponsel Mara', v: 'chat', with: 'Eli', sub: 'terakhir dilihat 2 j lalu', msgs: [['in', "I'll call before bed."], ['out', 'You better.']], draft: 'We played today. New arrangement. I can send it if you want.' },
+    { c: 27, at: 'Jawabannya tidak langsung datang.', dev: 'Ponsel Mara', v: 'doc', doc: { title: 'Hollow Atlas · folder bersama', who: ['Mara', 'Jonah', 'Yuna', 'Soren'], lines: [['2026-11-29 · Ruang B · take 1–4', 'h'], 'take4_2026-11-29_ruangB.m4a', ['without Elias.m4a', 'del', 'usul Jonah, bercanda · tidak dipakai'], ['Pesan untuk Eli', 'h'], 'Terkirim. Belum dibaca.'] } },
+    { c: 27, at: 'Ia menulis: We played today.', silent: 1, v: 'chat', with: 'Mara', msgs: [['sys', 'Minggu 18.10'], ['in', 'We played today. New arrangement. I can send it if you want.']] },
+
+    /* ---------- 28: Orang yang Tidak Pernah Mendapat Peta ---------- */
+    { c: 28, at: 'Pada awalnya aku mengira Nabi Nol adalah nama', v: 'web', url: 'arsipnol.net/t/first-witness', more: [['moth_e', 'he admits he doesn\'t know where it came from. that IS the proof he knows.', '2025']] },
+    { c: 28, at: 'Lalu aku menemukan wawancara lama dengan Nol.', v: 'web', url: 'arsipnol.net/t/wawancara-2019', page: { kind: 'forum', crumb: 'Arsip Nol › Dokumen', title: 'Wawancara dengan ZERO (2019)', meta: 'audio · 46:12 · suara pewawancara disamarkan', body: ['Diunggah atas izin. Tidak ada video. Mohon jangan memotong bagian mana pun untuk dikutip tanpa konteks.'] } },
+    { c: 28, at: 'Rekamannya berdurasi empat puluh enam menit.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', sub: 'kipas angin, sesekali kendaraan di luar', dur: '46:12', pos: '00:00', state: 'play' } },
+    { c: 28, at: 'Kemudian pewawancara bertanya apakah ia pernah melihat', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '11:38', state: 'play', lines: [['Pewawancara', 'Pernah melihat aplikasi itu di ponsel Anda sendiri?']] } },
+    { c: 28, at: 'Saya tidak tahu apakah siap itu syarat.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '12:04', state: 'play', lines: [['Nol', 'Belum.'], ['Pewawancara', 'Apa Anda merasa belum siap?'], ['Nol', 'Saya tidak tahu apakah siap itu syarat.']] } },
+    { c: 28, at: 'Ada orang yang bercerita kepada saya', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '19:16', state: 'play', lines: [['Nol', 'Ada orang yang bercerita kepada saya. Kalau saya sudah menerima ceritanya, saya merasa perlu memperlakukannya dengan hati-hati.']] } },
+    { c: 28, at: 'Aku menghentikan rekaman.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '19:31', state: 'pause' } },
+    { c: 28, at: 'Aku melanjutkan rekaman.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '19:31', state: 'play', lines: [['Pewawancara', 'Kenapa saya harus memilih?'], ['Nol', 'Mungkin. Tapi saya belum mau mengarang bagian yang tidak saya tahu.']] } },
+    { c: 28, at: 'Kalau aplikasi itu muncul besok pagi', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '43:52', state: 'play', lines: [['Pewawancara', 'Kalau aplikasi itu muncul besok pagi, apa yang akan Anda lakukan?']] } },
+    { c: 28, at: 'Saya tidak tahu saya akan menulis apa', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '44:30', state: 'play', lines: [['Pewawancara', 'Dan kalau ia bertanya dari mana?'], ['Nol', 'Saya tidak tahu saya akan menulis apa.']] } },
+    { c: 28, at: 'Aku memandang layar yang menampilkan gelombang suara.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '44:36', state: 'play', lines: [['', '(jeda panjang)']] } },
+    { c: 28, at: 'Aku mendengarkan rekaman sekali lagi.', v: 'rec', rec: { title: 'Wawancara · ZERO (2019)', pos: '00:00', state: 'play' } },
+
+    /* ---------- 29: Dua Macam Diam ---------- */
+    { c: 29, at: 'Mara menelepon pada hari ketika aku dijadwalkan', v: 'call', with: 'Mara', state: 'live', t: '13.08' },
+    { c: 29, at: 'Aku menyetujuinya.', v: 'call', with: 'Mara', state: 'ended', dur: '31 menit' },
+    { c: 29, at: 'Di ponsel ada pemberitahuan dari pengelola kendaraan.', v: 'lock', t: '15.00', date: 'Rabu, 2 Desember', n: [['setel', 'Gudang Simpan Saujana', 'Kantor kami tutup pukul 17.00. Kendaraan Anda siap diambil.', 'sekarang']] },
+    { c: 29, at: 'Aku juga menerima pesan dari Soren.', v: 'chat', with: 'Soren', msgs: [['in', 'Talk is booked. Thursday, 4pm. With or without legal, your choice.'], ['out', "I'll contact them."]] },
+    { c: 29, at: 'Kemudian Tio mengirim rekaman baru.', v: 'chat', with: 'Tio Jalan Layang', msgs: [['in', 'vo', 'Tio 3', '2:31'], ['out', 'Refrainnya lebih utuh sekarang. Mikrofonnya mundur sejengkal lagi.'], ['in', 'Istriku akhirnya suka, Bang.']] },
+    { c: 29, at: 'Soren menelepon setelah percakapanku dengan Mara.', v: 'call', with: 'Soren', state: 'live' },
+    { c: 29, at: 'Aku tertawa. Ia juga.', v: 'call', with: 'Soren', state: 'ended', dur: '18 menit' },
+    { c: 29, at: 'Soren mengirim dua berkas setelah panggilan selesai.', v: 'mail', mail: { from: 'Soren', subj: 'Dua berkas', body: ['Eli,', 'Yang pertama: jadwal yang masih bisa ditunda. Yang kedua: siapa saja yang perlu diberi tahu.', 'Kolom kosongnya tidak perlu diisi malam ini.', 'S.'], att: ['Jadwal_yang_bisa_ditunda.pdf', 'Daftar_pemberitahuan.pdf'] } },
+    { c: 29, at: 'Berkas kedua mempunyai kolom kosong', v: 'doc', doc: { title: 'Daftar_pemberitahuan.pdf', back: 'surel', lines: [['Jika Elias Venn berhenti tampil, beri tahu:', 'h'], 'Kru panggung (14) · Teknisi suara (3) · Logistik · Penyelenggara (9) · Label', ['Jenis pernyataan publik', 'h'], ['                                        ', 'mark'], ['Tanggal', 'h'], '—', ['Yang berwenang menjawab pertanyaan publik', 'h'], 'Soren'] } },
+    { c: 29, at: 'Beberapa jam kemudian, Yuna mengirim pesan singkat.', v: 'chat', with: 'Yuna', sub: 'Hollow Atlas', msgs: [['in', "Mara told me you're having a hard time. I won't ask."], ['in', 'ph', 'Gambar anakku: konser, empat orang di panggung. Satu digambar jauh lebih tinggi.', 'paper']] },
+    { c: 29, at: "Apparently you're the tall one", v: 'chat', with: 'Yuna', msgs: [['in', "Apparently you're the tall one."]] },
+    { c: 29, at: 'Aku membalas bahwa anaknya mempunyai bakat', v: 'chat', with: 'Yuna', msgs: [['out', 'She has a gift for rewriting reality.']] },
+    { c: 29, at: 'Yuna mengirim suara tawa pendek', v: 'chat', with: 'Yuna', msgs: [['in', 'vo', 'Yuna', '0:03'], ['in', "I hope you figure out what you need. I also need to know whether we're touring next year. Both can be true."]] },
+    { c: 29, at: 'Aku menulis bahwa aku akan memberi keputusan', v: 'chat', with: 'Yuna', msgs: [['out', "I'll decide on the date we agreed with Soren. Not sooner than I can promise. Not later if I can help it."]] },
+    { c: 29, at: 'Yuna membalas: Good. Also Jonah wants his jacket back', v: 'chat', with: 'Yuna', msgs: [['in', 'Good. Also Jonah wants his jacket back from the studio. Again.']] },
+
+    /* ---------- 30: Toko yang Tetap Berada di Peta ---------- */
+    { c: 30, at: 'Di aplikasi tanpa nama, sebuah tempat masih ditandai', v: 'map', t: '16.20', map: { place: 'Jalan Kenari', tag: 'Toko Roti Sinar' } },
+    { c: 30, at: 'Ponsel menunjukkan nama toko itu masih ada.', v: 'map', map: { place: 'Jalan Kenari', tag: 'Toko Roti Sinar', acc: 22 } },
+    { c: 30, at: 'Sore itu aku mengirim pesan kepada Mara', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', t: '17.35', msgs: [['out', 'Ate. Will call before bed.'], ['in', 'like'], ['in', 'Are you really planning to come back and talk?']] },
+    { c: 30, at: 'Aku ingin mencoba, tulisku.', v: 'chat', with: 'Mara', msgs: [['out', 'Aku ingin mencoba.']] },
+    { c: 30, at: "Ia menjawab: That's enough for tonight.", v: 'chat', with: 'Mara', msgs: [['in', "That's enough for tonight."]] },
+
+    /* ---------- 31: Semua yang Pernah ---------- */
+    { c: 31, at: 'Halaman forum terbuka di layar.', v: 'web', t: '22.40', url: 'arsipnol.net', page: { kind: 'forum', crumb: 'Arsip Nol', title: 'Indeks', meta: 'beberapa cabang tidak lagi aktif', body: ['Sightings · 1.311 laporan', 'Routes · 402', 'Aftermath · 806', '[gambar tidak dapat dimuat]', '[cabang ini sudah mati]'] }, more: [['▢', '[akun ditutup]', '2021'], ['▢', '[akun ditutup]', '2023']] },
+    { c: 31, at: 'Aku menemukan unggahan terakhir yang dibuat Nol', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', page: { kind: 'forum', crumb: 'Arsip Nol › Pengumuman', title: 'Mengurangi waktu di sini', meta: 'ZERO · unggahan terakhir sebelum berhenti beberapa bulan', body: ['Saya akan mengurangi waktu memeriksa forum. Urusan keluarga dan pekerjaan menumpuk. Beberapa pengelola akan melanjutkan pembaruan laporan.', 'Saya tidak pernah diberi alasan untuk menganggap pengalaman orang lain sebagai sesuatu yang boleh saya miliki.'] } },
+    { c: 31, at: 'Seseorang menanggapi dengan mengatakan bahwa pernyataan itu', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['lumen.k', 'This is exactly why he should lead this community.', '']] },
+    { c: 31, at: 'Pengguna lain mengatakan ia sedang menghindari tanggung jawab.', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['k_ruin', 'Convenient. Walk away right when people need answers.', '']] },
+    { c: 31, at: 'Seorang perempuan berterima kasih', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['sari_w', 'Dulu Damar membantu saya mencari layanan konseling. Saya sudah tidak memakai forum ini. Saya cuma ingin bilang terima kasih. Ia mengingatkan saya bahwa saya boleh tidak kembali.', '']] },
+    { c: 31, at: 'Nol membalas dengan dua kalimat.', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['ZERO', 'Saya senang Anda sudah mendapat bantuan. Semoga hidup Anda sekarang lebih mudah.', '', 1]] },
+    { c: 31, at: 'Ponsel bergetar.', v: 'lock', t: '23.21', date: 'Kamis, 3 Desember', n: [['pesan', 'Mara', 'Foto', 'sekarang']] },
+    { c: 31, at: 'Pesan dari Mara. Ia mengirim foto selembar partitur', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', msgs: [['sys', 'Kamis 23.21'], ['in', 'ph', 'Partitur. Di bawahnya, coretan Jonah: wajah kecil dengan mulut terbuka sangat lebar.', 'paper'], ['in', 'He says this is an accurate picture of our creative process.']] },
+    { c: 31, at: 'Aku membalas bahwa wajahnya kurang menggambarkan', v: 'chat', with: 'Mara', msgs: [['out', "It doesn't capture Yuna's suffering. She has to listen to us for hours."]] },
+    { c: 31, at: 'Mara mengirim beberapa ikon tertawa.', v: 'chat', with: 'Mara', msgs: [['in', '😂😂😂'], ['in', 'Have you sorted out your trip home?']] },
+    { c: 31, at: 'Not yet, tulisku.', v: 'chat', with: 'Mara', msgs: [['out', 'Not yet.']] },
+    { c: 31, at: 'Beberapa saat kemudian ia membalas', v: 'chat', with: 'Mara', msgs: [['in', 'Tell me when you know.']] },
+    { c: 31, at: 'Aku meletakkan ponsel di meja.', v: 'lock', t: '23.29', date: 'Kamis, 3 Desember', n: [['pesan', 'Mara', 'Tell me when you know.', '1 mnt']] },
+    { c: 31, at: 'Aku menutup laptop.', v: 'lock', t: '23.52', date: 'Kamis, 3 Desember', n: [['pesan', 'Mara', 'Tell me when you know.', '24 mnt']] },
+    { c: 31, at: 'Aku tidak menulis apa pun.', v: 'lock', t: '00.06', date: 'Jumat, 4 Desember', dim: 1, n: [['pesan', 'Mara', 'Tell me when you know.', '38 mnt']] }
+  ]
+};
