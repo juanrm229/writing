@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=3">
-<link rel="stylesheet" href="dasar.css?v=12">
+<link rel="stylesheet" href="dasar.css?v=13">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -24,6 +24,7 @@
   <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
   <span id="stepChip" hidden></span>
   <span class="qm-cluster" id="topRight">
+    <button class="qm-icon flame" id="flame" type="button" aria-label="Nyala" hidden><i aria-hidden="true"></i></button>
     <button class="qm-icon" id="openMem" type="button" aria-label="Yang masih kuingat" aria-haspopup="dialog" aria-controls="mem" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.3 5 5.4.5-4.1 3.6 1.2 5.3L12 15.3 7.2 18l1.2-5.3-4.1-3.6 5.4-.5z"/></svg></button>
     <button class="qm-icon" id="openSettings" type="button" aria-label="Pengaturan baca"><span class="aa">Aa</span></button>
   </span>
@@ -63,6 +64,6 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
-<script src="dasar.js?v=11"></script>
+<script src="dasar.js?v=12"></script>
 </body>
 </html>
