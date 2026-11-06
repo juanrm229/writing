@@ -343,6 +343,7 @@
   function songTick(force) {
     if (!audio) return;
     const t = audio.currentTime, playing = !audio.paused, { k, gap } = lyricAt(t);
+    if (window.SFX) window.SFX.duck = playing;
     const pl = $('.music.real', app);
     if (pl) {
       const bt = $('.mu-play', pl); bt.textContent = playing ? '❚❚' : '▶'; bt.classList.toggle('on', playing); bt.setAttribute('aria-label', playing ? 'Jeda' : 'Putar');
@@ -380,17 +381,18 @@
     // rekaman diputar
     const rp = $('.rc-time b[data-play="1"]', app);
     if (rp) { let s = +rp.dataset.pos; const d = +rp.dataset.dur, bars = $$('.wave i', app); const id = setInterval(() => { s = Math.min(d, s + 1); rp.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; bars.forEach((x, k) => x.classList.toggle('on', k / bars.length < s / d)); }, 1000); live.push(() => clearInterval(id)); }
+    if (anim && b) sfxFor(b);
     if (!anim || calm()) return;
     // mengetik draf, lalu menghapusnya
     const dr = $('.cmp-t', app);
     if (dr && dr.dataset.draft) {
       const txt = dr.dataset.draft, erase = dr.dataset.erase === '1', keep = dr.dataset.keep || ''; let alive = true; live.push(() => { alive = false; });
-      const typeTo = async s => { for (let k = 0; k <= s.length && alive; k += Math.max(1, Math.round(s.length / 60))) { dr.textContent = s.slice(0, k); await sleep(45); } if (alive) dr.textContent = s; };
+      const typeTo = async s => { for (let k = 0; k <= s.length && alive; k += Math.max(1, Math.round(s.length / 60))) { dr.textContent = s.slice(0, k); if (k) window.SFX?.play('key'); await sleep(45); } if (alive) dr.textContent = s; };
       (async () => {
         if (erase) {
           // yang pendek diketik dulu; yang panjang sudah ada di kolom (ditulis di ketukan sebelumnya)
           if (txt.length < 24) { dr.textContent = ''; await typeTo(txt); await sleep(700); } else { dr.textContent = txt; await sleep(600); }
-          for (let k = txt.length; k >= 0 && alive; k -= Math.max(1, Math.round(txt.length / 40))) { dr.textContent = txt.slice(0, k); await sleep(28); }
+          for (let k = txt.length; k >= 0 && alive; k -= Math.max(1, Math.round(txt.length / 40))) { dr.textContent = txt.slice(0, k); window.SFX?.play('del'); await sleep(28); }
           if (!alive) return; dr.textContent = ''; if (keep) { await sleep(400); await typeTo(keep); } return;
         }
         dr.textContent = ''; await typeTo(txt);
@@ -398,7 +400,7 @@
     }
     // isian peta diketik
     const mi = $('.mp-in[data-type]', app);
-    if (mi && mi.dataset.type && b && b.typeIn) { const txt = mi.dataset.type; let alive = true; live.push(() => { alive = false; }); mi.textContent = ''; mi.classList.add('typing'); (async () => { for (let k = 0; k <= txt.length && alive; k++) { mi.textContent = txt.slice(0, k); await sleep(70); } mi.classList.remove('typing'); })(); }
+    if (mi && mi.dataset.type && b && b.typeIn) { const txt = mi.dataset.type; let alive = true; live.push(() => { alive = false; }); mi.textContent = ''; mi.classList.add('typing'); (async () => { for (let k = 0; k <= txt.length && alive; k++) { mi.textContent = txt.slice(0, k); if (k) window.SFX?.play('key'); await sleep(70); } mi.classList.remove('typing'); })(); }
     // pesan baru: titik mengetik dulu
     const news = $$('.mw.new', app);
     if (news.length && b && (b.msgs || []).some(m => m[0] === 'in')) {
@@ -406,10 +408,26 @@
       const tw = document.createElement('div'); tw.className = 'mw typing-w'; tw.innerHTML = '<div class="m in typing"><i></i><i></i><i></i></div>';
       const box = $('.chat-b', app); box.append(tw); box.scrollTop = box.scrollHeight;
       let alive = true; live.push(() => { alive = false; });
-      (async () => { await sleep(900); if (!alive) return; tw.remove(); for (const n of news) { if (!alive) return; n.classList.remove('wait'); n.classList.add('pop'); box.scrollTop = box.scrollHeight; await sleep(520); } })();
+      (async () => { await sleep(900); if (!alive) return; tw.remove(); for (const n of news) { if (!alive) return; n.classList.remove('wait'); n.classList.add('pop'); box.scrollTop = box.scrollHeight; if (!n.querySelector('.sys')) window.SFX?.play(n.querySelector('.m.out') ? 'send' : 'recv'); await sleep(520); } })();
     }
   }
 
+  // efek suara menurut jenis layar (hanya saat cerita maju satu ketukan)
+  function sfxFor(b) {
+    const F = window.SFX; if (!F || !F.on) return;
+    if (b.buzz) F.play('buzz');
+    if (b.v === 'chat') {
+      const ms = b.msgs || [], hasIn = ms.some(m => m[0] === 'in');
+      if (!hasIn) ms.filter(m => m[0] === 'out').forEach((m, i) => F.play('send', 250 + i * 520));
+      return;
+    }
+    if (b.v === 'lock') { const n = $$('.lk-i.new', app).length; if (n && b.n?.length) { for (let i = 0; i < n; i++) F.play('notif', i * 500); } else if (!b.buzz) F.play('lock'); return; }
+    if (b.v === 'call') { F.play(b.state === 'ended' ? 'hangup' : b.state === 'ring' ? 'ring' : 'connect'); return; }
+    if (b.v === 'map') { if (b.map?.arrive) F.play('arrive', 500); else if (b.map?.route) F.play('route', 300); else F.play('tap'); return; }
+    if (b.v === 'web') { if (b.more && !b.page) F.play('pop', 200); else F.play('tap'); return; }
+    if (b.v === 'photo') { F.play(b.shot ? 'shutter' : 'tap'); return; }
+    F.play('tap');
+  }
   function viewOf(b, st) {
     if (!b) return H.lock({ n: [], date: L.start?.date, cap: L.start?.cap }, st);
     const f = H[b.v]; return f ? f(b, st) : '';
@@ -472,7 +490,7 @@
       const oc = $('.mp-card', app), nc = $('.mp-card', tmp);
       if (oc && nc) oc.replaceWith(nc); else if (oc) oc.remove(); else if (nc) app.firstElementChild.append(nc);
       const ot = $('.here', app), nt = $('.here', tmp); if (ot && nt) ot.textContent = nt.textContent;
-      mounted = v; applyWalk(b, walkP(b, gf)); return;
+      mounted = v; applyWalk(b, walkP(b, gf)); if (anim && b.map.arrive) window.SFX?.play('arrive', 300); return;
     }
     mount(viewOf(zb, st), anim, b); mounted = v; mountedKey = key;
     if (walking) applyWalk(b, walkP(b, gf));
@@ -517,7 +535,7 @@
     else if (kind === 'rec') html = H.rec({ rec: { ...st.recs.get(arg), state: 'pause' } }, st);
     else if (kind === 'catatan') { setBig(false); $('#read').focus({ preventScroll: true }); return; }
     else if (LIST[kind]) html = LIST[kind](st);
-    if (html) { mount(html, true, null); mounted = -9; mountedKey = null; homebar.hidden = false; }
+    if (html) { window.SFX?.play('tap'); mount(html, true, null); mounted = -9; mountedKey = null; homebar.hidden = false; }
     paintStatus(st, null);
   }
   app.addEventListener('click', e => {
@@ -547,6 +565,7 @@
     const el = document.createElement('button'); el.type = 'button'; el.className = 'bn';
     el.innerHTML = `${icon(APP_OF[b.v] || 'pesan')}<span><b>${esc(who || '')}</b><span>${inline(String(txt))}</span></span>`;
     el.addEventListener('click', () => setFollow(true));
+    window.SFX?.play('banner');
     box.prepend(el); while (box.children.length > 2) box.lastChild.remove();
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, 5200);
   }
@@ -650,6 +669,10 @@
   G?.settings?.({ open: '#openSettings', dialog: '#settingsDialog', theme: '#theme' });
   $('#smaller').addEventListener('click', () => setSize(-1));
   $('#bigger').addEventListener('click', () => setSize(1));
+  const sfxBtn = $('#sfxSet');
+  const paintSfx = () => { const v = S.sfx !== false; if (window.SFX) window.SFX.on = v; sfxBtn.setAttribute('aria-pressed', String(v)); sfxBtn.textContent = v ? 'Nyala' : 'Mati'; };
+  sfxBtn.addEventListener('click', () => { S.sfx = S.sfx === false; save(); paintSfx(); if (S.sfx) window.SFX?.play('recv'); });
+  paintSfx();
   const followBtn = $('#followSet');
   const paintFollow = () => { followBtn.setAttribute('aria-pressed', String(S.follow !== false)); followBtn.textContent = S.follow !== false ? 'Ikuti cerita' : 'Diam'; };
   followBtn.addEventListener('click', () => { setFollow(!(S.follow !== false)); paintFollow(); });

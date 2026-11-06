@@ -10,7 +10,7 @@ window.LAYAR = {
   beats: [
     /* ---------- Prolog: Hal yang Tidak Tersimpan ---------- */
     { c: 0, at: 'Orang terakhir yang memanggilku dengan nama asliku', v: 'lock', t: '20.51', n: [['surel', 'Soren', 'Re: tur lanjutan. Tolong dibaca sebelum Jumat.', '3 j']] },
-    { c: 0, at: 'Ponselku bergetar.', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', t: '21.04', msgs: [['sys', 'Hari ini 21.04'], ['in', "Please tell me you've eaten."]] },
+    { c: 0, at: 'Ponselku bergetar.', buzz: 1, v: 'chat', with: 'Mara', sub: 'Hollow Atlas', t: '21.04', msgs: [['sys', 'Hari ini 21.04'], ['in', "Please tell me you've eaten."]] },
     { c: 0, at: 'lalu menghapusnya. Aku belum makan.', v: 'chat', with: 'Mara', draft: 'yes', erase: 1 },
     { c: 0, at: 'Aku menaruh ponsel di meja.', v: 'lock', t: '21.05', n: [['pesan', 'Mara', "Please tell me you've eaten.", '1 mnt']], keep: 1 },
     { c: 0, at: 'Yang akan mati adalah Elias Venn.', v: 'web', t: '21.12', url: 'hollowatlas.wiki/Elias_Venn', page: { kind: 'wiki', title: 'Elias Venn', meta: 'Dari Hollow Atlas Wiki, ensiklopedia penggemar', box: [['Nama', 'Elias Venn'], ['Usia', '41 (lihat pembicaraan)'], ['Asal', '"Utara," katanya dalam satu wawancara'], ['Band', 'Hollow Atlas: gitar ritme, penulis lagu'], ['Ukuran sepatu', '44 (disengketakan)']], body: ['Elias Venn adalah gitaris dan penulis lagu Hollow Atlas. Hampir tidak ada catatan tentang masa kecilnya.', 'Halaman ini dikunci sementara karena perang suntingan tentang foto tahun 1903.'] } },
@@ -74,7 +74,7 @@ window.LAYAR = {
     { c: 5, at: 'Mara: Idiot.', v: 'chat', with: 'Mara', msgs: [['in', 'Idiot.']] },
     { c: 5, at: 'Aku pernah menghabiskan satu dekade sebagai pengemis.', v: 'lock', t: '02.30', date: 'Kamis, 5 November', dim: 1, n: [] },
     { c: 5, at: 'Aku juga pernah menjadi tabib pada masa penyakit', v: 'web', url: 'ensiklopedia.web/Pengobatan_sebelum_teori_kuman', page: { kind: 'article', kicker: 'Sejarah kedokteran', img: 'foto/guci-obat.jpg', imgCap: 'Guci obat dari masa wabah.', title: 'Pengobatan sebelum teori kuman', meta: 'Ensiklopedia Bebas', body: ['Ada cara yang membantu dan cara yang membahayakan. Air bersih dan istirahat menyelamatkan lebih banyak orang daripada ramuan.', 'Nama-nama para tabib hampir tidak pernah tercatat.'] } },
-    { c: 5, at: 'Ponselku berbunyi lagi. Kali ini dari Soren.', v: 'chat', with: 'Soren', sub: 'Manajer', t: '03.07', msgs: [['sys', '03.07'], ['in', 'We need to talk about the photo.']] },
+    { c: 5, at: 'Ponselku berbunyi lagi. Kali ini dari Soren.', buzz: 1, v: 'chat', with: 'Soren', sub: 'Manajer', t: '03.07', msgs: [['sys', '03.07'], ['in', 'We need to talk about the photo.']] },
     { c: 5, at: 'Aku membuka pesan berikutnya. Tautan menuju sebuah forum.', v: 'chat', with: 'Soren', msgs: [['in', 'link', 'Foto pekerja percetakan 1903 dan sebuah catatan pemakaman', 'silsilahterbuka.net']] },
     { c: 5, at: 'Dalam satu komentar ia menulis', v: 'web', url: 'silsilahterbuka.net/t/1903', page: { kind: 'forum', crumb: 'Silsilah Terbuka › Pertanyaan', title: 'Foto pekerja percetakan 1903 dan sebuah catatan pemakaman', meta: 'dibuka oleh edwin.r · 214 balasan', body: ['Saya menelusuri daftar pekerja percetakan untuk keluarga saya sendiri. Seorang lelaki tercatat pindah kota beberapa kali dengan usia yang hampir tidak berubah. Lalu ada catatan pemakaman dengan nama yang sama.', 'Saya tidak menyimpulkan apa-apa. Mohon jangan menambahkan teori di utas ini.'], comments: [['zz_orbit', 'ALIEN. sudah kubilang.', '5 j'], ['wren.h', 'tunggu, ini gitaris hollow atlas??', '4 j'], ['edwin.r', "I don't think he is immortal. I think the public record has been tampered with.", '3 j']] } },
     { c: 5, at: 'Soren menambahkan bahwa tim hukum akan menghubungi', v: 'chat', with: 'Soren', msgs: [['in', 'Legal wants to contact the forum owner this morning.'], ['out', "Please don't."], ['out', 'Not yet.']] },
@@ -104,7 +104,7 @@ window.LAYAR = {
     { c: 7, at: 'Di samping titik biru hanya ada tulisan kecil', v: 'map', map: { input: 'tidak tahu', here: 1 } },
     { c: 7, at: 'Pada hari kelima aku membawa kamera kecil', v: 'map', map: { input: 'Kampung Bandeng', route: 'gang', len: .7, meters: 140, instr: 'Lurus 140 m' } },
     { c: 7, at: 'Aku menandai jarak antara dua jalan', v: 'map', map: { input: 'Kampung Bandeng', route: 'gang', len: .7, arrive: 'Alatku: 203 m. Peta umum: kurang dari 150 m.' } },
-    { c: 7, at: 'Aku memeriksa jam.', v: 'photo', photo: { title: 'Foto', meta: 'Kampung Bandeng · 05.41', cap: 'Gang sempit, jemuran melintang. Jam di alat ukur dan jam di ponsel tidak sama.', tone: 'cool', src: 'foto/gang.jpg' } },
+    { c: 7, at: 'Aku memeriksa jam.', shot: 1, v: 'photo', photo: { title: 'Foto', meta: 'Kampung Bandeng · 05.41', cap: 'Gang sempit, jemuran melintang. Jam di alat ukur dan jam di ponsel tidak sama.', tone: 'cool', src: 'foto/gang.jpg' } },
     { c: 7, at: 'Aku mengambil ponsel dan menelepon Soren.', v: 'call', with: 'Soren', state: 'live' },
     { c: 7, at: 'Ia meminta foto paket dan amplop.', v: 'chat', with: 'Soren', msgs: [['out', 'ph', 'Amplop tanpa nama pengirim. Tertulis: E. Ven, kamar 1107.', 'paper', 'foto/amplop.jpg'], ['out', 'ph', 'Foto di dalamnya. Di belakangnya: Do you know who this man was?', 'sepia', 'foto/percetakan-1903.jpg'], ['in', 'Thank you. Do not open anything else that arrives.']] },
     { c: 7, at: 'Pada malam itu Mara menelepon.', v: 'call', with: 'Mara', state: 'live' },
@@ -221,7 +221,7 @@ window.LAYAR = {
 
     /* ---------- 21: Wulan dan Peta yang Belum Selesai (komputer Wulan) ---------- */
     { c: 21, at: 'Wulan tidak menyukai cara orang-orang di internet', dev: 'Komputer Wulan', devKind: 'pc', v: 'web', url: 'forumwarga-saujana.net/t/gang-bandeng', page: { kind: 'forum', crumb: 'Forum Warga Saujana › Jalan & Lingkungan', title: 'GANG BANDENG LEBIH PANJANG DARI PETA??', meta: '322 balasan', comments: [['bandeng_asli', 'kantor pemetaan pasti tahu sesuatu', ''], ['wulan.s', 'Sebelum membandingkan angka, periksa alat, metode, dan titik awal pengukuran.', ''], ['r4h4s14', 'nah ini jawaban orang dalam', ''], ['wulan.s', 'Saya cuma pegawai survei.', '']] } },
-    { c: 21, at: 'Aku mengambil foto papan itu setelah meminta izin.', v: 'photo', photo: { title: 'Foto', meta: 'Kantor pemetaan · diambil dengan izin', cap: 'Peta lama di dekat pintu. Satu garis bertanda: akan diperbaiki. Sudah dua tahun.', tone: 'paper', src: 'foto/peta-lama.jpg' } },
+    { c: 21, at: 'Aku mengambil foto papan itu setelah meminta izin.', shot: 1, v: 'photo', photo: { title: 'Foto', meta: 'Kantor pemetaan · diambil dengan izin', cap: 'Peta lama di dekat pintu. Satu garis bertanda: akan diperbaiki. Sudah dua tahun.', tone: 'paper', src: 'foto/peta-lama.jpg' } },
     { c: 21, at: 'Wulan membuka berkas survei yang belum selesai.', dev: 'Komputer Wulan', devKind: 'pc', v: 'doc', doc: { title: 'Survei bidang · belum selesai', who: ['Wulan'], lines: [['Petak 114, 115, 117', 'h'], ['Nomor bidang tertukar', 'mark'], 'Minta petugas periksa ulang sebelum sertifikat berikutnya dicetak.', ['Jalan baru, sisi timur', 'h'], 'Belum masuk peta. Menunggu anggaran.'] } },
 
     /* ---------- 22: Lagu yang Salah Digunakan ---------- */
@@ -243,7 +243,7 @@ window.LAYAR = {
     { c: 24, at: 'Aku mencoba memperkecil peta hingga seluruh Saujana', span: 'Lingkaran pucat di sekitar titik biru mengecil.', v: 'map', map: { place: 'Dermaga 7', dark: 1 } },
     { c: 24, at: 'Aku berhenti memperkecil.', v: 'map', map: { place: 'Dermaga 7', dark: 1, zoom: 1, acc: 0, here: 1 } },
     { c: 24, at: 'Aku mengunci layar.', v: 'lock', t: '18.02', date: 'Jumat, 27 November', n: [] },
-    { c: 24, at: 'Kami duduk sampai langit gelap.', v: 'photo', photo: { title: 'Foto', meta: 'Dermaga 7 · 19.08', cap: 'Sesudah gelap. Lampu-lampu dermaga dan air yang surut.', src: 'foto/dermaga.jpg' } },
+    { c: 24, at: 'Kami duduk sampai langit gelap.', shot: 1, v: 'photo', photo: { title: 'Foto', meta: 'Dermaga 7 · 19.08', cap: 'Sesudah gelap. Lampu-lampu dermaga dan air yang surut.', src: 'foto/dermaga.jpg' } },
 
     /* ---------- 25: Di Mana Aku Berada pada Hari Itu ---------- */
     { c: 25, at: 'Sebagian kisah tentang Nico baru kuketahui', v: 'lock', t: '22.10', date: 'Sabtu, 28 November', dim: 1, n: [] },
@@ -317,7 +317,7 @@ window.LAYAR = {
     { c: 31, at: 'Pengguna lain mengatakan ia sedang menghindari tanggung jawab.', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['k_ruin', 'Convenient. Walk away right when people need answers.', '']] },
     { c: 31, at: 'Seorang perempuan berterima kasih', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['sari_w', 'Dulu Damar membantu saya mencari layanan konseling. Saya sudah tidak memakai forum ini. Saya cuma ingin bilang terima kasih. Ia mengingatkan saya bahwa saya boleh tidak kembali.', '']] },
     { c: 31, at: 'Nol membalas dengan dua kalimat.', v: 'web', url: 'arsipnol.net/t/mengurangi-waktu', more: [['ZERO', 'Saya senang Anda sudah mendapat bantuan. Semoga hidup Anda sekarang lebih mudah.', '', 1]] },
-    { c: 31, at: 'Ponsel bergetar.', v: 'lock', t: '23.21', date: 'Kamis, 3 Desember', n: [['pesan', 'Mara', 'Foto', 'sekarang']] },
+    { c: 31, at: 'Ponsel bergetar.', buzz: 1, v: 'lock', t: '23.21', date: 'Kamis, 3 Desember', n: [['pesan', 'Mara', 'Foto', 'sekarang']] },
     { c: 31, at: 'Pesan dari Mara. Ia mengirim foto selembar partitur', v: 'chat', with: 'Mara', sub: 'Hollow Atlas', msgs: [['sys', 'Kamis 23.21'], ['in', 'ph', 'Partitur. Di bawahnya, coretan Jonah: wajah kecil dengan mulut terbuka sangat lebar.', 'paper', 'foto/partitur.jpg'], ['in', 'He says this is an accurate picture of our creative process.']] },
     { c: 31, at: 'Aku membalas bahwa wajahnya kurang menggambarkan', v: 'chat', with: 'Mara', msgs: [['out', "It doesn't capture Yuna's suffering. She has to listen to us for hours."]] },
     { c: 31, at: 'Mara mengirim beberapa ikon tertawa.', v: 'chat', with: 'Mara', msgs: [['in', '😂😂😂'], ['in', 'Have you sorted out your trip home?']] },
