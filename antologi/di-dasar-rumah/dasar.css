@@ -84,3 +84,23 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(-
 @media (prefers-reduced-motion: reduce) { .lupa, .lupa.fresh { transition: none; animation: none; } }
 .qm-icon[hidden] { display: none; }
 .toast { width: max-content; }
+
+/* memberi: saat nyalanya meredup, pembaca juga memberi satu kata */
+.give { position: fixed; z-index: 25; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); translate: -50% 0; width: min(460px, calc(100vw - 24px)); display: grid; grid-template-columns: 28px 1fr; gap: 10px 12px; align-items: start; padding: 16px 16px 14px; border-radius: 20px; background: var(--paper); box-shadow: var(--qm-shadow); animation: giveIn .5s var(--ease); }
+.give[hidden] { display: none; }
+@keyframes giveIn { from { transform: translateY(24px); opacity: 0; } }
+.give p { margin: 0; font: 400 15px/1.45 var(--f-ui); }
+.give .small { grid-column: 2; justify-self: start; height: 36px; padding: 0 16px; font-size: 13.5px; }
+.give-flame { width: 14px; height: 20px; margin: 2px 0 0 7px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 50% 70%, #FFE7A8, var(--flame) 60%, transparent 72%); animation: flick 1.4s ease-in-out infinite; }
+@keyframes flick { 50% { transform: scale(.82, .9); opacity: .7; } }
+body.giving .floor p { cursor: crosshair; }
+body.giving .floor p:hover { background: color-mix(in srgb, var(--flame) 6%, transparent); border-radius: 6px; }
+.w.mine.lupa { background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--flame) 55%, transparent) 0 .42em, transparent .42em .62em); }
+.mem-mine .mem-k { padding: 14px 18px 0; } .mem-mine .mem-l li::before { color: var(--flame); }
+/* menolak memberi: halaman meredup */
+.floor p { opacity: calc(1 - var(--dimmed, 0) * .14); transition: opacity 1.2s ease; }
+/* Ibu adalah penjaga */
+:root.keeper .ibu { text-decoration: underline dotted 1.5px; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); text-underline-offset: 4px; cursor: help; user-select: none; -webkit-user-select: none; }
+.ibu.swap { color: var(--hand); font-style: italic; }
+@media (prefers-reduced-motion: reduce) { .give, .give-flame { animation: none; } }
+body.giving .toast { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 150px); }
