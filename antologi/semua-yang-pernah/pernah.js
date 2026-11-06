@@ -827,7 +827,7 @@
     steps: [
       'Di bawah: aplikasi Catatan, tempat seluruh novella ini. Gulir seperti biasa.',
       'Di atas: layar ponsel yang sama. Pesan Mara, tautan Soren, forum, peta tanpa nama: semuanya muncul pada kalimat tempat ia terjadi.',
-      'Garis kecil di bawah layar membuka beranda. Semua aplikasi bisa dibuka; isinya hanya yang sudah terjadi sejauh ini. "Ikuti cerita" mengembalikan layar ke cerita.',
+      'Garis kecil di bawah layar membuka beranda; usap ke samping untuk halaman lain (Kontak ada di halaman pertama). Semua aplikasi bisa dibuka; isinya hanya yang sudah terjadi sejauh ini. "Ikuti cerita" mengembalikan layar ke cerita.',
       'Tarik pegangan di atas Catatan untuk memperbesar atau memperkecil layar. "‹ Catatan" membuka daftar bab.',
       'Novella ini membicarakan rencana memalsukan kematian dan pikiran tentang bunuh diri. Bacalah dengan pelan.'
     ] });
