@@ -223,6 +223,7 @@ body.big { --band: 66svh; }
 
 /* layar terkunci */
 .lock { background: radial-gradient(110% 60% at 50% 115%, #E9A15C 0, rgb(233 161 92 / .25) 30%, transparent 55%), radial-gradient(4px 4px at 22% 78%, #FFD9A0, transparent), radial-gradient(3px 3px at 64% 82%, #FFE7C2, transparent), radial-gradient(3px 3px at 80% 76%, #FFCB86, transparent), linear-gradient(#0B1220, #18243A 55%, #24314A); color: #fff; padding: 0 12px 30px; overflow: hidden; }
+.lock { background: linear-gradient(rgb(8 12 22 / .55), rgb(8 12 22 / .2) 40%, rgb(8 12 22 / .65)), #0B1220 url('foto/pelabuhan-malam.jpg') center 60% / cover no-repeat; }
 .lock.dim { filter: brightness(.55); }
 .lk-time { text-align: center; padding: 10px 0 8px; display: grid; } .lk-time small { font: 500 14px var(--f-ui); opacity: .85; } .lk-time b { font: 200 64px/1 var(--f-ui); letter-spacing: -.02em; }
 .lk-n { display: grid; gap: 7px; align-content: start; overflow: hidden; }
@@ -330,6 +331,7 @@ div.row { cursor: default; }
 .link-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 16px; background: var(--chip); color: inherit; text-decoration: none; }
 .link-card .ic { width: 52px; height: 52px; border-radius: 12px; } .link-card b { font: 600 15px var(--f-ui); display: block; } .link-card small { color: var(--muted); font: 400 12.5px var(--f-ui); }
 .after .jm-next { margin-top: 6px; }
+.kredit { margin: 8px 2px 0; font: 12px/1.5 var(--f-ui); color: var(--muted); } .kredit a { color: inherit; }
 
 /* daftar bab */
 .sheet { width: min(560px, 100%); max-height: 82svh; margin: auto auto 0; padding: 0 0 env(safe-area-inset-bottom); border: 0; border-radius: 18px 18px 0 0; background: var(--paper); color: var(--ink); font-family: var(--f-ui); }
@@ -359,10 +361,39 @@ div.row { cursor: default; }
   .bns { top: 48px; }
 }
 
+
+/* foto sungguhan (foto/, lihat foto/KREDIT.md) */
+.ph.real { background: #222 var(--img) center / cover no-repeat; }
+.ph.real .grain { display: none; }
+.ph.real figcaption { font-size: 12px; background: linear-gradient(transparent, rgb(0 0 0 / .6)); }
+.ph.real.big { background-size: contain; background-color: #000; }
+.ph.real.half .rekon { left: 0; top: 0; width: 100%; height: 100%; border: 0; border-radius: 0; place-items: start end; padding: 8px; background: linear-gradient(118deg, transparent 47.6%, rgb(255 255 255 / .8) 47.8% 48.1%, transparent 48.3%) 0 0 / 100% 70% no-repeat; }
+.ph.real.half .rekon span { background: rgb(0 0 0 / .55); }
+.ph-cell .ph.real figcaption { display: none; }
+.hero { margin: -12px -16px 12px; } .hero img { display: block; width: 100%; max-height: 38cqh; object-fit: cover; background: var(--scr2); }
+.hero figcaption { padding: 5px 16px 0; font-size: 11.5px; color: var(--smut); }
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; }
+.img-grid figure { margin: 0; } .img-grid img, .img-grid i { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--scr2); }
+.img-grid figcaption { font-size: 10.5px; color: var(--smut); padding-top: 2px; line-height: 1.25; }
+
+/* titik biru yang berjalan */
+.mp .lay-street { transition: transform .35s linear; }
+.map.zooming .mp .lay-street { transition: none; }
+.mp .route-done { fill: none; stroke: #9AA0A6; stroke-width: 6.4; stroke-linecap: round; stroke-linejoin: round; }
+.mp .trail { fill: none; stroke: #1A73E8; stroke-width: 3; stroke-dasharray: 1 7; stroke-linecap: round; opacity: .55; }
+.mp .cone { fill: rgb(26 115 232 / .22); opacity: 0; transition: transform .35s linear, opacity .4s; }
+.map.moving .mp .cone { opacity: 1; }
+.mp .me .acc { transform-box: fill-box; transform-origin: center; animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(1.12); opacity: .75; } }
+.map:not(.moving) .mp .me { animation: drift 7s ease-in-out infinite; }
+@keyframes drift { 25% { transform: translate(1.2px, -.8px); } 60% { transform: translate(-1px, 1px); } }
+.mp-card .left { margin-left: auto; font-size: 12.5px; opacity: .85; white-space: nowrap; }
+
 /* ponsel: 18px terbawah layar tertutup tepi Catatan */
 @media (max-width: 899px) { .screen { padding-bottom: 18px; } .homebar { bottom: 18px; } .follow { bottom: 44px; } }
 
 @media (prefers-reduced-motion: reduce) {
+  .mp .me, .mp .me .acc { animation: none !important; } .mp .lay-street { transition: none; }
   .app.in > .ap, .bn, .mw.pop .m, .cm.new, .app.in .lk-i.new, .app.in .mp-card, .app.in .mp .route, .resume, .sheet[open] { animation: none !important; }
   .typing i, .caret, .app-i.glow .ic, .call.s-ring .av, .mvo.playing .wave i { animation: none; }
   .screen, .read { transition: none; }

@@ -97,7 +97,7 @@
         st.pages.delete(b.url); st.pages.set(b.url, pg);
       }
       if (b.v === 'photo') st.photos.push({ ...b.photo, t: st.t });
-      if (b.v === 'chat') (b.msgs || []).forEach(m => { if (m[1] === 'ph') st.photos.push({ cap: m[2], meta: `Dari ${m[0] === 'out' ? 'aku untuk ' + b.with : b.with}`, tone: m[3] || 'warm', t: st.t }); });
+      if (b.v === 'chat') (b.msgs || []).forEach(m => { if (m[1] === 'ph') st.photos.push({ cap: m[2], meta: `Dari ${m[0] === 'out' ? 'aku untuk ' + b.with : b.with}`, tone: m[3] || 'warm', src: m[4], t: st.t }); });
       if (b.v === 'mail') st.mails.push({ ...b.mail, t: st.t });
       if (b.v === 'call' && b.state === 'ended') st.calls.push({ with: b.with, dur: b.dur, t: st.t, video: b.video });
       if (b.v === 'music') st.tracks.push({ ...b.track });
@@ -136,13 +136,13 @@
   const avatar = (name, cls = '') => `<span class="av ${cls}" style="--h:${Math.floor(seeded(name)() * 360)}" aria-hidden="true">${esc((name || '?').replace(/^[^A-Za-z0-9]+/, '')[0] || '?')}</span>`;
 
   /* ---------- potongan tampilan ---------- */
-  const photoTile = (p, big) => `<figure class="ph tone-${esc(p.tone || 'warm')}${big ? ' big' : ''}${p.half ? ' half' : ''}"><i class="grain" aria-hidden="true"></i>${p.half ? `<i class="rekon" aria-hidden="true"><span>${esc(p.half === true ? 'bagian yang direkonstruksi' : p.half)}</span></i>` : ''}<figcaption>${inline(p.cap || '')}</figcaption></figure>`;
+  const photoTile = (p, big) => `<figure class="ph tone-${esc(p.tone || 'warm')}${p.src ? ' real' : ''}${big ? ' big' : ''}${p.half ? ' half' : ''}"${p.src ? ` style="--img:url('${esc(p.src)}')"` : ''}><i class="grain" aria-hidden="true"></i>${p.half ? `<i class="rekon" aria-hidden="true"><span>${esc(p.half === true ? 'bagian yang direkonstruksi' : p.half)}</span></i>` : ''}<figcaption>${inline(p.cap || '')}</figcaption></figure>`;
   const wave = (seed, n = 48, pos = -1) => { const r = seeded(seed); return `<span class="wave" aria-hidden="true">${Array.from({ length: n }, (_, k) => `<i style="--v:${(.18 + r() * .82).toFixed(2)}"${pos >= 0 && k / n < pos ? ' class="on"' : ''}></i>`).join('')}</span>`; };
   const msgHTML = (m, who) => {
-    const [d, kind, s, x] = m;
+    const [d, kind, s, x, src] = m;
     if (d === 'sys') return `<p class="sys">${inline(kind)}</p>`;
     const cls = `m ${d === 'out' ? 'out' : 'in'}`;
-    if (kind === 'ph') return `<div class="${cls} mph">${photoTile({ cap: s, tone: x })}</div>`;
+    if (kind === 'ph') return `<div class="${cls} mph">${photoTile({ cap: s, tone: x, src })}</div>`;
     if (kind === 'vo') return `<div class="${cls} mvo"><button type="button" class="vo-p" aria-label="Putar rekaman suara" data-vo>▶</button>${wave(s + who, 26)}<small>${esc(x || '0:42')}</small></div>`;
     if (kind === 'link') return `<div class="${cls} mlink"><span class="ln-s">${esc(x || '')}</span><b>${inline(s)}</b></div>`;
     if (kind === 'like') return `<div class="${cls} mlike" aria-label="tanda suka">♥</div>`;
@@ -165,12 +165,13 @@
   H.web = (b, st) => {
     const pg = (!b.dev && st.pages.get(b.url)) || { ...(b.page || {}), url: b.url, more: b.more || [] };
     const k = pg.kind || 'article';
-    let body = '';
-    if (k === 'video') body = `<div class="vid"><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div>${(pg.body || []).map(p => `<p class="desc">${inline(p)}</p>`).join('')}<p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
-    else if (k === 'forum') body = `<p class="crumb">${inline(pg.crumb || 'Arsip Nol')}</p><h3 class="th-t">${inline(pg.title || '')}</h3>${pg.meta ? `<p class="meta">${inline(pg.meta)}</p>` : ''}${(pg.body || []).map(p => `<p class="post-b">${inline(p)}</p>`).join('')}`;
-    else if (k === 'wiki') body = `<h3 class="wk-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><table class="wk-box">${(pg.box || []).map(r => `<tr><th>${inline(r[0])}</th><td>${inline(r[1])}</td></tr>`).join('')}</table>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
-    else if (k === 'search') body = `<p class="q">${inline(pg.title || '')}</p>${(pg.body || []).map(r => `<div class="res"><small>${esc(r[0])}</small><b>${inline(r[1])}</b><span>${inline(r[2] || '')}</span></div>`).join('')}`;
-    else body = `${pg.kicker ? `<p class="kick">${inline(pg.kicker)}</p>` : ''}<h3 class="ar-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
+    let body = pg.img ? `<figure class="hero"><img src="${esc(pg.img)}" alt="" loading="lazy">${pg.imgCap ? `<figcaption>${inline(pg.imgCap)}</figcaption>` : ''}</figure>` : '';
+    if (k === 'images') body += `<p class="q">${inline(pg.title || '')}</p><div class="img-grid">${(pg.body || []).map(r => `<figure>${r[0] ? `<img src="${esc(r[0])}" alt="" loading="lazy">` : '<i></i>'}<figcaption>${inline(r[1] || '')}</figcaption></figure>`).join('')}</div>${pg.note ? `<p class="meta">${inline(pg.note)}</p>` : ''}`;
+    else if (k === 'video') body = `<div class="vid"><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div>${(pg.body || []).map(p => `<p class="desc">${inline(p)}</p>`).join('')}<p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
+    else if (k === 'forum') body += `<p class="crumb">${inline(pg.crumb || 'Arsip Nol')}</p><h3 class="th-t">${inline(pg.title || '')}</h3>${pg.meta ? `<p class="meta">${inline(pg.meta)}</p>` : ''}${(pg.body || []).map(p => `<p class="post-b">${inline(p)}</p>`).join('')}`;
+    else if (k === 'wiki') body += `<h3 class="wk-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><table class="wk-box">${(pg.box || []).map(r => `<tr><th>${inline(r[0])}</th><td>${inline(r[1])}</td></tr>`).join('')}</table>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
+    else if (k === 'search') body += `<p class="q">${inline(pg.title || '')}</p>${(pg.body || []).map(r => `<div class="res"><small>${esc(r[0])}</small><b>${inline(r[1])}</b><span>${inline(r[2] || '')}</span></div>`).join('')}`;
+    else body += `${pg.kicker ? `<p class="kick">${inline(pg.kicker)}</p>` : ''}<h3 class="ar-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
     const comments = [...(pg.comments || []), ...(pg.more || [])];
     const cm = comments.length ? `<div class="cms">${comments.map((c, n) => `<div class="cm${c[3] ? ' reply' : ''}${n >= comments.length - (b.more || []).length && b.more ? ' new' : ''}">${avatar(c[0], 'sm')}<div><p class="cm-u"><b>${esc(c[0])}</b>${c[2] ? `<small>${esc(c[2])}</small>` : ''}</p><p class="cm-b">${inline(c[1])}</p></div></div>`).join('')}</div>` : '';
     return `<div class="ap web k-${k}"><header class="url"><button type="button" class="ap-back" data-nav="web" aria-label="Riwayat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span class="url-f"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>${esc(String(pg.url || '').replace(/^https?:\/\//, '').split('/')[0])}</span></header><div class="ap-b web-b"${b.more || b.draft ? ' data-scroll-end' : ''}><article>${body}${cm}</article></div>${b.draft ? compose(b) : ''}</div>`;
@@ -182,9 +183,9 @@
     const r = seeded(seed), out = [];
     const ang = (r() - .5) * .5;
     const rot = (x, y) => { const cx = x - 200, cy = y - 200; return [200 + cx * Math.cos(ang) - cy * Math.sin(ang), 200 + cx * Math.sin(ang) + cy * Math.cos(ang)]; };
-    for (let k = -6; k <= 6; k++) {
+    for (let k = -9; k <= 9; k++) {
       const pts = [], pts2 = [];
-      for (let s = -1; s <= 9; s++) { pts.push(rot(-60 + s * 58 + (r() - .5) * 10, 200 + k * 46 + (r() - .5) * 16)); pts2.push(rot(200 + k * 52 + (r() - .5) * 18, -60 + s * 58 + (r() - .5) * 10)); }
+      for (let s = -4; s <= 12; s++) { pts.push(rot(-60 + s * 58 + (r() - .5) * 10, 200 + k * 46 + (r() - .5) * 16)); pts2.push(rot(200 + k * 52 + (r() - .5) * 18, -60 + s * 58 + (r() - .5) * 10)); }
       out.push({ d: 'M' + pts.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L'), w: k % 3 === 0 ? 7 : 3.4 });
       out.push({ d: 'M' + pts2.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L'), w: k % 4 === 0 ? 6 : 3 });
     }
@@ -201,7 +202,7 @@
     const z = m.zoom == null ? 0 : m.zoom;
     const seed = m.place || 'Saujana';
     const st1 = streets(seed);
-    const route = m.route ? routePath(m.route, m.len || 1) : null;
+    const route = m.route || m.trail ? routePath(m.route || m.trail, m.len || 1) : null;
     const d = route ? 'M' + route.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L') : '';
     const end = route ? route[route.length - 1] : null;
     const sea = `M-200 ${300 + (seeded(seed)() * 40)} C 60 270, 200 360, 600 300 L600 700 L-200 700 Z`;
@@ -213,18 +214,18 @@
           <path class="sea" d="${sea}"/>
           ${st1.map(s => `<path class="rd-o" d="${s.d}" stroke-width="${s.w + 2}"/>`).join('')}${st1.map(s => `<path class="rd" d="${s.d}" stroke-width="${s.w}"/>`).join('')}
           ${m.tag ? `<g class="tag" transform="translate(${route ? end.join(' ') : '250 170'})"><circle r="5"/><text x="9" y="4">${esc(m.tag)}</text></g>` : ''}
-          ${route ? `<path class="route" d="${d}" pathLength="1"/><g class="pin" transform="translate(${end.join(' ')})"><path d="M0 0c-6-7-9-11-9-15a9 9 0 0 1 18 0c0 4-3 8-9 15z"/><circle cy="-15" r="3.4"/></g>` : ''}
+          ${m.trail ? `<path class="trail" d="${d}"/>` : ''}${route && !m.trail ? `<path class="route" d="${d}" pathLength="1"/><path class="route-done" d="${d}" pathLength="1" stroke-dasharray="0 1"/><g class="pin" transform="translate(${end.join(' ')})"><path d="M0 0c-6-7-9-11-9-15a9 9 0 0 1 18 0c0 4-3 8-9 15z"/><circle cy="-15" r="3.4"/></g>` : ''}
         </g>
         <rect class="lay-sea" x="-400" y="-400" width="1200" height="1200"/>
         <g class="lay-land" style="transform-origin:200px 232px"><path d="M92 168 C 104 118, 150 96, 178 108 C 196 84, 238 80, 262 102 C 300 96, 334 128, 330 166 C 352 196, 338 236, 316 250 C 324 290, 290 322, 252 318 C 228 344, 180 340, 162 316 C 124 322, 92 296, 100 262 C 70 242, 72 200, 92 168 Z"/><path class="isle" d="M330 300 c 8 -6 20 -4 22 4 c 2 10 -12 14 -20 10 c -6 -3 -6 -10 -2 -14 Z"/></g>
         <g class="lay-globe"><circle cx="200" cy="232" r="120"/></g>
         <g class="lay-grid">${Array.from({ length: 13 }, (_, k) => `<path d="M${-100 + k * 50} -40 L${-40 + k * 50} 460"/><path d="M-40 ${-30 + k * 40} L440 ${-10 + k * 40}"/>`).join('')}</g>
-        <circle class="acc" cx="200" cy="232" r="${acc}"/>
-        <circle class="dot-h" cx="200" cy="232" r="11"/><circle class="dot" cx="200" cy="232" r="7.5"/>
+        <g class="me"><circle class="acc" cx="200" cy="232" r="${acc}"/><path class="cone" d="M200 232 L186 196 A38 38 0 0 1 214 196 Z" style="transform-origin:200px 232px"/>
+        <circle class="dot-h" cx="200" cy="232" r="11"/><circle class="dot" cx="200" cy="232" r="7.5"/></g>
         <text class="here" x="214" y="258">${m.here ? 'Anda di sini.' : ''}</text>
       </svg>
       <div class="mp-ask"><span class="ic tb sm" aria-hidden="true"></span><span class="mp-q">${esc(m.ask || 'Dari mana?')}</span><span class="mp-in" data-type="${esc(m.input || '')}">${esc(m.input || '')}</span>${m.free ? '<input class="mp-free" id="mpFree" maxlength="60" autocomplete="off" aria-label="Dari mana?">' : ''}</div>
-      ${m.instr || m.arrive ? `<div class="mp-card">${m.arrive ? `<b>Anda telah tiba.</b><small>${esc(m.arrive === true ? '' : m.arrive)}</small>` : `<span class="turn" aria-hidden="true">↑</span><b>${esc(m.instr)}</b>`}</div>` : ''}
+      ${m.instr || m.arrive ? `<div class="mp-card">${m.arrive ? `<b>Anda telah tiba.</b><small>${esc(m.arrive === true ? '' : m.arrive)}</small>` : `<span class="turn" aria-hidden="true">↑</span><b>${esc(m.instr)}</b><small class="left"></small>`}</div>` : ''}
     </div>`;
   };
 
@@ -360,7 +361,37 @@
     }
     return b;
   }
-  let lastZoom = -1, mounted = -9;
+  // titik biru berjalan: dari ketukan rute pertama sampai "Anda telah tiba." (atau sampai jangkar `to`)
+  const pathAt = (pts, p) => {
+    const seg = []; let tot = 0;
+    for (let k = 1; k < pts.length; k++) { const l = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); seg.push(l); tot += l; }
+    let d = clamp(p, 0, 1) * tot;
+    for (let k = 0; k < seg.length; k++) { if (d <= seg[k] || k === seg.length - 1) { const f = seg[k] ? clamp(d / seg[k], 0, 1) : 0, a = pts[k], c = pts[k + 1]; return { x: a[0] + (c[0] - a[0]) * f, y: a[1] + (c[1] - a[1]) * f, ang: Math.atan2(c[1] - a[1], c[0] - a[0]) }; } d -= seg[k]; }
+    return { x: pts[0][0], y: pts[0][1], ang: 0 };
+  };
+  BEATS.forEach((b, i) => {
+    if (b.v !== 'map' || !b.map) return;
+    const key = b.map.route || b.map.trail; if (!key) return;
+    if (b.map.p != null) { b.walkP = b.map.p; return; }
+    if (b.map.trail && b.map.to) { const e = findG(b.c, b.map.to); if (e > b.g) b.walk = [b.g, e]; return; }
+    if (b.map.arrive) { b.walkP = 1; return; }
+    let s = i; while (s > 0 && BEATS[s - 1].v === 'map' && BEATS[s - 1].map?.route === key && !BEATS[s - 1].map?.arrive) s--;
+    let e = BEATS.findIndex((x, j) => j > i && x.v === 'map' && x.map?.route === key && x.map?.arrive);
+    if (e < 0) e = BEATS.findIndex((x, j) => j > i && !(x.v === 'map' && x.map?.route === key));
+    if (e > 0 && BEATS[e].g > BEATS[s].g) b.walk = [BEATS[s].g, BEATS[e].g];
+  });
+  function walkP(b, gf) { return b.walk ? clamp((gf - b.walk[0]) / (b.walk[1] - b.walk[0]), 0, 1) : (b.walkP || 0); }
+  function applyWalk(b, p) {
+    const svg = $('.mp', app); if (!svg || !b.map) return;
+    const m = b.map, pts = routePath(m.route || m.trail, m.len || 1), at = pathAt(pts, p);
+    $('.lay-street', svg).style.transform = `translate(${(200 - at.x).toFixed(1)}px, ${(232 - at.y).toFixed(1)}px)`;
+    const done = $('.route-done', svg); if (done) done.setAttribute('stroke-dasharray', `${p.toFixed(4)} 1`);
+    const cone = $('.cone', svg); if (cone) cone.style.transform = `rotate(${(at.ang * 180 / Math.PI + 90).toFixed(1)}deg)`;
+    const left = $('.mp-card .left', app);
+    if (left && m.meters) left.textContent = p >= .995 ? '' : `sisa ${Math.max(10, Math.round(m.meters * (1 - p) / 10) * 10)} m`;
+    svg.closest('.map')?.classList.toggle('moving', p > 0 && p < 1);
+  }
+  let lastZoom = -1, mounted = -9, mountedKey = null;
   function show(i, anim, gf) {
     const st = fold(i);
     let v = i; while (v >= 0 && BEATS[v].silent) v--;
@@ -370,7 +401,20 @@
     if (!follow) { if (anim && b && b.bn !== false && !b.dev) notify(b); return; }
     const zb = zoomed(b, st, gf);
     if (b && b.span && mounted === v && b.v === 'map') { applyZoom(zb.map); return; }
-    mount(viewOf(zb, st), anim, b); mounted = v;
+    const walking = b && b.v === 'map' && b.map && (b.map.route || b.map.trail);
+    if (walking && mounted === v) { applyWalk(b, walkP(b, gf)); return; }
+    const key = walking ? (b.map.route || b.map.trail) + '|' + (b.map.place || '') : null;
+    if (key && key === mountedKey && $('.mp', app)) {
+      // rute yang sama: hanya isian dan kartu petunjuk yang berganti, perjalanannya tidak diulang
+      const tmp = document.createElement('div'); tmp.innerHTML = viewOf(zb, st);
+      $('.mp-ask', app)?.replaceWith($('.mp-ask', tmp));
+      const oc = $('.mp-card', app), nc = $('.mp-card', tmp);
+      if (oc && nc) oc.replaceWith(nc); else if (oc) oc.remove(); else if (nc) app.firstElementChild.append(nc);
+      const ot = $('.here', app), nt = $('.here', tmp); if (ot && nt) ot.textContent = nt.textContent;
+      mounted = v; applyWalk(b, walkP(b, gf)); return;
+    }
+    mount(viewOf(zb, st), anim, b); mounted = v; mountedKey = key;
+    if (walking) applyWalk(b, walkP(b, gf));
     if (b && b.v === 'map' && (b.span || zb.map.zoom > 0)) { lastZoom = -1; applyZoom(zb.map); }
     homebar.hidden = !!(b && b.dev);
   }
@@ -412,7 +456,7 @@
     else if (kind === 'rec') html = H.rec({ rec: { ...st.recs.get(arg), state: 'pause' } }, st);
     else if (kind === 'catatan') { setBig(false); $('#read').focus({ preventScroll: true }); return; }
     else if (LIST[kind]) html = LIST[kind](st);
-    if (html) { mount(html, true, null); mounted = -9; homebar.hidden = false; }
+    if (html) { mount(html, true, null); mounted = -9; mountedKey = null; homebar.hidden = false; }
     paintStatus(st, null);
   }
   app.addEventListener('click', e => {
@@ -467,7 +511,7 @@
       const anim = !force && k === cur + 1;
       // melompat jauh ke depan: tetap tampilkan yang terakhir, tanpa animasi
       cur = k; show(k, anim, f);
-    } else if (BEATS[k] && BEATS[k].span) show(k, false, f);
+    } else if (BEATS[k] && (BEATS[k].span || BEATS[k].walk)) show(k, false, f);
     const c = g >= 0 ? PARA[g].c : 0;
     if (c !== chNow) { chNow = c; $('#barTitle').textContent = CH[c].num === 'Prolog' ? 'Prolog' : `Bab ${CH[c].num}`; G?.step?.(c + 1, CH.length, 'Bagian'); paintFolder(); }
     $('#nbar').classList.toggle('scrolled', read.scrollTop > 60);
@@ -484,6 +528,9 @@
   let ticking = false;
   read.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; tick(false); }); } }, { passive: true });
   addEventListener('resize', () => { clearTimeout(measure.t); measure.t = setTimeout(measure, 150); });
+  // huruf web yang datang belakangan mengubah tinggi paragraf: ukur ulang
+  document.fonts?.ready.then(() => measure());
+  if ('ResizeObserver' in window) { let rw = 0; new ResizeObserver(() => { const w = story.offsetHeight; if (w !== rw) { rw = w; clearTimeout(measure.t); measure.t = setTimeout(measure, 120); } }).observe(story); }
 
   /* ---------- folder: daftar bab ---------- */
   const sheet = $('#sheet');
@@ -522,7 +569,7 @@
       if (!follow) return;
       const prev = String(store.get('darimana', '') || '').trim();
       const st = fold(cur);
-      mount(H.map({ map: { ask: 'Dari mana?', free: true, acc: 34, place: 'Saujana' } }, st), true, null); mounted = -9;
+      mount(H.map({ map: { ask: 'Dari mana?', free: true, acc: 34, place: 'Saujana' } }, st), true, null); mounted = -9; mountedKey = null;
       const inp = $('#mpFree');
       if (inp) {
         if (prev) { const h = document.createElement('p'); h.className = 'mp-prev'; h.innerHTML = `Terakhir kau menulis: <b>${esc(prev)}</b>`; $('.mp-ask', app).after(h); }
