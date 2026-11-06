@@ -250,7 +250,7 @@
       <header class="mu-h"><button type="button" class="ap-back" data-nav="home" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span><small>Diputar dari album</small><b>${esc(SONG.album)}</b></span><span></span></header>
       <div class="mu-top"><div class="cover sm"><span>${esc(SONG.artist)}</span></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
       <div class="mu-prog"><input type="range" class="mu-seek" min="0" max="${SONG.dur}" step="0.1" value="${t.toFixed(1)}" aria-label="Posisi lagu"><span class="mu-tt"><small class="mu-cur">${mmss(t)}</small><small>${mmss(SONG.dur)}</small></span></div>
-      <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `${secAt.has(k) ? `<p class="ly-sec">${esc(secAt.get(k))}</p>` : ''}<p class="ly" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
+      <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `${secAt.has(k) ? `<p class="ly-sec">${esc(secAt.get(k))}</p>` : ''}<p class="ly${l[3] ? ' ad' : ''}" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
     </div>`;
   }
   H.music = (b, st) => {
@@ -318,11 +318,14 @@
     screen.classList.toggle('other', !!dev);
     screen.dataset.dev = dev ? b.devKind || 'phone' : '';
   }
-  let audio = null, lyOn = -2, seeking = false;
+  // baris menyala sedikit lebih awal, seperti pemutar lirik pada umumnya; mengikuti bingkai layar, bukan hanya timeupdate
+  const LEAD = .1;
+  let audio = null, lyOn = -2, seeking = false, raf = 0, userScroll = 0;
+  const loop = () => { raf = 0; if (!audio || audio.paused) return; songTick(false); raf = requestAnimationFrame(loop); };
   function songEl() {
     if (audio || !SONG) return audio;
     audio = new Audio(SONG.src); audio.preload = 'metadata';
-    ['timeupdate', 'play', 'pause', 'ended', 'seeked'].forEach(ev => audio.addEventListener(ev, () => songTick(ev !== 'timeupdate')));
+    ['timeupdate', 'play', 'pause', 'ended', 'seeked'].forEach(ev => audio.addEventListener(ev, () => { songTick(ev === 'seeked' || ev === 'ended'); if (ev === 'play' && !raf) raf = requestAnimationFrame(loop); }));
     if ('mediaSession' in navigator) {
       try { navigator.mediaSession.metadata = new MediaMetadata({ title: SONG.title, artist: SONG.artist, album: SONG.album }); } catch (e) { /* tidak didukung */ }
       navigator.mediaSession.setActionHandler?.('play', () => audio.play());
@@ -331,7 +334,12 @@
     return audio;
   }
   function songToggle() { const a = songEl(); if (!a) return; if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => announce('Lagu belum bisa diputar.')); } else a.pause(); }
-  function lyricAt(t) { let k = -1; SONG.lines.forEach((l, i) => { if (l[0] <= t + .05) k = i; }); if (k >= 0 && t > SONG.lines[k][1] + .3) return { k, gap: true }; return { k, gap: false }; }
+  function lyricAt(t) {
+    let k = -1; for (let i = 0; i < SONG.lines.length; i++) { if (SONG.lines[i][0] <= t + LEAD) k = i; else break; }
+    // redup hanya di jeda instrumental yang panjang; jeda napas antarbaris tetap menyala
+    if (k >= 0) { const nx = SONG.lines[k + 1], end = SONG.lines[k][1]; if (t > end + .6 && (!nx || nx[0] - end > 2.5)) return { k, gap: true }; }
+    return { k, gap: false };
+  }
   function songTick(force) {
     if (!audio) return;
     const t = audio.currentTime, playing = !audio.paused, { k, gap } = lyricAt(t);
@@ -345,7 +353,11 @@
         lyOn = on;
         $$('.ly', pl).forEach(el => { const i = +el.dataset.k; el.classList.toggle('on', i === on); el.classList.toggle('past', i < k || (gap && i === k)); });
         const box = $('.lyr', pl), el = on >= 0 ? $(`.ly[data-k="${on}"]`, pl) : (k >= 0 ? $(`.ly[data-k="${k}"]`, pl) : null);
-        if (el) box.scrollTo({ top: Math.max(0, el.offsetTop - box.clientHeight * .32), behavior: force || calm() ? 'auto' : 'smooth' });
+        // sebelum baris pertama (atau sesudah diulang dari awal): kembali ke atas. Jangan melawan pembaca yang sedang menggulir sendiri.
+        if (force || Date.now() - userScroll > 2500) {
+          const top = k < 0 ? 0 : el ? Math.max(0, el.offsetTop - box.clientHeight * .32) : box.scrollTop;
+          box.scrollTo({ top, behavior: force || calm() ? 'auto' : 'smooth' });
+        }
       }
     }
     const mini = $('#mini'), show = !pl && (playing || (t > 0 && !audio.ended));
@@ -513,9 +525,10 @@
     if (o) { open(o.dataset.open); return; }
     if (n) { const v = n.dataset.nav; open(v === 'home' ? 'home' : v); return; }
     if (e.target.closest('[data-song]')) { songToggle(); return; }
-    const ly = e.target.closest('.ly[data-t]'); if (ly && SONG) { const a = songEl(); a.currentTime = +ly.dataset.t; if (a.paused) a.play().catch(() => {}); return; }
+    const ly = e.target.closest('.ly[data-t]'); if (ly && SONG) { const a = songEl(); a.currentTime = Math.max(0, +ly.dataset.t - .05); userScroll = 0; songTick(true); if (a.paused) a.play().catch(() => {}); return; }
     const vo = e.target.closest('[data-vo]'); if (vo) { vo.textContent = vo.textContent === '▶' ? '❚❚' : '▶'; vo.closest('.mvo')?.classList.toggle('playing'); }
   });
+  ['wheel', 'touchmove'].forEach(ev => app.addEventListener(ev, e => { if (e.target.closest('.lyr')) userScroll = Date.now(); }, { passive: true }));
   app.addEventListener('input', e => { if (!e.target.classList.contains('mu-seek')) return; seeking = true; const a = songEl(); a.currentTime = +e.target.value; e.target.style.setProperty('--p', (e.target.value / SONG.dur * 100).toFixed(2) + '%'); });
   app.addEventListener('change', e => { if (e.target.classList.contains('mu-seek')) { seeking = false; songTick(true); } });
   $('#mini').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open('musik'); } });
