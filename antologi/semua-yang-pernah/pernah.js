@@ -214,30 +214,38 @@
 
   // peta tanpa nama: jalan-jalan Saujana digambar dari benih, titik biru di tengah
   const MAPW = 400;
+  // kisi jalan Saujana: lurus, sedikit diputar per tempat, dengan satu perempatan tepat di titik biru (200, 232)
+  const GX = 52, GY = 46, DOT = [200, 232];
+  const gridAng = seed => (seeded(seed)() - .5) * .5;
+  const toWorld = (ang, u, v) => [DOT[0] + u * Math.cos(ang) - v * Math.sin(ang), DOT[1] + u * Math.sin(ang) + v * Math.cos(ang)];
   function streets(seed) {
-    const r = seeded(seed), out = [];
-    const ang = (r() - .5) * .5;
-    const rot = (x, y) => { const cx = x - 200, cy = y - 200; return [200 + cx * Math.cos(ang) - cy * Math.sin(ang), 200 + cx * Math.sin(ang) + cy * Math.cos(ang)]; };
-    for (let k = -9; k <= 9; k++) {
-      const pts = [], pts2 = [];
-      for (let s = -4; s <= 12; s++) { pts.push(rot(-60 + s * 58 + (r() - .5) * 10, 200 + k * 46 + (r() - .5) * 16)); pts2.push(rot(200 + k * 52 + (r() - .5) * 18, -60 + s * 58 + (r() - .5) * 10)); }
-      out.push({ d: 'M' + pts.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L'), w: k % 3 === 0 ? 7 : 3.4 });
-      out.push({ d: 'M' + pts2.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L'), w: k % 4 === 0 ? 6 : 3 });
+    const ang = gridAng(seed), r = seeded('lebar' + seed), out = [], N = 14, ext = 15;
+    const line = (a, b) => 'M' + [a, b].map(p => p.map(v => v.toFixed(1)).join(' ')).join('L');
+    for (let k = -N; k <= N; k++) {
+      out.push({ d: line(toWorld(ang, -ext * GX, k * GY), toWorld(ang, ext * GX, k * GY)), w: k % 3 === 0 ? 7 : 3.2 + r() * .8 });
+      out.push({ d: line(toWorld(ang, k * GX, -ext * GY), toWorld(ang, k * GX, ext * GY)), w: k % 4 === 0 ? 6 : 3 + r() * .8 });
     }
     return out;
   }
-  function routePath(seed, len = 1) {
-    const r = seeded('rute' + seed); let x = 200, y = 232, dir = r() * Math.PI * 2; const pts = [[x, y]];
+  // rute hanya berjalan di sepanjang jalan dan berbelok di perempatan
+  function routePath(seed, len = 1, place = 'Saujana') {
+    const ang = gridAng(place), r = seeded('rute' + seed);
+    const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+    let d = Math.floor(r() * 4), i = 0, j = 0; const cells = [[0, 0]];
     const n = 3 + Math.floor(r() * 3);
-    for (let k = 0; k < n; k++) { const l = (40 + r() * 70) * len; x += Math.cos(dir) * l; y += Math.sin(dir) * l; x = clamp(x, 40, 360); y = clamp(y, 60, 340); pts.push([x, y]); dir += (r() < .5 ? 1 : -1) * Math.PI / 2 * (.8 + r() * .3); }
-    return pts;
+    for (let k = 0; k < n; k++) {
+      const blocks = Math.max(1, Math.round((1 + Math.floor(r() * 3)) * len));
+      i += DIRS[d][0] * blocks; j += DIRS[d][1] * blocks; cells.push([i, j]);
+      d = (d + (r() < .5 ? 1 : 3)) % 4;
+    }
+    return cells.map(([u, v]) => toWorld(ang, u * GX, v * GY));
   }
   H.map = (b, st) => {
     const m = b.map || st.map || {};
     const z = m.zoom == null ? 0 : m.zoom;
     const seed = m.place || 'Saujana';
     const st1 = streets(seed);
-    const route = m.route || m.trail ? routePath(m.route || m.trail, m.len || 1) : null;
+    const route = m.route || m.trail ? routePath(m.route || m.trail, m.len || 1, seed) : null;
     const d = route ? 'M' + route.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L') : '';
     const end = route ? route[route.length - 1] : null;
     const sea = `M-200 ${300 + (seeded(seed)() * 40)} C 60 270, 200 360, 600 300 L600 700 L-200 700 Z`;
@@ -248,8 +256,8 @@
         <g class="lay-street" style="transform-origin:200px 232px">
           <path class="sea" d="${sea}"/>
           ${st1.map(s => `<path class="rd-o" d="${s.d}" stroke-width="${s.w + 2}"/>`).join('')}${st1.map(s => `<path class="rd" d="${s.d}" stroke-width="${s.w}"/>`).join('')}
-          ${m.tag ? `<g class="tag" transform="translate(${route ? end.join(' ') : '250 170'})"><circle r="5"/><text x="9" y="4">${esc(m.tag)}</text></g>` : ''}
-          ${m.trail ? `<path class="trail" d="${d}"/>` : ''}${route && !m.trail ? `<path class="route" d="${d}" pathLength="1"/><path class="route-done" d="${d}" pathLength="1" stroke-dasharray="0 1"/><g class="pin" transform="translate(${end.join(' ')})"><path d="M0 0c-6-7-9-11-9-15a9 9 0 0 1 18 0c0 4-3 8-9 15z"/><circle cy="-15" r="3.4"/></g>` : ''}
+          ${m.tag ? `<g class="tag" transform="translate(${route ? end.join(' ') : '250 170'})"><g class="tag-i"><circle r="5"/><text x="9" y="4">${esc(m.tag)}</text></g></g>` : ''}
+          ${m.trail ? `<path class="trail" d="${d}"/>` : ''}${route && !m.trail ? `<path class="route" d="${d}" pathLength="1"/><path class="route-done" d="${d}" pathLength="1" stroke-dasharray="0 1"/><g class="pin" transform="translate(${end.join(' ')})"><g class="pin-i"><path d="M0 0c-6-7-9-11-9-15a9 9 0 0 1 18 0c0 4-3 8-9 15z"/><circle cy="-15" r="3.4"/></g></g>` : ''}
         </g>
         <rect class="lay-sea" x="-400" y="-400" width="1200" height="1200"/>
         <g class="lay-land" style="transform-origin:200px 232px"><path d="M92 168 C 104 118, 150 96, 178 108 C 196 84, 238 80, 262 102 C 300 96, 334 128, 330 166 C 352 196, 338 236, 316 250 C 324 290, 290 322, 252 318 C 228 344, 180 340, 162 316 C 124 322, 92 296, 100 262 C 70 242, 72 200, 92 168 Z"/><path class="isle" d="M330 300 c 8 -6 20 -4 22 4 c 2 10 -12 14 -20 10 c -6 -3 -6 -10 -2 -14 Z"/></g>
@@ -520,7 +528,7 @@
     const seg = []; let tot = 0;
     for (let k = 1; k < pts.length; k++) { const l = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); seg.push(l); tot += l; }
     let d = clamp(p, 0, 1) * tot;
-    for (let k = 0; k < seg.length; k++) { if (d <= seg[k] || k === seg.length - 1) { const f = seg[k] ? clamp(d / seg[k], 0, 1) : 0, a = pts[k], c = pts[k + 1]; return { x: a[0] + (c[0] - a[0]) * f, y: a[1] + (c[1] - a[1]) * f, ang: Math.atan2(c[1] - a[1], c[0] - a[0]) }; } d -= seg[k]; }
+    for (let k = 0; k < seg.length; k++) { if (d <= seg[k] || k === seg.length - 1) { const f = seg[k] ? clamp(d / seg[k], 0, 1) : 0, a = pts[k], c = pts[k + 1]; return { x: a[0] + (c[0] - a[0]) * f, y: a[1] + (c[1] - a[1]) * f, ang: Math.atan2(c[1] - a[1], c[0] - a[0]), k, rest: seg[k] * (1 - f), tot }; } d -= seg[k]; }
     return { x: pts[0][0], y: pts[0][1], ang: 0 };
   };
   BEATS.forEach((b, i) => {
@@ -535,14 +543,28 @@
     if (e > 0 && BEATS[e].g > BEATS[s].g) b.walk = [BEATS[s].g, BEATS[e].g];
   });
   function walkP(b, gf) { return b.walk ? clamp((gf - b.walk[0]) / (b.walk[1] - b.walk[0]), 0, 1) : (b.walkP || 0); }
+  // skala meter: `first` = panjang ruas pertama (Lurus 300 m di Bab 7), selain itu `meters` = panjang seluruh rute
+  const metersPer = (m, pts, tot) => m.first ? m.first / Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]) : m.meters / tot;
+  let lastRot = 0;
   function applyWalk(b, p) {
     const svg = $('.mp', app); if (!svg || !b.map) return;
-    const m = b.map, pts = routePath(m.route || m.trail, m.len || 1), at = pathAt(pts, p);
-    $('.lay-street', svg).style.transform = `translate(${(200 - at.x).toFixed(1)}px, ${(232 - at.y).toFixed(1)}px)`;
+    const m = b.map, pts = routePath(m.route || m.trail, m.len || 1, m.place || 'Saujana'), at = pathAt(pts, p);
+    let rot = -90 - at.ang * 180 / Math.PI;
+    while (rot - lastRot > 180) rot -= 360; while (rot - lastRot < -180) rot += 360; lastRot = rot;
+    $('.lay-street', svg).style.transform = `rotate(${rot.toFixed(1)}deg) translate(${(200 - at.x).toFixed(1)}px, ${(232 - at.y).toFixed(1)}px)`;
+    $$('.pin-i, .tag-i', svg).forEach(el => el.setAttribute('transform', `rotate(${(-rot).toFixed(1)})`));
     const done = $('.route-done', svg); if (done) done.setAttribute('stroke-dasharray', `${p.toFixed(4)} 1`);
-    const cone = $('.cone', svg); if (cone) cone.style.transform = `rotate(${(at.ang * 180 / Math.PI + 90).toFixed(1)}deg)`;
+    const cone = $('.cone', svg); if (cone) cone.style.transform = 'none';
+    const card = $('.mp-card', app);
+    if (card && m.route && !m.arrive && (m.meters || m.first) && p < .995) {
+      const mpp = metersPer(m, pts, at.tot), k = at.k, a = pts[k], c = pts[k + 1], nx = pts[k + 2];
+      const dist = Math.max(10, Math.round(at.rest * mpp / 10) * 10);
+      let txt = `Tujuan dalam ${dist} m`, arrow = '↑';
+      if (nx) { const cr = (c[0] - a[0]) * (nx[1] - c[1]) - (c[1] - a[1]) * (nx[0] - c[0]); const right = cr > 0; txt = dist <= 30 ? `Belok ${right ? 'kanan' : 'kiri'} sekarang` : `Belok ${right ? 'kanan' : 'kiri'} dalam ${dist} m`; arrow = right ? '↱' : '↰'; if (dist > 120) { txt = `Lurus ${dist} m`; arrow = '↑'; } }
+      const b0 = $('b', card), t0 = $('.turn', card); if (b0 && b0.textContent !== txt) b0.textContent = txt; if (t0) t0.textContent = arrow;
+    }
     const left = $('.mp-card .left', app);
-    if (left && m.meters) left.textContent = p >= .995 ? '' : `sisa ${Math.max(10, Math.round(m.meters * (1 - p) / 10) * 10)} m`;
+    if (left && (m.meters || m.first)) left.textContent = p >= .995 ? '' : `sisa ${Math.max(10, Math.round(metersPer(m, pts, at.tot) * at.tot * (1 - p) / 10) * 10)} m`;
     svg.closest('.map')?.classList.toggle('moving', p > 0 && p < 1);
   }
   let lastZoom = -1, mounted = -9, mountedKey = null;
