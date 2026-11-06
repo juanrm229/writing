@@ -240,8 +240,22 @@
     ${b.video ? `<div class="cl-self" aria-hidden="true"><span>${esc(b.self || 'kamera mati')}</span></div>` : ''}
     <div class="cl-btn" aria-hidden="true"><span><i>🎙</i>bisukan</span><span><i>⌗</i>papan tombol</span><span><i>🔈</i>speaker</span></div><span class="cl-end" aria-hidden="true">✕</span></div>`;
 
+  // lagu sungguhan (lagu.js): pemutar dengan lirik yang mengikuti lagu
+  const SONG = window.LAGU || null;
+  const mmss = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+  function songPlayer(tr) {
+    const a = audio, t = a ? a.currentTime : 0, playing = a && !a.paused;
+    const secAt = new Map(); (SONG.sections || []).forEach(([st0, lab]) => { const k = SONG.lines.findIndex(l => Math.abs(l[0] - st0) < .35); if (k >= 0) secAt.set(k, lab); });
+    return `<div class="ap music real" style="--h:205">
+      <header class="mu-h"><button type="button" class="ap-back" data-nav="home" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span><small>Diputar dari album</small><b>${esc(SONG.album)}</b></span><span></span></header>
+      <div class="mu-top"><div class="cover sm"><span>${esc(SONG.artist)}</span></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
+      <div class="mu-prog"><input type="range" class="mu-seek" min="0" max="${SONG.dur}" step="0.1" value="${t.toFixed(1)}" aria-label="Posisi lagu"><span class="mu-tt"><small class="mu-cur">${mmss(t)}</small><small>${mmss(SONG.dur)}</small></span></div>
+      <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `${secAt.has(k) ? `<p class="ly-sec">${esc(secAt.get(k))}</p>` : ''}<p class="ly" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
+    </div>`;
+  }
   H.music = (b, st) => {
     const tr = b.track || st.tracks[st.tracks.length - 1] || {};
+    if (SONG && tr.title === SONG.title) return songPlayer(tr);
     return `<div class="ap music">${head('Sedang diputar', { back: 'musik' })}<div class="ap-b mu-b"><div class="cover" style="--h:${Math.floor(seeded(tr.album || tr.title || 'x')() * 360)}"><span>${esc(tr.artist || 'Hollow Atlas')}</span><b>${esc(tr.album || '')}</b></div><b class="mu-t">${inline(tr.title || '')}</b><small class="mu-a">${esc(tr.artist || '')}</small><span class="mu-bar"><i style="--p:${tr.p || .32}"></i></span><span class="mu-c" aria-hidden="true">⏮ ${tr.paused ? '▶' : '❚❚'} ⏭</span>${tr.note ? `<p class="mu-n">${inline(tr.note)}</p>` : ''}</div></div>`;
   };
 
@@ -283,7 +297,7 @@
     foto: st => `<div class="ap list">${head('Foto', { sub: st.photos.length ? `${st.photos.length} foto` : '' })}<div class="ap-b ph-grid">${st.photos.map((p, k) => `<button type="button" class="ph-cell" data-open="photo:${k}" aria-label="${esc(plain(p.cap || 'foto'))}">${photoTile(p)}</button>`).join('') || '<p class="empty">Belum ada foto yang disimpan di sini.</p>'}</div></div>`,
     surel: st => `<div class="ap list">${head('Kotak masuk')}<div class="ap-b">${st.mails.map((m, k) => [m, k]).reverse().map(([m, k]) => `<button type="button" class="row" data-open="mail:${k}">${avatar(m.from)}<span><b>${esc(m.from)}</b><small>${inline(m.subj || '')}</small></span><time>${esc(m.when || m.t)}</time></button>`).join('') || '<p class="empty">Tidak ada surel.</p>'}</div></div>`,
     telepon: st => `<div class="ap list">${head('Terbaru')}<div class="ap-b">${st.calls.slice().reverse().map(c => `<div class="row">${avatar(c.with)}<span><b>${esc(c.with)}</b><small>${c.video ? 'Video' : 'Suara'} · ${esc(c.dur || '')}</small></span><time>${esc(c.t)}</time></div>`).join('') || '<p class="empty">Belum ada panggilan.</p>'}</div></div>`,
-    musik: st => st.tracks.length ? H.music({ track: st.tracks[st.tracks.length - 1] }, st) : `<div class="ap list">${head('Musik')}<div class="ap-b"><p class="empty">Tidak ada yang diputar.</p></div></div>`,
+    musik: st => SONG && (st.tracks.length || audio) ? H.music({ track: st.tracks[st.tracks.length - 1] || { title: SONG.title } }, st) : st.tracks.length ? H.music({ track: st.tracks[st.tracks.length - 1] }, st) : `<div class="ap list">${head('Musik')}<div class="ap-b"><p class="empty">Tidak ada yang diputar.</p></div></div>`,
     rekaman: st => `<div class="ap list">${head('Rekaman')}<div class="ap-b">${[...st.recs.values()].map(r => `<button type="button" class="row" data-open="rec:${esc(r.title)}"><span class="fav rc" aria-hidden="true">●</span><span><b>${inline(r.title)}</b><small>${esc(r.dur || '')}</small></span></button>`).join('') || '<p class="empty">Belum ada rekaman.</p>'}</div></div>`,
     kalender: st => st.cal ? H.cal({ cal: st.cal }, st) : `<div class="ap list">${head('Kalender')}<div class="ap-b"><p class="empty">Hari ini kosong.</p></div></div>`,
     peta: st => H.map({ map: st.map ? { ...st.map } : { ask: 'Dari mana?' } }, st),
@@ -304,6 +318,40 @@
     screen.classList.toggle('other', !!dev);
     screen.dataset.dev = dev ? b.devKind || 'phone' : '';
   }
+  let audio = null, lyOn = -2, seeking = false;
+  function songEl() {
+    if (audio || !SONG) return audio;
+    audio = new Audio(SONG.src); audio.preload = 'metadata';
+    ['timeupdate', 'play', 'pause', 'ended', 'seeked'].forEach(ev => audio.addEventListener(ev, () => songTick(ev !== 'timeupdate')));
+    if ('mediaSession' in navigator) {
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title: SONG.title, artist: SONG.artist, album: SONG.album }); } catch (e) { /* tidak didukung */ }
+      navigator.mediaSession.setActionHandler?.('play', () => audio.play());
+      navigator.mediaSession.setActionHandler?.('pause', () => audio.pause());
+    }
+    return audio;
+  }
+  function songToggle() { const a = songEl(); if (!a) return; if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => announce('Lagu belum bisa diputar.')); } else a.pause(); }
+  function lyricAt(t) { let k = -1; SONG.lines.forEach((l, i) => { if (l[0] <= t + .05) k = i; }); if (k >= 0 && t > SONG.lines[k][1] + .3) return { k, gap: true }; return { k, gap: false }; }
+  function songTick(force) {
+    if (!audio) return;
+    const t = audio.currentTime, playing = !audio.paused, { k, gap } = lyricAt(t);
+    const pl = $('.music.real', app);
+    if (pl) {
+      const bt = $('.mu-play', pl); bt.textContent = playing ? '❚❚' : '▶'; bt.classList.toggle('on', playing); bt.setAttribute('aria-label', playing ? 'Jeda' : 'Putar');
+      const sk = $('.mu-seek', pl); if (!seeking) sk.value = t.toFixed(1); sk.style.setProperty('--p', (t / SONG.dur * 100).toFixed(2) + '%');
+      $('.mu-cur', pl).textContent = mmss(t);
+      const on = gap ? -1 : k;
+      if (on !== lyOn || force) {
+        lyOn = on;
+        $$('.ly', pl).forEach(el => { const i = +el.dataset.k; el.classList.toggle('on', i === on); el.classList.toggle('past', i < k || (gap && i === k)); });
+        const box = $('.lyr', pl), el = on >= 0 ? $(`.ly[data-k="${on}"]`, pl) : (k >= 0 ? $(`.ly[data-k="${k}"]`, pl) : null);
+        if (el) box.scrollTo({ top: Math.max(0, el.offsetTop - box.clientHeight * .32), behavior: force || calm() ? 'auto' : 'smooth' });
+      }
+    }
+    const mini = $('#mini'), show = !pl && (playing || (t > 0 && !audio.ended));
+    mini.hidden = !show;
+    if (show) { $('#miniLine').textContent = gap || k < 0 ? '♪' : SONG.lines[k][2]; $('#miniBtn').textContent = playing ? '❚❚' : '▶'; $('#miniBtn').setAttribute('aria-label', playing ? 'Jeda' : 'Putar'); mini.style.setProperty('--p', (t / SONG.dur * 100).toFixed(2) + '%'); }
+  }
   function stopLive() { live.forEach(f => f()); live = []; }
   function mount(html, anim, b) {
     stopLive();
@@ -312,6 +360,7 @@
     app.innerHTML = html;
     app.classList.remove('in'); if (swap) { void app.offsetWidth; app.classList.add('in'); }
     $$('[data-scroll-end]', app).forEach(el => { el.scrollTop = el.scrollHeight; });
+    lyOn = -2; if (audio) songTick(true); else { const mini = $('#mini'); if (mini) mini.hidden = true; }
     // jam panggilan berjalan
     const cl = $('.cl-st[data-from]', app);
     if (cl && $('.call.s-live', app)) { const t0 = Date.now() - (+cl.dataset.from || 0) * 1000; const id = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); cl.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}.${String(s % 60).padStart(2, '0')}`; }, 500); live.push(() => clearInterval(id)); }
@@ -463,8 +512,14 @@
     const n = e.target.closest('[data-nav]'), o = e.target.closest('[data-open]');
     if (o) { open(o.dataset.open); return; }
     if (n) { const v = n.dataset.nav; open(v === 'home' ? 'home' : v); return; }
+    if (e.target.closest('[data-song]')) { songToggle(); return; }
+    const ly = e.target.closest('.ly[data-t]'); if (ly && SONG) { const a = songEl(); a.currentTime = +ly.dataset.t; if (a.paused) a.play().catch(() => {}); return; }
     const vo = e.target.closest('[data-vo]'); if (vo) { vo.textContent = vo.textContent === '▶' ? '❚❚' : '▶'; vo.closest('.mvo')?.classList.toggle('playing'); }
   });
+  app.addEventListener('input', e => { if (!e.target.classList.contains('mu-seek')) return; seeking = true; const a = songEl(); a.currentTime = +e.target.value; e.target.style.setProperty('--p', (e.target.value / SONG.dur * 100).toFixed(2) + '%'); });
+  app.addEventListener('change', e => { if (e.target.classList.contains('mu-seek')) { seeking = false; songTick(true); } });
+  $('#mini').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open('musik'); } });
+  $('#mini').addEventListener('click', e => { if (e.target.closest('#miniBtn')) { songToggle(); return; } open('musik'); });
   const homebar = $('#homebar');
   homebar.addEventListener('click', () => open(manual === 'home' && fold(cur).tb ? 'home3' : 'home'));
   $('#follow').addEventListener('click', () => setFollow(true));
