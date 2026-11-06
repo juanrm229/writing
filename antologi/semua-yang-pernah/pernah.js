@@ -245,12 +245,11 @@
   const mmss = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
   function songPlayer(tr) {
     const a = audio, t = a ? a.currentTime : 0, playing = a && !a.paused;
-    const secAt = new Map(); (SONG.sections || []).forEach(([st0, lab]) => { const k = SONG.lines.findIndex(l => Math.abs(l[0] - st0) < .35); if (k >= 0) secAt.set(k, lab); });
     return `<div class="ap music real" style="--h:205">
       <header class="mu-h"><button type="button" class="ap-back" data-nav="home" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span><small>Diputar dari album</small><b>${esc(SONG.album)}</b></span><span></span></header>
       <div class="mu-top"><div class="cover sm"><span>${esc(SONG.artist)}</span></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
       <div class="mu-prog"><input type="range" class="mu-seek" min="0" max="${SONG.dur}" step="0.1" value="${t.toFixed(1)}" aria-label="Posisi lagu"><span class="mu-tt"><small class="mu-cur">${mmss(t)}</small><small>${mmss(SONG.dur)}</small></span></div>
-      <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `${secAt.has(k) ? `<p class="ly-sec">${esc(secAt.get(k))}</p>` : ''}<p class="ly${l[3] ? ' ad' : ''}" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
+      <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `<p class="ly${l[3] ? ' ad' : ''}" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
     </div>`;
   }
   H.music = (b, st) => {
