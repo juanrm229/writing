@@ -693,12 +693,13 @@ Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan
 
 ### Sebelum Makna Menemukan Kita (antologi/sebelum-makna/)
 
-Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*). Teksnya utuh dari `content/works.json`; halaman ini hanya cara membacanya:
+Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*), dibaca sebagai catatan di ponsel yang sama dengan *Anda di Sini*. Teks esai utuh dari `content/works.json`; yang ditulis untuk versi interaktif hanya suara aplikasinya (`NOTIFS` di `makna.js`).
 
-- **Peta titik biru**: 19 bagian menjadi 19 titik di tepi kanan; titik biru = kau di sini. Ketuk untuk pindah bagian.
-- **Baca cepat**: hanya kalimat pertama setiap paragraf.
-- **Kartu pemikir**: nama Frankl, Wolf, Camus, Nietzsche, Nozick, Kant, dll. bisa diketuk; isinya kalimat esai yang menyebutnya dan butir catatan bacaannya.
-- **Percobaan pikiran**: bagian yang dibuka dengan "Saya membayangkan" tampil sebagai adegan.
-- **Tanda makna**: kalau pembaca diam lebih dari enam detik, kalimat di garis baca diberi garis emas (satu per bagian, maksimal 12; `jm:makna`). Di bagian XII halaman mengakuinya, di XVII pembaca memeriksa dan melepaskan tanda, di XIX hanya yang dipertahankan yang tersisa.
-- **Janji**: sesudah bagian XIII pembaca boleh menulis satu janji untuk dirinya; ia kembali di akhir.
-- **Segelas air** di bilah atas pelan-pelan tidak lagi dingin (10 menit).
+- **Catatan**: bilah status, bilah aplikasi Catatan; "Titik Biru" di kiri atas membuka folder berisi 19 bagian dengan titik biru di bagian tempat pembaca berada, dan jalan kembali ke meja tulis.
+- **Aplikasi tanpa nama** (ikon putih dengan titik biru): notifikasi di kalimat-kalimat tertentu, sebagian dengan tombol (bantu, simpan sebagai jawaban). Ia menandai kalimat tempat pembaca berhenti lebih dari enam detik.
+- **Bagian XII**: dialog izin. Ditolak, ia berhenti menandai (kecuali laporan mingguan di bagian XV).
+- **Bagian XIII**: Pengingat, janji pembaca untuk minggu yang sulit; muncul lagi di akhir.
+- **Bagian XVII**: Pengaturan: izin bisa dimatikan, tanda dilepaskan satu per satu, aplikasi bisa dihapus.
+- **Sesudah XIX**: layar beranda, hapus aplikasinya atau biarkan; dihapus, semua tandanya hilang dari catatan. Catatan diakhiri pratinjau tautan ke *Anda di Sini*.
+- **Cari**: nama pemikir dikenali seperti tautan data; ketuk untuk kalimat esai yang menyebutnya dan butir catatan bacaannya.
+- **•••**: ringkas (kalimat pertama saja), ukuran teks, pengaturan aplikasi. Semua tersimpan di perangkat (`jm:makna`).
