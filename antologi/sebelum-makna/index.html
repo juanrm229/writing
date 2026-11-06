@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="id" class="qm-theme-auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sebelum Makna Menemukan Kita · Quiet Margins</title>
+<meta name="description" content="Esai pengantar untuk Titik Biru: tentang segelas air yang tidak perlu menjelaskan dirinya, dan kuasa yang mungkin ikut mengatur apa yang terasa bermakna.">
+<meta name="theme-color" content="#F4F5F7">
+<meta property="og:title" content="Sebelum Makna Menemukan Kita">
+<meta property="og:description" content="Esai pengantar untuk Titik Biru. Halaman ini memperhatikan di mana kau berhenti, lalu meminta izinmu.">
+<meta property="og:type" content="article">
+<link rel="icon" type="image/png" href="../../assets/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../panduan.css?v=1">
+<link rel="stylesheet" href="../bingkai.css?v=3">
+<link rel="stylesheet" href="makna.css?v=1">
+<script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
+</head>
+<body>
+<header class="qm-top" id="qmTop">
+  <a class="qm-back" href="../../#putar" id="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span data-qm-label>Meja tulis</span></a>
+  <span id="stepChip" hidden></span>
+  <span class="qm-cluster" id="topRight">
+    <span class="glass" id="glass" role="img" aria-label="Segelas air"><i></i></span>
+    <button class="qm-icon" id="quick" type="button" aria-pressed="false" aria-label="Baca cepat" title="Baca cepat: kalimat pertama setiap paragraf"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h8M5 17h11"/></svg></button>
+  </span>
+</header>
+
+<nav class="peta" id="peta" aria-label="Peta esai"></nav>
+
+<main class="read" id="read">
+  <header class="cover" id="cover">
+    <p class="kick">Titik Biru · Esai pengantar</p>
+    <h1>Sebelum Makna Menemukan Kita</h1>
+    <p class="by">Juan</p>
+    <p class="lede" id="lede">Sembilan belas bagian, dari segelas air di samping tempat tidur sampai sebuah jawaban yang belum disebut.</p>
+    <ul class="legend" aria-label="Cara membaca">
+      <li><i class="lg-dot" aria-hidden="true"></i><span>Titik biru: kau di sini</span></li>
+      <li><i class="lg-scene" aria-hidden="true"></i><span>Percobaan pikiran</span></li>
+      <li><i class="lg-who" aria-hidden="true"></i><span>Nama pemikir: ketuk untuk kartunya</span></li>
+    </ul>
+    <p class="lost" id="lost" hidden></p>
+  </header>
+  <div class="essay" id="essay"><p class="loading">…</p></div>
+  <footer class="end" id="end" hidden></footer>
+</main>
+
+<dialog class="card" id="card" aria-labelledby="cardName">
+  <button class="close" data-close type="button" aria-label="Tutup">×</button>
+  <p class="card-k" id="cardKick"></p>
+  <h2 id="cardName"></h2>
+  <div id="cardBody"></div>
+</dialog>
+<p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+<p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+<script src="../panduan.js?v=4"></script>
+<script src="makna.js?v=1"></script>
+</body>
+</html>
