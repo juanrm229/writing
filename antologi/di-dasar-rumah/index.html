@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <link rel="stylesheet" href="../panduan.css?v=1">
 <link rel="stylesheet" href="../bingkai.css?v=3">
-<link rel="stylesheet" href="dasar.css?v=11">
+<link rel="stylesheet" href="dasar.css?v=12">
 <script>try { var t = localStorage.getItem('jm:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {}</script>
 </head>
 <body>
@@ -44,10 +44,12 @@
 </main>
 
 <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+<aside class="give" id="give" hidden role="dialog" aria-labelledby="giveText"><span class="give-flame" aria-hidden="true"></span><p id="giveText"></p><button type="button" class="ghost small" id="giveNo">Biarkan meredup</button></aside>
 
 <dialog class="mem" id="mem" aria-labelledby="memTitle">
   <header class="mem-h"><div><p class="mem-k" id="memKick">Yang masih kuingat</p><h2 id="memTitle">Bintang</h2></div><button class="close" data-close type="button" aria-label="Tutup">×</button></header>
   <ol class="mem-l" id="memList"></ol>
+  <div class="mem-mine" id="memMine" hidden></div>
   <p class="mem-f" id="memNote"></p>
 </dialog>
 
@@ -61,6 +63,6 @@
 </dialog>
 <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
 <script src="../panduan.js?v=4"></script>
-<script src="dasar.js?v=10"></script>
+<script src="dasar.js?v=11"></script>
 </body>
 </html>

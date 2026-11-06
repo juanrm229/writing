@@ -253,6 +253,9 @@ Cerpen kedua di antologi **Koda**, dibuat ulang dari nol dengan satu gagasan: **
   - Kata yang baru hilang memudar di depan mata, dan kabar kecil memberi tahu bahwa ia juga hilang dari yang sudah dibaca.
   - Tahan kata yang hilang untuk mencoba mengingatnya: ia muncul samar lalu pergi lagi.
 - **Bintang.** Sejak ia mulai menghitung yang masih diingat, tombol bintang menyimpan daftarnya. Yang padam masih bisa dihitung, tetapi tidak bisa dibaca lagi.
+- **Kau juga memberi.** Pada tiga saat nyalanya meredup (nama sungai, denyut yang terlambat, nyala yang hampir tak terlihat; dua saat di versi Inggris), muncul kartu: ketuk satu kata di halaman untuk memberikannya. Kata itu (minimal tiga huruf) hilang dari seluruh halaman, dengan garis putus-putus berwarna nyala, dan masuk ke bintang sebagai *Yang kau berikan*. *Biarkan meredup* menolak, dan halamannya meredup sedikit setiap kali.
+- **Ibu adalah penjaga.** Sesudah ia membuka buku-buku lain dan mengerti bahwa *Ibu* adalah sebutan untuk siapa pun yang menjaga nyala, setiap *Ibu* di halaman bergaris titik; tahan untuk melihat kata *penjaga* di baliknya.
+- **Diceritakan lagi.** *Ceritakan lagi* memulai bacaan dari atas, tetapi semua kata yang sudah hilang (termasuk yang kau berikan) tetap hilang, dan saat-saat memberi datang lagi. Setiap kali diceritakan, ada yang tidak ikut.
 - **Dongeng yang mulai lagi.** Di akhir, Ibu menceritakan dua paragraf pembuka lagi, dengan kata-kata yang sudah hilang tetap kosong. *Ceritakan lagi* kembali ke sampul dan menghitung berapa kali dongeng itu diceritakan.
 - **Aa.** Ukuran huruf, tampilan, dan *Kembalikan semua kata* (mulai dari atas). Semua tersimpan di perangkat (`jm:dasar2`).
 - Versi Inggris memakai terjemahan yang lebih pendek: *river*, *rain*, dan *salt* hilang pada kalimat yang sesuai; angka dan wajah hanya di versi Indonesia.
