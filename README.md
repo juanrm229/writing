@@ -244,47 +244,18 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
 
 ### Di Dasar Rumah (antologi/di-dasar-rumah/)
 
-Cerpen kedua di antologi **Koda**. Teksnya dimuat utuh dari `content/works.json`; yang ditambahkan hanya antarmukanya (`dasar.js`, `dasar.css`). Semua yang muncul di luar teks mengikuti kalimat yang sedang dibaca, dan dicari lewat kalimatnya (daftar `I` di `dasar.js`). Kalau kalimat itu diubah di admin, perbarui juga polanya.
+Cerpen kedua di antologi **Koda**, dibuat ulang dari nol dengan satu gagasan: **kata yang terlupakan**. Teksnya dimuat utuh dari `content/works.json`; yang berubah hanya apa yang masih bisa terbaca (`dasar.js`, `dasar.css`), dengan bahasa visual situs (Doto untuk judul dan nomor lantai, Newsreader untuk teks, bilah atas dan Aa yang sama dengan pengalaman lain).
 
-- **Kedalaman.** Delapan bagian cerita (dipisah `***`) adalah delapan lantai yang turun: *Angka-angka, Tangga, Musim dingin pertama, Musim dingin ketiga, Pintu, Musim dingin berikutnya, Boleh pulang, Dongeng*. Nama-nama lantai ini hanya label antarmuka.
-  - Di layar lebar ada rel kedalaman di kiri; di ponsel ada penanda *Lantai N dari 8* di bar atas.
-- **Udara di tepi layar.**
-  - Embun beku menempel di musim dingin.
-  - Kehangatan yang terlalu dekat bernapas di tepi layar saat perempuan bertopi mendekat, pada pagi yang hangat, dan di balik pintu.
-  - Gelap mendekat saat denyutnya terlambat dan saat wajah Ibu hilang.
-- **Siapa yang bicara.** Kalimat perempuan bertopi berwarna kuning madu. Tulisan tangan gadis itu berwarna biru tinta dan miring ke kiri. *Mari.* tampil sebagai suara di dalam kepala.
-- **Benda-benda.**
-  - Lembar tagihan: angkanya hilang saat narasinya sampai ke sana, dan kertasnya bisa dimiringkan ke jendela untuk melihat bekas tekanan pena. Angka-angka di tagihan adalah tambahan antarmuka.
-  - Rumah panggung yang terbalik: *Betulkan letaknya* membalikkan rumahnya, tetapi lalu pohon-pohonlah yang tumbuh ke arah yang salah.
-  - Hitungan undakan di tepi layar, dengan goresan bulan sabit yang lewat lagi dan lagi. Koin yang diselipkan pembaca sudah ada di sana, dan koin yang jatuh tak pernah menyentuh dasar.
-  - Benang yang mengukur kamar.
-  - Rak buku yang punggungnya menghadap dinding. Buku tentang laut di bawah kota menunjuk ke *Kepala yang Dingin, Kota yang Hangat*.
-  - Toples dengan label *Nama sungai yang diberikan seorang anak agar nyalanya tidak padam*.
-- **Nyala kecil.** Nyala itu turun dari halaman ke sudut layar.
-  - Kalau pembaca diam lebih dari 14 detik di kamar itu (lantai 3–6), nyalanya meredup dan tepi layar menggelap. Ketuk untuk menemaninya.
-  - Sesudah *Nyala itu berdetak.* ia berdetak, dan telapak tangan kecil menekan dari dalamnya.
-- **Bintang.** Tombol bintang di bar atas menyimpan isi tas, lalu yang masih diingat: wajah Ibu, bau hujan, rasa garam, nama sungai, bunyi gunting.
-  - Setiap ingatan hilang tepat saat ceritanya memberikannya. Hurufnya masih terbaca, tetapi tidak lagi berarti apa-apa.
-  - Sesudah ia diceritakan pulang, isinya diganti dengan yang diceritakan kepadanya.
-- **Nama dan sungai.** Pembaca boleh menulis namanya di sampul dan memberi nyala itu nama sungai di dekat rumahnya. Keduanya hanya tersimpan di perangkat (`jm:dasar`).
-  - Namanya ikut tertulis di halaman kosong itu, kehilangan bunyinya, lalu menjadi *Ibu*.
-  - Sungainya masuk ke toples.
-- **Buku yang belum pernah dibuka.**
-  - Sesudah ia menemukan tulisannya sendiri, catatan tangannya muncul di tepi halaman-halaman sebelumnya. Catatan-catatan ini diambil dari kalimat cerita: *Aku masih ingat wajah Ibu*, *pintunya terbuka ke dalam*, *aku tidak mau*, dan seterusnya.
-  - Buku yang dimulai dengan musim-musim lembut membuka halaman pertama cerita ini.
-  - Sesudah *Ibu* dan *penjaga* ternyata ditulis dengan huruf yang sama, setiap *Ibu* di atas menyimpan kata *penjaga*.
-- **Ceritakan lagi.** Di akhir, kartu sesudah dongeng mencatat:
-  - nama pembaca, sekarang *Ibu*;
-  - berapa yang masih diingat;
-  - berapa kali pembaca menemani nyala itu;
-  - sungainya.
-  
-  *Ceritakan lagi* kembali ke atas dengan sampul *Maka begini, anakku.*
-- **Pengaturan.**
-  - Suara angin dan denyut disintesis di perangkat dan mati secara bawaan.
-  - *Gerak dan kejutan* bisa dimatikan; mati juga kalau perangkat meminta gerak dikurangi.
-  - *Baca biasa* membuka teksnya di pembaca situs.
-- Terjemahan Inggrisnya masih mengikuti versi sebelum revisi, jadi momen-momen di atas hanya ada di teks Indonesia.
+- **Delapan lantai.** Bagian yang dipisah `***` menjadi lantai 01–08; penanda *Lantai N dari 8* di bilah atas.
+- **Kata yang terlupakan.** Setiap kali ceritanya memberikan satu ingatan, kata itu hilang dari seluruh halaman, juga dari bagian yang sudah dibaca: tempatnya masih ada (garis putus-putus), bunyinya tidak.
+  - Angka-angka hilang sesudah lembar tagihan kosong.
+  - *sungai* hilang ketika ia tidak bisa lagi menyebut nama sungai itu; *hujan*, *garam*, dan *gunting* hilang pada kalimat ketika ia memberikannya; *wajah* (Ibu) hilang ketika tak ada wajah yang datang.
+  - Kata yang baru hilang memudar di depan mata, dan kabar kecil memberi tahu bahwa ia juga hilang dari yang sudah dibaca.
+  - Tahan kata yang hilang untuk mencoba mengingatnya: ia muncul samar lalu pergi lagi.
+- **Bintang.** Sejak ia mulai menghitung yang masih diingat, tombol bintang menyimpan daftarnya. Yang padam masih bisa dihitung, tetapi tidak bisa dibaca lagi.
+- **Dongeng yang mulai lagi.** Di akhir, Ibu menceritakan dua paragraf pembuka lagi, dengan kata-kata yang sudah hilang tetap kosong. *Ceritakan lagi* kembali ke sampul dan menghitung berapa kali dongeng itu diceritakan.
+- **Aa.** Ukuran huruf, tampilan, dan *Kembalikan semua kata* (mulai dari atas). Semua tersimpan di perangkat (`jm:dasar2`).
+- Versi Inggris memakai terjemahan yang lebih pendek: *river*, *rain*, dan *salt* hilang pada kalimat yang sesuai; angka dan wajah hanya di versi Indonesia.
 
 ### Usia Pulang (antologi/usia-pulang/)
 
@@ -703,9 +674,3 @@ Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*), dibaca
 - **Sesudah XIX**: layar beranda, hapus aplikasinya atau biarkan; dihapus, semua tandanya hilang dari catatan. Catatan diakhiri pratinjau tautan ke *Anda di Sini*.
 - **Cari**: nama pemikir dikenali seperti tautan data; ketuk untuk kalimat esai yang menyebutnya dan butir catatan bacaannya.
 - **•••**: ringkas (kalimat pertama saja), ukuran teks, pengaturan aplikasi. Semua tersimpan di perangkat (`jm:makna`).
-
-### Di Dasar Rumah sebagai buku
-
-*Di Dasar Rumah* dibaca sebagai buku tanpa nama pengarang yang ditemukan gadis itu: satu layar satu halaman (ketuk tepi kanan/kiri, geser, atau tombol panah), setiap lantai mulai di halaman baru, dan semua yang terjadi di luar teks (angka yang hilang, nyala, bintang, napas) terjadi saat halamannya dibalik. Halaman terakhir yang dibuka disimpan (`jm:dasar:page`). `?gulir` membuka cara baca lama yang digulir.
-
-**Buku yang membaca pembacanya.** Buku ini memperhatikan caramu membaca: jam, halaman yang dibaca dua kali, membalik terlalu cepat, layar gelap, pergi lalu kembali (juga kunjungan sebelumnya), nama dan sungaimu, dan menit yang kau berikan. Catatannya muncul di tepi halaman dengan tangan lain (pensil), satu per beberapa halaman, saat halaman dibalik (`W.onPage` di `dasar.js`). Di akhir ada *tagihan untuk pembaca* yang angkanya pelan-pelan hilang seperti tagihan tabib, dan dongeng yang mulai lagi menyebut nama, jam, dan menitmu. Semua hanya dari perangkat ini (`jm:dasar:seen`), tidak dikirim ke mana pun.
