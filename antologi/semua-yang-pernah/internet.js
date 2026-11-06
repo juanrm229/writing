@@ -9,7 +9,7 @@ window.INTERNET = {
 
   'hollowatlas.wiki/Elias_Venn': {
     kind: 'wiki', title: 'Elias Venn', meta: 'Dari Hollow Atlas Wiki, ensiklopedia penggemar · halaman dikunci sebagian',
-    img: 'foto/penonton.jpg', imgCap: 'Hollow Atlas pada malam terakhir tur, dari belakang panggung.',
+    img: 'foto/wiki-elias.jpg', imgCap: 'Elias Venn di sebuah festival. Foto pers.',
     box: [['Nama', 'Elias Venn'], ['Usia', '41 (lihat pembicaraan); 38 menurut dokumen tur'], ['Asal', '"Utara," katanya dalam satu wawancara. Tidak pernah diperjelas.'], ['Band', 'Hollow Atlas (gitar ritme, vokal latar, penulis lagu)'], ['Tahun aktif', 'tidak diketahui sebelum Hollow Atlas'], ['Lagu terkenal', 'The Harbor Has No Memory'], ['Ukuran sepatu', '44 (disengketakan)']],
     body: [
       'Elias Venn adalah gitaris ritme dan salah satu penulis lagu Hollow Atlas. Ia jarang diwawancarai sendirian dan hampir tidak pernah membicarakan masa sebelum band. Sebagian besar keterangan di halaman ini berasal dari wawancara kelompok, catatan album, dan pengamatan penggemar.',
@@ -26,6 +26,8 @@ window.INTERNET = {
       'Elias tidak memakai media sosial. Ia tidak pernah mengonfirmasi tanggal lahir, kota asal, atau status pernikahannya. Halaman ini pernah memuat ukuran sepatunya; Mara menyebut angkanya salah dalam sebuah siaran langsung.',
       '## Kontroversi foto 1903',
       'Bagian ini dikunci sementara. Pada November 2026 beredar sebuah foto pekerja percetakan dari tahun 1903 yang dianggap memperlihatkan wajah yang mirip. Penyunting diminta tidak menambahkan klaim tanpa sumber tepercaya dan tidak menautkan alamat atau nama keluarga yang ada dalam foto tersebut.',
+      '![Foto pekerja percetakan, 1903 (arsip kota). Wajah di baris belakang yang dipersoalkan.](foto/percetakan-1903.jpg)',
+      '![Lukisan pelabuhan, 1761. Sosok di dermaga terlalu kecil untuk dikenali; penyunting sepakat tidak memakainya sebagai bukti.](foto/lukisan-1761.jpg)',
       '^ Halaman pembicaraan: 34 halaman. Topik terpanjang: "Usia", "Ukuran sepatu", "Foto 1903 (jangan dibuka lagi)".'
     ]
   },
@@ -48,7 +50,7 @@ window.INTERNET = {
   },
 
   'putar.video/w/venn-timeline': {
-    kind: 'video', title: 'THE ELIAS VENN TIMELINE CANNOT BE REAL', meta: '2,4 jt x ditonton · 1 hari yang lalu', by: 'deepfold', subs: '312 rb pelanggan', dur: '23:41', count: '18.204',
+    kind: 'video', thumb: 'foto/vid-timeline.jpg', title: 'THE ELIAS VENN TIMELINE CANNOT BE REAL', meta: '2,4 jt x ditonton · 1 hari yang lalu', by: 'deepfold', subs: '312 rb pelanggan', dur: '23:41', count: '18.204',
     body: [
       'Foto 1903. Lukisan pelabuhan 1761. Wawancara 2019. Saya tidak bilang dia abadi. Saya cuma bilang: lihat sendiri. (teori, bukan tuduhan)',
       '00:00 Pembuka · 02:14 Foto pekerja percetakan 1903 · 07:50 Lukisan pelabuhan 1761 · 12:30 Tiga wawancara dibandingkan · 15:42 "Utara" itu di mana? · 18:05 Teori proyek bioteknologi (tamu: @helixwatch) · 21:40 Yang bisa dan tidak bisa kita katakan',
@@ -85,13 +87,23 @@ window.INTERNET = {
   },
 
   'putar.video/w/harbor-piano': {
-    kind: 'video', title: 'anakku main The Harbor Has No Memory (beberapa nada salah, kami tidak peduli)', meta: '4,1 rb x ditonton · 2 minggu lalu', by: 'ayah.nadira', subs: '38 pelanggan', dur: '3:12', count: '96',
+    kind: 'video', thumb: 'foto/vid-piano.jpg', title: 'anakku main The Harbor Has No Memory (beberapa nada salah, kami tidak peduli)', meta: '4,1 rb x ditonton · 2 minggu lalu', by: 'ayah.nadira', subs: '38 pelanggan', dur: '3:12', count: '96',
     body: [
       'Latihan tiga minggu. Nada ketujuh masih bandel. Dia minta jangan diulang bagian yang salah, jadi tidak diulang.',
       'Ini lagu yang ibunya suka. Kami putar setiap Minggu pagi waktu bersih-bersih rumah. Sekarang anaknya yang main.',
       'Kalau anggota Hollow Atlas lihat ini: terima kasih. Itu saja.'
     ],
     comments: [['ayah.nadira', 'dia minta jangan diulang bagian yang salah. jadi tidak diulang.', ''], ['k.lee', 'the dad nodding before she finishes 😭', ''], ['tanjung', 'versi ini lebih jujur dari aslinya', ''], ['m.harbor', 'nada ketujuh itu memang susah. di versi aslinya juga hampir tidak sampai', ''], ['ayah.nadira', 'dia baca komen ini dan sekarang mau belajar lagu lain. tolong rekomendasi', '', 1]]
+  },
+
+  'putar.video/w/blue-dot-pier7': {
+    kind: 'video', thumb: 'foto/vid-bluedot.jpg', title: 'I followed the blue dot to Pier 7 (not clickbait)', meta: '820 rb x ditonton · 1 tahun lalu', by: 'kurir.malam', subs: '2,1 rb pelanggan', dur: '11:04', count: '4.511',
+    body: [
+      'Aku kurir lepas. Aplikasinya muncul beberapa hari setelah aku kehilangan kerja tetap. Ini rekaman jalan kakiku, tanpa potongan, dari kos sampai ujung Dermaga 7.',
+      '00:00 Ikon di halaman ketiga · 01:40 "Dari mana?" · 03:12 Rute muncul · 07:55 Dermaga · 10:20 Ujung',
+      'Aku tidak tahu apa yang terjadi. Aku cuma tahu malam itu aku tidak memeriksa aplikasi pesanan sama sekali. Tolong jangan tanya cara mendapatkannya. Aku tidak tahu.'
+    ],
+    comments: [['hamdan_mancing', 'itu dermaga tempat saya mancing. jangan goyang-goyang papannya', '1 thn'], ['moth_e', 'everyone ends at pier 7 eventually', '1 thn'], ['ZERO', 'Tidak semua. Terima kasih sudah merekam tanpa memotong.', '1 thn', 1], ['sari_w', 'semoga kamu dapat kerja lagi mas', '11 bln']]
   },
 
   /* ================= Edwin dan arsip keluarga ================= */
@@ -118,7 +130,7 @@ window.INTERNET = {
   /* ================= Alma Riedel ================= */
 
   'sainsterbuka.org/2012/ingatan-dan-energi': {
-    kind: 'article', kicker: 'Sains · 2012', title: 'Seberapa banyak yang bisa diingat sebuah benda?', meta: 'Wawancara dengan Dr. Alma Riedel · Sains Terbuka',
+    kind: 'article', kicker: 'Sains · 2012', img: 'foto/alma-artikel.jpg', imgCap: 'Alma Riedel menggambar lingkaran di serbet kafe.', title: 'Seberapa banyak yang bisa diingat sebuah benda?', meta: 'Wawancara dengan Dr. Alma Riedel · Sains Terbuka',
     body: [
       'Alma Riedel mempelajari hal yang terdengar sederhana dan ternyata tidak: berapa harga sebuah informasi. Bukan harga dalam uang, tetapi dalam energi, ruang, dan panas. Kami menemuinya di sebuah kafe dekat kampus yang trotoarnya, katanya, "selalu sedang diperbaiki".',
       '## Apakah ingatan punya berat?',
@@ -365,7 +377,7 @@ window.INTERNET = {
   },
 
   'museumprasejarah.web/koleksi/naskah-lasa': {
-    kind: 'article', kicker: 'Koleksi · Ruang 6', img: 'foto/naskah.jpg', imgCap: 'Salinan, ditulis tangan. Huruf a sedikit miring ke kiri.', title: 'Naskah Lasa', meta: 'Salinan tertua yang diketahui · no. inventaris PR-0611',
+    kind: 'article', kicker: 'Koleksi · Ruang 6', img: 'foto/naskah-lasa.jpg', imgCap: 'Salinan, ditulis tangan. Huruf a sedikit miring ke kiri.', title: 'Naskah Lasa', meta: 'Salinan tertua yang diketahui · no. inventaris PR-0611',
     body: [
       'Naskah ini memuat ajaran Tempat Tanpa Lapar, peraturan pembagian air, dan beberapa catatan tentang putusan di sumur. Penyusunnya, Lasa, adalah salah satu pencatat paling berpengaruh di lembah itu.',
       '## Tangan kiri',
@@ -380,7 +392,7 @@ window.INTERNET = {
 
   'ensiklopedia.web/Sang_Adil': {
     kind: 'wiki', title: 'Sang Adil', meta: 'penguasa di jalur perdagangan · Dari Ensiklopedia Bebas',
-    img: 'foto/koin.jpg', imgCap: 'Koin dari masa pemerintahannya. Wajah di koin dianggap potretnya.',
+    img: 'foto/koin-sang-adil.jpg', imgCap: 'Koin dari masa pemerintahannya. Wajah di koin dianggap potretnya.',
     box: [['Gelar', 'Sang Adil'], ['Naik takhta', 'lewat jalur administrasi; keluarga penguasa tanpa pewaris'], ['Dikenang', 'jembatan, pembagian air, pajak yang diringankan'], ['Akhir', 'pergi "ke wilayah selatan"; tidak ada catatan kematian']],
     body: [
       'Sang Adil adalah penguasa sebuah kota di jalur perdagangan pada abad ketika berbagai kerajaan kecil berdiri dan runtuh. Ia naik takhta bukan karena keturunan, melainkan karena keluarga penguasa kehabisan pewaris dan ia telah lama mengurus administrasi kota.',
@@ -398,7 +410,7 @@ window.INTERNET = {
   },
 
   'warisanbudaya.web/pintu-air-sira': {
-    kind: 'article', kicker: 'Cagar budaya', img: 'foto/pintu-air.jpg', imgCap: 'Sisa pintu air. Sebagian kayunya sudah diganti berkali-kali.', title: 'Pintu Air Sira', meta: 'dibangun sesudah banjir besar · status: dilindungi',
+    kind: 'article', kicker: 'Cagar budaya', img: 'foto/pintu-air-sira.jpg', imgCap: 'Sisa pintu air. Sebagian kayunya sudah diganti berkali-kali.', title: 'Pintu Air Sira', meta: 'dibangun sesudah banjir besar · status: dilindungi',
     body: [
       'Sistem tanggul dan pintu air ini dinamai menurut insinyurnya, Sira. Pembangunannya memakan waktu bertahun-tahun; sebagian pekerjaan tertunda karena bahan habis, dan sebagian wilayah sempat menolak karena merasa tanggul lama masih cukup.',
       '## Cara kerja',
