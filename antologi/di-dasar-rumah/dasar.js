@@ -1,22 +1,15 @@
-/* Di Dasar Rumah: seorang gadis dengan tangan yang selalu dingin, dan pekerjaan yang hangat di dasar sebuah rumah.
-   Teks dimuat utuh dari content/works.json; yang ditambahkan hanya antarmukanya. Semua yang muncul di luar teks
-   mengikuti kalimat yang sedang dibaca:
-   - Kedalaman: delapan bagian adalah delapan lantai yang turun. Dingin menempel di tepi layar pada musim dingin,
-     kehangatan yang terlalu dekat bernapas di tepi layar setiap kali perempuan bertopi mendekat.
-   - Tagihan: angka-angkanya hilang dari kertas saat narasinya sampai ke sana; yang tersisa bekas tekanan pena.
-   - Tangga: undakan dihitung di tepi layar, goresan bulan sabit lewat lagi dan lagi, dan koinmu sudah di sana.
-   - Nyala kecil: turun dari halaman ke sudut layar dan menemanimu. Kalau kau diam terlalu lama di kamar itu, ia meredup;
-     ketuk untuk menemaninya. Sesudah "Nyala itu berdetak", ia berdetak.
-   - Bintang: daftar yang masih diingat. Satu demi satu hilang, persis saat ceritanya memberikannya.
-   - Nama: namamu (kalau kau menuliskannya) ikut ditulis di halaman kosong itu, lalu kehilangan bunyinya, lalu menjadi Ibu.
-   - Buku yang belum pernah dibuka: sesudah ia menemukan tulisannya sendiri, catatan tangannya muncul di tepi halaman-halaman
-     sebelumnya, dan setiap "Ibu" di atas menyimpan kata lain. */
+/* Di Dasar Rumah: dibuat ulang dari nol. Satu gagasan: kata yang terlupakan.
+   Gadis itu menjaga sebuah nyala dengan ingatannya sendiri. Setiap kali ceritanya memberikan satu ingatan kepada nyala,
+   kata itu hilang dari seluruh halaman, juga dari bagian yang sudah kau baca: tempatnya masih ada, bunyinya tidak.
+   Angka-angka hilang sesudah tagihan kosong; sungai, hujan, garam, gunting, dan wajah Ibu hilang pada kalimat ketika ia
+   memberikannya. Tahan kata yang hilang untuk mencoba mengingatnya. Di akhir, dongengnya mulai lagi, diceritakan dengan
+   kata-kata yang tersisa. Teks dimuat utuh dari content/works.json; yang berubah hanya apa yang masih bisa terbaca. */
 (async () => {
   'use strict';
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const qs = new URLSearchParams(location.search);
-  const PREVIEW = qs.get('preview') === '1', HISTORY = ['read', 'stats', 'last', 'prog', 'dasar'];
+  const PREVIEW = qs.get('preview') === '1', HISTORY = ['read', 'stats', 'last', 'prog', 'dasar2'];
   const store = {
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { if (PREVIEW && HISTORY.includes(k)) return; try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
@@ -24,634 +17,153 @@
   const SLUG = 'di-dasar-rumah', G = window.JMGuide, root = document.documentElement;
   const EN = (qs.get('lang') || store.get('lang', 'id')) === 'en';
   const t = (id, en) => (EN ? en : id);
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c])); // tanpa angka, supaya angka di teks bisa dicari aman
   const plain = s => String(s).replace(/\*/g, '').trim();
   const hasText = b => Array.isArray(b) && b.some(p => String(p).trim());
   const isBreak = p => !/[\p{L}\p{N}]/u.test(String(p));
-  const motionQ = matchMedia('(prefers-reduced-motion: reduce)');
-  const calm = () => motionQ.matches || root.hasAttribute('data-calm');
-  root.lang = t('id', 'en');
-  root.toggleAttribute('data-calm', !!store.get('dasar:calm', false));
   const announce = m => { const a = $('#announcement'); a.textContent = ''; setTimeout(() => { a.textContent = m; }, 30); };
+  let toastT = 0;
+  const toast = (m, ms = 4200) => { const el = $('#toast'); el.textContent = m; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms); };
+  root.lang = t('id', 'en');
 
   /* ---------- naskah ---------- */
   let work = null;
   if (PREVIEW) work = (store.get('preview', null)?.works || []).find(w => w.slug === SLUG) || null;
   if (!work) try { work = (await (await fetch('../../content/works.json', { cache: 'no-cache' })).json()).find(w => w.slug === SLUG); } catch (e) { /* luring */ }
   const story = $('#story');
-  if (!work || !hasText(work.body)) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Go back')}</a></p>`; return; }
-  const tr = (EN ? work.en : null) || {};
-  const BODY = hasText(tr.body) ? tr.body : work.body;
-  const title = tr.title || work.title;
-  document.title = `${title} · Quiet Margins`;
-  $('#title').textContent = title;
-  if (EN) {
-    $('#lost').hidden = false;
-    $('#lost').textContent = hasText(tr.body) ? 'The English text follows an earlier draft of this story; some moments in the room only appear in the Indonesian original.' : 'This story is not translated yet, so it is shown in the original language.';
-  }
+  if (!work || !hasText(work.body)) { story.innerHTML = `<p class="loading">${t('Cerita belum bisa dimuat.', 'The story could not be loaded.')} <a href="../../">${t('Kembali', 'Back')}</a></p>`; return; }
+  const tr = EN && work.en && hasText(work.en.body) ? work.en : null;
+  if (EN && !tr) { $('#lost').hidden = false; $('#lost').textContent = 'This story is not translated yet, so it is shown in the original.'; }
+  const BODY = tr ? tr.body : work.body;
+  const TITLE = (tr && tr.title) || work.title;
+  document.title = `${TITLE} · Quiet Margins`;
+  $('#title').textContent = TITLE;
 
-  /* ---------- bagian dan paragraf ---------- */
-  const NAMES = [t('Angka-angka', 'The numbers'), t('Tangga', 'The stairs'), t('Musim dingin pertama', 'The first winter'), t('Musim dingin ketiga', 'The third winter'), t('Pintu', 'The door'), t('Musim dingin berikutnya', 'The next winter'), t('Boleh pulang', 'You may go home'), t('Dongeng', 'The tale')];
-  const SECS = [[]];
-  BODY.forEach(p => { if (isBreak(p)) { if (SECS[SECS.length - 1].length) SECS.push([]); } else SECS[SECS.length - 1].push(String(p)); });
-  const P = []; SECS.forEach((s, si) => s.forEach(text => P.push({ i: P.length, text, sec: si })));
-  const nameOf = si => NAMES[si] || `${t('Lantai', 'Floor')} ${si + 1}`;
+  const P = [], FLOORS = [[]];
+  BODY.forEach(p => { if (isBreak(p)) { if (FLOORS[FLOORS.length - 1].length) FLOORS.push([]); return; } const it = { i: P.length, text: String(p), floor: FLOORS.length - 1 }; P.push(it); FLOORS[FLOORS.length - 1].push(it); });
   const at = re => P.findIndex(p => re.test(plain(p.text)));
-  const I = {
-    bill: at(/^Tagihan tabib dari dalam/), billGone: at(/lembar-lembar tagihan di bawah siku telah kosong/),
-    touch: at(/^Maka ketika, pada suatu sore/), warmMorning: at(/^Pagi terasa hangat/), mari: at(/^Mari\.$/),
-    bag: at(/^Gadis itu mengangkat tas karena/), house: at(/rumah panggung dari kayu hitam/),
-    stairs: at(/^Tangga batu menempel/), crescent: at(/goresan menyerupai bulan sabit/), coin: at(/menyelipkannya ke goresan itu/), stairsEnd: at(/^Tangga telah berakhir/),
-    nyala: at(/nyala keemasan bergerak pelan/), thread: at(/membawa sisanya mengelilingi kamar/), shelf: at(/^Kadang buku-buku itu memuat/),
-    mem: at(/mulai menghitung hal-hal yang masih diingat dari atas/), note: at(/^Pada halaman kosong sebuah buku/), nameLost: at(/^Ketika bangun berikutnya, tulisannya masih ada/),
-    river: at(/Akhirnya ia memberinya nama sungai/), riverLost: at(/^Cahaya mengembang\. Gadis itu duduk kembali/), lid: at(/^Dari balik dinding terdengar bunyi kaca/), jar: at(/^Gadis itu memanggil perempuan bertopi sampai/),
-    stall: at(/^Selama beberapa waktu sesudah itu, ia mencoba tidak memberi/), late: at(/^Denyut berikutnya terlambat/), thin: at(/Nyala tinggal setipis benang/),
-    out: at(/^Ia menyelipkan kaki di celah pintu/), inhale: at(/tarikan napas yang begitu panjang/), back: at(/^Gadis itu merangkak kembali/), beat: at(/^Nyala itu berdetak\.$/),
-    given3: at(/^Gadis itu telah memberikan bau hujan/), notes: at(/^Kadang-kadang ia menemukan tulisannya sendiri/), book: at(/kisah yang dimulai dengan musim-musim lembut/),
-    faceLast: at(/^Ketika nyala akhirnya menyusut sampai hampir/), faceGone: at(/^Tak ada wajah yang datang\.$/), palm: at(/bekas lima jari yang menekan dari dalam/),
-    penjaga: at(/seperti sebutan penjaga pada halaman sebelumnya/), blank: at(/^Setelah itu ia tak lagi ingat siapa dirinya/), warn: at(/^Jangan percaya ketika ia mengatakan kau boleh pulang\.$/),
-    turn: at(/^Perempuan itu membalik halaman/), told: at(/^Ia mulai dengan desa yang indah/), palms: at(/^Di tengah cerita ia mendengar suara lain/), palm2: at(/tangan-tangan kecil itu menekan dari sisi dalam/),
-    mother: at(/^Anak itu membuka mata dan memanggilnya Ibu/), tale: at(/^Maka begini, anakku/), breath2: at(/^Di bawah ranjang, jauh melewati/)
-  };
-  const has = k => I[k] >= 0;
+
+  /* ---------- yang dilupakan, dan kapan ---------- */
+  const NUM = /\b(\d[\d.,]*\d|\d|nol|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|seratus|seribu|sejuta|belas|puluh|ratus|ribu|juta)\b/gi;
+  const FORGET = (EN ? [
+    { id: 'river', at: at(/She gave the flame the name of the river/), re: /\brivers?\b/gi },
+    { id: 'rain', at: at(/she had given the flame the smell of rain/), re: /\brain\b/gi },
+    { id: 'salt', at: at(/she had given the flame the smell of rain/), re: /\bsalt\b/gi }
+  ] : [
+    { id: 'angka', at: at(/lembar-lembar tagihan di bawah siku telah kosong/), re: NUM, all: true },
+    { id: 'sungai', at: at(/^Cahaya mengembang\. Gadis itu duduk kembali/), re: /\bsungai\b/gi },
+    { id: 'hujan', at: at(/^Gadis itu telah memberikan bau hujan/), re: /\bhujan\b/gi },
+    { id: 'garam', at: at(/^Gadis itu telah memberikan bau hujan/), re: /\bgaram\b/gi },
+    { id: 'gunting', at: at(/^Gadis itu telah memberikan bau hujan/), re: /\bgunting\b/gi },
+    { id: 'wajah', at: at(/^Tak ada wajah yang datang\.$/), re: /\bwajah\b(?=\s+(?:Ibu|ibunya|ibu)\b)/g }
+  ]).filter(f => f.at >= 0);
+  const MEM_AT = at(EN ? /how many things she still remembered/ : /mulai menghitung hal-hal yang masih diingat/);
+  const MEM = EN
+    ? [['Her mother’s face', null], ['The smell of rain on soil', 'rain'], ['The taste of salt', 'salt'], ['The name of the river near her house', 'river']]
+    : [['Wajah Ibu', 'wajah'], ['Bau hujan di tanah', 'hujan'], ['Rasa garam', 'garam'], ['Nama sungai di dekat rumah', 'sungai'], ['Bunyi gunting ketika memotong wol', 'gunting']];
 
   /* ---------- ingatan pembaca ---------- */
-  const blank = () => ({ v: 1, name: '', river: '', kept: 0, coin: false, retold: 0, reach: -1 });
-  let S = store.get('dasar', null); S = S && S.v === 1 ? { ...blank(), ...S } : blank();
-  const save = () => store.set('dasar', S);
-  const reached = k => has(k) && S.reach >= I[k];
-  const MEM = [['wajah', t('Wajah Ibu', 'Mother’s face'), 'faceGone'], ['hujan', t('Bau hujan di tanah', 'The smell of rain on earth'), 'given3'], ['garam', t('Rasa garam', 'The taste of salt'), 'given3'], ['sungai', t('Nama sungai di dekat rumah', 'The name of the river near home'), 'riverLost'], ['gunting', t('Bunyi gunting ketika memotong wol', 'The sound of scissors cutting wool'), 'given3']];
-  const BAG = [t('Pakaian', 'Clothes'), t('Jarum', 'Needles'), t('Sisa benang', 'Leftover thread'), t('Sisir ibunya yang patah satu gigi', 'Her mother’s comb with one broken tooth')];
-  const TOLD = [t('Jalan pulang', 'The way home'), t('Letak dapur', 'Where the kitchen is'), t('Kamar mana yang harus dimasuki sebelum pagi', 'Which room to enter before morning')];
-  // pembaca boleh mengganti daftar itu dengan ingatannya sendiri; hilangnya tetap di kalimat yang sama
-  const memLabel = (k, l) => (S.mine && S.mine[k]) || l;
-  const memLeft = () => (reached('mem') ? MEM.filter(m => !reached(m[2])).length : 0);
+  const blank = () => ({ v: 1, reach: -1, retold: 0 });
+  let S = store.get('dasar2', null); S = S && S.v === 1 ? { ...blank(), ...S } : blank();
+  const save = () => store.set('dasar2', S);
+  const gone = f => S.reach >= f.at;
 
-  /* ---------- menyusun teks ---------- */
-  const TOPI = /^(Aku dengar|Itulah kepandaian|Kau sudah siap|Sudah selesai mengucapkan|Tentu|Aku belum mengambil|Lelaki yang mendatangi|Aku mengenali yang|Ada yang mendobrak|Sebentar lagi hangat|Kau ingat aku menjanjikan|Sampai kau siap|Masuklah|Supaya nyala itu|Nanti kau akan tahu|Kau menjaganya|Kau memberikannya|Sampai ada yang menggantikanmu|Kau ceritakan kepadanya|Kau belum diminta|Akhirnya kau tak punya|Sekarang kau boleh|Kuberikan satu tugas)/;
-  const TUA = /^(Ambil ini|Kalau mendengar seseorang)/, ANAK = /^Ceritakan lagi/;
-  const HAND = /^(Aku berada di dasar rumah|Kalau ia padam|Jangan percaya ketika|Aku masih ingat wajah Ibu|pintunya terbuka ke dalam)/;
-  const voiceOf = txt => { const qsx = [...txt.matchAll(/“([^”]*)”/g)].map(m => m[1]); if (qsx.some(q => TOPI.test(q))) return 'topi'; if (qsx.some(q => TUA.test(q))) return 'tua'; if (qsx.some(q => ANAK.test(q))) return 'anak'; return qsx.length ? 'gadis' : ''; };
-  function textHTML(txt) {
-    let h = esc(txt);
-    // setiap "Ibu" menyimpan kata lain, tetapi ibu jari tetap ibu jari
-    h = h.replace(/\b([Ii]bu)(nya|mu)?\b(?! jari)/g, (m, a, b) => `<span class="ibu" data-g="${b ? 'penjaga' + b : 'penjaga'}">${m}</span>`);
-    h = h.replace(/\*(\S(?:[^*]*?\S)?)\*/g, (m, inner) => { const raw = inner.replace(/<[^>]+>/g, ''); return `<em${HAND.test(raw) ? ' class="hand"' : /^Nama sungai yang diberikan/.test(raw) ? ' class="label"' : ''}>${inner}</em>`; });
-    const v = voiceOf(txt);
-    if (v) h = h.replace(/“([^”]*)”/g, (m, q) => `<span class="q v-${v}">“${q}”</span>`);
-    return h;
+  /* ---------- menyusun ---------- */
+  // setiap kata yang kelak bisa hilang dibungkus sejak awal, supaya hilangnya serentak di seluruh halaman
+  function wrap(text) {
+    let h = esc(text);
+    FORGET.forEach(f => { h = h.replace(f.re, m => `\u0001${f.id}\u0002${m}\u0003`); });
+    h = h.replace(/\u0001(\w+)\u0002([^\u0003]*)\u0003/g, (m, id, w) => `<span class="w${id === 'angka' ? ' num' : ''}" data-f="${id}">${w}</span>`);
+    return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:[^*]*?\S)?)\*/g, '<em>$1</em>');
   }
-  const whole = txt => /^\*[^*]+\*$/.test(txt.trim());
-  function paraHTML(p) {
-    const cls = [];
-    if (whole(p.text)) cls.push(p.i === I.mari ? 'mari' : HAND.test(plain(p.text)) ? 'hand-p' : 'lull');
-    if (has('tale') && p.i >= I.tale) cls.push('tale');
-    if (p.i === I.beat) cls.push('beat');
-    if (p.i === I.late || p.i === I.faceGone) cls.push('short');
-    return `<p data-i="${p.i}"${cls.length ? ` class="${cls.join(' ')}"` : ''}>${textHTML(p.text)}</p>`;
-  }
+  const pHTML = p => `<p data-i="${p.i}"${/^\*[^*]+\*$/.test(p.text.trim()) ? ' class="voice"' : ''}>${wrap(p.text)}</p>`;
+  story.innerHTML = FLOORS.map((f, fi) => `<section class="floor" id="lantai-${fi + 1}" data-f="${fi}">
+      <header class="floor-h"><small>${t('Lantai', 'Floor')}</small><b>${String(fi + 1).padStart(2, '0')}</b></header>${f.map(pHTML).join('')}</section>`).join('');
+  const paras = $$('#story p[data-i]');
 
-  /* ---------- benda-benda di luar teks ---------- */
-  const BILL = [[t('Tabib dari dalam desa', 'Healer from the village'), '1.840.000'], [t('Tabib dari luar desa', 'Healer from beyond the village'), '6.500.000'], [t('Sisa utang kebutuhan rumah', 'What is left of the household debt'), '2.275.000'], [t('Hari-hari Ibu', 'Mother’s days'), '']];
-  const billHTML = gone => `<figure class="bill${gone ? ' gone' : ''}" data-bill="${gone ? 2 : 1}" aria-label="${esc(t('Lembar tagihan', 'The bills'))}">
-      <ul>${BILL.map(([k, v]) => `<li><span>${esc(k)}</span><b data-n="${esc(v)}">${v ? esc(v) : '<i class="unwritten"></i>'}</b></li>`).join('')}</ul>
-      <p class="bill-mom"><span>${esc(t('ditulis tangan Ibu', 'in Mother’s hand'))}</span><b data-n="38.000">38.000</b></p>
-      ${gone ? `<figcaption><button type="button" class="lt-btn ghost" data-tilt>${esc(t('Miringkan ke arah jendela', 'Tilt it toward the window'))}</button></figcaption>` : ''}
-    </figure>`;
-  // rumah terbalik, ditulis terbalik: kalimatnya sendiri yang berdiri di atas kepala sampai diketuk
-  const houseHTML = () => `<figure class="house typo" data-house aria-label="${esc(t('Rumah panggung yang terbalik', 'The upside-down stilt house'))}">
-      <p class="upside" aria-hidden="true">${esc(t('rumah panggung dari kayu hitam', 'a stilt house of black wood'))}</p>
-      <figcaption><span data-house-cap>${esc(t('Rumahnya terbalik. Pintunya tidak.', 'The house is upside down. Its door is not.'))}</span><button type="button" class="lt-btn ghost" data-flip>${esc(t('Betulkan letaknya', 'Set it right'))}</button></figcaption>
-    </figure>`;
-  const coinHTML = () => `<div class="coin-ask"><span class="cr" aria-hidden="true">☾</span><button type="button" class="lt-btn ghost" data-coin>${esc(t('Selipkan satu koin ke goresan itu', 'Slip a coin into the mark'))}</button></div>`;
-  const landHTML = () => `<div class="fl-land" id="flLand" aria-hidden="true"><span class="fl-body"><i class="fl-core"></i></span></div>`;
-  // benang: satu garis yang memanjang lalu berhenti di tempat yang sama
-  const threadHTML = () => `<figure class="thread typo" data-thread aria-label="${esc(t('Benang yang mengukur kamar', 'The thread that measures the room'))}">
-      <p class="yarn" aria-hidden="true"><i></i></p>
-      <figcaption><button type="button" class="lt-btn ghost" data-measure>${esc(t('Ukur dindingnya', 'Measure the walls'))}</button></figcaption>
-    </figure>`;
-  const SPINES = [
-    [t('anak yang terus mengayun di taman mati', 'a child swinging on in a dead park')], [t('toko bunga tempat seseorang merangkai duka', 'a flower shop where someone arranges grief')],
-    [t('lelaki yang menggali makam-makam kosong di dekat bunga biru', 'a man digging empty graves by the blue flowers')], [t('makhluk dengan lipatan daging di bawah dagu', 'a creature with folds of flesh under its chin'), 'torn'],
-    [t('makhluk tanpa mata yang mengenali manusia dari gema suara', 'an eyeless creature that knows people by their echo')], [t('kota yang dibangun di atas sesuatu yang disangka tanah', 'a city built on something taken for ground')],
-    [t('bayangan yang tetap menunggu di dinding', 'a shadow still waiting on the wall')], [t('sebuah laut yang disembunyikan di bawah kota', 'a sea hidden beneath a city'), 'sea']
-  ];
-  const shelfHTML = () => `<figure class="shelf" data-shelf aria-label="${esc(t('Buku-buku tanpa nama penulis', 'Books with no author’s name'))}">
-      <div class="spines">${SPINES.map(([s, k], i) => `<button type="button" class="spine${k ? ' ' + k : ''}" data-spine="${i}" style="--h:${78 + (i * 37) % 26}%" aria-label="${esc(t('Balik bukunya', 'Turn the book around'))}"><span>${esc(s)}</span></button>`).join('')}</div>
-      <figcaption>${esc(t('Punggungnya menghadap dinding. Ketuk untuk membaliknya.', 'Their spines face the wall. Tap to turn one around.'))}</figcaption>
-    </figure>`;
-  const memCardHTML = () => `<figure class="stars" data-stars aria-label="${esc(t('Yang masih diingat', 'What she still remembers'))}"><ol>${MEM.map(([k, l]) => `<li data-m="${k}"><i aria-hidden="true">✦</i><span data-mine="${k}" data-ph="${esc(l)}">${esc(memLabel(k, l))}</span></li>`).join('')}</ol><p class="mine-act"><button type="button" class="lt-btn ghost" data-mine-edit>${esc(t('Ganti dengan ingatanku sendiri', 'Use my own memories'))}</button></p><figcaption>${esc(t('Disimpan seperti orang menyimpan bintang. Ada di tombol bintang di atas.', 'Kept the way one keeps stars. Also behind the star button above.'))}</figcaption></figure>`;
-  const signName = () => esc(S.name || '');
-  const noteHTML = () => `<figure class="note" data-note aria-label="${esc(t('Halaman kosong yang ditulisinya', 'The blank page she wrote on'))}"><p class="hand">${esc(t('Aku berada di dasar rumah.', 'I am at the bottom of the house.'))}<br>${esc(t('Aku datang untuk bekerja.', 'I came here to work.'))}<br>${esc(t('Aku harus pulang.', 'I must go home.'))}</p><p class="hand sig" data-sig>${signName() || '<span class="nm-blank"></span>'}</p></figure>`;
-  const riverHTML = () => `<figure class="river" data-river><p>${esc(t('Nyala itu hampir separuh padam. Ia memberinya nama sungai di dekat rumah. Kau juga punya sungai?', 'The flame is almost half gone. She gives it the name of the river near home. Do you have a river too?'))}</p>
-      <form data-river-form><input name="r" maxlength="28" spellcheck="false" placeholder="${esc(t('nama sungai di dekat rumahmu', 'the river near your home'))}" aria-label="${esc(t('Nama sungai di dekat rumahmu', 'The river near your home'))}"><button type="submit" class="lt-btn">${esc(t('Berikan', 'Give it'))}</button></form>
-      <p class="river-given" data-river-word></p></figure>`;
-  const jarHTML = () => `<figure class="jar typo" data-jar aria-label="${esc(t('Toples', 'A jar'))}"><figcaption><em class="label">${esc(t('Nama sungai yang diberikan seorang anak agar nyalanya tidak padam.', 'The name of a river, given by a child so her flame would not go out.'))}</em><b data-jar-word></b></figcaption></figure>`;
-  const doorsHTML = () => '';
-  const bookHTML = () => `<figure class="book typo" data-book><figcaption><p>${esc(t('Tak ada nama di sana. Hanya gadis, Ibu, dan perempuan bertopi.', 'No name in it. Only a girl, a mother, and a woman in a hat.'))}</p><button type="button" class="lt-btn ghost" data-open-book>${esc(t('Buka halaman pertamanya', 'Open it to the first page'))}</button></figcaption></figure>`;
-  const ghostHTML = () => `<div class="ghost-ask"><button type="button" class="lt-btn ghost" data-look-up>${esc(t('Lihat setiap Ibu di atas', 'Look at every Mother above'))}</button></div>`;
-  const INSERTS = [['bill', billHTML(false)], ['billGone', billHTML(true)], ['house', houseHTML()], ['crescent', coinHTML()], ['nyala', landHTML()], ['thread', threadHTML()], ['shelf', shelfHTML()], ['mem', memCardHTML()], ['note', noteHTML()], ['river', riverHTML()], ['jar', jarHTML()], ['out', doorsHTML()], ['book', bookHTML()], ['penjaga', ghostHTML()]];
-  // catatan tangannya, di tepi halaman-halaman yang ia baca sebelum kau
-  const NOTES = [
-    [0, t('Aku berada di dasar rumah. Aku datang untuk bekerja. Aku harus pulang.', 'I am at the bottom of the house. I came here to work. I must go home.'), 'sign'],
-    [at(/^Meski semua itu membebani pikirannya/), t('Aku masih ingat wajah Ibu.', 'I still remember Mother’s face.')],
-    [at(/^Namun perempuan di hadapannya menawarkan pekerjaan/), t('Jangan percaya ketika ia mengatakan kau boleh pulang.', 'Do not believe her when she says you may go home.')],
-    [at(/^“Kau sudah siap, sayang\?”/), t('aku tidak mau', 'I do not want to'), 'circle'],
-    [at(/^Gadis itu mengangkat tas karena/), t('pakaian · jarum · benang · sisir, patah satu gigi', 'clothes · needles · thread · comb, one tooth broken')],
-    [at(/^Pintu terbuka tanpa suara/), t('pintunya terbuka ke dalam', 'the door opens inward'), 'many'],
-    [at(/^Rasa kantuk, ketika datang/), '|||| |||| |||| ||', 'tally'],
-    [at(/^Gadis itu berdiri lama dengan tas di tangan/), t('Kalau ia padam, aku ikut berhenti.', 'If it goes out, I stop too.')]
-  ].filter(n => n[0] >= 0);
-  const noteFor = i => { const n = NOTES.find(x => x[0] === i); if (!n) return ''; const [, txt, k] = n; return `<aside class="margin${k ? ' ' + k : ''}" aria-label="${esc(t('Catatan di tepi halaman', 'A note in the margin'))}"><span class="hand">${k === 'many' ? Array(9).fill(esc(txt)).join(' ') : esc(txt)}</span>${k === 'sign' ? `<span class="hand sig" data-sig>${signName() || '<span class="nm-blank"></span>'}</span>` : ''}</aside>`; };
-
-  story.innerHTML = SECS.map((s, si) => `<section class="step" id="lantai-${si + 1}" data-s="${si}" style="--si:${si}">
-      <header class="st-h"><p class="st-k"><span>${esc(t('Lantai', 'Floor'))} ${si === 0 ? esc(t('atas', 'above')) : '−' + si}</span><span class="st-of">${si + 1}/${SECS.length}</span></p><h2 data-name="${esc(nameOf(si))}">${esc(nameOf(si))}</h2></header>
-      ${P.filter(p => p.sec === si).map(p => noteFor(p.i) + paraHTML(p) + INSERTS.filter(([k]) => I[k] === p.i).map(x => x[1]).join('')).join('')}
-    </section>`).join('');
-  const pEl = i => story.querySelector(`p[data-i="${i}"]`);
-
-  /* ---------- kedalaman (rel di tepi) ---------- */
-  $('#depth').innerHTML = SECS.map((s, si) => `<a href="#lantai-${si + 1}" style="--i:${si}"><i></i><span data-name="${esc(nameOf(si))}">${esc(nameOf(si))}</span></a>`).join('');
-  $('#lgTopi').textContent = t('Suara perempuan bertopi', 'The woman in the hat');
-  $('#lgHead').textContent = t('Suara di dalam kepala', 'A voice inside the head');
-  $('#lgHand').textContent = t('Tulisan tangannya', 'Her handwriting');
-  $('#lgFlame').textContent = t('Nyala kecil', 'The little flame');
-  $('#kick').textContent = 'Koda · ' + t('Cerpen', 'Short story');
-
-  /* ---------- nama di halaman kosong ---------- */
-  const sigs = () => $$('[data-sig]');
-  function paintName() {
-    const mother = reached('mother'), lostSound = reached('nameLost');
-    const nm = S.name || '';
-    sigs().forEach(el => {
-      el.classList.toggle('mute', lostSound && !mother); el.classList.toggle('mother', mother);
-      el.innerHTML = mother ? esc(t('Ibu', 'Mother')) : nm ? (lostSound ? [...nm].map(c => `<i>${esc(c)}</i>`).join('') : esc(nm)) : '<span class="nm-blank"></span>';
+  function paintForget(fresh = []) {
+    FORGET.forEach(f => {
+      const off = gone(f);
+      $$(`[data-f="${f.id}"]`).forEach(el => {
+        if (el.matches('.floor')) return;
+        el.classList.toggle('lupa', off);
+        if (off && fresh.includes(f.id) && !calm()) { const r = el.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) { el.classList.remove('fresh'); void el.offsetWidth; el.classList.add('fresh'); } }
+        el.setAttribute('aria-label', off ? t('kata yang terlupakan', 'a forgotten word') : '');
+        if (!off) el.removeAttribute('aria-label');
+      });
     });
-    const inp = $('#signName');
-    if (inp && document.activeElement !== inp) { inp.value = mother ? t('Ibu', 'Mother') : nm; inp.readOnly = mother; inp.classList.toggle('mute', lostSound && !mother); }
-    $('#signLabel').textContent = mother ? t('Namamu', 'Your name') : t('Tulis namamu di halaman kosong', 'Write your name on the blank page');
-    $('#signNote').textContent = mother ? t('Sebutan itu masuk dengan mudah.', 'The word goes in easily.') : t('Hanya tersimpan di perangkatmu.', 'Only kept on your device.');
+    memPaint();
   }
-  $('#sign').addEventListener('submit', e => { e.preventDefault(); $('#signName').blur(); });
-  $('#signName').addEventListener('input', e => { if (reached('mother')) return; S.name = e.target.value.trim().slice(0, 24); save(); sigs().forEach(el => { el.innerHTML = S.name ? esc(S.name) : '<span class="nm-blank"></span>'; }); });
-  $('#signName').addEventListener('blur', paintName);
+  // tahan kata yang hilang: ia muncul samar, lalu pergi lagi
+  let peekEl = null;
+  const unpeek = () => { if (peekEl) { peekEl.classList.remove('peek'); peekEl = null; } };
+  document.addEventListener('pointerdown', e => { const w = e.target.closest('.lupa'); if (!w) return; e.preventDefault(); unpeek(); peekEl = w; w.classList.add('peek'); });
+  ['pointerup', 'pointercancel', 'scroll'].forEach(ev => addEventListener(ev, unpeek, { passive: true }));
+  document.addEventListener('contextmenu', e => { if (e.target.closest('.lupa')) e.preventDefault(); });
 
-  /* ---------- bintang: yang masih diingat ---------- */
-  function mineEdit(on) {
-    const f = $('[data-stars]'); if (!f) return;
-    $$('[data-mine]', f).forEach(sp => {
-      const li = sp.closest('li'), open = on && !li.classList.contains('lost');
-      sp.contentEditable = open ? 'plaintext-only' : 'false'; sp.classList.toggle('editing', open);
-    });
-    f.classList.toggle('editing', on);
-    $('[data-mine-edit]', f).textContent = on ? t('Selesai', 'Done') : t('Ganti dengan ingatanku sendiri', 'Use my own memories');
-    const first = on && $('[data-mine].editing', f); if (first) { first.focus(); const r = document.createRange(); r.selectNodeContents(first); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
-  }
-  document.addEventListener('input', e => {
-    const sp = e.target.closest && e.target.closest('[data-mine]'); if (!sp) return;
-    const v = sp.textContent.replace(/\s+/g, ' ').trim().slice(0, 48);
-    S.mine = { ...(S.mine || {}) }; if (v) S.mine[sp.dataset.mine] = v; else delete S.mine[sp.dataset.mine]; save();
-  });
-  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.closest && e.target.closest('[data-mine]')) { e.preventDefault(); e.target.blur(); } });
+  /* ---------- yang masih kuingat ---------- */
+  const memBtn = $('#openMem'), memDlg = $('#mem');
   function memPaint() {
-    $$('[data-stars] li').forEach(li => { const m = MEM.find(x => x[0] === li.dataset.m); li.classList.toggle('lost', !!m && reached(m[2])); });
-    const n = memLeft(), b = $('#openMem');
-    if (reached('mem') && !reached('mother')) b.dataset.n = n; else delete b.dataset.n;
+    const on = MEM_AT >= 0 && S.reach >= MEM_AT; memBtn.hidden = !on;
+    const left = MEM.filter(([, id]) => !id || !FORGET.find(f => f.id === id && gone(f))).length;
+    if (on) memBtn.dataset.n = left; else delete memBtn.dataset.n;
+    $('#memTitle').textContent = t(`${left} bintang`, `${left} stars`);
+    $('#memList').innerHTML = MEM.map(([l, id]) => { const g = id && FORGET.find(f => f.id === id && gone(f)); return `<li class="${g ? 'gone' : ''}"><span>${esc(l)}</span></li>`; }).join('');
+    $('#memNote').textContent = left === MEM.length ? t('Disimpan seperti orang menyimpan bintang.', 'Kept the way one keeps stars.') : t('Yang padam masih bisa kau hitung. Kau tidak bisa membacanya lagi.', 'You can still count the ones that went out. You can no longer read them.');
   }
-  function memSheet() {
-    const lostTip = t('Kau bisa membacanya. Ia tidak lagi berarti apa-apa.', 'You can read it. It no longer means anything.');
-    const parts = [];
-    if (reached('told')) parts.push(`<section class="mem-sec told"><h3>${esc(t('Yang diceritakan kepadanya', 'What she was told'))}</h3><ol>${TOLD.map(x => `<li><i aria-hidden="true">✦</i><span>${esc(x)}</span></li>`).join('')}</ol><p class="mem-n">${esc(t('Ia tidak mengingat pernah berada di sana.', 'She does not remember ever being there.'))}</p></section>`);
-    if (reached('mem')) parts.push(`<section class="mem-sec"><h3>${esc(t('Yang masih kuingat dari atas', 'What I still remember from above'))}</h3><ol>${MEM.map(([k, l0, when], _, __, l = memLabel(k, l0)) => `<li class="${reached(when) ? 'lost' : ''}"${reached(when) ? ` title="${esc(lostTip)}"` : ''}><i aria-hidden="true">✦</i><span>${esc(l)}</span>${k === 'sungai' && S.river ? `<small>${reached(when) ? [...S.river].map(c => `<i>${esc(c)}</i>`).join('') : esc(S.river)}</small>` : ''}</li>`).join('')}</ol>${memLeft() === 0 ? `<p class="mem-n">${esc(lostTip)}</p>` : ''}</section>`);
-    if (reached('bag')) parts.push(`<section class="mem-sec"><h3>${esc(t('Di dalam tas', 'In the bag'))}</h3><ol>${BAG.map(x => `<li><i aria-hidden="true">·</i><span>${esc(x)}</span></li>`).join('')}</ol></section>`);
-    $('#memTitle').textContent = reached('mother') ? t('Ibu', 'Mother') : reached('mem') ? t(`${memLeft()} bintang`, `${memLeft()} stars`) : t('Bintang', 'Stars');
-    $('#memBody').innerHTML = parts.join('') || `<p class="mem-empty">${esc(t('Belum ada yang perlu dihitung. Turunlah.', 'Nothing to count yet. Go down.'))}</p>`;
-  }
-  const memDlg = $('#mem');
-  $('#openMem').onclick = () => { memSheet(); memDlg.showModal(); };
+  memBtn.onclick = () => memDlg.showModal();
   memDlg.addEventListener('click', e => { if (e.target === memDlg || e.target.closest('[data-close]')) memDlg.close(); });
 
-  /* ---------- suara (tidak menyala sendiri) ---------- */
-  const Snd = (() => {
-    let ac = null, wind = null, wg = null, on = false;
-    const start = () => {
-      try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
-      if (ac.state === 'suspended') ac.resume();
-      if (!wind) {
-        const len = ac.sampleRate * 3, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0); let last = 0;
-        for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; }
-        wind = ac.createBufferSource(); wind.buffer = buf; wind.loop = true;
-        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
-        wg = ac.createGain(); wg.gain.value = 0; wind.connect(lp).connect(wg).connect(ac.destination); wind.start();
-      }
-      return true;
-    };
-    const tone = (f, dur, g0, type = 'sine', f2) => { if (!on || !ac) return; const o = ac.createOscillator(), g = ac.createGain(), n = ac.currentTime; o.type = type; o.frequency.setValueAtTime(f, n); if (f2) o.frequency.exponentialRampToValueAtTime(f2, n + dur); g.gain.setValueAtTime(g0, n); g.gain.exponentialRampToValueAtTime(.0001, n + dur); o.connect(g).connect(ac.destination); o.start(n); o.stop(n + dur + .05); };
-    return {
-      get on() { return on; },
-      set(v) { on = v && start(); if (wg) wg.gain.setTargetAtTime(on ? .05 : 0, ac.currentTime, .6); return on; },
-      wind(level) { if (on && wg) wg.gain.setTargetAtTime(.025 + level * .07, ac.currentTime, 1.4); },
-      beat() { tone(62, .22, .5, 'sine', 40); setTimeout(() => tone(55, .2, .35, 'sine', 38), 260); },
-      coin(g = .12) { tone(2350, .5, g, 'triangle'); },
-      lid() { tone(1250, .08, .1, 'square', 900); }
-    };
-  })();
-  const paintSound = () => { const b = $('#sound'); b.setAttribute('aria-pressed', String(Snd.on)); b.textContent = Snd.on ? t('Hidup', 'On') : t('Mati', 'Off'); };
-  $('#sound').onclick = () => { Snd.set(!Snd.on); store.set('dasar:sound', Snd.on); paintSound(); };
-  paintSound();
-
-  /* ---------- nyala kecil ---------- */
-  const flame = $('#flame'), tip = $('#flameTip');
-  let dim = 0, idleAt = Date.now(), tipT = 0, flareT = 0;
-  const say = (m, ms = 3600) => { tip.textContent = m; tip.hidden = false; clearTimeout(tipT); tipT = setTimeout(() => { tip.hidden = true; }, ms); };
-  // di desa, sesudah ia terbangun, nyalanya tidak terlihat; di kalimat terakhir dongengnya ia ada lagi
-  const wakeAt = P.findIndex(p => p.sec === SECS.length - 1), againAt = at(/^Lihat tanganmu, sayang/);
-  const roomOn = () => reached('nyala') && !(wakeAt >= 0 && cur >= wakeAt && (againAt < 0 || cur < againAt));
-  flame.addEventListener('click', () => {
-    S.kept++; save(); const wasDim = dim > .45; dim = 0; idleAt = Date.now(); paintFlame();
-    flame.classList.remove('flare'); void flame.offsetWidth; flame.classList.add('flare'); clearTimeout(flareT); flareT = setTimeout(() => flame.classList.remove('flare'), 900);
-    if (reached('beat')) Snd.beat();
-    say(wasDim ? t('Ia kembali terang.', 'It burns bright again.') : reached('beat') ? t('Ia berdetak sedikit lebih kuat.', 'It beats a little stronger.') : t('Kau menemaninya.', 'You keep it company.'), 2400);
-    announce(t('Nyala itu kembali terang.', 'The flame burns bright again.'));
-  });
-  // di kamar tanpa jendela halaman menjadi gelap; huruf hanya diterangi nyala, dan membeku kalau nyalanya meredup
-  let warmT = 0, warmAt = 0;
-  function startWarm(e) {
-    if (!roomOn() || calm() || e.target.closest('button, a, input, [contenteditable="plaintext-only"], .flame')) return;
-    clearInterval(warmT); warmAt = Date.now();
-    warmT = setInterval(() => {
-      if (Date.now() - warmAt < 450) return;
-      root.classList.add('warming');
-      if (dim > 0) { dim = Math.max(0, dim - .035); idleAt = Date.now(); paintFlame(); }
-      else if (!root.classList.contains('warm-done')) { root.classList.add('warm-done'); S.kept++; save(); }
-    }, 90);
-  }
-  const stopWarm = () => { clearInterval(warmT); root.classList.remove('warming', 'warm-done'); };
-  story.addEventListener('pointerdown', startWarm);
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => story.addEventListener(ev, stopWarm));
-  addEventListener('scroll', () => { if (Date.now() - warmAt < 450) stopWarm(); }, { passive: true });
-  function paintFlame() {
-    root.toggleAttribute('data-room', roomOn());
-    flame.hidden = !(roomOn() || flame.classList.contains('docking'));
-    flame.classList.toggle('heart', reached('beat'));
-    flame.classList.toggle('palms', reached('palms'));
-    root.style.setProperty('--dim', dim.toFixed(3));
-    $('#flameLabel').textContent = reached('beat') ? t('Ketuk: temani yang berdetak itu', 'Tap: keep the beating thing company') : t('Ketuk: temani nyala itu', 'Tap: keep the flame company');
-  }
-  // diam terlalu lama di kamar itu: nyalanya meredup
-  const markActive = () => { idleAt = Date.now(); };
-  ['scroll', 'keydown', 'pointerdown', 'touchstart'].forEach(e => addEventListener(e, markActive, { passive: true }));
-  setInterval(() => {
-    if (!roomOn() || calm() || document.hidden || curSec < 2 || curSec > 5) return;
-    const quiet = (Date.now() - idleAt) / 1000;
-    if (quiet > 14 && dim < 1) { dim = Math.min(1, dim + .04); paintFlame(); if (dim > .5 && tip.hidden) say(t('Jangan biarkan dia tertidur.', 'Do not let it fall asleep.'), 5000); }
-  }, 1000);
-  // turun dari halaman ke sudut layar
-  function dock() {
-    const land = $('#flLand'); if (!land || flame.dataset.docked) return;
-    flame.dataset.docked = '1';
-    if (calm()) { paintFlame(); return; }
-    const a = land.getBoundingClientRect(); flame.hidden = false; flame.classList.add('docking');
-    const b = flame.getBoundingClientRect();
-    flame.animate([{ transform: `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(1.6)`, opacity: .2 }, { transform: 'none', opacity: 1 }], { duration: 1400, easing: 'cubic-bezier(.2,.9,.25,1)' }).onfinish = () => { flame.classList.remove('docking'); paintFlame(); };
-    land.classList.add('left');
-  }
-  let beatT = 0;
-  const beatLoop = () => { clearInterval(beatT); if (!reached('beat')) return; beatT = setInterval(() => { if (!flame.hidden && !document.hidden && Snd.on) Snd.beat(); }, 1100); };
-
-  /* ---------- benda-benda yang bisa disentuh ---------- */
-  story.addEventListener('click', e => {
-    if (e.target.closest('[data-mine-edit]')) { mineEdit(!$('[data-stars]').classList.contains('editing')); return; }
-    const tilt = e.target.closest('[data-tilt]');
-    if (tilt) { const f = tilt.closest('.bill'); f.classList.toggle('tilted'); tilt.textContent = f.classList.contains('tilted') ? t('Kembalikan', 'Put it back') : t('Miringkan ke arah jendela', 'Tilt it toward the window'); return; }
-    const flip = e.target.closest('[data-flip]');
-    if (flip) { const f = flip.closest('.house'); f.classList.toggle('righted'); $('[data-house-cap]', f).textContent = f.classList.contains('righted') ? t('Sekarang pohon-pohonlah yang tumbuh ke arah yang salah.', 'Now it is the trees that grow the wrong way.') : t('Rumahnya terbalik. Pintunya tidak.', 'The house is upside down. Its door is not.'); flip.textContent = f.classList.contains('righted') ? t('Kembalikan', 'Put it back') : t('Betulkan letaknya', 'Set it right'); return; }
-    if (e.target.closest('[data-coin]')) { S.coin = true; save(); Snd.coin(); const box = e.target.closest('.coin-ask'); box.classList.add('done'); box.querySelector('button').outerHTML = `<span class="coin-done">${esc(t('Koinnya masuk ke goresan.', 'The coin goes into the mark.'))}</span>`; return; }
-    const ms = e.target.closest('[data-measure]');
-    if (ms) { const f = ms.closest('.thread'); f.classList.remove('run'); void f.offsetWidth; f.classList.add('run'); ms.textContent = t('Ukur lagi', 'Measure again'); return; }
-    const sp = e.target.closest('[data-spine]');
-    if (sp) {
-      if (sp.classList.contains('out')) return;
-      sp.classList.add('out');
-      const k = SPINES[+sp.dataset.spine][1];
-      if (k === 'sea') sp.insertAdjacentHTML('beforeend', `<a class="spine-link" href="../../${location.search}#baca-kepala-yang-dingin-kota-yang-hangat">${esc(t('Kepala yang Dingin, Kota yang Hangat', 'A Cold Head, A Warm City'))} →</a>`);
-      setTimeout(() => { sp.classList.remove('out'); sp.querySelector('.spine-link')?.remove(); }, k === 'torn' ? 1300 : 5200);
-      return;
+  /* ---------- bergulir ---------- */
+  let curF = -1, ticking = false;
+  function frame() {
+    ticking = false;
+    const line = innerHeight * .5; let r = -1;
+    for (const p of paras) { if (p.getBoundingClientRect().top < line) r = +p.dataset.i; else break; }
+    if (r > S.reach) {
+      const before = S.reach; S.reach = r; save();
+      const fresh = FORGET.filter(f => before < f.at && r >= f.at).map(f => f.id);
+      if (fresh.length) {
+        paintForget(fresh);
+        toast(fresh.includes('angka') ? t('Angka-angkanya hilang dari seluruh halaman, juga dari yang sudah kau baca.', 'The numbers are gone from every page, even the ones you have read.') : fresh.length > 1 ? t(`${fresh.length} kata hilang dari seluruh halaman, juga dari yang sudah kau baca.`, `${fresh.length} words are gone from every page, even the ones you have read.`) : t('Satu kata hilang dari seluruh halaman, juga dari yang sudah kau baca.', 'One word is gone from every page, even the ones you have read.'));
+      } else if (MEM_AT >= 0 && before < MEM_AT && r >= MEM_AT) memPaint();
     }
-    if (e.target.closest('[data-open-book]')) { goAndBack(0); return; }
-    if (e.target.closest('[data-look-up]')) { const first = story.querySelector('.ibu'); if (first) goAndBack(+first.closest('p').dataset.i); return; }
-  });
-  story.addEventListener('submit', e => {
-    const f = e.target.closest('[data-river-form]'); if (!f) return; e.preventDefault();
-    const v = f.r.value.trim().slice(0, 28); if (!v) return;
-    S.river = v; save(); dim = 0; paintFlame(); flame.classList.add('flare'); setTimeout(() => flame.classList.remove('flare'), 900);
-    riverPaint(); announce(t('Cahaya mengembang.', 'The light swells.'));
-  });
-  const muteWord = w => [...w].map(c => `<i>${esc(c)}</i>`).join('');
-  function riverPaint() {
-    const lost = reached('riverLost'), fig = $('[data-river]');
-    if (fig) {
-      fig.classList.toggle('given', !!S.river); fig.classList.toggle('lost', lost);
-      $('[data-river-word]', fig).innerHTML = S.river ? (lost ? muteWord(S.river) : esc(S.river)) : '';
-      const form = $('[data-river-form]', fig); if (form) form.hidden = !!S.river;
-    }
-    const jw = $('[data-jar-word]'); if (jw) jw.innerHTML = S.river ? muteWord(S.river) : '<span class="nm-blank"></span>';
+    let f = -1; $$('.floor').forEach((s, i) => { if (s.getBoundingClientRect().top < innerHeight * .4) f = i; });
+    if (f !== curF) { curF = f; $('#stepChip').hidden = f < 0; if (f >= 0 && G) G.step(f + 1, FLOORS.length, t('Lantai', 'Floor')); }
+    const max = document.documentElement.scrollHeight - innerHeight, fr = max > 0 ? scrollY / max : 0;
+    clearTimeout(frame.t); frame.t = setTimeout(() => {
+      if (scrollY > 200) { store.set('dasar2:place', +fr.toFixed(4)); const pr = store.get('prog', {}) || {}; pr[SLUG] = Math.max(pr[SLUG] || 0, +fr.toFixed(3)); store.set('prog', pr); }
+      if (fr > .97 && !$('#end').dataset.done) finish();
+    }, 300);
   }
-  // kembali ke tempatmu sesudah melihat ke atas
-  let backTo = null;
-  function goAndBack(i) {
-    backTo = scrollY; const el = i === 0 ? story.querySelector('p[data-i="0"]') : pEl(i);
-    let pill = $('#backPill'); if (!pill) { pill = document.createElement('button'); pill.type = 'button'; pill.id = 'backPill'; pill.className = 'back-pill'; document.body.append(pill); pill.onclick = () => { if (backTo != null) scrollTo({ top: backTo, behavior: calm() ? 'instant' : 'smooth' }); pill.hidden = true; backTo = null; }; }
-    pill.textContent = t('Kembali ke halamanmu', 'Back to your page'); pill.hidden = false;
-    el?.scrollIntoView({ block: 'center', behavior: calm() ? 'instant' : 'smooth' });
-  }
-
-  /* ---------- membaca: di mana, dan apa yang terjadi ---------- */
-  let cur = -1, curSec = -1, ticking = false;
-  /* ---------- buku yang membaca pembacanya ----------
-     Buku-buku di kamar itu memuat riwayat orang yang membacanya. Buku ini juga. Ia memperhatikan caramu membaca:
-     jam, halaman yang kau baca dua kali, berapa lama kau diam, kapan kau pergi dan kembali, nama dan sungaimu.
-     Semua diambil dari yang benar-benar terjadi di perangkat ini, tidak dikirim ke mana pun. Catatannya muncul di
-     tepi halaman dengan tangan lain, pensil, bukan tangan gadis itu; di akhir, ia menagihnya. */
-  const W = {
-    t0: Date.now(), active: 0, lastTick: Date.now(), backs: 0, backPages: new Set(), seenPages: new Set(), leaves: 0, flips: [], pageAt: Date.now(),
-    prev: store.get('dasar:seen', null), hour: new Date().getHours(), said: new Set(), lastNote: -9,
-    dark: matchMedia('(prefers-color-scheme: dark)').matches || root.getAttribute('data-theme') === 'dark',
-    clock: d => `${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`,
-    mins() { return Math.max(1, Math.round(this.active / 60000)); },
-    note(html) {
-      let el = $('#watch');
-      if (!el) { el = document.createElement('p'); el.id = 'watch'; el.className = 'watch'; el.setAttribute('role', 'note'); document.body.append(el); }
-      el.innerHTML = html; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); el.hidden = false;
-    },
-    clear() { const el = $('#watch'); if (el) el.hidden = true; },
-    say(id, html, n) { if (this.said.has(id)) return false; this.said.add(id); this.lastNote = n; this.note(html); return true; },
-    onPage(n, from) {
-      const now = Date.now();
-      if (n < from) { this.backs++; this.backPages.add(n); }
-      this.flips.push(now); this.flips = this.flips.filter(x => now - x < 6000);
-      const again = this.seenPages.has(n); this.seenPages.add(n); this.pageAt = now;
-      this.clear();
-      // tagihan pembaca: seperti tagihan tabib, angkanya pelan-pelan hilang dari kertas
-      const rb = $('[data-reader-bill]'); if (rb && rb.offsetParent && !rb.classList.contains('fading')) setTimeout(() => rb.classList.add('fading'), 1500);
-      if (n === 0 || n - this.lastNote < 3 && !again) return;
-      const nm = S.name, pick = [];
-      if (n >= 2 && this.prev && this.prev.page > 3 && now - this.prev.at > 3600000) {
-        const d = Math.round((now - this.prev.at) / 86400000);
-        pick.push(['back-visit', t(`Kau kembali. Terakhir kali kau berhenti di halaman ${this.prev.page}, ${d < 1 ? 'beberapa jam' : d + ' hari'} yang lalu. Buku ini tidak membalik dirinya sendiri selama kau pergi.`, `You came back. Last time you stopped at page ${this.prev.page}, ${d < 1 ? 'a few hours' : d + ' days'} ago. The book did not turn itself while you were gone.`)]);
-      }
-      if (n >= 2 && (this.hour >= 22 || this.hour < 4)) pick.push(['late', t(`Sudah pukul ${this.clock(new Date())} di tempatmu. Ia juga selalu membaca ketika yang lain sudah tidur.`, `It is ${this.clock(new Date())} where you are. She also always read while the others slept.`)]);
-      if (again && from > n) pick.push(['reread', t('Kau membalik kembali ke halaman ini. Yang tertinggal di sini tidak akan hilang lebih lambat karena dibaca dua kali.', 'You turned back to this page. What is left here will not fade any slower for being read twice.')]);
-      if (this.flips.length >= 4) pick.push(['fast', t('Kau membalik terlalu cepat. Ia juga dulu menghitung undakan supaya tidak memikirkan yang lain.', 'You are turning too fast. She too once counted steps so as not to think of anything else.')]);
-      if (this.dark && n >= 6) pick.push(['dark', t('Kau membaca dengan layar gelap. Di kamar itu juga tidak ada jendela.', 'You are reading with a dark screen. That room had no window either.')]);
-      if (nm && reached('nameLost')) pick.push(['name', t(`${esc(nm)}. Buku ini sudah menuliskannya beberapa halaman yang lalu. Coba ucapkan tanpa melihat: masih berbunyi?`, `${esc(nm)}. This book wrote it down a few pages ago. Try saying it without looking: does it still make a sound?`)]);
-      if (S.river && reached('riverLost')) pick.push(['river', t(`Kau memberinya “${esc(S.river)}”. Buku ini menyimpannya di rak. Kau masih ingat di mana sungai itu?`, `You gave it “${esc(S.river)}”. This book keeps it on a shelf. Do you still remember where that river is?`)]);
-      if (this.leaves && reached('nyala')) pick.push(['left', t(`Kau pergi ${this.leaves} kali dan kembali. Nyala itu tidak pernah pergi.`, `You left ${this.leaves} times and came back. The flame never left.`)]);
-      if (reached('stall')) pick.push(['minutes', t(`Kau sudah memberikan ${this.mins()} menit kepada buku ini. Ia tidak memintanya. Kau memberikannya.`, `You have given this book ${this.mins()} minutes. It did not ask. You gave them.`)]);
-      if (reached('blank')) pick.push(['knows', t('Buku ini sekarang tahu lebih banyak tentangmu daripada tentang pengarangnya.', 'This book now knows more about you than about its author.')]);
-      for (const [id, txt] of pick) if (this.say(id, txt, n)) break;
-    },
-    // tagihan untuk pembaca, seperti tagihan tabib di halaman pertama; angkanya juga akan hilang
-    billHTML() {
-      const rows = [
-        [t('Waktu yang kau berikan', 'Time you gave'), `${this.mins()} ${t('menit', 'min')}`],
-        [t('Jam kau mulai membaca', 'The hour you began'), this.clock(new Date(this.t0))],
-        [t('Halaman yang kau baca dua kali', 'Pages you read twice'), String(this.backPages.size)],
-        [t('Kau pergi lalu kembali', 'You left and came back'), `${this.leaves} ${t('kali', 'times')}`],
-        [t('Nyala yang kau temani', 'Times you kept the flame company'), `${S.kept} ${t('kali', 'times')}`]
-      ];
-      if (S.name) rows.push([t('Nama', 'Name'), `<s>${esc(S.name)}</s> ${esc(t('Ibu', 'Mother'))}`]);
-      if (S.river) rows.push([t('Sungai', 'River'), muteWord(S.river)]);
-      return `<figure class="bill reader-bill" data-reader-bill aria-label="${esc(t('Tagihan untuk pembaca', 'A bill for the reader'))}">
-        <p class="rb-k">${esc(t('Tagihan untuk pembaca buku ini', 'A bill for the reader of this book'))}</p>
-        ${rows.map(([a, b]) => `<p class="rb-r"><span>${esc(a)}</span><b>${b}</b></p>`).join('')}
-        <p class="rb-f">${esc(t('ditulis tangan, bukan oleh pengarangnya', 'handwritten, not by its author'))}</p></figure>`;
-    }
-  };
-  setInterval(() => { const now = Date.now(); if (!document.hidden && now - W.lastTick < 15000 && now - idleAt < 60000) W.active += now - W.lastTick; W.lastTick = now; }, 1000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) W.leaves++; else if (W.leaves && Book.on && where.started) W.say('left-now', t(`Kau pergi sebentar. Halaman ${Book.page} tidak ke mana-mana.`, `You stepped away. Page ${Book.page} stayed where it was.`), Book.page); });
-  addEventListener('pagehide', () => store.set('dasar:seen', { page: Book.page, at: Date.now() }));
-  const Book = {
-    on: !qs.has('gulir'), page: 0, pages: [], blocks: [],
-    lastI() { let i = -1; for (let k = 0; k <= this.page && k < this.pages.length; k++) this.pages[k].forEach(b => { $$('p[data-i]', b).concat(b.matches('p[data-i]') ? [b] : []).forEach(p => { i = Math.max(i, +p.dataset.i); }); }); return i; },
-    frac() { return this.pages.length > 1 ? this.page / (this.pages.length - 1) : 0; },
-    init() {
-      if (!this.on) return;
-      document.body.classList.add('book');
-      const pager = document.createElement('nav'); pager.className = 'pager'; pager.setAttribute('aria-label', t('Halaman', 'Pages'));
-      pager.innerHTML = `<button type="button" class="pg-b" data-pg="-1" aria-label="${esc(t('Halaman sebelumnya', 'Previous page'))}">‹</button><span class="pg-n" id="pgN"></span><button type="button" class="pg-b" data-pg="1" aria-label="${esc(t('Halaman berikutnya', 'Next page'))}">›</button>`;
-      document.body.append(pager);
-      pager.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) this.go(this.page + +b.dataset.pg); });
-      // ketuk tepi, geser, panah
-      let sx = 0, sy = 0, st = 0;
-      const read = $('#read');
-      read.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = Date.now(); });
-      read.addEventListener('pointerup', e => {
-        if (e.target.closest('button, a, input, textarea, label, [contenteditable="plaintext-only"], [data-spine], figure, form')) return;
-        const dx = e.clientX - sx, dy = e.clientY - sy, quick = Date.now() - st < 320;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) { this.go(this.page + (dx < 0 ? 1 : -1)); return; }
-        if (quick && Math.abs(dx) < 8 && Math.abs(dy) < 8) { const x = e.clientX / innerWidth; if (x > .62) this.go(this.page + 1); else if (x < .3) this.go(this.page - 1); }
-      });
-      addEventListener('keydown', e => {
-        if (e.target.closest && e.target.closest('input, textarea, [contenteditable="plaintext-only"]')) return;
-        if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); this.go(this.page + 1); }
-        if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); this.go(this.page - 1); }
-      });
-      $('#depth').addEventListener('click', e => { const a = e.target.closest('a[href^="#lantai-"]'); if (!a) return; e.preventDefault(); this.toSec(+a.getAttribute('href').slice(8) - 1); });
-      document.addEventListener('click', e => { const a = e.target.closest('a.go[href^="#lantai-"]'); if (a) { e.preventDefault(); this.toSec(0); } });
-      let rz = 0; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => this.paginate(), 200); });
-      this.saved = store.get('dasar:page', 0); this.paginate();
-    },
-    // susun ulang halaman: sampul, lalu isi setiap lantai (setiap lantai mulai di halaman baru), lalu akhir
-    paginate() {
-      const keep = this.pages[this.page] && this.pages[this.page][0];
-      const read = $('#read'), H = read.clientHeight - 8;
-      const groups = [[$('#cover')]];
-      $$('#story > section').forEach(sec => groups.push([...sec.children].map(ch => ch)));
-      const end = $('#end'); if (!end.hidden) groups.push([end]);
-      this.blocks.forEach(b => b.classList.remove('off'));
-      $$('#story > section').forEach(s => s.classList.remove('off'));
-      read.classList.add('measuring');
-      const pages = [];
-      groups.forEach(g => {
-        let page = [], h = 0;
-        g.forEach(b => {
-          const cs = getComputedStyle(b), bh = b.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
-          if (page.length && h + bh > H) { pages.push(page); page = []; h = 0; }
-          page.push(b); h += bh;
-        });
-        if (page.length) pages.push(page);
-      });
-      read.classList.remove('measuring');
-      this.pages = pages; this.blocks = pages.flat();
-      const at = keep ? pages.findIndex(p => p.includes(keep)) : -1;
-      this.show(at >= 0 ? at : Math.min(this.page, pages.length - 1), true);
-    },
-    show(n, quiet) {
-      n = Math.max(0, Math.min(this.pages.length - 1, n));
-      const dir = n > this.page ? 1 : -1, from = this.page; this.page = n;
-      const on = new Set(this.pages[n]);
-      this.blocks.forEach(b => b.classList.toggle('off', !on.has(b)));
-      $$('#story > section').forEach(s => s.classList.toggle('off', ![...s.children].some(ch => on.has(ch))));
-      const read = $('#read'); read.scrollTop = 0;
-      if (!quiet && !calm()) { read.classList.remove('turn-l', 'turn-r'); void read.offsetWidth; read.classList.add(dir > 0 ? 'turn-r' : 'turn-l'); }
-      const secEl = this.pages[n][0].closest('#story > section'), si = secEl ? +secEl.dataset.s : -1;
-      $('#pgN').textContent = n === 0 ? t('Sampul', 'Cover') : `${n} · ${si >= 0 ? nameOf(si) : t('Sesudah dongengnya', 'After the tale')}`;
-      $$('.pager .pg-b').forEach(b => { b.disabled = +b.dataset.pg < 0 ? n === 0 : n === this.pages.length - 1; });
-      store.set('dasar:page', n);
-      markActive();
-      if (where.started) { frame(); W.onPage(n, from); store.set('dasar:seen', { page: n, at: Date.now() }); }
-    },
-    go(n) { if (n === this.page || n < 0 || n >= this.pages.length) return; this.show(n); if (n === this.pages.length - 1 && !$('#end').dataset.done) { finish(); } },
-    toSec(si) { const sec = $(`#lantai-${si + 1}`); if (!sec) return; const k = this.pages.findIndex(p => p.some(b => sec.contains(b))); if (k >= 0) this.show(k); },
-    live(cnt) {
-      const on = has('stairs') && has('stairsEnd') && cur >= I.stairs && cur < I.stairsEnd;
-      cnt.hidden = !on;
-      if (on) {
-        const f = (cur - I.stairs + 1) / Math.max(1, I.stairsEnd - I.stairs), n = 101 + Math.floor(f * 340), mark = n >= 196 && n % 100 >= 96 || n >= 200 && n % 100 <= 6;
-        $('#counterN').textContent = n; $('#counterMark').textContent = mark ? (S.coin ? '☾ ●' : '☾') : ''; cnt.classList.toggle('mark', mark);
-      }
-      const fall = $('#coinfall'), fon = has('stairsEnd') && this.pages[this.page].some(b => b.matches && b.matches(`p[data-i="${I.stairsEnd}"]`));
-      if (fall && fon !== !fall.hidden) fall.hidden = !fon;
-      const th = $('[data-thread]'); if (th && !th.dataset.seen && th.offsetParent) { th.dataset.seen = '1'; th.classList.add('run'); }
-    }
-  };
-  const fired = new Set();
-  const once = (k, fn) => { if (fired.has(k)) return; fired.add(k); fn(); };
-  const pulse = (cls, ms) => { if (calm()) return; document.body.classList.remove(cls); void document.body.offsetWidth; document.body.classList.add(cls); setTimeout(() => document.body.classList.remove(cls), ms); };
-  const between = (a, b) => has(a) && cur >= I[a] && (b == null || !has(b) || cur < I[b]);
-  function air() {
-    // dingin di tepi layar, kehangatan yang terlalu dekat, gelap yang mendekat
-    let frost = [.35, .1, .55, .7, .35, .85, .25, .1][Math.max(0, curSec)] ?? .2, warm = [0, .35, 0, 0, .1, 0, .3, .35][Math.max(0, curSec)] ?? 0;
-    let dark = Math.max(0, curSec) / Math.max(1, SECS.length - 1) * .55;
-    if (has('touch') && cur >= I.touch && cur < I.touch + 5) warm = Math.max(warm, .32);
-    if (between('warmMorning', 'stairs')) { frost = 0; warm = .6; }
-    if (between('out', 'back')) { frost = 0; warm = .95; dark = .5; }
-    if (between('stall', 'thin')) dark = 1;
-    if (between('faceLast', 'palm')) dark = Math.max(dark, .85);
-    if (between('blank', 'told')) dark = Math.max(dark, .8);
-    if (between('told')) { frost = 0; warm = .5; }
-    if (between('tale')) { warm = .7; dark = .55; }
-    root.style.setProperty('--frost', frost.toFixed(2)); root.style.setProperty('--warm', warm.toFixed(2)); root.style.setProperty('--dark', dark.toFixed(2));
-    document.body.classList.toggle('breathing', !calm() && (between('warmMorning', 'stairs') || between('out', 'back') || between('tale')));
-    document.body.classList.toggle('stalled', between('late', 'thin'));
-    document.body.classList.toggle('blanked', between('blank', 'told'));
-    Snd.wind(Math.min(1, frost + dark * .4));
-  }
-  function where() {
-    const ps = story.querySelectorAll('p[data-i]'), line = innerHeight * .45; let c = -1, r = -1;
-    if (Book.on) { c = r = Book.lastI(); }
-    else {
-      for (const p of ps) { if (p.getBoundingClientRect().top < line) c = +p.dataset.i; else break; }
-      const reachLine = innerHeight * .5;
-      for (const p of ps) { if (p.getBoundingClientRect().top < reachLine) r = +p.dataset.i; else break; }
-    }
-    const before = S.reach;
-    if (r > S.reach) { S.reach = r; save(); }
-    if (c !== cur) {
-      cur = c; const s = c < 0 ? -1 : P[c].sec;
-      if (s !== curSec) {
-        curSec = s;
-        $$('#depth a').forEach((a, i) => { a.classList.toggle('on', i === s); a.classList.toggle('past', i < s); });
-        root.style.setProperty('--depth', (Math.max(0, s) / Math.max(1, SECS.length - 1)).toFixed(3));
-        $('#stepChip').hidden = s < 0; if (s >= 0 && G) G.step(s + 1, SECS.length, t('Lantai', 'Floor'));
-      }
-      air(); paintFlame();
-    }
-    if (S.reach !== before || !where.painted) { where.painted = true; persist(before); }
-    live();
-  }
-  // keadaan yang tetap, dari seberapa jauh kau sudah turun; kejutan hanya saat kau melewatinya sekarang
-  function persist(before) {
-    const crossed = k => has(k) && before < I[k] && S.reach >= I[k] && where.started;
-    $$('[data-bill]').forEach(b => b.classList.toggle('vanished', reached('billGone')));
-    if (crossed('billGone')) announce(t('Angka-angkanya hilang dari kertas.', 'The numbers are gone from the paper.'));
-    if (crossed('mari')) pulse('mari-now', 2600);
-    if (reached('nyala')) { if (crossed('nyala')) dock(); else if (!flame.dataset.docked) { flame.dataset.docked = '1'; $('#flLand')?.classList.add('left'); } }
-    if (crossed('river') && !S.river) $('[data-river] input')?.focus({ preventScroll: true });
-    if (crossed('lid')) { Snd.lid(); $('[data-jar]')?.classList.add('shut'); }
-    if (reached('lid')) $('[data-jar]')?.classList.add('shut');
-    if (crossed('inhale') || crossed('breath2')) pulse('inhale', 4200);
-    if (crossed('late')) { pulse('skip', 1600); if (Snd.on) setTimeout(() => Snd.beat(), 900); }
-    if (crossed('beat')) { pulse('beat-now', 2400); beatLoop(); announce(t('Nyala itu berdetak.', 'The flame beats.')); }
-    if (crossed('palm') || crossed('palm2')) pressPalm();
-    document.body.classList.toggle('notes-on', reached('notes'));
-    document.body.classList.toggle('penjaga', reached('penjaga'));
-    document.body.classList.toggle('retold', S.retold > 0);
-    if (crossed('penjaga')) announce(t('Setiap Ibu di atas menyimpan kata lain.', 'Every Mother above holds another word.'));
-    if (reached('turn')) pEl(I.warn)?.classList.add('turned');
-    memPaint(); riverPaint(); paintName(); paintFlame();
-  }
-  function pressPalm() {
-    if (calm()) return; const p = $('#palm'); p.hidden = false; p.classList.remove('on'); void p.offsetWidth; p.classList.add('on');
-    setTimeout(() => { p.hidden = true; p.classList.remove('on'); }, 3200);
-  }
-  // hal-hal yang mengikuti posisi gulir: hitungan undakan, koin yang jatuh, benang
-  function live() {
-    const cnt = $('#counter');
-    if (Book.on) { Book.live(cnt); return; }
-    if (has('stairs') && has('stairsEnd')) {
-      const a = pEl(I.stairs).getBoundingClientRect().top, b = pEl(I.stairsEnd - 1).getBoundingClientRect().bottom, mid = innerHeight * .5;
-      const on = a < mid && b > mid; cnt.hidden = !on;
-      if (on) {
-        const f = (mid - a) / Math.max(1, b - a), n = 101 + Math.floor(f * 340), mark = n >= 196 && n % 100 >= 96 || n >= 200 && n % 100 <= 6;
-        $('#counterN').textContent = n; $('#counterMark').textContent = mark ? (S.coin ? '☾ ●' : '☾') : '';
-        cnt.classList.toggle('mark', mark);
-      }
-    }
-    const fall = $('#coinfall');
-    if (has('stairsEnd')) { const r = pEl(I.stairsEnd).getBoundingClientRect(), on = r.top < innerHeight * .8 && r.bottom > innerHeight * .1; if (on !== !fall.hidden) { fall.hidden = !on; if (on && Snd.on) { let k = 0; const tk = setInterval(() => { if (fall.hidden || k > 6) return clearInterval(tk); Snd.coin(.09 / (k + 1)); k++; }, 1500); } } }
-    const th = $('[data-thread]'); if (th && !th.dataset.seen) { const r = th.getBoundingClientRect(); if (r.top < innerHeight * .7 && r.bottom > 0) { th.dataset.seen = '1'; th.classList.add('run'); } }
-  }
-  const frame = () => {
-    ticking = false; where();
-    const max = document.documentElement.scrollHeight - innerHeight, f = Book.on ? Book.frac() : max > 0 ? scrollY / max : 0;
-    if (Book.on ? Book.page > 0 : scrollY > 200) { store.set('dasar:place', +f.toFixed(4)); const pr = store.get('prog', {}) || {}; pr[SLUG] = Math.max(pr[SLUG] || 0, +f.toFixed(3)); store.set('prog', pr); }
-    if (f > .97 && !$('#end').dataset.done) finish();
-  };
   addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
   addEventListener('resize', () => requestAnimationFrame(frame));
 
-  /* ---------- akhir: ceritakan lagi ---------- */
-  function endHTML() {
-    const nm = S.name;
-    // dongengnya mulai lagi, kali ini diceritakan kepadamu
-    const first = P[0] ? plain(P[0].text) : '';
-    return `${W.billHTML()}<div class="again" aria-label="${esc(t('Dongengnya mulai lagi', 'The tale begins again'))}">
-      <p class="again-k">${esc(t('Ibu bercerita', 'Mother is telling it'))}</p>
-      <p class="again-t">${esc(first)}</p>
-      <p class="again-you">${esc(t(`Kau baru saja mendengarnya dari awal sampai akhir, ${S.name || 'sayang'}. Sekarang pukul ${W.clock(new Date())}. ${W.mins()} menit. Tanganmu dingin sekali.`, `You have just heard it from beginning to end, ${S.name || 'sweetheart'}. It is ${W.clock(new Date())} now. ${W.mins()} minutes. Your hands are so cold.`))}</p>
-    </div>
-    <div class="end-card">
-      <p class="end-k">${esc(t('Sesudah dongengnya', 'After the tale'))}</p>
-      <ul class="end-list">
-        <li><span>${esc(t('Namamu', 'Your name'))}</span><b>${nm ? `<s>${esc(nm)}</s> ` : ''}${esc(t('Ibu', 'Mother'))}</b></li>
-        <li><span>${esc(t('Yang masih kau ingat', 'What you still remember'))}</span><b>${memLeft()} ${esc(t('dari', 'of'))} ${MEM.length}</b></li>
-        <li><span>${esc(t('Kau menemani nyala itu', 'You kept the flame company'))}</span><b>${S.kept} ${esc(t('kali', S.kept === 1 ? 'time' : 'times'))}</b></li>
-        ${S.river ? `<li><span>${esc(t('Sungaimu', 'Your river'))}</span><b class="mute">${muteWord(S.river)}</b></li>` : ''}
-      </ul>
-      <p class="end-q">“${esc(t('Ceritakan lagi,', 'Tell it again,'))}” <span>${esc(t('kata anak itu dengan suara mengantuk.', 'said the child, sleepily.'))}</span></p>
-      <div class="end-act"><button type="button" class="go" id="retell">${esc(t('Ceritakan lagi', 'Tell it again'))}</button><a class="ghost" href="../../${location.search}#baca-kepala-yang-dingin-kota-yang-hangat">${esc(t('Toples itu, di rak Nyonya Barang Hilang', 'That jar, on the Lady of Lost Things’ shelf'))}</a></div>
-      <div class="end-next" id="endNext"></div>
-    </div>`;
-  }
+  /* ---------- akhir: dongengnya mulai lagi, dengan kata-kata yang tersisa ---------- */
   function finish() {
-    const end = $('#end'); end.dataset.done = '1'; end.hidden = false; end.innerHTML = endHTML();
-    if (G) $('#endNext').innerHTML = G.next(SLUG);
-    $('#retell').onclick = () => { S.retold++; save(); document.body.classList.add('retold'); coverPaint(); if (Book.on) Book.go(0); else scrollTo({ top: 0, behavior: calm() ? 'instant' : 'smooth' }); };
-    if (Book.on) Book.paginate();
+    const end = $('#end'); end.dataset.done = '1'; end.hidden = false;
+    const lost = FORGET.filter(gone).length;
+    end.innerHTML = `<section class="again" aria-label="${esc(t('Dongengnya mulai lagi', 'The tale begins again'))}">
+        <p class="again-k">${esc(t('Ibu bercerita', 'Mother is telling it'))}</p>
+        ${P.slice(0, 2).map(p => `<p class="again-t">${wrap(p.text)}</p>`).join("")}
+        <p class="again-n">${esc(lost ? t('Dongengnya mulai lagi. Beberapa katanya sudah tidak ada, dan yang mendengarnya tidak akan tahu.', 'The tale begins again. Some of its words are gone, and whoever hears it will not know.') : t('Dongengnya mulai lagi.', 'The tale begins again.'))}</p>
+      </section>
+      <div class="end-act"><button type="button" class="go" id="retell">${esc(t('Ceritakan lagi', 'Tell it again'))}</button></div>
+      ${G ? G.next(SLUG) : ''}`;
+    paintForget();
+    $('#retell').onclick = () => { S.retold++; save(); coverPaint(); scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); };
     const st = store.get('stats', {}) || {}; st.done = st.done || []; if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); }
   }
-  if (store.get('dasar:place', 0) > .97 && !Book.on) finish();
-  { const r = store.get('read', []) || []; if (!r.includes(SLUG)) store.set('read', [...r, SLUG]); const st = store.get('stats', {}) || {}; st.plays = st.plays || {}; st.plays[SLUG] = (st.plays[SLUG] || 0) + 1; store.set('stats', st); store.set('last', { key: SLUG, at: Date.now() }); }
 
   /* ---------- sampul ---------- */
   function coverPaint() {
-    const place = store.get('dasar:place', 0);
-    $('#lede').textContent = S.retold ? t('Maka begini, anakku. Dengarkan baik-baik.', 'So it goes, my child. Listen closely.') : t('Tugasmu hanya menjaganya. Duduk di sampingnya, menyayanginya, dan tidak membiarkannya tidur.', 'Your only task is to keep it. Sit beside it, love it, and do not let it sleep.');
     $('#kick').textContent = 'Koda · ' + t('Cerpen', 'Short story') + (S.retold ? ' · ' + t(`diceritakan ${S.retold + 1} kali`, `told ${S.retold + 1} times`) : '');
-    $('#coverAct').innerHTML = `<a class="go" href="#lantai-1">${esc(S.retold ? t('Ceritakan lagi', 'Tell it again') : t('Mulai turun', 'Begin the descent'))}</a>${place > .03 && place < .97 ? `<button type="button" class="ghost" id="resume">${esc(t('Lanjutkan', 'Continue'))} · ${Math.round(place * 100)}%</button>` : ''}`;
-    $('#resume')?.addEventListener('click', () => { if (Book.on) Book.go(Book.saved || 0); else scrollTo({ top: place * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' }); });
+    $('#lede').textContent = t('Seorang gadis dengan tangan yang selalu dingin menerima pekerjaan yang hangat.', 'A girl whose hands are always cold accepts a warm job.');
+    if (EN) $('#how').innerHTML = 'Every memory she gives to the flame will vanish from this page, even from the parts you have already read. Hold a <span class="lupa demo" aria-hidden="true">word</span> that is gone to try to remember it.';
+    const place = store.get('dasar2:place', 0);
+    $('#begin').textContent = S.retold ? t('Ceritakan lagi', 'Tell it again') : place > .03 && place < .97 ? t('Lanjutkan turun', 'Keep going down') : t('Mulai turun', 'Begin the descent');
+    $('#begin').onclick = e => { if (place > .03 && place < .97 && !S.retold) { e.preventDefault(); scrollTo({ top: place * (document.documentElement.scrollHeight - innerHeight), behavior: 'auto' }); } };
   }
   coverPaint();
 
@@ -660,34 +172,24 @@
   const applySize = () => { root.style.setProperty('--size', size + 'px'); $('#smaller').disabled = size <= 15; $('#bigger').disabled = size >= 24; };
   const setSize = d => { size = Math.min(24, Math.max(15, size + d)); applySize(); store.set('rd', { ...(store.get('rd', {}) || {}), size }); };
   $('#smaller').onclick = () => setSize(-1); $('#bigger').onclick = () => setSize(1); applySize();
-  const paintMotion = () => { const b = $('#motion'); b.setAttribute('aria-pressed', String(!root.hasAttribute('data-calm'))); b.textContent = root.hasAttribute('data-calm') ? t('Tenang', 'Still') : t('Aktif', 'On'); };
-  $('#motion').onclick = () => { root.toggleAttribute('data-calm'); store.set('dasar:calm', root.hasAttribute('data-calm')); paintMotion(); air(); };
-  paintMotion();
-  $('#reset').onclick = () => { if (!confirm(t('Lupakan namamu, sungaimu, dan seberapa jauh kau sudah turun?', 'Forget your name, your river, and how far down you have been?'))) return; S = blank(); save(); store.set('dasar:place', 0); location.hash = ''; location.reload(); };
-  if (EN) {
-    $('#sizeLabel').textContent = 'Text size'; $('#soundLabel').textContent = 'Sound (wind, heartbeat)'; $('#motionLabel').textContent = 'Motion and surprises'; $('#themeLabel').textContent = 'Appearance'; $('#resetLabel').textContent = 'Your trail in this story'; $('#reset').textContent = 'Forget';
-    $('#memKick').textContent = 'What I still remember'; $('#openMem').setAttribute('aria-label', 'What I still remember');
-  }
+  $('#reset').onclick = () => { if (!confirm(t('Kembalikan semua kata yang hilang dan mulai dari atas?', 'Bring back every lost word and start from the top?'))) return; S = blank(); save(); store.set('dasar2:place', 0); paintForget(); coverPaint(); $('#end').hidden = true; delete $('#end').dataset.done; scrollTo({ top: 0 }); };
+  if (EN) { $('#resetLabel').textContent = 'Memories in this story'; $('#reset').textContent = 'Bring every word back'; $('#memKick').textContent = 'What I still remember'; $('#back').querySelector('[data-qm-label]').textContent = 'Desk'; $('#begin').textContent = 'Begin the descent'; }
 
-  /* ---------- bingkai situs ---------- */
+  /* ---------- mulai ---------- */
+  { const r = store.get('read', []) || []; if (!r.includes(SLUG)) store.set('read', [...r, SLUG]); const st = store.get('stats', {}) || {}; st.plays = st.plays || {}; st.plays[SLUG] = (st.plays[SLUG] || 0) + 1; store.set('stats', st); }
+  paintForget(); frame();
+  $('#back').addEventListener('click', e => { if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) { e.preventDefault(); history.back(); } });
   if (G) {
-    G.mount({ slug: SLUG, title, helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#story',
+    G.mount({ slug: SLUG, title: TITLE, helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#story',
       lede: t('Seorang gadis dengan tangan yang selalu dingin menerima pekerjaan yang hangat.', 'A girl whose hands are always cold accepts a warm job.'),
       steps: [
-        t('Yang kau pegang adalah buku tanpa nama pengarang. Ketuk tepi kanan atau geser untuk membalik halaman, tepi kiri untuk kembali. Setiap lantai mulai di halaman baru.', 'What you are holding is a book with no author\u2019s name. Tap the right edge or swipe to turn the page, the left edge to go back. Every floor begins on a new page.'),
-        t('Di kamar itu, nyala kecil turun ke sudut layarmu. Kalau kau diam terlalu lama, ia meredup. Ketuk untuk menemaninya.', 'In that room, the little flame comes down to the corner of your screen. Stay still too long and it dims. Tap to keep it company.'),
-        t('Bintang di atas menyimpan yang masih ia ingat. Lihat lagi sesekali.', 'The star above keeps what she still remembers. Look again now and then.'),
-        t('Tulis namamu di sampul kalau mau. Kau boleh pulang kapan saja.', 'Write your name on the cover if you like. You may go home whenever you want.')
+        t('Ceritanya turun, lantai demi lantai.', 'The story goes down, floor by floor.'),
+        t('Setiap kali gadis itu memberikan satu ingatan, kata itu hilang dari seluruh halaman, juga dari bagian yang sudah kau baca.', 'Each time the girl gives away a memory, that word disappears from every page, even the parts you have read.'),
+        t('Tahan kata yang hilang untuk mencoba mengingatnya. Bintang di atas menyimpan yang masih ia ingat.', 'Hold a lost word to try to remember it. The star above keeps what she still remembers.'),
+        t('Pengaturan baca mengembalikan semua kata kalau kau ingin mulai lagi.', 'Reading settings can bring every word back if you want to start again.')
       ] });
     G.settings();
   }
-  if (store.get('dasar:sound', false)) { addEventListener('pointerdown', function once() { removeEventListener('pointerdown', once); if (!Snd.on) { Snd.set(true); paintSound(); } }, { once: true }); }
-  /* ---------- buku: dibalik halaman demi halaman ----------
-     Yang kau baca adalah buku tanpa nama pengarang yang ditemukan gadis itu di kamar. Satu layar satu halaman,
-     setiap lantai mulai di halaman baru, dan semua yang terjadi di luar teks terjadi saat halamannya dibalik.
-     Ketuk tepi kanan atau geser untuk membalik; ketuk tepi kiri untuk kembali. ?gulir membuka cara baca lama. */
-  Book.init();
-  frame(); where.started = true; beatLoop();
-  if (location.hash.startsWith('#lantai-')) setTimeout(() => (Book.on ? Book.toSec(+location.hash.slice(8) - 1) : $(location.hash)?.scrollIntoView()), 60);
+  if (location.hash.startsWith('#lantai-')) setTimeout(() => $(location.hash)?.scrollIntoView(), 60);
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();
