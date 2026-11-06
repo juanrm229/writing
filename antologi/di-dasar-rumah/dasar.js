@@ -368,6 +368,91 @@
 
   /* ---------- membaca: di mana, dan apa yang terjadi ---------- */
   let cur = -1, curSec = -1, ticking = false;
+  const Book = {
+    on: !qs.has('gulir'), page: 0, pages: [], blocks: [],
+    lastI() { let i = -1; for (let k = 0; k <= this.page && k < this.pages.length; k++) this.pages[k].forEach(b => { $$('p[data-i]', b).concat(b.matches('p[data-i]') ? [b] : []).forEach(p => { i = Math.max(i, +p.dataset.i); }); }); return i; },
+    frac() { return this.pages.length > 1 ? this.page / (this.pages.length - 1) : 0; },
+    init() {
+      if (!this.on) return;
+      document.body.classList.add('book');
+      const pager = document.createElement('nav'); pager.className = 'pager'; pager.setAttribute('aria-label', t('Halaman', 'Pages'));
+      pager.innerHTML = `<button type="button" class="pg-b" data-pg="-1" aria-label="${esc(t('Halaman sebelumnya', 'Previous page'))}">‹</button><span class="pg-n" id="pgN"></span><button type="button" class="pg-b" data-pg="1" aria-label="${esc(t('Halaman berikutnya', 'Next page'))}">›</button>`;
+      document.body.append(pager);
+      pager.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) this.go(this.page + +b.dataset.pg); });
+      // ketuk tepi, geser, panah
+      let sx = 0, sy = 0, st = 0;
+      const read = $('#read');
+      read.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = Date.now(); });
+      read.addEventListener('pointerup', e => {
+        if (e.target.closest('button, a, input, textarea, label, [contenteditable="plaintext-only"], [data-spine], figure, form')) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy, quick = Date.now() - st < 320;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) { this.go(this.page + (dx < 0 ? 1 : -1)); return; }
+        if (quick && Math.abs(dx) < 8 && Math.abs(dy) < 8) { const x = e.clientX / innerWidth; if (x > .62) this.go(this.page + 1); else if (x < .3) this.go(this.page - 1); }
+      });
+      addEventListener('keydown', e => {
+        if (e.target.closest && e.target.closest('input, textarea, [contenteditable="plaintext-only"]')) return;
+        if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); this.go(this.page + 1); }
+        if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); this.go(this.page - 1); }
+      });
+      $('#depth').addEventListener('click', e => { const a = e.target.closest('a[href^="#lantai-"]'); if (!a) return; e.preventDefault(); this.toSec(+a.getAttribute('href').slice(8) - 1); });
+      document.addEventListener('click', e => { const a = e.target.closest('a.go[href^="#lantai-"]'); if (a) { e.preventDefault(); this.toSec(0); } });
+      let rz = 0; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => this.paginate(), 200); });
+      this.saved = store.get('dasar:page', 0); this.paginate();
+    },
+    // susun ulang halaman: sampul, lalu isi setiap lantai (setiap lantai mulai di halaman baru), lalu akhir
+    paginate() {
+      const keep = this.pages[this.page] && this.pages[this.page][0];
+      const read = $('#read'), H = read.clientHeight - 8;
+      const groups = [[$('#cover')]];
+      $$('#story > section').forEach(sec => groups.push([...sec.children].map(ch => ch)));
+      const end = $('#end'); if (!end.hidden) groups.push([end]);
+      this.blocks.forEach(b => b.classList.remove('off'));
+      $$('#story > section').forEach(s => s.classList.remove('off'));
+      read.classList.add('measuring');
+      const pages = [];
+      groups.forEach(g => {
+        let page = [], h = 0;
+        g.forEach(b => {
+          const cs = getComputedStyle(b), bh = b.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
+          if (page.length && h + bh > H) { pages.push(page); page = []; h = 0; }
+          page.push(b); h += bh;
+        });
+        if (page.length) pages.push(page);
+      });
+      read.classList.remove('measuring');
+      this.pages = pages; this.blocks = pages.flat();
+      const at = keep ? pages.findIndex(p => p.includes(keep)) : -1;
+      this.show(at >= 0 ? at : Math.min(this.page, pages.length - 1), true);
+    },
+    show(n, quiet) {
+      n = Math.max(0, Math.min(this.pages.length - 1, n));
+      const dir = n > this.page ? 1 : -1; this.page = n;
+      const on = new Set(this.pages[n]);
+      this.blocks.forEach(b => b.classList.toggle('off', !on.has(b)));
+      $$('#story > section').forEach(s => s.classList.toggle('off', ![...s.children].some(ch => on.has(ch))));
+      const read = $('#read'); read.scrollTop = 0;
+      if (!quiet && !calm()) { read.classList.remove('turn-l', 'turn-r'); void read.offsetWidth; read.classList.add(dir > 0 ? 'turn-r' : 'turn-l'); }
+      const secEl = this.pages[n][0].closest('#story > section'), si = secEl ? +secEl.dataset.s : -1;
+      $('#pgN').textContent = n === 0 ? t('Sampul', 'Cover') : `${n} · ${si >= 0 ? nameOf(si) : t('Sesudah dongengnya', 'After the tale')}`;
+      $$('.pager .pg-b').forEach(b => { b.disabled = +b.dataset.pg < 0 ? n === 0 : n === this.pages.length - 1; });
+      store.set('dasar:page', n);
+      markActive();
+      if (where.started) frame();
+    },
+    go(n) { if (n === this.page || n < 0 || n >= this.pages.length) return; this.show(n); if (n === this.pages.length - 1 && !$('#end').dataset.done) { finish(); } },
+    toSec(si) { const sec = $(`#lantai-${si + 1}`); if (!sec) return; const k = this.pages.findIndex(p => p.some(b => sec.contains(b))); if (k >= 0) this.show(k); },
+    live(cnt) {
+      const on = has('stairs') && has('stairsEnd') && cur >= I.stairs && cur < I.stairsEnd;
+      cnt.hidden = !on;
+      if (on) {
+        const f = (cur - I.stairs + 1) / Math.max(1, I.stairsEnd - I.stairs), n = 101 + Math.floor(f * 340), mark = n >= 196 && n % 100 >= 96 || n >= 200 && n % 100 <= 6;
+        $('#counterN').textContent = n; $('#counterMark').textContent = mark ? (S.coin ? '☾ ●' : '☾') : ''; cnt.classList.toggle('mark', mark);
+      }
+      const fall = $('#coinfall'), fon = has('stairsEnd') && this.pages[this.page].some(b => b.matches && b.matches(`p[data-i="${I.stairsEnd}"]`));
+      if (fall && fon !== !fall.hidden) fall.hidden = !fon;
+      const th = $('[data-thread]'); if (th && !th.dataset.seen && th.offsetParent) { th.dataset.seen = '1'; th.classList.add('run'); }
+    }
+  };
   const fired = new Set();
   const once = (k, fn) => { if (fired.has(k)) return; fired.add(k); fn(); };
   const pulse = (cls, ms) => { if (calm()) return; document.body.classList.remove(cls); void document.body.offsetWidth; document.body.classList.add(cls); setTimeout(() => document.body.classList.remove(cls), ms); };
@@ -391,10 +476,13 @@
     Snd.wind(Math.min(1, frost + dark * .4));
   }
   function where() {
-    const ps = story.querySelectorAll('p[data-i]'), line = innerHeight * .45; let c = -1;
-    for (const p of ps) { if (p.getBoundingClientRect().top < line) c = +p.dataset.i; else break; }
-    const reachLine = innerHeight * .5; let r = -1;
-    for (const p of ps) { if (p.getBoundingClientRect().top < reachLine) r = +p.dataset.i; else break; }
+    const ps = story.querySelectorAll('p[data-i]'), line = innerHeight * .45; let c = -1, r = -1;
+    if (Book.on) { c = r = Book.lastI(); }
+    else {
+      for (const p of ps) { if (p.getBoundingClientRect().top < line) c = +p.dataset.i; else break; }
+      const reachLine = innerHeight * .5;
+      for (const p of ps) { if (p.getBoundingClientRect().top < reachLine) r = +p.dataset.i; else break; }
+    }
     const before = S.reach;
     if (r > S.reach) { S.reach = r; save(); }
     if (c !== cur) {
@@ -438,6 +526,7 @@
   // hal-hal yang mengikuti posisi gulir: hitungan undakan, koin yang jatuh, benang
   function live() {
     const cnt = $('#counter');
+    if (Book.on) { Book.live(cnt); return; }
     if (has('stairs') && has('stairsEnd')) {
       const a = pEl(I.stairs).getBoundingClientRect().top, b = pEl(I.stairsEnd - 1).getBoundingClientRect().bottom, mid = innerHeight * .5;
       const on = a < mid && b > mid; cnt.hidden = !on;
@@ -453,8 +542,8 @@
   }
   const frame = () => {
     ticking = false; where();
-    const max = document.documentElement.scrollHeight - innerHeight, f = max > 0 ? scrollY / max : 0;
-    if (scrollY > 200) { store.set('dasar:place', +f.toFixed(4)); const pr = store.get('prog', {}) || {}; pr[SLUG] = Math.max(pr[SLUG] || 0, +f.toFixed(3)); store.set('prog', pr); }
+    const max = document.documentElement.scrollHeight - innerHeight, f = Book.on ? Book.frac() : max > 0 ? scrollY / max : 0;
+    if (Book.on ? Book.page > 0 : scrollY > 200) { store.set('dasar:place', +f.toFixed(4)); const pr = store.get('prog', {}) || {}; pr[SLUG] = Math.max(pr[SLUG] || 0, +f.toFixed(3)); store.set('prog', pr); }
     if (f > .97 && !$('#end').dataset.done) finish();
   };
   addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
@@ -486,10 +575,11 @@
   function finish() {
     const end = $('#end'); end.dataset.done = '1'; end.hidden = false; end.innerHTML = endHTML();
     if (G) $('#endNext').innerHTML = G.next(SLUG);
-    $('#retell').onclick = () => { S.retold++; save(); document.body.classList.add('retold'); coverPaint(); scrollTo({ top: 0, behavior: calm() ? 'instant' : 'smooth' }); };
+    $('#retell').onclick = () => { S.retold++; save(); document.body.classList.add('retold'); coverPaint(); if (Book.on) Book.go(0); else scrollTo({ top: 0, behavior: calm() ? 'instant' : 'smooth' }); };
+    if (Book.on) Book.paginate();
     const st = store.get('stats', {}) || {}; st.done = st.done || []; if (!st.done.includes(SLUG)) { st.done.push(SLUG); store.set('stats', st); }
   }
-  if (store.get('dasar:place', 0) > .97) finish();
+  if (store.get('dasar:place', 0) > .97 && !Book.on) finish();
   { const r = store.get('read', []) || []; if (!r.includes(SLUG)) store.set('read', [...r, SLUG]); const st = store.get('stats', {}) || {}; st.plays = st.plays || {}; st.plays[SLUG] = (st.plays[SLUG] || 0) + 1; store.set('stats', st); store.set('last', { key: SLUG, at: Date.now() }); }
 
   /* ---------- sampul ---------- */
@@ -498,7 +588,7 @@
     $('#lede').textContent = S.retold ? t('Maka begini, anakku. Dengarkan baik-baik.', 'So it goes, my child. Listen closely.') : t('Tugasmu hanya menjaganya. Duduk di sampingnya, menyayanginya, dan tidak membiarkannya tidur.', 'Your only task is to keep it. Sit beside it, love it, and do not let it sleep.');
     $('#kick').textContent = 'Koda · ' + t('Cerpen', 'Short story') + (S.retold ? ' · ' + t(`diceritakan ${S.retold + 1} kali`, `told ${S.retold + 1} times`) : '');
     $('#coverAct').innerHTML = `<a class="go" href="#lantai-1">${esc(S.retold ? t('Ceritakan lagi', 'Tell it again') : t('Mulai turun', 'Begin the descent'))}</a>${place > .03 && place < .97 ? `<button type="button" class="ghost" id="resume">${esc(t('Lanjutkan', 'Continue'))} · ${Math.round(place * 100)}%</button>` : ''}`;
-    $('#resume')?.addEventListener('click', () => scrollTo({ top: place * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' }));
+    $('#resume')?.addEventListener('click', () => { if (Book.on) Book.go(Book.saved || 0); else scrollTo({ top: place * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' }); });
   }
   coverPaint();
 
@@ -521,7 +611,7 @@
     G.mount({ slug: SLUG, title, helpInto: '#topRight', stepInto: '#stepChip', focusAfter: '#story',
       lede: t('Seorang gadis dengan tangan yang selalu dingin menerima pekerjaan yang hangat.', 'A girl whose hands are always cold accepts a warm job.'),
       steps: [
-        t('Ceritanya turun, lantai demi lantai. Rel di tepi layar membawamu ke lantai mana pun, dan warna suara memberi tahu siapa yang bicara: kuning madu untuk perempuan bertopi.', 'The story goes down, floor by floor. The rail at the edge takes you to any floor, and the colour of a voice tells you who speaks: honey for the woman in the hat.'),
+        t('Yang kau pegang adalah buku tanpa nama pengarang. Ketuk tepi kanan atau geser untuk membalik halaman, tepi kiri untuk kembali. Setiap lantai mulai di halaman baru.', 'What you are holding is a book with no author\u2019s name. Tap the right edge or swipe to turn the page, the left edge to go back. Every floor begins on a new page.'),
         t('Di kamar itu, nyala kecil turun ke sudut layarmu. Kalau kau diam terlalu lama, ia meredup. Ketuk untuk menemaninya.', 'In that room, the little flame comes down to the corner of your screen. Stay still too long and it dims. Tap to keep it company.'),
         t('Bintang di atas menyimpan yang masih ia ingat. Lihat lagi sesekali.', 'The star above keeps what she still remembers. Look again now and then.'),
         t('Tulis namamu di sampul kalau mau. Kau boleh pulang kapan saja.', 'Write your name on the cover if you like. You may go home whenever you want.')
@@ -529,7 +619,12 @@
     G.settings();
   }
   if (store.get('dasar:sound', false)) { addEventListener('pointerdown', function once() { removeEventListener('pointerdown', once); if (!Snd.on) { Snd.set(true); paintSound(); } }, { once: true }); }
+  /* ---------- buku: dibalik halaman demi halaman ----------
+     Yang kau baca adalah buku tanpa nama pengarang yang ditemukan gadis itu di kamar. Satu layar satu halaman,
+     setiap lantai mulai di halaman baru, dan semua yang terjadi di luar teks terjadi saat halamannya dibalik.
+     Ketuk tepi kanan atau geser untuk membalik; ketuk tepi kiri untuk kembali. ?gulir membuka cara baca lama. */
+  Book.init();
   frame(); where.started = true; beatLoop();
-  if (location.hash.startsWith('#lantai-')) setTimeout(() => $(location.hash)?.scrollIntoView(), 60);
+  if (location.hash.startsWith('#lantai-')) setTimeout(() => (Book.on ? Book.toSec(+location.hash.slice(8) - 1) : $(location.hash)?.scrollIntoView()), 60);
   if (!PREVIEW && 'serviceWorker' in navigator) navigator.serviceWorker.register('../../sw.js').catch(() => {});
 })();

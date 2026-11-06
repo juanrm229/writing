@@ -378,3 +378,25 @@ dialog.mem::backdrop { background: rgb(0 0 0 / .5); -webkit-backdrop-filter: blu
 :root[data-room] { --qm-card: #1C1915; --qm-ink: #EADCC4; }
 :root[data-room] .lt-btn.ghost { background: rgb(255 255 255 / .08); color: var(--ink); }
 :root[data-room] .stars { background: #15130F; }
+
+/* ---------- buku: satu layar satu halaman ---------- */
+body.book { overflow: hidden; height: 100svh; }
+body.book .read { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 64px); bottom: calc(env(safe-area-inset-bottom) + 58px); max-width: 640px; margin: 0 auto; padding: 8px 26px 0; overflow: hidden auto; overscroll-behavior: contain; }
+body.book .read.measuring .off, body.book .read.measuring section { display: revert !important; }
+body.book .off { display: none !important; }
+body.book .cover { padding: 4vh 0 0; }
+body.book .step { padding-top: 0; margin-top: 0; }
+body.book .read::before { content: ''; position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 60px); bottom: calc(env(safe-area-inset-bottom) + 54px); width: min(640px, 100vw); translate: -50% 0; z-index: -1; pointer-events: none; border-radius: 4px; background: color-mix(in srgb, var(--paper, #fff) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent), 0 30px 60px -40px rgb(0 0 0 / .4); }
+@media (max-width: 680px) { body.book .read::before { border-radius: 0; box-shadow: none; } }
+body.book .read.turn-r { animation: turnR .45s var(--ease); } body.book .read.turn-l { animation: turnL .45s var(--ease); }
+@keyframes turnR { from { opacity: 0; transform: translateX(26px) rotateY(-6deg); } } @keyframes turnL { from { opacity: 0; transform: translateX(-26px) rotateY(6deg); } }
+.pager { position: fixed; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); translate: -50% 0; z-index: 6; display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 22px; background: color-mix(in srgb, var(--paper, #fff) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent); }
+.pg-b { width: 40px; height: 36px; border: 0; border-radius: 18px; background: none; color: var(--ink); font: 400 24px/1 var(--f-text); cursor: pointer; }
+.pg-b:disabled { opacity: .25; cursor: default; }
+.pg-n { min-width: 150px; max-width: 58vw; text-align: center; font: 500 12.5px var(--f-ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+:root[data-room] .pager { background: rgb(28 25 21 / .8); }
+:root[data-room] body.book .read::before { background: #13110E; }
+@media (prefers-reduced-motion: reduce) { body.book .read.turn-r, body.book .read.turn-l { animation: none; } }
+body.book .qm-top { position: fixed; left: 0; right: 0; top: 0; }
+body.book .read { top: calc(env(safe-area-inset-top) + var(--qm-top-h, 60px) + 4px); }
+body.book .read::before { top: calc(env(safe-area-inset-top) + var(--qm-top-h, 60px)); }

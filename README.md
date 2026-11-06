@@ -703,3 +703,7 @@ Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*), dibaca
 - **Sesudah XIX**: layar beranda, hapus aplikasinya atau biarkan; dihapus, semua tandanya hilang dari catatan. Catatan diakhiri pratinjau tautan ke *Anda di Sini*.
 - **Cari**: nama pemikir dikenali seperti tautan data; ketuk untuk kalimat esai yang menyebutnya dan butir catatan bacaannya.
 - **•••**: ringkas (kalimat pertama saja), ukuran teks, pengaturan aplikasi. Semua tersimpan di perangkat (`jm:makna`).
+
+### Di Dasar Rumah sebagai buku
+
+*Di Dasar Rumah* dibaca sebagai buku tanpa nama pengarang yang ditemukan gadis itu: satu layar satu halaman (ketuk tepi kanan/kiri, geser, atau tombol panah), setiap lantai mulai di halaman baru, dan semua yang terjadi di luar teks (angka yang hilang, nyala, bintang, napas) terjadi saat halamannya dibalik. Halaman terakhir yang dibuka disimpan (`jm:dasar:page`). `?gulir` membuka cara baca lama yang digulir.
