@@ -158,7 +158,7 @@ window.INTERNET = {
       'Biaya verifikasi tumbuh lebih cepat daripada jumlah rekaman. Sistem yang menyimpan segalanya cenderung mengalami bukan lupa, melainkan keraguan: rekaman tetap ada, tetapi kepastian bahwa rekaman itu tidak berubah menjadi mahal.',
       '## 4. Diskusi',
       'Ingatan yang dapat diputar ulang tidak memberi tahu di mana berkasnya berada, bagaimana ia dikodekan, atau apakah setiap kali dipanggil ia benar-benar tidak berubah. Jika kita tidak dapat membedakan sebuah sistem dari penjelasan biasa melalui pengamatan yang dapat diuji, yang kita miliki belum cukup untuk memaksakan teori tentang cara kerjanya.',
-      '^ Ucapan terima kasih: kepada H., yang ikut dalam pengujian awal dan tidak sempat membaca hasilnya; dan kepada seorang relawan yang meminta tidak disebutkan.'
+      '^ Ucapan terima kasih: kepada H., yang menemani pengujian awal dengan sabar dan tidak sempat melihat hasilnya; dan kepada seorang relawan yang meminta tidak disebutkan.'
     ]
   },
 

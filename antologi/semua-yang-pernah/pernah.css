@@ -369,6 +369,47 @@ div.row { cursor: default; }
 
 
 
+
+/* kontak: semua yang pernah */
+.ic.kontak { background: linear-gradient(#C9CDD3, #9AA0A8); }
+.ct-b { padding-bottom: 40px; }
+.ct-l { margin: 0; padding: 8px 16px 2px; font: 700 12px var(--f-ui); color: var(--smut); background: var(--scr2); }
+.row.ct.past b { font-weight: 500; } .row.ct.past small { font-style: italic; }
+.row.ct.past .av { filter: grayscale(1); opacity: .75; }
+.ct-end { margin: 22px 0 0; text-align: center; font: italic 14px var(--f-read); color: var(--smut); }
+.ct-card { padding: 18px 20px 40px; display: grid; justify-items: center; text-align: center; gap: 4px; }
+.ct-card h3 { margin: 8px 0 0; font: 600 21px var(--f-ui); } .ct-era { margin: 0; color: var(--smut); font-size: 13px; }
+.ct-act { display: flex; gap: 10px; margin: 12px 0 6px; } .ct-act span { display: grid; justify-items: center; gap: 3px; padding: 8px 14px; border-radius: 12px; background: var(--scr2); font-size: 11px; color: var(--blue); } .ct-act .ic.sm { width: 22px; height: 22px; border-radius: 6px; } .ct-act .none { color: var(--smut); padding: 10px 18px; font-size: 12.5px; }
+.ct-row { justify-self: stretch; text-align: left; margin: 6px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--scr2); font-size: 14px; } .ct-row small { display: block; font-size: 11.5px; color: var(--smut); margin-bottom: 2px; } .ct-row q { font: italic 15px/1.45 var(--f-read); quotes: none; }
+
+/* foto: sebelum/sesudah, perbesar */
+.ph-cmp { position: relative; overflow: hidden; border-radius: 4px; background: #000; align-self: center; }
+.ph-cmp img { display: block; width: 100%; height: auto; max-height: 100%; object-fit: contain; user-select: none; }
+.ph-cmp .aft { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--x)); }
+.cmp-line { position: absolute; top: 0; bottom: 0; left: var(--x); width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px rgb(0 0 0 / .5); pointer-events: none; }
+.cmp-line::after { content: '‹ ›'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 3px 7px; border-radius: 12px; background: #fff; color: #111; font: 700 11px var(--f-ui); white-space: nowrap; }
+.cmp-l, .cmp-r { position: absolute; top: 8px; padding: 2px 7px; border-radius: 4px; background: rgb(0 0 0 / .55); color: #fff; font: 600 10px var(--f-ui); text-transform: uppercase; letter-spacing: .05em; pointer-events: none; } .cmp-l { left: 8px; } .cmp-r { right: 8px; }
+.cmp-in { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+.ph-cap { margin: 0; font: italic 14px/1.4 var(--f-read); color: #ddd; padding: 0 4px; }
+.ph.big.real { cursor: zoom-in; transition: background-size .35s var(--ease), background-position .35s var(--ease); }
+.ph.big.real.zoom { cursor: zoom-out; background-size: 260%; background-position: var(--zx) var(--zy); } .ph.big.real.zoom figcaption { opacity: 0; }
+
+/* pembaca menulis sendiri */
+.cmp.yours .cmp-f.edit { border-color: var(--blue); }
+.cmp-t[contenteditable] { outline: none; min-width: 2ch; flex: 1; }
+.cmp-t[contenteditable]:empty::before { content: attr(data-ph); color: var(--smut); }
+.cmp.yours + .cmp-note { margin: -18px 14px 22px; font-size: 11px; color: var(--smut); }
+.cmp.yours + .cmp-note.on::after { content: ' · Tidak terkirim.'; color: var(--red); }
+
+/* pukul 03.00–03.33 */
+.screen.jam3 .app-i:has(.ic.tb) .ic, .bn.tb3 .ic { animation: glow 2.4s ease-in-out infinite; }
+
+/* judul lagu di teks */
+.song-link { display: inline; padding: 0 .15em; border: 0; border-radius: 4px; background: color-mix(in srgb, #1A73E8 12%, transparent); color: inherit; font: inherit; cursor: pointer; }
+.song-link i { font-style: normal; font-size: .7em; margin-right: .25em; color: #1A73E8; vertical-align: .1em; }
+.song-link:hover { background: color-mix(in srgb, #1A73E8 22%, transparent); }
+.ly.focus { color: #fff; background: rgb(255 255 255 / .1); border-radius: 6px; box-shadow: 0 0 0 6px rgb(255 255 255 / .1); }
+
 /* foto profil, sampul album, gambar mini video, latar panggilan video */
 .av.img { background: #555 center / cover no-repeat; }
 .cover.img { background-color: #222; background-size: cover; background-position: center; background-repeat: no-repeat; } .cover.img span, .cover.img b { text-shadow: 0 1px 6px rgb(0 0 0 / .6); }
