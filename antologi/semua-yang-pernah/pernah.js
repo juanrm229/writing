@@ -52,13 +52,20 @@
     return `<p data-g="${g}" class="${(chat + doc).trim()}">${inline(p)}</p>`;
   }).join('')}</section>`).join('');
   $$('#story p[data-g]').forEach((el, g) => { PARA[g].el = el; });
+  // judul lagu di teks bisa diketuk untuk memutarnya
+  if (window.LAGU) $$('#story em').forEach(em => { if (em.textContent.trim() === window.LAGU.title) { const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'song-link'; bt.dataset.playSong = '1'; bt.innerHTML = `<i aria-hidden="true">▶</i><em>${esc(window.LAGU.title)}</em>`; bt.setAttribute('aria-label', 'Putar ' + window.LAGU.title); em.replaceWith(bt); } });
   const TOTAL = PARA.length;
 
   /* ---------- ingatan pembaca ---------- */
-  const blank = () => ({ v: 1, max: -1, at: 0, follow: true, big: false, size: 19, blank: '' });
+  const blank = () => ({ v: 1, max: -1, at: 0, follow: true, big: false, size: 19, blank: '', yours: {} });
   let S = { ...blank(), ...(store.get('pernah', null) || {}) };
   if (S.v !== 1) S = blank();
   const save = () => store.set('pernah', S);
+
+  /* ---------- kontak: semua yang pernah ---------- */
+  const PEOPLE = (L.people || []).map(x => ({ ...x, g: x.at ? findGlobal(x.c, x.at) : -1 })).filter(x => x.g >= 0 || !x.at);
+  function findGlobal(c, at) { const n = plain(at); for (let g = 0; g < TOTAL; g++) if (PARA[g].c === c && PARA[g].text.includes(n)) return g; return -1; }
+  const known = g => PEOPLE.filter(x => x.g <= g).sort((a, b) => a.name.localeCompare(b.name, 'id'));
 
   /* ---------- ketukan layar ---------- */
   const findG = (c, at) => {
@@ -121,13 +128,14 @@
     rekaman: '<path d="M4 12h1.5M7 9v6M10 6v12M13 9.5v5M16 7.5v9M19 11v2"/>',
     kalender: '',
     catatan: '<path d="M6 8h12M6 12h12M6 16h8"/>',
+    kontak: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
     setel: '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.1 2.1M15.9 15.9 18 18M18 6l-2.1 2.1M8.1 15.9 6 18"/>',
     arsip: '<path d="M4 7h16v3H4zM5.5 10v8.5h13V10M10 13.5h4"/>'
   };
   const APPS = [
     ['pesan', 'Pesan'], ['telepon', 'Telepon'], ['web', 'Peramban'], ['musik', 'Musik'],
     ['foto', 'Foto'], ['surel', 'Surel'], ['kalender', 'Kalender'], ['rekaman', 'Rekaman'],
-    ['catatan', 'Catatan'], ['setel', 'Pengaturan']
+    ['kontak', 'Kontak'], ['catatan', 'Catatan'], ['setel', 'Pengaturan']
   ];
   const icon = (id, extra = '') => id === 'tb' ? `<span class="ic tb${extra}" aria-hidden="true"></span>`
     : id === 'kalender' ? (() => { const m = /^(\w{3})\w*,\s*(\d+)/.exec(TODAY || ''); return `<span class="ic kalender${extra}" aria-hidden="true"><small>${esc(m ? m[1].toUpperCase() : 'SEL')}</small><b>${esc(m ? m[2] : '3')}</b></span>`; })()
@@ -154,7 +162,13 @@
   const H = {}; // penyusun layar per jenis
   const head = (title, { back = 'home', sub = '', right = '', cls = '' } = {}) => `<header class="ap-h ${cls}"><button type="button" class="ap-back" data-nav="${esc(back)}" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span class="ap-t"><b>${inline(title)}</b>${sub ? `<small>${inline(sub)}</small>` : ''}</span><span class="ap-r">${right}</span></header>`;
 
-  const compose = (b, ph = '') => `<div class="cmp"><span class="cmp-f${b.draft ? ' has' : ''}"><span class="cmp-t" data-draft="${esc(b.draft || '')}" data-erase="${b.erase ? 1 : 0}" data-keep="${esc(b.keep || '')}" data-ph="${esc(ph)}">${esc(b.erase ? (b.keep || '') : (b.draft || ''))}</span><i class="caret"></i></span><span class="cmp-s" aria-hidden="true">↑</span></div>`;
+  // kolom tulis; ketukan dengan `yours` membiarkan pembaca menulis sendiri (tidak pernah terkirim)
+  const compose = (b, ph = '') => {
+    const mine = b.yours ? (S.yours || {})[b.yours] : '';
+    const draft = b.yours && mine && b.erase ? mine : (b.draft || '');
+    const shown = b.erase ? (b.keep || '') : (b.yours && mine ? mine : draft);
+    return `<div class="cmp${b.yours ? ' yours' : ''}"><span class="cmp-f${draft || b.yours ? ' has' : ''}"><span class="cmp-t" data-draft="${esc(draft)}" data-erase="${b.erase ? 1 : 0}" data-keep="${esc(b.keep || '')}" data-ph="${esc(b.yoursPh || ph)}"${b.yours && !b.erase ? ` data-yours="${esc(b.yours)}"` : ''}${b.yours && b.erase ? ` data-forget="${esc(b.yours)}"` : ''}>${esc(shown)}</span><i class="caret"></i></span><span class="cmp-s" aria-hidden="true">↑</span></div>${b.yours && !b.erase ? `<p class="cmp-note">${esc(b.yoursNote || 'Kau boleh menulis di sini. Ia tidak akan terkirim.')}</p>` : ''}`;
+  };
   H.chat = (b, st) => {
     const th = st.threads.get(b.with) || { msgs: (b.msgs || []).map(m => ({ m, t: st.t })), sub: b.sub || '' };
     const msgs = b.dev ? (b.msgs || []).map(m => ({ m })) : th.msgs;
@@ -271,7 +285,7 @@
   const mmss = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
   function songPlayer(tr) {
     const a = audio, t = a ? a.currentTime : 0, playing = a && !a.paused;
-    return `<div class="ap music real" style="--h:205">
+    return `<div class="ap music real" style="--h:205"${tr.focus ? ` data-focus="${tr.focus.join(',')}"` : ''}>
       <header class="mu-h"><button type="button" class="ap-back" data-nav="home" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span><small>Diputar dari album</small><b>${esc(SONG.album)}</b></span><span></span></header>
       <div class="mu-top"><div class="cover sm img" style="background-image:url('foto/album.jpg')"></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
       <div class="mu-prog"><input type="range" class="mu-seek" min="0" max="${SONG.dur}" step="0.1" value="${t.toFixed(1)}" aria-label="Posisi lagu"><span class="mu-tt"><small class="mu-cur">${mmss(t)}</small><small>${mmss(SONG.dur)}</small></span></div>
@@ -294,7 +308,7 @@
     return `<div class="ap doc">${head(dc.title || 'Dokumen', { back: dc.back || 'home', sub: dc.sub || '', right: (dc.who || []).map(w => avatar(w, 'sm')).join('') })}<div class="ap-b dc-b">${(dc.lines || []).map(l => typeof l === 'string' ? `<p>${inline(l)}</p>` : `<p class="${esc(l[1] || '')}">${l[1] === 'del' ? `<s>${inline(l[0])}</s>` : inline(l[0])}${l[2] ? `<small>${inline(l[2])}</small>` : ''}</p>`).join('')}${dc.foot ? `<p class="dc-f">${inline(dc.foot)}</p>` : ''}</div></div>`;
   };
 
-  H.photo = (b) => `<div class="ap photo">${head(b.photo?.title || 'Foto', { back: 'foto', sub: b.photo?.meta || '', cls: 'dark' })}<div class="ap-b ph-b">${photoTile(b.photo || {}, true)}${b.photo?.note ? `<p class="ph-n">${inline(b.photo.note)}</p>` : ''}</div></div>`;
+  H.photo = (b) => `<div class="ap photo">${head(b.photo?.title || 'Foto', { back: 'foto', sub: b.photo?.meta || '', cls: 'dark' })}<div class="ap-b ph-b">${b.photo?.after ? `<div class="ph-cmp" style="--x:50%"><img src="${esc(b.photo.src)}" alt=""><img class="aft" src="${esc(b.photo.after)}" alt=""><i class="cmp-line" aria-hidden="true"></i><span class="cmp-l">sebelum</span><span class="cmp-r">sesudah</span><input type="range" class="cmp-in" min="0" max="100" value="50" aria-label="Geser: sebelum dan sesudah dipulihkan"></div><p class="ph-cap">${inline(b.photo.cap || '')}</p>` : photoTile(b.photo || {}, true)}${b.photo?.note ? `<p class="ph-n">${inline(b.photo.note)}</p>` : ''}</div></div>`;
 
   H.rec = (b, st) => {
     const r = { ...(st.recs.get(b.rec?.title) || {}), ...(b.rec || {}) };
@@ -307,6 +321,21 @@
     const c = b.cal || st.cal || { rows: [] };
     return `<div class="ap cal">${head(c.title || 'Kalender', { back: 'home', sub: c.sub || '' })}<div class="ap-b ca-b">${(c.rows || []).map(r => `<div class="ca-r${r[2] ? ' ' + esc(r[2]) : ''}"><b>${esc(r[0])}</b><span>${inline(r[1])}</span></div>`).join('')}${c.foot ? `<p class="dc-f">${inline(c.foot)}</p>` : ''}</div></div>`;
   };
+
+  // daftar kontak; yang sudah lama tiada tidak punya nomor, hanya masa dan satu hal yang diingat
+  function contactsList(g, scroll) {
+    const ps = known(g); let letter = '';
+    const rows = ps.map(x => { const L0 = x.name[0].toUpperCase(); const hd = L0 !== letter ? `<p class="ct-l">${esc(letter = L0)}</p>` : ''; return `${hd}<button type="button" class="row ct${x.num ? '' : ' past'}" data-open="contact:${esc(x.name)}">${avatar(x.name)}<span><b>${esc(x.name)}</b><small>${esc(x.num || x.era || '')}</small></span></button>`; }).join('');
+    return `<div class="ap list kontak">${head('Kontak', { sub: `${ps.length} kontak` })}<div class="ap-b ct-b"${scroll ? ' data-roll="1"' : ''}>${rows || '<p class="empty">Belum ada kontak.</p>'}<p class="ct-end">Semua yang pernah.</p></div></div>`;
+  }
+  function contactCard(name) {
+    const x = PEOPLE.find(p => p.name === name); if (!x) return null;
+    return `<div class="ap list kontak">${head(x.name, { back: 'kontak' })}<div class="ap-b ct-card">${avatar(x.name, 'xl')}<h3>${esc(x.name)}</h3><p class="ct-era">${esc(x.num ? x.where || 'seluler' : x.era || '')}</p>
+      <div class="ct-act">${x.num ? `<span>${GLYPH.pesan ? `<i class="ic pesan sm">${`<svg viewBox="0 0 24 24">${GLYPH.pesan}</svg>`}</i>` : ''}pesan</span><span><i class="ic telepon sm"><svg viewBox="0 0 24 24">${GLYPH.telepon}</svg></i>telepon</span>` : '<span class="none">tidak ada nomor</span>'}</div>
+      ${x.num ? `<p class="ct-row"><small>seluler</small><b>${esc(x.num)}</b></p>` : ''}
+      <p class="ct-row"><small>yang kuingat</small><q>${inline(x.line || '')}</q></p>${x.note ? `<p class="ct-row"><small>catatan</small>${inline(x.note)}</p>` : ''}</div></div>`;
+  }
+  H.contacts = (b, st) => contactsList(b.g, b.roll);
 
   H.home = (b, st) => {
     const page = b.page || 1;
@@ -327,6 +356,7 @@
     kalender: st => st.cal ? H.cal({ cal: st.cal }, st) : `<div class="ap list">${head('Kalender')}<div class="ap-b"><p class="empty">Hari ini kosong.</p></div></div>`,
     peta: st => H.map({ map: st.map ? { ...st.map } : { ask: 'Dari mana?' } }, st),
     catatan: () => null,
+    kontak: () => contactsList(BEATS[cur]?.g ?? -1, false),
     setel: st => `<div class="ap list">${head('Pengaturan')}<div class="ap-b"><div class="row"><span class="fav" aria-hidden="true">i</span><span><b>Tentang ponsel ini</b><small>Pemilik: Elias Venn</small></span></div>${st.tb ? `<div class="row">${icon('tb', ' sm')}<span><b>(tanpa nama)</b><small>Pengembang: kosong · Izin lokasi: selalu</small></span></div>` : ''}<div class="row"><span class="fav" aria-hidden="true">◐</span><span><b>Baterai</b><small>${battery()}%</small></span></div></div></div>`
   };
 
@@ -376,6 +406,7 @@
       const sk = $('.mu-seek', pl); if (!seeking) sk.value = t.toFixed(1); sk.style.setProperty('--p', (t / SONG.dur * 100).toFixed(2) + '%');
       $('.mu-cur', pl).textContent = mmss(t);
       const on = gap ? -1 : k;
+      const fc = pl.dataset.focus; if (fc && !playing && t < .5) { const ks = fc.split(',').map(Number); $$('.ly', pl).forEach(el => el.classList.toggle('focus', ks.includes(+el.dataset.k))); const f0 = $(`.ly[data-k="${ks[0]}"]`, pl), bx = $('.lyr', pl); if (f0 && force) bx.scrollTo({ top: Math.max(0, f0.offsetTop - bx.clientHeight * .32) }); return; }
       if (on !== lyOn || force) {
         lyOn = on;
         $$('.ly', pl).forEach(el => { const i = +el.dataset.k; el.classList.toggle('on', i === on); el.classList.toggle('past', i < k || (gap && i === k)); });
@@ -400,7 +431,11 @@
     app.classList.remove('in'); if (swap) { void app.offsetWidth; app.classList.add('in'); }
     $$('[data-scroll-end]', app).forEach(el => { el.scrollTop = el.scrollHeight; });
     if (b && b.jump) { const wb = $('.web-b', app), t = wb && $$('h4, p, blockquote, li', wb).find(x => x.textContent.includes(b.jump)); if (t) { wb.scrollTop = Math.max(0, t.offsetTop - 8); t.classList.add('mark-jump'); } }
-    lyOn = -2; if (audio) songTick(true); else { const mini = $('#mini'); if (mini) mini.hidden = true; screen.classList.remove('has-mini'); }
+    lyOn = -2;
+    // baris lirik yang sedang dibicarakan cerita (selama lagu belum diputar)
+    const pf = $('.music.real[data-focus]', app);
+    if (pf && (!audio || (audio.paused && audio.currentTime < .5))) { const ks = pf.dataset.focus.split(',').map(Number); $$('.ly', pf).forEach(el => el.classList.toggle('focus', ks.includes(+el.dataset.k))); const f0 = $(`.ly[data-k="${ks[0]}"]`, pf), bx = $('.lyr', pf); if (f0) requestAnimationFrame(() => bx.scrollTo({ top: Math.max(0, f0.offsetTop - bx.clientHeight * .32) })); }
+    if (audio && !(pf && audio.paused && audio.currentTime < .5)) songTick(true); else if (!audio) { const mini = $('#mini'); if (mini) mini.hidden = true; screen.classList.remove('has-mini'); }
     // jam panggilan berjalan
     const cl = $('.cl-st[data-from]', app);
     if (cl && $('.call.s-live', app)) { const t0 = Date.now() - (+cl.dataset.from || 0) * 1000; const id = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); cl.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}.${String(s % 60).padStart(2, '0')}`; }, 500); live.push(() => clearInterval(id)); }
@@ -409,6 +444,9 @@
     const rp = $('.rc-time b[data-play="1"]', app);
     if (rp) { let s = +rp.dataset.pos; const d = +rp.dataset.dur, bars = $$('.wave i', app); const id = setInterval(() => { s = Math.min(d, s + 1); rp.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; bars.forEach((x, k) => x.classList.toggle('on', k / bars.length < s / d)); }, 1000); live.push(() => clearInterval(id)); }
     if (anim && b) sfxFor(b);
+    const roll = $('[data-roll]', app);
+    if (roll && anim && !calm()) { roll.scrollTop = 0; const t0 = performance.now(), dur = 9000; let alive = true; live.push(() => { alive = false; }); const step = now => { if (!alive) return; const k = Math.min(1, (now - t0) / dur); roll.scrollTop = (roll.scrollHeight - roll.clientHeight) * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2); if (k < 1) requestAnimationFrame(step); }; setTimeout(() => requestAnimationFrame(step), 900); }
+    { const y = $('.cmp-t[data-yours]', app); if (y && (!anim || calm() || !y.dataset.draft)) makeYours(y); const f = $('.cmp-t[data-forget]', app); if (f && (!anim || calm()) && S.yours) { delete S.yours[f.dataset.forget]; save(); } }
     if (!anim || calm()) return;
     // mengetik draf, lalu menghapusnya
     const dr = $('.cmp-t', app);
@@ -420,9 +458,10 @@
           // yang pendek diketik dulu; yang panjang sudah ada di kolom (ditulis di ketukan sebelumnya)
           if (txt.length < 24) { dr.textContent = ''; await typeTo(txt); await sleep(700); } else { dr.textContent = txt; await sleep(600); }
           for (let k = txt.length; k >= 0 && alive; k -= Math.max(1, Math.round(txt.length / 40))) { dr.textContent = txt.slice(0, k); window.SFX?.play('del'); await sleep(28); }
-          if (!alive) return; dr.textContent = ''; if (keep) { await sleep(400); await typeTo(keep); } return;
+          if (!alive) return; dr.textContent = ''; if (dr.dataset.forget && S.yours) { delete S.yours[dr.dataset.forget]; save(); } if (keep) { await sleep(400); await typeTo(keep); } return;
         }
-        dr.textContent = ''; await typeTo(txt);
+        dr.textContent = ''; if (!(dr.dataset.yours && (S.yours || {})[dr.dataset.yours])) await typeTo(txt); else dr.textContent = S.yours[dr.dataset.yours];
+        if (alive) makeYours(dr);
       })();
     }
     // isian peta diketik
@@ -454,6 +493,15 @@
     if (b.v === 'web') { if (b.more && !b.page) F.play('pop', 200); else F.play('tap'); return; }
     if (b.v === 'photo') { F.play(b.shot ? 'shutter' : 'tap'); return; }
     F.play('tap');
+  }
+  function makeYours(el) {
+    if (!el || el.isContentEditable || !el.dataset.yours) return;
+    el.contentEditable = 'plaintext-only'; if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
+    el.setAttribute('role', 'textbox'); el.setAttribute('aria-label', el.dataset.ph || 'Tulis pesan');
+    el.closest('.cmp-f')?.classList.add('has', 'edit');
+    el.addEventListener('focus', () => setTimeout(() => { const rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(false); const sl = getSelection(); sl.empty ? sl.empty() : null; sl.addRange(rg); }, 0));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); el.closest('.cmp')?.nextElementSibling?.classList.add('on'); } e.stopPropagation(); });
+    el.addEventListener('input', () => { S.yours = S.yours || {}; S.yours[el.dataset.yours] = el.textContent.slice(0, 600); save(); window.SFX?.play('key'); });
   }
   function viewOf(b, st) {
     if (!b) return H.lock({ n: [], date: L.start?.date, cap: L.start?.cap }, st);
@@ -560,6 +608,7 @@
     else if (kind === 'photo') html = H.photo({ photo: { ...st.photos[+arg], meta: st.photos[+arg]?.meta || st.photos[+arg]?.t } }, st);
     else if (kind === 'mail') html = H.mail({ mail: st.mails[+arg] }, st);
     else if (kind === 'rec') html = H.rec({ rec: { ...st.recs.get(arg), state: 'pause' } }, st);
+    else if (kind === 'contact') html = contactCard(arg);
     else if (kind === 'catatan') { setBig(false); $('#read').focus({ preventScroll: true }); return; }
     else if (LIST[kind]) html = LIST[kind](st);
     if (html) { window.SFX?.play('tap'); mount(html, true, null); mounted = -9; mountedKey = null; homebar.hidden = false; }
@@ -570,14 +619,22 @@
     if (o) { open(o.dataset.open); return; }
     if (n) { const v = n.dataset.nav; open(v === 'home' ? 'home' : v); return; }
     if (e.target.closest('[data-song]')) { songToggle(); return; }
+    // ketuk foto untuk memperbesar di titik yang diketuk; ketuk lagi untuk kembali
+    const big = e.target.closest('.ph.big.real');
+    if (big) { const r = big.getBoundingClientRect(); big.style.setProperty('--zx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%'); big.style.setProperty('--zy', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%'); big.classList.toggle('zoom'); return; }
     const ly = e.target.closest('.ly[data-t]'); if (ly && SONG) { const a = songEl(); a.currentTime = Math.max(0, +ly.dataset.t - .05); userScroll = 0; songTick(true); if (a.paused) a.play().catch(() => {}); return; }
     const vo = e.target.closest('[data-vo]'); if (vo) { vo.textContent = vo.textContent === '▶' ? '❚❚' : '▶'; vo.closest('.mvo')?.classList.toggle('playing'); }
   });
   ['wheel', 'touchmove'].forEach(ev => app.addEventListener(ev, e => { if (e.target.closest('.lyr')) userScroll = Date.now(); }, { passive: true }));
   app.addEventListener('input', e => { if (!e.target.classList.contains('mu-seek')) return; seeking = true; const a = songEl(); a.currentTime = +e.target.value; e.target.style.setProperty('--p', (e.target.value / SONG.dur * 100).toFixed(2) + '%'); });
+  app.addEventListener('input', e => { if (e.target.classList.contains('cmp-in')) e.target.closest('.ph-cmp').style.setProperty('--x', e.target.value + '%'); });
   app.addEventListener('change', e => { if (e.target.classList.contains('mu-seek')) { seeking = false; songTick(true); } });
   $('#mini').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open('musik'); } });
   $('#mini').addEventListener('click', e => { if (e.target.closest('#miniBtn')) { songToggle(); return; } open('musik'); });
+  story.addEventListener('click', e => {
+    if (!e.target.closest('[data-play-song]')) return;
+    open('musik'); const a = songEl(); if (a && a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => {}); }
+  });
   const homebar = $('#homebar');
   homebar.addEventListener('click', () => open(manual === 'home' && fold(cur).tb ? 'home3' : 'home'));
   $('#follow').addEventListener('click', () => setFollow(true));
@@ -674,6 +731,24 @@
   }
   endTxt.value = S.blank || '';
   endTxt.addEventListener('input', () => { S.blank = endTxt.value.slice(0, 4000); save(); });
+  // aplikasi tanpa nama, pada pukul 03.00–03.33 di tempat pembaca, menanyakan hal yang sama kepada pembaca
+  function askReader(note) {
+    const prev = String(store.get('darimana', '') || '').trim(), st = fold(cur);
+    mount(H.map({ map: { ask: 'Dari mana?', free: true, acc: 34, place: 'Saujana' } }, st), true, null); mounted = -9; mountedKey = null;
+    const inp = $('#mpFree'); if (!inp) return;
+    if (prev || note) { const h = document.createElement('p'); h.className = 'mp-prev'; h.innerHTML = note ? esc(note) + (prev ? ` · Terakhir kau menulis: <b>${esc(prev)}</b>` : '') : `Terakhir kau menulis: <b>${esc(prev)}</b>`; $('.mp-ask', app).after(h); }
+    inp.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); const v = inp.value.trim().slice(0, 60); if (!v) return; store.set('darimana', v); inp.blur(); $('.here', app).textContent = 'Anda di sini.'; announce('Tidak ada rute. Anda di sini.'); });
+  }
+  let jam3 = false;
+  function cekJam3() {
+    const d = new Date(); if (jam3 || d.getHours() !== 3 || d.getMinutes() > 33) return;
+    jam3 = true; app.closest('.screen').classList.add('jam3');
+    const box = $('#bns'), el = document.createElement('button'); el.type = 'button'; el.className = 'bn tb3';
+    el.innerHTML = `${icon('tb')}<span><b>&nbsp;</b><span>Dari mana?</span></span>`;
+    el.addEventListener('click', () => { el.remove(); if (follow) { follow = false; $('#follow').hidden = false; } askReader(`Pukul ${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')} di tempatmu.`); });
+    box.prepend(el); window.SFX?.play('notif');
+  }
+  setInterval(cekJam3, 30000);
   function ending() {
     const d = new Date(), pad = n => String(n).padStart(2, '0');
     $('#blankDate').textContent = `Hari ini, ${pad(d.getHours())}.${pad(d.getMinutes())}`;
@@ -681,14 +756,7 @@
     // layar terakhir: aplikasi itu, menanyakan hal yang sama kepada yang memegang ponsel sekarang
     setTimeout(() => {
       if (!follow) return;
-      const prev = String(store.get('darimana', '') || '').trim();
-      const st = fold(cur);
-      mount(H.map({ map: { ask: 'Dari mana?', free: true, acc: 34, place: 'Saujana' } }, st), true, null); mounted = -9; mountedKey = null;
-      const inp = $('#mpFree');
-      if (inp) {
-        if (prev) { const h = document.createElement('p'); h.className = 'mp-prev'; h.innerHTML = `Terakhir kau menulis: <b>${esc(prev)}</b>`; $('.mp-ask', app).after(h); }
-        inp.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); const v = inp.value.trim().slice(0, 60); if (!v) return; store.set('darimana', v); inp.blur(); $('.here', app).textContent = 'Anda di sini.'; announce('Tidak ada rute. Anda di sini.'); });
-      }
+      askReader('');
     }, 9000);
   }
 
@@ -707,6 +775,7 @@
   $('#reset').addEventListener('click', () => { S = { ...blank(), size }; save(); $('#settingsDialog').close(); read.scrollTo({ top: 0 }); setFollow(true); });
 
   /* ---------- mulai ---------- */
+  setTimeout(cekJam3, 2500);
   const rd = store.get('read', []) || []; if (!rd.includes(SLUG)) store.set('read', [...rd, SLUG]);
   document.body.classList.toggle('big', !!S.big);
   $('#grab').setAttribute('aria-expanded', String(!!S.big));
