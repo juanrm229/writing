@@ -150,6 +150,22 @@
   const letterHead = (k, label) => `<header class="lt-h"><span class="lt-k">${esc(k)}</span>${label ? `<span class="lt-l">${esc(label)}</span>` : ''}</header>`;
   let editCard = null;
   let veil = false;
+  /* ---------- menyala mendengar warna ----------
+     Frasa itu berpendar warna setiap kali muncul. Makin ke bawah makin pudar (di bab ketujuh Renjani "masih"
+     menyala, artinya sudah tidak), dan di bab terakhir, ketika surat dibacakan dengan benar, warnanya kembali utuh. */
+  const SAT = [1, 1, .85, .7, .55, .35, .08, 1];
+  const COLOUR = EN ? /(?:glowing\s+(?:like\s+she\s+could\s+|at\s+)?)?(?:could\s+)?hear(?:ing)?\s+colou?rs/gi : /(?:menyala\s+(?:seperti\s+(?:orang\s+yang\s+)?)?)?(?:bisa\s+)?mendengar\s+warna/gi;
+  function paintColours() {
+    $$('.step').forEach(st => {
+      const ci = +st.dataset.ch, w = document.createTreeWalker(st, NodeFilter.SHOW_TEXT), hits = [];
+      while (w.nextNode()) { COLOUR.lastIndex = 0; if (COLOUR.test(w.currentNode.nodeValue)) hits.push(w.currentNode); }
+      hits.forEach(n => {
+        const span = document.createElement('span'); COLOUR.lastIndex = 0;
+        span.innerHTML = esc(n.nodeValue).replace(COLOUR, m => `<span class="warna${ci === CH.length - 1 ? ' utuh' : ''}" style="--sat:${SAT[Math.min(ci, SAT.length - 1)]}">${m}</span>`);
+        n.replaceWith(...span.childNodes);
+      });
+    });
+  }
   function render() {
     let html = '';
     CH.forEach((c, ci) => {
@@ -189,6 +205,7 @@
       html += '</section>';
     });
     story.innerHTML = html;
+    paintColours();
     editCard = $('[data-letter="angry"]');
     $$('.ec').forEach(x => { x.title = t('Gema dari bisikan ibu Sarah', 'An echo of Sarah’s mother’s whisper'); });
   }
@@ -257,6 +274,7 @@
     let c = -1; steps.forEach((s, i) => { if (s.getBoundingClientRect().top < mid) c = i; });
     if (c !== cur) {
       if (c > (S.reached ?? -1)) { const was = S.reached ?? -1; S.reached = c; save(); laciBadge(); laciNotes(); collect(was, c); }
+      if (c === CH.length - 1) setTimeout(giveBack, calm() ? 0 : 1200);
       cur = c;
       $$('#stairs a').forEach((a, i) => { a.classList.toggle('on', i === c); a.classList.toggle('past', i < c); });
       nightfall(c);
@@ -349,7 +367,8 @@
   const pocket = $('#pocket');
   function pocketCount() {
     const n = inPocket().reduce((a, u) => a + words(u.w), 0);
-    pocket.hidden = !n; $('#pocketN').textContent = n; $('#pocketT').textContent = t('kata tak dibacakan', 'words unread');
+    pocket.hidden = !n; pocket.classList.toggle('back', !!S.returned);
+    $('#pocketN').textContent = S.returned ? 0 : n; $('#pocketT').textContent = S.returned ? t('semua sudah dibacakan', 'all read aloud now') : t('kata tak dibacakan', 'words unread');
     pocket.setAttribute('aria-label', t(`${n} kata yang tidak pernah dibacakan`, `${n} words never read aloud`));
   }
   function collect(from, to) {
@@ -364,6 +383,20 @@
     });
     setTimeout(() => { pocketCount(); pocket.classList.remove('bump'); void pocket.offsetWidth; pocket.classList.add('bump'); }, calm() ? 0 : 1500);
     announce(t(`${fresh.length} potongan surat Damar masuk ke kantongmu: tidak pernah dibacakan.`, `${fresh.length} pieces of Damar’s letters went into your pocket: never read aloud.`));
+  }
+  // di anak tangga terakhir semuanya dikembalikan: potongan terbang keluar dari kantong, angka turun ke nol
+  function giveBack() {
+    if (S.returned) return; S.returned = true; save();
+    const total = inPocket().reduce((a, u) => a + words(u.w), 0), pr = pocket.getBoundingClientRect();
+    if (!calm()) inPocket().slice(0, 7).forEach((u, i) => {
+      const s = document.createElement('span'); s.className = 'strip back'; s.textContent = frag(u.w).slice(0, 44);
+      s.style.cssText = `left:${pr.left + pr.width / 2}px;top:${pr.top + pr.height / 2}px;--dx:${innerWidth / 2 - pr.left - pr.width / 2 + (i % 3 - 1) * 60}px;--dy:${-pr.top + 40 + i * 26}px;animation-delay:${i * .22}s`;
+      document.body.append(s); setTimeout(() => s.remove(), 2600 + i * 220);
+    });
+    const t0 = performance.now(), dur = calm() ? 1 : 2200;
+    const tick = now => { const k = Math.min(1, (now - t0) / dur); $('#pocketN').textContent = Math.round(total * (1 - k)); if (k < 1) requestAnimationFrame(tick); else pocketCount(); };
+    requestAnimationFrame(tick);
+    announce(t('Semua yang dicabut dikembalikan ke suratnya. Sekarang semuanya dibacakan.', 'Everything that was pulled out goes back into the letters. Now all of it is read aloud.'));
   }
   const kantong = $('#kantong');
   function openPocket() {
@@ -493,13 +526,31 @@
   const synth = 'speechSynthesis' in window ? speechSynthesis : null;
   const voiceOn = () => !!(synth && S.voice);
   const pickVoice = () => { const vs = synth.getVoices(), L = EN ? 'en' : 'id'; return vs.find(v => v.lang.toLowerCase().startsWith(L) && /female|wanita|damayanti|samantha|karen|serena/i.test(v.name)) || vs.find(v => v.lang.toLowerCase().startsWith(L)) || null; };
+  // genggam: suara hanya berjalan selama layar ditahan; makin lama ditahan, makin pelan ("supaya kau tinggal lebih lama")
+  let holding = false, holdT0 = 0, holdWaiters = [];
+  const handMode = () => !calm() && !S.noHand;
+  const slow = () => (holding ? Math.min(1, (performance.now() - holdT0) / 20000) : 0);
+  const held = () => (handMode() && !holding ? new Promise(r => holdWaiters.push(r)) : Promise.resolve());
+  function setHold(on) {
+    if (on === holding) return; holding = on; dark.classList.toggle('held', on);
+    if (on) { holdT0 = performance.now(); holdWaiters.splice(0).forEach(r => r()); if (synth && synth.paused) synth.resume(); }
+    else if (synth && synth.speaking && handMode()) synth.pause();
+    syncHand();
+  }
+  function syncHand() { const h = $('#darkHint'); h.hidden = !handMode() || dark.classList.contains('ended'); h.textContent = holding ? t('Makin lama kau menggenggam, makin pelan ia membaca.', 'The longer you hold on, the slower she reads.') : t('Tahan layar untuk mendengar, seperti menggenggam tangan Renjani.', 'Hold the screen to listen, like holding Renjani\u2019s hand.'); $('#darkHand').textContent = handMode() ? t('Tanpa genggam', 'No holding') : t('Genggam', 'Hold'); $('#darkHand').hidden = calm(); }
+  dark.addEventListener('pointerdown', e => { if (!e.target.closest('button')) { e.preventDefault(); setHold(true); } });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => dark.addEventListener(ev, () => setHold(false)));
+  dark.addEventListener('keydown', e => { if (e.code === 'Space' && !e.target.closest('button')) { e.preventDefault(); setHold(true); } });
+  dark.addEventListener('keyup', e => { if (e.code === 'Space') setHold(false); });
+  dark.addEventListener('contextmenu', e => e.preventDefault());
+  $('#darkHand').onclick = () => { S.noHand = !S.noHand; save(); if (!handMode()) holdWaiters.splice(0).forEach(r => r()); syncHand(); };
   function sayOne(text) {
     return new Promise(res => {
       const cap = $('#darkCap'); cap.classList.remove('in'); void cap.offsetWidth; cap.textContent = text; cap.classList.add('in');
-      if (!voiceOn()) { setTimeout(res, Math.max(2200, text.split(/\s+/).length * 380)); return; }
+      if (!voiceOn()) { setTimeout(res, Math.max(2200, text.split(/\s+/).length * 380) * (1 + slow() * .6)); return; }
       // suara yang pelan dan rendah, seperti suara yang menenangkan semua orang
       const u = new SpeechSynthesisUtterance(text), v = pickVoice(); if (v) u.voice = v;
-      u.lang = EN ? 'en-US' : 'id-ID'; u.rate = .86; u.pitch = .9;
+      u.lang = EN ? 'en-US' : 'id-ID'; u.rate = .86 - slow() * .26; u.pitch = .9;
       let done = false; const fin = () => { if (!done) { done = true; res(); } };
       u.onend = fin; u.onerror = fin; u.onboundary = () => { dark.classList.remove('beat'); void dark.offsetWidth; dark.classList.add('beat'); };
       setTimeout(fin, 4000 + text.length * 120); synth.speak(u);
@@ -509,13 +560,14 @@
   async function listen(lines, { who = '', silenceAfter = null, onEnd = null } = {}) {
     const my = ++session;
     if (voiceOn()) { synth.cancel(); synth.speak(new SpeechSynthesisUtterance('')); } // iOS: suara harus dimulai dari ketukan
-    syncVoice();
+    syncVoice(); setHold(false); dark.classList.remove('ended'); syncHand();
     dark.hidden = false; document.body.classList.add('eyes-closed');
     $('#darkWho').textContent = who; $('#darkCap').textContent = '';
     $('#darkOpen').focus({ preventScroll: true });
     await pause(calm() ? 200 : 1400);
     for (const s of lines) {
       if (my !== session) return;
+      await held(); if (my !== session) return;
       dark.classList.add('speaking');
       await sayOne(s);
       dark.classList.remove('speaking');
@@ -525,12 +577,12 @@
       else await pause(calm() ? 150 : 520);
     }
     if (my !== session) return;
-    $('#darkCap').textContent = ''; dark.classList.add('ended');
+    $('#darkCap').textContent = ''; dark.classList.add('ended'); syncHand();
     if (onEnd) onEnd();
   }
   function syncVoice() { const b = $('#darkVoice'); b.hidden = !synth; b.setAttribute('aria-pressed', String(voiceOn())); b.textContent = voiceOn() ? t('Suara: hidup', 'Voice: on') : t('Suara: mati', 'Voice: off'); }
   $('#darkVoice').onclick = () => { S.voice = !S.voice; save(); syncVoice(); if (!voiceOn() && synth) synth.cancel(); };
-  function closeDark() { if (synth) synth.cancel(); session++; dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
+  function closeDark() { if (synth) synth.cancel(); holdWaiters.splice(0).forEach(r => r()); holding = false; dark.classList.remove('held'); session++; dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
   $('#darkOpen').onclick = closeDark;
   dark.addEventListener('keydown', e => { if (e.key === 'Escape') closeDark(); });
   function listenTo(k) {
@@ -568,7 +620,7 @@
         ${path.length > 1 ? `<path d="${path.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1]}`).join('')}"/>` : ''}
         ${pts.map((v, i) => `<g><circle class="${v == null ? 'none' : 'v' + v}" cx="${X(i).toFixed(1)}" cy="${v == null ? H0 - 14 : Y(v)}" r="${v == null ? 3 : 6}"/><text class="n" x="${X(i).toFixed(1)}" y="${H0 - 2}">${i + 1}</text></g>`).join('')}
       </svg>${lines.map(l => `<p class="vd-t">${esc(l)}</p>`).join('')}</section>
-      ${UNREAD.length ? `<section class="kt-end"><p class="sc-k">${esc(t('Yang tidak pernah dibacakan', 'What was never read aloud'))}</p><p class="kt-big"><b>${UNREAD.reduce((a, u) => a + words(u.w), 0)}</b> ${esc(t('kata dalam sepuluh tahun', 'words in ten years'))}</p><p class="vd-t">${esc(t('Semuanya ada di kantongmu. Renjani tidak pernah mendengar satu pun.', 'They are all in your pocket. Renjani never heard a single one.'))}</p><button type="button" class="lt-btn big" data-listen="unread">${ear()}${esc(t('Pejamkan mata · dengarkan semuanya', 'Close your eyes · hear them all'))}</button></section>` : ''}
+      ${UNREAD.length ? `<section class="kt-end"><p class="sc-k">${esc(t('Yang tidak pernah dibacakan', 'What was never read aloud'))}</p><p class="kt-big"><b>${UNREAD.reduce((a, u) => a + words(u.w), 0)}</b> ${esc(t('kata dalam sepuluh tahun', 'words in ten years'))}</p><p class="vd-t">${esc(t('Kau mengumpulkannya sambil turun, lalu mengembalikannya. Renjani tidak pernah mendengar satu pun.', 'You gathered them on the way down, then gave them back. Renjani never heard a single one.'))}</p><button type="button" class="lt-btn big" data-listen="unread">${ear()}${esc(t('Pejamkan mata · dengarkan semuanya', 'Close your eyes · hear them all'))}</button></section>` : ''}
       ${chainHTML(true)}
       ${chronoHTML()}
       <section class="pass"><p class="sc-k">${esc(t('Bacakan kepada seseorang', 'Read it to someone'))}</p>

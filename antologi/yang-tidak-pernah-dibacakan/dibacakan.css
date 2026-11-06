@@ -465,3 +465,20 @@ dialog.laci::backdrop { background: rgb(0 0 0 / .42); -webkit-backdrop-filter: b
 :root.shift body, :root.shift .room, :root.shift .step, :root.shift .letter, :root.shift .read, :root.shift .qm-top * { transition: background-color 1.6s ease, color 1.6s ease, border-color 1.6s ease !important; }
 :root[data-night] .room::after { opacity: calc(.25 + var(--depth) * .45); }
 .pocket[hidden] { display: none; }
+
+/* menyala mendengar warna: berpendar, memudar bab demi bab, utuh kembali di akhir */
+.warna { background: linear-gradient(90deg, #E8892B, #E9C24A, #6BBF7A, #4E9BD8, #A177E0, #E66B8E, #E8892B); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: saturate(var(--sat, 1)); animation: hear 7s linear infinite; font-style: italic; }
+.warna.utuh { filter: saturate(1.25) drop-shadow(0 0 10px rgb(233 194 74 / .35)); animation-duration: 4s; }
+:root[data-night] .warna { filter: saturate(var(--sat, 1)) drop-shadow(0 0 8px rgb(255 210 140 / calc(var(--sat, 1) * .5))); }
+@keyframes hear { to { background-position: 300% 0; } }
+/* kantong dikembalikan */
+.strip.back { animation-name: flyback; }
+@keyframes flyback { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 20% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(-3deg); } }
+.pocket.back { background: #EFF5EC; } .pocket.back svg { stroke: #4E8A5A; } .pocket.back small { text-decoration: none; color: #4E8A5A; }
+/* genggam tangan Renjani */
+.dark-hint { position: absolute; left: 24px; right: 24px; bottom: calc(max(28px, env(safe-area-inset-bottom)) + 62px); margin: 0; text-align: center; font: 500 13px var(--f-ui); color: rgb(217 214 206 / .6); }
+.dark { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.dark .dark-glow { transition: opacity .6s ease, transform .9s ease; }
+.dark.held .dark-glow { opacity: 1; transform: scale(1.25); }
+@media (prefers-reduced-motion: reduce) { .warna, .warna.utuh { animation: none; } }
+@media (max-width: 480px) { .dark-act { padding: 0 12px; gap: 8px; } .dark-btn { padding: 0 14px; font-size: 13px; } }
