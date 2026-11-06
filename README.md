@@ -244,28 +244,15 @@ Novel delapan bab tentang jarak antara yang ditulis dan yang dibacakan. Karya in
 
 ### Di Dasar Rumah (antologi/di-dasar-rumah/)
 
-Cerpen kedua di antologi **Koda**, dibuat ulang dari nol dengan satu gagasan: **kata yang terlupakan**. Teksnya dimuat utuh dari `content/works.json`; yang berubah hanya apa yang masih bisa terbaca (`dasar.js`, `dasar.css`), dengan bahasa visual situs (Doto untuk judul dan nomor lantai, Newsreader untuk teks, bilah atas dan Aa yang sama dengan pengalaman lain).
+Cerpen kedua di antologi **Koda**, dibaca sebagai **dongeng sebelum tidur, delapan malam**. Di akhir cerita terungkap bahwa semuanya adalah dongeng yang diceritakan Ibu kepada seorang anak; di sini pembaca adalah anak itu. Kalimat cerita dimuat utuh dari `content/works.json`; yang ditulis untuk versi ini ada di `dasar.js` (`NIGHTS`, `ASK`, `MOMENTS`, akhir).
 
-- **Delapan lantai.** Bagian yang dipisah `***` menjadi lantai 01–08; penanda *Lantai N dari 8* di bilah atas.
-- **Kata yang terlupakan.** Setiap kali ceritanya memberikan satu ingatan, kata itu hilang dari seluruh halaman, juga dari bagian yang sudah dibaca: tempatnya masih ada (garis putus-putus), bunyinya tidak.
-  - Angka-angka hilang sesudah lembar tagihan kosong.
-  - *sungai* hilang ketika ia tidak bisa lagi menyebut nama sungai itu; *hujan*, *garam*, dan *gunting* hilang pada kalimat ketika ia memberikannya; *wajah* (Ibu) hilang ketika tak ada wajah yang datang.
-  - Kata yang baru hilang memudar di depan mata, dan kabar kecil memberi tahu bahwa ia juga hilang dari yang sudah dibaca.
-  - Tahan kata yang hilang untuk mencoba mengingatnya: ia muncul samar lalu pergi lagi.
-- **Bintang.** Sejak ia mulai menghitung yang masih diingat, tombol bintang menyimpan daftarnya. Yang padam masih bisa dihitung, tetapi tidak bisa dibaca lagi.
-- **Kau juga memberi.** Pada tiga saat nyalanya meredup (nama sungai, denyut yang terlambat, nyala yang hampir tak terlihat; dua saat di versi Inggris), muncul kartu: ketuk satu kata di halaman untuk memberikannya. Kata itu (minimal tiga huruf) hilang dari seluruh halaman, dengan garis putus-putus berwarna nyala, dan masuk ke bintang sebagai *Yang kau berikan*. *Biarkan meredup* menolak, dan halamannya meredup sedikit setiap kali.
-- **Ibu adalah penjaga.** Sesudah ia membuka buku-buku lain dan mengerti bahwa *Ibu* adalah sebutan untuk siapa pun yang menjaga nyala, setiap *Ibu* di halaman bergaris titik; tahan untuk melihat kata *penjaga* di baliknya.
-- **Diceritakan lagi.** *Ceritakan lagi* memulai bacaan dari atas, tetapi semua kata yang sudah hilang (termasuk yang kau berikan) tetap hilang, dan saat-saat memberi datang lagi. Setiap kali diceritakan, ada yang tidak ikut.
-- **Nyala kecil** di bilah atas: mengecil setiap kali ada kata yang hilang, meredup saat pembaca menolak memberi, berdetak sesudah *Nyala itu berdetak.* Ketuk untuk tahu berapa kata yang sudah ia makan.
-- **Suhu lantai.** Latar hangat di lantai 1–2 dan di desa (lantai 8), makin dingin keabu-biruan ke bawah; di kamar (lantai 3–6) tepi layar berembun.
-- **Keterangan lubang.** Kata yang hilang, saat ditahan, memberi tahu kapan ia hilang: *hilang di lantai 4*, *kau berikan*, atau *hilang sebelum kau datang*.
-- **Namamu di halaman kosong.** Di paragraf ketika ia menulis namanya sendiri, pembaca boleh menulis namanya. Saat namanya kehilangan bunyi, hurufnya memudar satu per satu; ketika anak itu memanggilnya Ibu, namamu dicoret menjadi *Ibu*.
-- **Peringatan untuk dirimu.** Di paragraf peringatan *Jangan percaya…*, pembaca menulis satu peringatan. Ketika perempuan bertopi membalik halaman sebelum jari gadis itu mencapai ujung kalimat, peringatanmu muncul lagi, terpotong di tengah.
-- **Indeks** di akhir: semua kata yang hilang, berapa kali, dan kapan. *Dengarkan Ibu bercerita* membacakan dongeng yang mulai lagi dengan suara perangkat; setiap kata yang hilang menjadi jeda.
-- **Ceritakan kepada seseorang.** Tautan `?dongeng=` membawa daftar kata yang kau berikan (paling banyak 12, hanya huruf). Penerimanya membaca dongeng yang kata-kata itu sudah hilang sejak awal (garis biru, *hilang sebelum kau datang*), dengan sampul *Seseorang menceritakan ini kepadamu*. Tidak ada data lain yang ikut, dan bacaan penerima tidak menyimpannya sebagai miliknya.
-- **Dongeng yang mulai lagi.** Di akhir, Ibu menceritakan dua paragraf pembuka lagi, dengan kata-kata yang sudah hilang tetap kosong. *Ceritakan lagi* kembali ke sampul dan menghitung berapa kali dongeng itu diceritakan.
-- **Aa.** Ukuran huruf, tampilan, dan *Kembalikan semua kata* (mulai dari atas). Semua tersimpan di perangkat (`jm:dasar2`).
-- Versi Inggris memakai terjemahan yang lebih pendek: *river*, *rain*, dan *salt* hilang pada kalimat yang sesuai; angka dan wajah hanya di versi Indonesia.
+- **Kamar.** Layar gelap dengan satu lampu kecil di sisi ranjang; bilah atas, Aa, dan ? sama dengan pengalaman lain (warnanya mengikuti kamar).
+- **Ibu bercerita, anak meminta lanjutannya.** Kalimat Ibu muncul sedikit demi sedikit (Newsreader); sela anak di bawah seperti tempat mengetik di chat (*Lalu?*, *Terus, Bu?*). Di dua belas saat, selanya berubah (*Jangan mau!*, *Bu, aku takut.*, *Dia harus pulang!*, *Itu aku, ya?*) dan Ibu membalas dengan bisikan.
+- **Delapan malam.** Setiap bagian (dipisah `***`) diceritakan dalam satu malam, dengan pembuka malamnya sendiri; *Selamat malam, Bu.* memadamkan lampu, pagi datang, lalu *Malam berikutnya*. Penanda *Malam N dari 8* di bilah atas. Posisi tersimpan (`jm:dongeng`); sampul menawarkan *Lanjutkan malam ke-N*.
+- **Kata yang Ibu lupa.** Ibu adalah gadis yang sudah memberikan ingatannya, jadi sejak malam pertama ia lupa *angka*, *hujan*, *garam*, *gunting*, *sungai*, dan *wajah* (Ibu). Saat ceritanya sampai ke kata itu, ia berhenti; anak boleh mengingatkannya (*Hujan, Bu.*), dan kata itu kembali di seluruh cerita dengan warna anak. *Tidak apa-apa, Bu.* membiarkannya kosong di mana pun ia muncul.
+- **Akhir.** Di kalimat *Lihat tanganmu, sayang*, lampunya menjadi nyala dan sesuatu di bawah ranjang menarik napas. Lalu: *Kau mengingatkan Ibu N kata… Sekarang kata-kata itu milikmu.* Pilihan: *Ceritakan lagi*, *Aku mau tidur* (lampu padam, *Tidurlah, nyala kecil, biar Ibu yang berjaga*), atau *Ceritakan kepada seseorang*.
+- **Aa.** Ukuran huruf, **suara Ibu** (suara perangkat; kata yang ia lupa menjadi diam), dan mulai lagi dari malam pertama.
+- Versi Inggris memakai terjemahan yang lebih pendek: kata yang dilupakan *rain*, *salt*, *river*; sela khusus hanya di versi Indonesia.
 
 ### Usia Pulang (antologi/usia-pulang/)
 
