@@ -452,7 +452,7 @@ div.row { cursor: default; }
 .img-grid figcaption { font-size: 10.5px; color: var(--smut); padding-top: 2px; line-height: 1.25; }
 
 /* titik biru yang berjalan */
-.mp .lay-street { transition: transform .35s linear; }
+.mp .lay-street { transition: transform .45s ease-out; }
 .map.zooming .mp .lay-street { transition: none; }
 .mp .route-done { fill: none; stroke: #9AA0A6; stroke-width: 6.4; stroke-linecap: round; stroke-linejoin: round; }
 .mp .trail { fill: none; stroke: #1A73E8; stroke-width: 3; stroke-dasharray: 1 7; stroke-linecap: round; opacity: .55; }
