@@ -18,7 +18,7 @@
     get(k, d) { try { const v = localStorage.getItem('jm:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { if (PREVIEW && HISTORY.includes(k)) return; try { localStorage.setItem('jm:' + k, JSON.stringify(v)); } catch (e) { /* penyimpanan tidak tersedia */ } }
   };
-  const SLUG = 'semua-yang-pernah', G = window.JMGuide, root = document.documentElement, L = window.LAYAR || { beats: [] };
+  const SLUG = 'semua-yang-pernah', G = window.JMGuide, root = document.documentElement, L = window.LAYAR || { beats: [] }, NET = window.INTERNET || {};
   const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S(?:[^*]*?\S)?)\*/g, '<em>$1</em>');
@@ -92,8 +92,8 @@
         st.threads.delete(b.with); st.threads.set(b.with, th);
       }
       if (b.v === 'web') {
-        const old = st.pages.get(b.url);
-        const pg = old ? { ...old, ...(b.page || {}), more: [...(old.more || []), ...(b.more || [])] } : { ...(b.page || {}), url: b.url, more: b.more || [] };
+        const old = st.pages.get(b.url), base = NET[b.url];
+        const pg = old ? { ...old, ...(base ? {} : (b.page || {})), more: [...(old.more || []), ...(b.more || [])] } : { ...(b.page || {}), ...(base || {}), url: b.url, more: b.more || [] };
         st.pages.delete(b.url); st.pages.set(b.url, pg);
       }
       if (b.v === 'photo') st.photos.push({ ...b.photo, t: st.t });
@@ -162,16 +162,33 @@
       ${compose(b)}</div>`;
   };
 
+  // markah sederhana untuk halaman panjang: subjudul, kutipan, butir, catatan kaki
+  const rich = (arr, pcls = '') => {
+    let out = '', list = [];
+    const flush = () => { if (list.length) { out += `<ul>${list.map(x => `<li>${inline(x)}</li>`).join('')}</ul>`; list = []; } };
+    (arr || []).forEach(p => {
+      p = String(p);
+      if (p.startsWith('• ')) { list.push(p.slice(2)); return; }
+      flush();
+      if (p.startsWith('## ')) out += `<h4>${inline(p.slice(3))}</h4>`;
+      else if (p.startsWith('> ')) out += `<blockquote>${inline(p.slice(2))}</blockquote>`;
+      else if (p.startsWith('^ ')) out += `<p class="fn">${inline(p.slice(2))}</p>`;
+      else out += `<p${pcls ? ` class="${pcls}"` : ''}>${inline(p)}</p>`;
+    });
+    flush(); return out;
+  };
   H.web = (b, st) => {
-    const pg = (!b.dev && st.pages.get(b.url)) || { ...(b.page || {}), url: b.url, more: b.more || [] };
+    const base = NET[b.url];
+    const pg = (!b.dev && st.pages.get(b.url)) || { ...(b.page || {}), ...(base || {}), url: b.url, more: b.more || [] };
     const k = pg.kind || 'article';
     let body = pg.img ? `<figure class="hero"><img src="${esc(pg.img)}" alt="" loading="lazy">${pg.imgCap ? `<figcaption>${inline(pg.imgCap)}</figcaption>` : ''}</figure>` : '';
     if (k === 'images') body += `<p class="q">${inline(pg.title || '')}</p><div class="img-grid">${(pg.body || []).map(r => `<figure>${r[0] ? `<img src="${esc(r[0])}" alt="" loading="lazy">` : '<i></i>'}<figcaption>${inline(r[1] || '')}</figcaption></figure>`).join('')}</div>${pg.note ? `<p class="meta">${inline(pg.note)}</p>` : ''}`;
-    else if (k === 'video') body = `<div class="vid"><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div>${(pg.body || []).map(p => `<p class="desc">${inline(p)}</p>`).join('')}<p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
-    else if (k === 'forum') body += `<p class="crumb">${inline(pg.crumb || 'Arsip Nol')}</p><h3 class="th-t">${inline(pg.title || '')}</h3>${pg.meta ? `<p class="meta">${inline(pg.meta)}</p>` : ''}${(pg.body || []).map(p => `<p class="post-b">${inline(p)}</p>`).join('')}`;
-    else if (k === 'wiki') body += `<h3 class="wk-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><table class="wk-box">${(pg.box || []).map(r => `<tr><th>${inline(r[0])}</th><td>${inline(r[1])}</td></tr>`).join('')}</table>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
+    else if (k === 'video') body = `<div class="vid"><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div><div class="desc">${rich(pg.body)}</div><p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
+    else if (k === 'forum') body += `<p class="crumb">${inline(pg.crumb || 'Arsip Nol')}</p><h3 class="th-t">${inline(pg.title || '')}</h3>${pg.meta ? `<p class="meta">${inline(pg.meta)}</p>` : ''}${pg.body?.length ? `<div class="post-b">${rich(pg.body)}</div>` : ''}`;
+    else if (k === 'wiki') body += `<h3 class="wk-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><table class="wk-box">${(pg.box || []).map(r => `<tr><th>${inline(r[0])}</th><td>${inline(r[1])}</td></tr>`).join('')}</table>${rich(pg.body)}`;
     else if (k === 'search') body += `<p class="q">${inline(pg.title || '')}</p>${(pg.body || []).map(r => `<div class="res"><small>${esc(r[0])}</small><b>${inline(r[1])}</b><span>${inline(r[2] || '')}</span></div>`).join('')}`;
-    else body += `${pg.kicker ? `<p class="kick">${inline(pg.kicker)}</p>` : ''}<h3 class="ar-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p>${(pg.body || []).map(p => `<p>${inline(p)}</p>`).join('')}`;
+    else if (k === 'paper') body += `<p class="jr">${inline(pg.journal || '')}</p><h3 class="pp-t">${inline(pg.title || '')}</h3><p class="pp-a">${inline(pg.authors || '')}</p><p class="meta">${inline(pg.affil || '')}</p><div class="abs"><b>Abstrak</b><p>${inline(pg.abstract || '')}</p><p class="kw"><b>Kata kunci:</b> ${inline(pg.keywords || '')}</p></div>${rich(pg.body)}`;
+    else body += `${pg.kicker ? `<p class="kick">${inline(pg.kicker)}</p>` : ''}<h3 class="ar-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p>${rich(pg.body)}`;
     const comments = [...(pg.comments || []), ...(pg.more || [])];
     const cm = comments.length ? `<div class="cms">${comments.map((c, n) => `<div class="cm${c[3] ? ' reply' : ''}${n >= comments.length - (b.more || []).length && b.more ? ' new' : ''}">${avatar(c[0], 'sm')}<div><p class="cm-u"><b>${esc(c[0])}</b>${c[2] ? `<small>${esc(c[2])}</small>` : ''}</p><p class="cm-b">${inline(c[1])}</p></div></div>`).join('')}</div>` : '';
     return `<div class="ap web k-${k}"><header class="url"><button type="button" class="ap-back" data-nav="web" aria-label="Riwayat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span class="url-f"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>${esc(String(pg.url || '').replace(/^https?:\/\//, '').split('/')[0])}</span></header><div class="ap-b web-b"${b.more || b.draft ? ' data-scroll-end' : ''}><article>${body}${cm}</article></div>${b.draft ? compose(b) : ''}</div>`;
@@ -377,6 +394,7 @@
     app.innerHTML = html;
     app.classList.remove('in'); if (swap) { void app.offsetWidth; app.classList.add('in'); }
     $$('[data-scroll-end]', app).forEach(el => { el.scrollTop = el.scrollHeight; });
+    if (b && b.jump) { const wb = $('.web-b', app), t = wb && $$('h4, p, blockquote, li', wb).find(x => x.textContent.includes(b.jump)); if (t) { wb.scrollTop = Math.max(0, t.offsetTop - 8); t.classList.add('mark-jump'); } }
     lyOn = -2; if (audio) songTick(true); else { const mini = $('#mini'); if (mini) mini.hidden = true; screen.classList.remove('has-mini'); }
     // jam panggilan berjalan
     const cl = $('.cl-st[data-from]', app);
