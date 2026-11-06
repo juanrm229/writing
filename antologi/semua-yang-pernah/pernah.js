@@ -133,7 +133,9 @@
     : id === 'kalender' ? (() => { const m = /^(\w{3})\w*,\s*(\d+)/.exec(TODAY || ''); return `<span class="ic kalender${extra}" aria-hidden="true"><small>${esc(m ? m[1].toUpperCase() : 'SEL')}</small><b>${esc(m ? m[2] : '3')}</b></span>`; })()
     : `<span class="ic ${id}${extra}" aria-hidden="true"><svg viewBox="0 0 24 24">${GLYPH[id] || ''}</svg></span>`;
   let TODAY = L.start?.date || '';
-  const avatar = (name, cls = '') => `<span class="av ${cls}" style="--h:${Math.floor(seeded(name)() * 360)}" aria-hidden="true">${esc((name || '?').replace(/^[^A-Za-z0-9]+/, '')[0] || '?')}</span>`;
+  // foto profil kontak (foto/av-*.jpg); yang lain memakai inisial
+  const AV = { 'Mara': 'mara', 'Jonah': 'jonah', 'Yuna': 'yuna', 'Soren': 'soren', 'Hollow Atlas': 'hollowatlas', 'Eli': 'eli', 'Tio Jalan Layang': 'tio', 'Suri': 'suri', 'Alma Riedel': 'alma' };
+  const avatar = (name, cls = '') => AV[name] ? `<span class="av img ${cls}" style="background-image:url('foto/av-${AV[name]}.jpg')" aria-hidden="true"></span>` : `<span class="av ${cls}" style="--h:${Math.floor(seeded(name)() * 360)}" aria-hidden="true">${esc((name || '?').replace(/^[^A-Za-z0-9]+/, '')[0] || '?')}</span>`;
 
   /* ---------- potongan tampilan ---------- */
   const photoTile = (p, big) => `<figure class="ph tone-${esc(p.tone || 'warm')}${p.src ? ' real' : ''}${big ? ' big' : ''}${p.half ? ' half' : ''}"${p.src ? ` style="--img:url('${esc(p.src)}')"` : ''}><i class="grain" aria-hidden="true"></i>${p.half ? `<i class="rekon" aria-hidden="true"><span>${esc(p.half === true ? 'bagian yang direkonstruksi' : p.half)}</span></i>` : ''}<figcaption>${inline(p.cap || '')}</figcaption></figure>`;
@@ -170,7 +172,9 @@
       p = String(p);
       if (p.startsWith('• ')) { list.push(p.slice(2)); return; }
       flush();
-      if (p.startsWith('## ')) out += `<h4>${inline(p.slice(3))}</h4>`;
+      const im = /^!\[(.*)\]\((.+)\)$/.exec(p);
+      if (im) out += `<figure class="inl"><img src="${esc(im[2])}" alt="" loading="lazy"><figcaption>${inline(im[1])}</figcaption></figure>`;
+      else if (p.startsWith('## ')) out += `<h4>${inline(p.slice(3))}</h4>`;
       else if (p.startsWith('> ')) out += `<blockquote>${inline(p.slice(2))}</blockquote>`;
       else if (p.startsWith('^ ')) out += `<p class="fn">${inline(p.slice(2))}</p>`;
       else out += `<p${pcls ? ` class="${pcls}"` : ''}>${inline(p)}</p>`;
@@ -183,7 +187,7 @@
     const k = pg.kind || 'article';
     let body = pg.img ? `<figure class="hero"><img src="${esc(pg.img)}" alt="" loading="lazy">${pg.imgCap ? `<figcaption>${inline(pg.imgCap)}</figcaption>` : ''}</figure>` : '';
     if (k === 'images') body += `<p class="q">${inline(pg.title || '')}</p><div class="img-grid">${(pg.body || []).map(r => `<figure>${r[0] ? `<img src="${esc(r[0])}" alt="" loading="lazy">` : '<i></i>'}<figcaption>${inline(r[1] || '')}</figcaption></figure>`).join('')}</div>${pg.note ? `<p class="meta">${inline(pg.note)}</p>` : ''}`;
-    else if (k === 'video') body = `<div class="vid"><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div><div class="desc">${rich(pg.body)}</div><p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
+    else if (k === 'video') body = `<div class="vid${pg.thumb ? ' has-thumb' : ''}"${pg.thumb ? ` style="background-image:url('${esc(pg.thumb)}')"` : ''}><span class="vid-p" aria-hidden="true">▶</span><small>${esc(pg.dur || '14:32')}</small></div><h3 class="vid-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><div class="chan">${avatar(pg.by || 'kanal')}<b>${esc(pg.by || '')}</b><small>${esc(pg.subs || '')}</small></div><div class="desc">${rich(pg.body)}</div><p class="cm-h">Komentar <small>${esc(pg.count || '')}</small></p>`;
     else if (k === 'forum') body += `<p class="crumb">${inline(pg.crumb || 'Arsip Nol')}</p><h3 class="th-t">${inline(pg.title || '')}</h3>${pg.meta ? `<p class="meta">${inline(pg.meta)}</p>` : ''}${pg.body?.length ? `<div class="post-b">${rich(pg.body)}</div>` : ''}`;
     else if (k === 'wiki') body += `<h3 class="wk-t">${inline(pg.title || '')}</h3><p class="meta">${inline(pg.meta || '')}</p><table class="wk-box">${(pg.box || []).map(r => `<tr><th>${inline(r[0])}</th><td>${inline(r[1])}</td></tr>`).join('')}</table>${rich(pg.body)}`;
     else if (k === 'search') body += `<p class="q">${inline(pg.title || '')}</p>${(pg.body || []).map(r => `<div class="res"><small>${esc(r[0])}</small><b>${inline(r[1])}</b><span>${inline(r[2] || '')}</span></div>`).join('')}`;
@@ -258,7 +262,7 @@
       ${b.cap ? `<p class="lk-cap">${inline(b.cap)}</p>` : ''}</div>`;
   };
 
-  H.call = (b) => `<div class="ap call${b.video ? ' video' : ''} s-${b.state || 'live'}"><div class="cl-top">${avatar(b.with, 'xl')}<b>${esc(b.with)}</b><small class="cl-st" data-from="${b.from || 0}">${b.state === 'ended' ? `Panggilan berakhir · ${esc(b.dur || '')}` : b.state === 'ring' ? 'Memanggil…' : '00.00'}</small>${b.line ? `<p class="cl-line">${inline(b.line)}</p>` : ''}</div>
+  H.call = (b) => `<div class="ap call${b.video ? ' video' : ''}${b.bg ? ' has-bg' : ''} s-${b.state || 'live'}"${b.bg ? ` style="--bg:url('${esc(b.bg)}')"` : ''}><div class="cl-top">${avatar(b.with, 'xl')}<b>${esc(b.with)}</b><small class="cl-st" data-from="${b.from || 0}">${b.state === 'ended' ? `Panggilan berakhir · ${esc(b.dur || '')}` : b.state === 'ring' ? 'Memanggil…' : '00.00'}</small>${b.line ? `<p class="cl-line">${inline(b.line)}</p>` : ''}</div>
     ${b.video ? `<div class="cl-self" aria-hidden="true"><span>${esc(b.self || 'kamera mati')}</span></div>` : ''}
     <div class="cl-btn" aria-hidden="true"><span><i>🎙</i>bisukan</span><span><i>⌗</i>papan tombol</span><span><i>🔈</i>speaker</span></div><span class="cl-end" aria-hidden="true">✕</span></div>`;
 
@@ -269,7 +273,7 @@
     const a = audio, t = a ? a.currentTime : 0, playing = a && !a.paused;
     return `<div class="ap music real" style="--h:205">
       <header class="mu-h"><button type="button" class="ap-back" data-nav="home" aria-label="Kembali"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg></button><span><small>Diputar dari album</small><b>${esc(SONG.album)}</b></span><span></span></header>
-      <div class="mu-top"><div class="cover sm"><span>${esc(SONG.artist)}</span></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
+      <div class="mu-top"><div class="cover sm img" style="background-image:url('foto/album.jpg')"></div><div class="mu-meta"><b>${esc(SONG.title)}</b><small>${esc(SONG.artist)}${tr.note ? ` · ${inline(tr.note)}` : ''}</small></div><button type="button" class="mu-play${playing ? ' on' : ''}" data-song="toggle" aria-label="${playing ? 'Jeda' : 'Putar'}">${playing ? '❚❚' : '▶'}</button></div>
       <div class="mu-prog"><input type="range" class="mu-seek" min="0" max="${SONG.dur}" step="0.1" value="${t.toFixed(1)}" aria-label="Posisi lagu"><span class="mu-tt"><small class="mu-cur">${mmss(t)}</small><small>${mmss(SONG.dur)}</small></span></div>
       <div class="lyr" aria-label="Lirik">${SONG.lines.map((l, k) => `<p class="ly${l[3] ? ' ad' : ''}" data-k="${k}" data-t="${l[0]}">${esc(l[2])}</p>`).join('')}<p class="ly-end">♪</p></div>
     </div>`;
@@ -277,7 +281,7 @@
   H.music = (b, st) => {
     const tr = b.track || st.tracks[st.tracks.length - 1] || {};
     if (SONG && tr.title === SONG.title) return songPlayer(tr);
-    return `<div class="ap music">${head('Sedang diputar', { back: 'musik' })}<div class="ap-b mu-b"><div class="cover" style="--h:${Math.floor(seeded(tr.album || tr.title || 'x')() * 360)}"><span>${esc(tr.artist || 'Hollow Atlas')}</span><b>${esc(tr.album || '')}</b></div><b class="mu-t">${inline(tr.title || '')}</b><small class="mu-a">${esc(tr.artist || '')}</small><span class="mu-bar"><i style="--p:${tr.p || .32}"></i></span><span class="mu-c" aria-hidden="true">⏮ ${tr.paused ? '▶' : '❚❚'} ⏭</span>${tr.note ? `<p class="mu-n">${inline(tr.note)}</p>` : ''}</div></div>`;
+    return `<div class="ap music">${head('Sedang diputar', { back: 'musik' })}<div class="ap-b mu-b"><div class="cover${tr.album === 'Low Tide Hymns' ? ' img' : ''}" style="${tr.album === 'Low Tide Hymns' ? "background-image:url('foto/album.jpg');" : ''}--h:${Math.floor(seeded(tr.album || tr.title || 'x')() * 360)}"><span>${esc(tr.artist || 'Hollow Atlas')}</span><b>${esc(tr.album || '')}</b></div><b class="mu-t">${inline(tr.title || '')}</b><small class="mu-a">${esc(tr.artist || '')}</small><span class="mu-bar"><i style="--p:${tr.p || .32}"></i></span><span class="mu-c" aria-hidden="true">⏮ ${tr.paused ? '▶' : '❚❚'} ⏭</span>${tr.note ? `<p class="mu-n">${inline(tr.note)}</p>` : ''}</div></div>`;
   };
 
   H.mail = (b, st) => {
@@ -338,6 +342,7 @@
     const dev = follow && b && b.dev; owner.hidden = !dev; owner.textContent = dev ? b.dev : '';
     screen.classList.toggle('other', !!dev);
     screen.dataset.dev = dev ? b.devKind || 'phone' : '';
+    screen.dataset.owner = dev && /Mara/.test(b.dev) ? 'mara' : '';
   }
   // baris menyala sedikit lebih awal, seperti pemutar lirik pada umumnya; mengikuti bingkai layar, bukan hanya timeupdate
   const LEAD = .1;
