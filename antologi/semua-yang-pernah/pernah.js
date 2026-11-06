@@ -232,7 +232,12 @@
   H.lock = (b, st) => {
     const n = b.dev ? (b.n || []) : (b.n ? (b.keep ? st.lock : b.n) : st.lock);
     return `<div class="ap lock${b.dim ? ' dim' : ''}"><div class="lk-time"><small>${esc(b.date || L.start?.date || 'Jumat, 13 November')}</small><b>${esc(st.t)}</b></div>
-      <div class="lk-n">${n.map((x, k) => `<div class="lk-i${k >= n.length - (b.n || []).length ? ' new' : ''}">${icon(x[0])}<div><p><b>${inline(x[1])}</b><small>${esc(x[3] || 'sekarang')}</small></p><p>${inline(x[2])}</p></div></div>`).join('')}</div>
+      <div class="lk-n">${(() => {
+        // seperti ponsel sungguhan: yang terbaru di atas; yang lama ditumpuk
+        const fresh = (b.n || []).length, list = n.map((x, k) => ({ x, isNew: k >= n.length - fresh })).reverse();
+        const shown = list.slice(0, 3), rest = list.length - shown.length;
+        return shown.map(({ x, isNew }) => `<div class="lk-i${isNew ? ' new' : ''}">${icon(x[0])}<div><p><b>${inline(x[1])}</b><small>${esc(x[3] || 'sekarang')}</small></p><p>${inline(x[2])}</p></div></div>`).join('') + (rest > 0 ? `<p class="lk-more">${rest} notifikasi lainnya</p>` : '');
+      })()}</div>
       ${b.cap ? `<p class="lk-cap">${inline(b.cap)}</p>` : ''}</div>`;
   };
 
@@ -361,7 +366,7 @@
       }
     }
     const mini = $('#mini'), show = !pl && (playing || (t > 0 && !audio.ended));
-    mini.hidden = !show;
+    mini.hidden = !show; screen.classList.toggle('has-mini', show);
     if (show) { $('#miniLine').textContent = gap || k < 0 ? '♪' : SONG.lines[k][2]; $('#miniBtn').textContent = playing ? '❚❚' : '▶'; $('#miniBtn').setAttribute('aria-label', playing ? 'Jeda' : 'Putar'); mini.style.setProperty('--p', (t / SONG.dur * 100).toFixed(2) + '%'); }
   }
   function stopLive() { live.forEach(f => f()); live = []; }
@@ -372,7 +377,7 @@
     app.innerHTML = html;
     app.classList.remove('in'); if (swap) { void app.offsetWidth; app.classList.add('in'); }
     $$('[data-scroll-end]', app).forEach(el => { el.scrollTop = el.scrollHeight; });
-    lyOn = -2; if (audio) songTick(true); else { const mini = $('#mini'); if (mini) mini.hidden = true; }
+    lyOn = -2; if (audio) songTick(true); else { const mini = $('#mini'); if (mini) mini.hidden = true; screen.classList.remove('has-mini'); }
     // jam panggilan berjalan
     const cl = $('.cl-st[data-from]', app);
     if (cl && $('.call.s-live', app)) { const t0 = Date.now() - (+cl.dataset.from || 0) * 1000; const id = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); cl.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}.${String(s % 60).padStart(2, '0')}`; }, 500); live.push(() => clearInterval(id)); }
