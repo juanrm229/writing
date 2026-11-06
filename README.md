@@ -707,3 +707,5 @@ Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*), dibaca
 ### Di Dasar Rumah sebagai buku
 
 *Di Dasar Rumah* dibaca sebagai buku tanpa nama pengarang yang ditemukan gadis itu: satu layar satu halaman (ketuk tepi kanan/kiri, geser, atau tombol panah), setiap lantai mulai di halaman baru, dan semua yang terjadi di luar teks (angka yang hilang, nyala, bintang, napas) terjadi saat halamannya dibalik. Halaman terakhir yang dibuka disimpan (`jm:dasar:page`). `?gulir` membuka cara baca lama yang digulir.
+
+**Buku yang membaca pembacanya.** Buku ini memperhatikan caramu membaca: jam, halaman yang dibaca dua kali, membalik terlalu cepat, layar gelap, pergi lalu kembali (juga kunjungan sebelumnya), nama dan sungaimu, dan menit yang kau berikan. Catatannya muncul di tepi halaman dengan tangan lain (pensil), satu per beberapa halaman, saat halaman dibalik (`W.onPage` di `dasar.js`). Di akhir ada *tagihan untuk pembaca* yang angkanya pelan-pelan hilang seperti tagihan tabib, dan dongeng yang mulai lagi menyebut nama, jam, dan menitmu. Semua hanya dari perangkat ini (`jm:dasar:seen`), tidak dikirim ke mana pun.

@@ -368,6 +368,69 @@
 
   /* ---------- membaca: di mana, dan apa yang terjadi ---------- */
   let cur = -1, curSec = -1, ticking = false;
+  /* ---------- buku yang membaca pembacanya ----------
+     Buku-buku di kamar itu memuat riwayat orang yang membacanya. Buku ini juga. Ia memperhatikan caramu membaca:
+     jam, halaman yang kau baca dua kali, berapa lama kau diam, kapan kau pergi dan kembali, nama dan sungaimu.
+     Semua diambil dari yang benar-benar terjadi di perangkat ini, tidak dikirim ke mana pun. Catatannya muncul di
+     tepi halaman dengan tangan lain, pensil, bukan tangan gadis itu; di akhir, ia menagihnya. */
+  const W = {
+    t0: Date.now(), active: 0, lastTick: Date.now(), backs: 0, backPages: new Set(), seenPages: new Set(), leaves: 0, flips: [], pageAt: Date.now(),
+    prev: store.get('dasar:seen', null), hour: new Date().getHours(), said: new Set(), lastNote: -9,
+    dark: matchMedia('(prefers-color-scheme: dark)').matches || root.getAttribute('data-theme') === 'dark',
+    clock: d => `${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`,
+    mins() { return Math.max(1, Math.round(this.active / 60000)); },
+    note(html) {
+      let el = $('#watch');
+      if (!el) { el = document.createElement('p'); el.id = 'watch'; el.className = 'watch'; el.setAttribute('role', 'note'); document.body.append(el); }
+      el.innerHTML = html; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); el.hidden = false;
+    },
+    clear() { const el = $('#watch'); if (el) el.hidden = true; },
+    say(id, html, n) { if (this.said.has(id)) return false; this.said.add(id); this.lastNote = n; this.note(html); return true; },
+    onPage(n, from) {
+      const now = Date.now();
+      if (n < from) { this.backs++; this.backPages.add(n); }
+      this.flips.push(now); this.flips = this.flips.filter(x => now - x < 6000);
+      const again = this.seenPages.has(n); this.seenPages.add(n); this.pageAt = now;
+      this.clear();
+      // tagihan pembaca: seperti tagihan tabib, angkanya pelan-pelan hilang dari kertas
+      const rb = $('[data-reader-bill]'); if (rb && rb.offsetParent && !rb.classList.contains('fading')) setTimeout(() => rb.classList.add('fading'), 1500);
+      if (n === 0 || n - this.lastNote < 3 && !again) return;
+      const nm = S.name, pick = [];
+      if (n >= 2 && this.prev && this.prev.page > 3 && now - this.prev.at > 3600000) {
+        const d = Math.round((now - this.prev.at) / 86400000);
+        pick.push(['back-visit', t(`Kau kembali. Terakhir kali kau berhenti di halaman ${this.prev.page}, ${d < 1 ? 'beberapa jam' : d + ' hari'} yang lalu. Buku ini tidak membalik dirinya sendiri selama kau pergi.`, `You came back. Last time you stopped at page ${this.prev.page}, ${d < 1 ? 'a few hours' : d + ' days'} ago. The book did not turn itself while you were gone.`)]);
+      }
+      if (n >= 2 && (this.hour >= 22 || this.hour < 4)) pick.push(['late', t(`Sudah pukul ${this.clock(new Date())} di tempatmu. Ia juga selalu membaca ketika yang lain sudah tidur.`, `It is ${this.clock(new Date())} where you are. She also always read while the others slept.`)]);
+      if (again && from > n) pick.push(['reread', t('Kau membalik kembali ke halaman ini. Yang tertinggal di sini tidak akan hilang lebih lambat karena dibaca dua kali.', 'You turned back to this page. What is left here will not fade any slower for being read twice.')]);
+      if (this.flips.length >= 4) pick.push(['fast', t('Kau membalik terlalu cepat. Ia juga dulu menghitung undakan supaya tidak memikirkan yang lain.', 'You are turning too fast. She too once counted steps so as not to think of anything else.')]);
+      if (this.dark && n >= 6) pick.push(['dark', t('Kau membaca dengan layar gelap. Di kamar itu juga tidak ada jendela.', 'You are reading with a dark screen. That room had no window either.')]);
+      if (nm && reached('nameLost')) pick.push(['name', t(`${esc(nm)}. Buku ini sudah menuliskannya beberapa halaman yang lalu. Coba ucapkan tanpa melihat: masih berbunyi?`, `${esc(nm)}. This book wrote it down a few pages ago. Try saying it without looking: does it still make a sound?`)]);
+      if (S.river && reached('riverLost')) pick.push(['river', t(`Kau memberinya “${esc(S.river)}”. Buku ini menyimpannya di rak. Kau masih ingat di mana sungai itu?`, `You gave it “${esc(S.river)}”. This book keeps it on a shelf. Do you still remember where that river is?`)]);
+      if (this.leaves && reached('nyala')) pick.push(['left', t(`Kau pergi ${this.leaves} kali dan kembali. Nyala itu tidak pernah pergi.`, `You left ${this.leaves} times and came back. The flame never left.`)]);
+      if (reached('stall')) pick.push(['minutes', t(`Kau sudah memberikan ${this.mins()} menit kepada buku ini. Ia tidak memintanya. Kau memberikannya.`, `You have given this book ${this.mins()} minutes. It did not ask. You gave them.`)]);
+      if (reached('blank')) pick.push(['knows', t('Buku ini sekarang tahu lebih banyak tentangmu daripada tentang pengarangnya.', 'This book now knows more about you than about its author.')]);
+      for (const [id, txt] of pick) if (this.say(id, txt, n)) break;
+    },
+    // tagihan untuk pembaca, seperti tagihan tabib di halaman pertama; angkanya juga akan hilang
+    billHTML() {
+      const rows = [
+        [t('Waktu yang kau berikan', 'Time you gave'), `${this.mins()} ${t('menit', 'min')}`],
+        [t('Jam kau mulai membaca', 'The hour you began'), this.clock(new Date(this.t0))],
+        [t('Halaman yang kau baca dua kali', 'Pages you read twice'), String(this.backPages.size)],
+        [t('Kau pergi lalu kembali', 'You left and came back'), `${this.leaves} ${t('kali', 'times')}`],
+        [t('Nyala yang kau temani', 'Times you kept the flame company'), `${S.kept} ${t('kali', 'times')}`]
+      ];
+      if (S.name) rows.push([t('Nama', 'Name'), `<s>${esc(S.name)}</s> ${esc(t('Ibu', 'Mother'))}`]);
+      if (S.river) rows.push([t('Sungai', 'River'), muteWord(S.river)]);
+      return `<figure class="bill reader-bill" data-reader-bill aria-label="${esc(t('Tagihan untuk pembaca', 'A bill for the reader'))}">
+        <p class="rb-k">${esc(t('Tagihan untuk pembaca buku ini', 'A bill for the reader of this book'))}</p>
+        ${rows.map(([a, b]) => `<p class="rb-r"><span>${esc(a)}</span><b>${b}</b></p>`).join('')}
+        <p class="rb-f">${esc(t('ditulis tangan, bukan oleh pengarangnya', 'handwritten, not by its author'))}</p></figure>`;
+    }
+  };
+  setInterval(() => { const now = Date.now(); if (!document.hidden && now - W.lastTick < 15000 && now - idleAt < 60000) W.active += now - W.lastTick; W.lastTick = now; }, 1000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) W.leaves++; else if (W.leaves && Book.on && where.started) W.say('left-now', t(`Kau pergi sebentar. Halaman ${Book.page} tidak ke mana-mana.`, `You stepped away. Page ${Book.page} stayed where it was.`), Book.page); });
+  addEventListener('pagehide', () => store.set('dasar:seen', { page: Book.page, at: Date.now() }));
   const Book = {
     on: !qs.has('gulir'), page: 0, pages: [], blocks: [],
     lastI() { let i = -1; for (let k = 0; k <= this.page && k < this.pages.length; k++) this.pages[k].forEach(b => { $$('p[data-i]', b).concat(b.matches('p[data-i]') ? [b] : []).forEach(p => { i = Math.max(i, +p.dataset.i); }); }); return i; },
@@ -426,7 +489,7 @@
     },
     show(n, quiet) {
       n = Math.max(0, Math.min(this.pages.length - 1, n));
-      const dir = n > this.page ? 1 : -1; this.page = n;
+      const dir = n > this.page ? 1 : -1, from = this.page; this.page = n;
       const on = new Set(this.pages[n]);
       this.blocks.forEach(b => b.classList.toggle('off', !on.has(b)));
       $$('#story > section').forEach(s => s.classList.toggle('off', ![...s.children].some(ch => on.has(ch))));
@@ -437,7 +500,7 @@
       $$('.pager .pg-b').forEach(b => { b.disabled = +b.dataset.pg < 0 ? n === 0 : n === this.pages.length - 1; });
       store.set('dasar:page', n);
       markActive();
-      if (where.started) frame();
+      if (where.started) { frame(); W.onPage(n, from); store.set('dasar:seen', { page: n, at: Date.now() }); }
     },
     go(n) { if (n === this.page || n < 0 || n >= this.pages.length) return; this.show(n); if (n === this.pages.length - 1 && !$('#end').dataset.done) { finish(); } },
     toSec(si) { const sec = $(`#lantai-${si + 1}`); if (!sec) return; const k = this.pages.findIndex(p => p.some(b => sec.contains(b))); if (k >= 0) this.show(k); },
@@ -554,10 +617,10 @@
     const nm = S.name;
     // dongengnya mulai lagi, kali ini diceritakan kepadamu
     const first = P[0] ? plain(P[0].text) : '';
-    return `<div class="again" aria-label="${esc(t('Dongengnya mulai lagi', 'The tale begins again'))}">
+    return `${W.billHTML()}<div class="again" aria-label="${esc(t('Dongengnya mulai lagi', 'The tale begins again'))}">
       <p class="again-k">${esc(t('Ibu bercerita', 'Mother is telling it'))}</p>
       <p class="again-t">${esc(first)}</p>
-      <p class="again-you">${esc(t('Kau baru saja mendengarnya dari awal sampai akhir, sayang. Tanganmu dingin sekali.', 'You have just heard it from beginning to end, sweetheart. Your hands are so cold.'))}</p>
+      <p class="again-you">${esc(t(`Kau baru saja mendengarnya dari awal sampai akhir, ${S.name || 'sayang'}. Sekarang pukul ${W.clock(new Date())}. ${W.mins()} menit. Tanganmu dingin sekali.`, `You have just heard it from beginning to end, ${S.name || 'sweetheart'}. It is ${W.clock(new Date())} now. ${W.mins()} minutes. Your hands are so cold.`))}</p>
     </div>
     <div class="end-card">
       <p class="end-k">${esc(t('Sesudah dongengnya', 'After the tale'))}</p>
