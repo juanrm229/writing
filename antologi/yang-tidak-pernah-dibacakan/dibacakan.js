@@ -241,12 +241,25 @@
   /* ---------- tangga ---------- */
   $('#stairs').innerHTML = CH.map((c, i) => `<a href="#bab-${i + 1}" style="--i:${i}" data-go="${i}"><i aria-hidden="true"></i><span><b>${i + 1}</b>${esc(c.title || '')}</span></a>`).join('');
   let cur = -1;
+  /* malam turun bersama ceritanya: anak tangga 5–7 dibaca dalam gelap seperti dunia Renjani,
+     dan di anak tangga terakhir, ketika surat dibacakan dengan benar, terang kembali. Pilihan tema gelap pembaca tetap dihormati. */
+  const NIGHT = [4, 6];
+  function nightfall(c) {
+    const chosen = store.get('theme', null); if (chosen === 'dark') return;
+    const night = c >= NIGHT[0] && c <= NIGHT[1], was = root.hasAttribute('data-night');
+    if (night === was) return;
+    root.classList.add('shift'); setTimeout(() => root.classList.remove('shift'), 1800);
+    if (night) { root.setAttribute('data-night', ''); root.setAttribute('data-theme', 'dark'); announce(t('Malam turun. Mulai di sini, ceritanya dibaca dalam gelap.', 'Night falls. From here, the story is read in the dark.')); }
+    else { root.removeAttribute('data-night'); chosen === 'light' ? root.setAttribute('data-theme', 'light') : root.removeAttribute('data-theme'); if (c > NIGHT[1]) announce(t('Terang kembali.', 'The light comes back.')); }
+  }
   function where() {
     const steps = $$('.step'), mid = innerHeight * .4;
     let c = -1; steps.forEach((s, i) => { if (s.getBoundingClientRect().top < mid) c = i; });
     if (c !== cur) {
-      cur = c; if (c > (S.reached ?? -1)) { S.reached = c; save(); laciBadge(); laciNotes(); }
+      if (c > (S.reached ?? -1)) { const was = S.reached ?? -1; S.reached = c; save(); laciBadge(); laciNotes(); collect(was, c); }
+      cur = c;
       $$('#stairs a').forEach((a, i) => { a.classList.toggle('on', i === c); a.classList.toggle('past', i < c); });
+      nightfall(c);
       const k = Math.max(0, c); root.style.setProperty('--depth', (k / Math.max(1, CH.length - 1)).toFixed(3)); root.style.setProperty('--rain', RAIN[Math.min(k, RAIN.length - 1)]); root.style.setProperty('--lamp', LAMP[Math.min(k, LAMP.length - 1)]);
       Rain.level(c < 0 ? .5 : RAIN[Math.min(k, RAIN.length - 1)]);
       $('#stepChip').hidden = c < 0; if (c >= 0 && G) G.step(c + 1, CH.length, t('Anak tangga', 'Step'));
@@ -322,6 +335,51 @@
     const x = LETTERS.find(y => y.id === laciAt), max = +r.max; let v = 0; r.value = 0; $('#lpBody').innerHTML = letterHTML(x, 0);
     penT = setInterval(() => { v++; r.value = v; $('#lpBody').innerHTML = letterHTML(x, v); if (v >= max) clearInterval(penT); }, calm() ? 40 : 650);
   }
+  /* ---------- kantong: kata-kata Damar yang tidak pernah sampai ke telinga Renjani ----------
+     Dihitung dari dua versi setiap surat Damar untuk Renjani (yang ditulis dan yang dibacakan). Setiap kali
+     pembaca turun satu anak tangga, potongan yang dicabut Sarah di anak tangga itu jatuh ke kantong. */
+  const UNREAD = LETTERS.filter(x => x.dari === 'Damar' && x.untuk === 'Renjani' && (!EN || x.dariTeks)).flatMap(x => {
+    if (x.sampai == null) return [{ id: x.id, bab: x.bab, kapan: x.kapan, w: plain(x.tulis).replace(/\s+/g, ' ') }];
+    return coalesce(diff(tokens(x.tulis), tokens(x.sampai))).filter(h => h.eq == null)
+      .map(h => ({ id: x.id, bab: x.bab, kapan: x.kapan, w: h.del.filter(w => w !== '¶').join(' ').trim() })).filter(u => /[\p{L}]/u.test(u.w));
+  });
+  const words = s => s.split(/\s+/).filter(Boolean).length;
+  const frag = w => (/^\p{Ll}/u.test(w) ? '…' + w : w); // potongan dari tengah kalimat
+  const inPocket = () => UNREAD.filter(u => (S.reached ?? -1) >= u.bab);
+  const pocket = $('#pocket');
+  function pocketCount() {
+    const n = inPocket().reduce((a, u) => a + words(u.w), 0);
+    pocket.hidden = !n; $('#pocketN').textContent = n; $('#pocketT').textContent = t('kata tak dibacakan', 'words unread');
+    pocket.setAttribute('aria-label', t(`${n} kata yang tidak pernah dibacakan`, `${n} words never read aloud`));
+  }
+  function collect(from, to) {
+    const fresh = UNREAD.filter(u => u.bab > from && u.bab <= to);
+    if (!fresh.length) return pocketCount();
+    const pr = pocket.getBoundingClientRect();
+    fresh.filter(u => u.bab === to).slice(0, 3).forEach((u, i) => { // hanya dari anak tangga yang baru dicapai
+      if (calm()) return;
+      const s = document.createElement('span'); s.className = 'strip'; s.textContent = u.w.length > 46 ? u.w.slice(0, 44) + '…' : u.w;
+      s.style.cssText = `left:${innerWidth / 2}px;top:${innerHeight * .45 + i * 34}px;--dx:${pr.left + pr.width / 2 - innerWidth / 2}px;--dy:${pr.top + pr.height / 2 - innerHeight * .45 - i * 34}px;animation-delay:${i * .35}s`;
+      document.body.append(s); setTimeout(() => s.remove(), 2600 + i * 350);
+    });
+    setTimeout(() => { pocketCount(); pocket.classList.remove('bump'); void pocket.offsetWidth; pocket.classList.add('bump'); }, calm() ? 0 : 1500);
+    announce(t(`${fresh.length} potongan surat Damar masuk ke kantongmu: tidak pernah dibacakan.`, `${fresh.length} pieces of Damar’s letters went into your pocket: never read aloud.`));
+  }
+  const kantong = $('#kantong');
+  function openPocket() {
+    const got = inPocket(), all = UNREAD.length, done = (S.reached ?? -1) >= CH.length - 1;
+    const groups = []; got.forEach(u => { const g = groups.find(x => x.id === u.id); g ? g.items.push(u.w) : groups.push({ id: u.id, kapan: u.kapan, items: [u.w] }); });
+    $('#kantongBody').innerHTML = `<p class="kt-lede">${esc(t('Yang ditulis Damar, dicabut Sarah sebelum sampai ke telinga Renjani. Kau mengumpulkannya sambil turun.', 'What Damar wrote and Sarah pulled out before it reached Renjani’s ears. You gathered it on the way down.'))}</p>
+      ${groups.map(g => `<section class="kt-g"><p class="kt-k">${esc(g.kapan)}</p>${g.items.map(w => `<p class="kt-w">${esc(frag(w))}</p>`).join('')}</section>`).join('')}
+      ${got.length < all ? `<p class="kt-more">${esc(t(`${all - got.length} potongan lagi menunggu di anak tangga di bawah.`, `${all - got.length} more pieces wait on the steps below.`))}</p>` : ''}
+      <div class="kt-act"><button type="button" class="lt-btn big" data-unread ${done ? '' : 'disabled'}>${esc(done ? t('Bacakan semuanya, sekali saja', 'Read them all aloud, just once') : t('Bisa dibacakan di anak tangga terakhir', 'Can be read aloud on the last step'))}</button></div>`;
+    kantong.showModal();
+  }
+  pocket.onclick = openPocket; pocketCount();
+  kantong.addEventListener('click', e => {
+    if (e.target === kantong || e.target.closest('[data-close]')) { kantong.close(); return; }
+    if (e.target.closest('[data-unread]')) { kantong.close(); listenTo('unread'); }
+  });
   function laciBadge() { const n = LETTERS.filter(x => unlocked(x) && !(S.seen || []).includes(x.id)).length, b = $('#openLaci'); if (b) { if (n) b.dataset.n = n; else delete b.dataset.n; } }
   // di akhir setiap anak tangga: surat baru di laci
   function laciNotes() {
@@ -432,15 +490,26 @@
   // dalam gelap, kalimat-kalimatnya muncul satu per satu, sepelan orang membacakan; tanpa suara buatan
   const dark = $('#dark');
   let session = 0;
+  const synth = 'speechSynthesis' in window ? speechSynthesis : null;
+  const voiceOn = () => !!(synth && S.voice);
+  const pickVoice = () => { const vs = synth.getVoices(), L = EN ? 'en' : 'id'; return vs.find(v => v.lang.toLowerCase().startsWith(L) && /female|wanita|damayanti|samantha|karen|serena/i.test(v.name)) || vs.find(v => v.lang.toLowerCase().startsWith(L)) || null; };
   function sayOne(text) {
     return new Promise(res => {
       const cap = $('#darkCap'); cap.classList.remove('in'); void cap.offsetWidth; cap.textContent = text; cap.classList.add('in');
-      setTimeout(res, Math.max(2200, text.split(/\s+/).length * 380));
+      if (!voiceOn()) { setTimeout(res, Math.max(2200, text.split(/\s+/).length * 380)); return; }
+      // suara yang pelan dan rendah, seperti suara yang menenangkan semua orang
+      const u = new SpeechSynthesisUtterance(text), v = pickVoice(); if (v) u.voice = v;
+      u.lang = EN ? 'en-US' : 'id-ID'; u.rate = .86; u.pitch = .9;
+      let done = false; const fin = () => { if (!done) { done = true; res(); } };
+      u.onend = fin; u.onerror = fin; u.onboundary = () => { dark.classList.remove('beat'); void dark.offsetWidth; dark.classList.add('beat'); };
+      setTimeout(fin, 4000 + text.length * 120); synth.speak(u);
     });
   }
   const pause = ms => new Promise(r => setTimeout(r, ms));
   async function listen(lines, { who = '', silenceAfter = null, onEnd = null } = {}) {
     const my = ++session;
+    if (voiceOn()) { synth.cancel(); synth.speak(new SpeechSynthesisUtterance('')); } // iOS: suara harus dimulai dari ketukan
+    syncVoice();
     dark.hidden = false; document.body.classList.add('eyes-closed');
     $('#darkWho').textContent = who; $('#darkCap').textContent = '';
     $('#darkOpen').focus({ preventScroll: true });
@@ -459,12 +528,15 @@
     $('#darkCap').textContent = ''; dark.classList.add('ended');
     if (onEnd) onEnd();
   }
-  function closeDark() { session++; dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
+  function syncVoice() { const b = $('#darkVoice'); b.hidden = !synth; b.setAttribute('aria-pressed', String(voiceOn())); b.textContent = voiceOn() ? t('Suara: hidup', 'Voice: on') : t('Suara: mati', 'Voice: off'); }
+  $('#darkVoice').onclick = () => { S.voice = !S.voice; save(); syncVoice(); if (!voiceOn() && synth) synth.cancel(); };
+  function closeDark() { if (synth) synth.cancel(); session++; dark.hidden = true; dark.classList.remove('speaking', 'silence', 'ended'); document.body.classList.remove('eyes-closed'); }
   $('#darkOpen').onclick = closeDark;
   dark.addEventListener('keydown', e => { if (e.key === 'Escape') closeDark(); });
   function listenTo(k) {
     if (k === 'soft' || k === 'angry') { listen(sentences(softText), { who: t('Suara Sarah, membacakan surat Damar', 'Sarah’s voice, reading Damar’s letter'), onEnd: () => { S.heard.soft = 1; save(); } }); return; }
     if (k === 'orange') { const c = $('[data-letter="orange"] blockquote'); const txt = c.textContent, cut = $('[data-cut]', c)?.textContent || ''; listen(sentences(txt.replace(cut, ' ').replace(/\s+/g, ' ')), { who: t('Suara Sarah, membacakan surat Damar', 'Sarah’s voice, reading Damar’s letter'), onEnd: () => { S.heard.orange = 1; save(); } }); return; }
+    if (k === 'unread') { listen(inPocket().map(u => frag(u.w).replace(/[,;:]$/, '') + (/[.!?…]$/.test(u.w) ? '' : '.')), { who: t('Kata-kata Damar yang tidak pernah dibacakan, dalam urutan ia menulisnya', 'Damar’s words that were never read aloud, in the order he wrote them'), onEnd: () => { S.heard.unread = 1; save(); } }); return; }
     if (k === 'last') { listen(sentences(LAST), { who: t('Suara Sarah, tanpa mengubah satu kata pun', 'Sarah’s voice, not changing a single word'), silenceAfter: /(\bsiap\b|\bready\b)/i, onEnd: () => { S.heard.last = 1; save(); } }); }
   }
 
@@ -496,6 +568,7 @@
         ${path.length > 1 ? `<path d="${path.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1]}`).join('')}"/>` : ''}
         ${pts.map((v, i) => `<g><circle class="${v == null ? 'none' : 'v' + v}" cx="${X(i).toFixed(1)}" cy="${v == null ? H0 - 14 : Y(v)}" r="${v == null ? 3 : 6}"/><text class="n" x="${X(i).toFixed(1)}" y="${H0 - 2}">${i + 1}</text></g>`).join('')}
       </svg>${lines.map(l => `<p class="vd-t">${esc(l)}</p>`).join('')}</section>
+      ${UNREAD.length ? `<section class="kt-end"><p class="sc-k">${esc(t('Yang tidak pernah dibacakan', 'What was never read aloud'))}</p><p class="kt-big"><b>${UNREAD.reduce((a, u) => a + words(u.w), 0)}</b> ${esc(t('kata dalam sepuluh tahun', 'words in ten years'))}</p><p class="vd-t">${esc(t('Semuanya ada di kantongmu. Renjani tidak pernah mendengar satu pun.', 'They are all in your pocket. Renjani never heard a single one.'))}</p><button type="button" class="lt-btn big" data-listen="unread">${ear()}${esc(t('Pejamkan mata · dengarkan semuanya', 'Close your eyes · hear them all'))}</button></section>` : ''}
       ${chainHTML(true)}
       ${chronoHTML()}
       <section class="pass"><p class="sc-k">${esc(t('Bacakan kepada seseorang', 'Read it to someone'))}</p>
@@ -616,7 +689,8 @@
         t('Ceritanya turun, anak tangga demi anak tangga. Makin ke bawah, kamarnya makin gelap. Tangga di tepi layar membawamu ke bab mana pun.', 'The story descends, one step at a time. The lower you go, the darker the room. The stairs at the edge take you to any chapter.'),
         t('Surat-surat Damar tampil sebagai kertas. Di bab kedua, pena Sarah ada di tanganmu.', 'Damar’s letters appear as paper. In the second chapter, Sarah’s pen is in your hand.'),
         t('"Dengarkan seperti Renjani" menggelapkan layar. Suratnya datang kalimat demi kalimat, dalam versi yang Renjani dengar.', '"Hear it as Renjani did" darkens the screen. The letter arrives sentence by sentence, in the version Renjani heard.'),
-        t('Amplop di pojok tersegel sampai anak tangga terakhir. Di setiap anak tangga, timbanglah Sarah; jangan memaafkannya terlalu cepat.', 'The envelope in the corner stays sealed until the last step. On every step, weigh Sarah; do not forgive her too soon.')
+        t('Amplop di pojok tersegel sampai anak tangga terakhir. Di setiap anak tangga, timbanglah Sarah; jangan memaafkannya terlalu cepat.', 'The envelope in the corner stays sealed until the last step. On every step, weigh Sarah; do not forgive her too soon.'),
+        t('Kantong di atas mengumpulkan kata-kata Damar yang dicabut Sarah. Di anak tangga terakhir, semuanya bisa dibacakan, dengan suara sungguhan kalau kau mau.', 'The pocket at the top gathers the words of Damar’s that Sarah pulled out. On the last step they can all be read aloud, in a real voice if you like.')
       ] });
     G.settings();
   }
