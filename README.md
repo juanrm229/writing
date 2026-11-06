@@ -690,3 +690,15 @@ python3 tests/share_smoke.py
 ```
 
 Pemeriksaan mencakup keutuhan naskah dua bahasa, setiap penanda acara, foto, dan kutipan, tautan situs utama dan status tamat, bulan yang mengikuti bacaan, jadwal ulang empat puluh tahun, tahun yang kosong, foto temuan, undangan dan jawaban Lila, jawaban yang diingat, pengingat, penanda baca dan bahasa, tata letak 320–1440 px, gerak tenang, pratinjau, kegagalan modul, dan tema.
+
+### Sebelum Makna Menemukan Kita (antologi/sebelum-makna/)
+
+Esai pengantar *Titik Biru* (album `titik-biru`, sebelum *Anda di Sini*). Teksnya utuh dari `content/works.json`; halaman ini hanya cara membacanya:
+
+- **Peta titik biru**: 19 bagian menjadi 19 titik di tepi kanan; titik biru = kau di sini. Ketuk untuk pindah bagian.
+- **Baca cepat**: hanya kalimat pertama setiap paragraf.
+- **Kartu pemikir**: nama Frankl, Wolf, Camus, Nietzsche, Nozick, Kant, dll. bisa diketuk; isinya kalimat esai yang menyebutnya dan butir catatan bacaannya.
+- **Percobaan pikiran**: bagian yang dibuka dengan "Saya membayangkan" tampil sebagai adegan.
+- **Tanda makna**: kalau pembaca diam lebih dari enam detik, kalimat di garis baca diberi garis emas (satu per bagian, maksimal 12; `jm:makna`). Di bagian XII halaman mengakuinya, di XVII pembaca memeriksa dan melepaskan tanda, di XIX hanya yang dipertahankan yang tersisa.
+- **Janji**: sesudah bagian XIII pembaca boleh menulis satu janji untuk dirinya; ia kembali di akhir.
+- **Segelas air** di bilah atas pelan-pelan tidak lagi dingin (10 menit).

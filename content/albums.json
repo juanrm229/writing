@@ -3,12 +3,13 @@
     "id": "titik-biru",
     "title": "Titik Biru",
     "kind": "antologi",
-    "note": "Antologi Juan, dibuka dengan Anda di Sini.",
+    "note": "Antologi Juan, dibuka dengan esai Sebelum Makna Menemukan Kita.",
     "tracks": [
+      "sebelum-makna-menemukan-kita",
       "anda-di-sini"
     ],
     "en": {
-      "note": "Juan's anthology, opening with Anda di Sini."
+      "note": "Juan's anthology, opening with the essay Sebelum Makna Menemukan Kita."
     }
   },
   {
