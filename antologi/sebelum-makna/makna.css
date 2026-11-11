@@ -30,6 +30,10 @@ button { font: inherit; color: inherit; }
 .bar-r { justify-self: end; display: inline-flex; align-items: center; gap: 4px; }
 .bar-b, .bar-r .jm-help { width: 40px; height: 40px; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--accent); cursor: pointer; }
 .bar-b svg { width: 24px; height: 24px; fill: currentColor; }
+/* tombol lagu naskah mengikuti gaya bilah aplikasi catatan ini: tanpa latar, warna aksen */
+.bar-r .jm-song { width: 40px; height: 40px; background: none; color: var(--accent); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.bar-r .jm-song svg { width: 22px; height: 22px; }
+.bar-r .jm-song.on { box-shadow: none; }
 .menu { position: absolute; right: max(12px, calc(50% - 368px)); top: calc(env(safe-area-inset-top) + 76px); display: grid; min-width: 260px; padding: 6px 0; border-radius: 14px; background: var(--banner); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 20px 50px -14px rgb(0 0 0 / .35), 0 0 0 .5px rgb(0 0 0 / .12); }
 .menu[hidden] { display: none; }
 .menu button { text-align: left; padding: 11px 16px; border: 0; background: none; font: 400 16px var(--f-ui); cursor: pointer; }

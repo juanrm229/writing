@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://quietmargins.site/</loc><lastmod>2026-11-03</lastmod><priority>1.0</priority></url>
+  <url><loc>https://quietmargins.site/</loc><lastmod>2026-11-11</lastmod><priority>1.0</priority></url>
+  <url><loc>https://quietmargins.site/baca/semua-yang-pernah/</loc><lastmod>2026-11-06</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/kepala-yang-dingin-kota-yang-hangat/</loc><lastmod>2026-11-03</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/usia-pulang/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/giliran/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
+  <url><loc>https://quietmargins.site/baca/sebelum-makna-menemukan-kita/</loc><lastmod>2026-11-06</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/anda-di-sini/</loc><lastmod>2026-10-30</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/interlude/</loc><lastmod>2026-10-30</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/yang-tidak-pernah-dibacakan/</loc><lastmod>2026-07-21</lastmod><priority>0.8</priority></url>
@@ -19,15 +21,18 @@
   <url><loc>https://quietmargins.site/baca/thought-log-003-the-resonance-of-silence/</loc><lastmod>2026-07-19</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/thought-log-002-the-dissonant-shell/</loc><lastmod>2026-07-19</lastmod><priority>0.8</priority></url>
   <url><loc>https://quietmargins.site/baca/thought-log-001-the-cartesian-void/</loc><lastmod>2026-07-19</lastmod><priority>0.8</priority></url>
-  <url><loc>https://quietmargins.site/antologi/usia-pulang/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/giliran/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/anda-di-sini/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/interlude/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/yang-tidak-pernah-dibacakan/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/terlambat-satu-menit/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/pabrik-mimpi/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/the-moon-behind-my-eyes/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/trillions-of-seconds/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/the-room/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
-  <url><loc>https://quietmargins.site/antologi/arsip/</loc><lastmod>2026-11-03</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/semua-yang-pernah/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/usia-pulang/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/giliran/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/sebelum-makna/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/anda-di-sini/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/interlude/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/yang-tidak-pernah-dibacakan/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/terlambat-satu-menit/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/di-dasar-rumah/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/pabrik-mimpi/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/the-moon-behind-my-eyes/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/trillions-of-seconds/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/the-room/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://quietmargins.site/antologi/arsip/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
 </urlset>

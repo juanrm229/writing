@@ -606,7 +606,7 @@ output.bump { animation: bump .35s var(--spring); }
 .rel-t i { font-family: var(--r-font); color: #D7263D; font-size: 1.1em; }
 
 /* suasana */
-.ambience { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ambience { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 8px; }
 .ambience button { height: 72px; border-radius: 20px; border: 2px solid transparent; background: var(--chip-2); color: var(--ink); cursor: pointer; display: grid; place-content: center; justify-items: center; gap: 4px; transition: border-color .2s, background-color .2s, transform .35s var(--spring); }
 .ambience button svg { width: 22px; height: 22px; }
 .ambience button small { font-size: 11.5px; color: var(--muted); }
@@ -721,13 +721,15 @@ output.bump { animation: bump .35s var(--spring); }
 .th-arc path { fill: none; stroke-width: 2.2; stroke-linecap: round; }
 .th-arc .base { stroke: var(--t-sheet-dim); }
 #thArc { stroke: var(--t-sheet-ink); stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.4s var(--ease-out) .4s; }
-.th-title { margin: 22px 0 0; text-align: center; font: 900 clamp(52px, 6.6vw, 82px)/.86 "Doto", ui-monospace, monospace; letter-spacing: -.03em; text-transform: uppercase; }
+.th-title { margin: 22px 0 0; text-align: center; font: 900 var(--th-title)/.86 "Doto", ui-monospace, monospace; letter-spacing: -.03em; text-transform: uppercase; }
 .th-title span { display: block; animation: dotIn 1s var(--ease-out) both; }
 .th-title span + span { animation-delay: .12s; }
 @keyframes dotIn { from { opacity: 0; filter: blur(8px); letter-spacing: .1em; } }
 
 /* tumpukan piringan */
-.crate { position: absolute; left: 0; right: 0; top: 34%; bottom: 0; touch-action: pan-x; }
+/* piringan mulai di bawah judul dua baris, juga di layar yang pendek */
+.th-sheet { --th-title: clamp(52px, 6.6vw, 82px); }
+.crate { position: absolute; left: 0; right: 0; top: max(34%, calc(var(--th-title) * 1.72 + 84px)); bottom: 0; touch-action: pan-x; }
 .disc {
   --i: 0;
   position: absolute; left: 50%; top: 0; width: var(--d); aspect-ratio: 1; margin-left: calc(var(--d) / -2);
@@ -933,9 +935,9 @@ output.bump { animation: bump .35s var(--spring); }
 .sc-box { height: 46px; min-width: 78px; padding: 0 12px; border-radius: 15px; background: var(--t-card); display: flex; align-items: center; justify-content: center; gap: 4px; font: 300 22px/1 var(--f-ui); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .sc-box small { font-size: 12px; color: var(--t-muted); }
 .sc-ticks { position: relative; height: 30px; display: flex; align-items: center; justify-content: space-between; }
-.sc-ticks i { width: 2px; height: 22px; border-radius: 1px; background: var(--t-muted); opacity: .35; transition: height .25s var(--spring), opacity .2s, background-color .2s; }
+.sc-ticks i { width: 2px; height: var(--h, 22px); border-radius: 1px; background: var(--t-muted); opacity: .35; transition: height .25s var(--spring), opacity .2s, background-color .2s; }
 .sc-ticks i.past { opacity: .9; background: var(--t-ink); }
-.sc-ticks i.now { height: 30px; opacity: 1; background: var(--go); width: 3px; }
+.sc-ticks i.now { height: 30px; min-height: calc(var(--h, 22px) + 4px); opacity: 1; background: var(--go); width: 3px; }
 .sc-tag { position: absolute; bottom: calc(100% + 18px); left: var(--x, 0); translate: -50% 0; padding: 4px 10px; border-radius: 10px; background: var(--go); color: #0D1A05; font: 700 12.5px var(--f-ui); white-space: nowrap; transition: left .25s var(--spring); pointer-events: none; }
 .pk-stage { flex: 1; min-height: 0; width: 100%; padding-bottom: 6px; container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 14px; }
 .pk-disc { --d: max(84px, min(300px, 70vw, calc(100cqh - 200px))); flex: none; position: relative; width: var(--d); height: var(--d); perspective: 1200px; touch-action: pan-y; cursor: grab; }
@@ -952,7 +954,7 @@ output.bump { animation: bump .35s var(--spring); }
 .pk-arm .arm-pivot { fill: var(--t-ink); stroke: none; }
 .pk-arm .arm-rod { fill: none; stroke: var(--t-ink); stroke-width: 4.5; stroke-linecap: round; }
 .pk-arm .arm-head { fill: var(--t-ink); stroke: none; }
-.pk-disc.needle .pk-arm { transform: rotate(15deg); }
+.pk-disc.needle .pk-arm { transform: rotate(var(--arm, 15deg)); }
 .pk-disc.flipping .pk-arm { transform: rotate(-12deg) translateY(-4px); }
 .pk-disc.swap { animation: pkSwap .55s var(--ease-out); }
 @keyframes pkSwap { from { opacity: 0; transform: translateX(var(--dir, 40px)) scale(.92) rotate(var(--rot, 12deg)); } }
@@ -1890,7 +1892,7 @@ button.pf-now-c:hover { transform: translateY(-3px); }
 }
 .kt-main { width: 100%; display: grid; grid-template-columns: 54px 36px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 14px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
 .kt-main:hover .kt-disc, .kt-row.open .kt-disc { animation: spin 3s linear infinite; }
-.kt-no { color: var(--t-muted); font: 700 11px "Doto", ui-monospace, monospace; letter-spacing: .02em; }
+.kt-no { color: color-mix(in srgb, var(--t-ink) 66%, transparent); font: 900 12.5px "Doto", ui-monospace, monospace; letter-spacing: .02em; }
 .kt-t { display: grid; gap: 3px; min-width: 0; }
 .kt-t b { font: 500 19px/1.2 var(--f-read); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kt-t small { color: var(--t-muted); font: 12.5px var(--f-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1975,3 +1977,39 @@ button.pf-now-c:hover { transform: translateY(-3px); }
   .tb-btn { width: 28px; }
   .tb-btn.tb-music { display: none; }
 }
+
+/* ================================================================
+   ALUR YANG JUJUR: alur piringan digambar dari teksnya (drawGroove di app.js)
+   ================================================================ */
+.disc-spin canvas.groove { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.disc.has-groove .disc-spin::before { display: none; }
+/* jarum di pemilih piringan: cincin hijau menandai alur tempat mulai membaca, lengannya ikut menunjuk */
+.pk-needle { position: absolute; left: 50%; top: 50%; z-index: 2; width: calc(var(--d) * var(--nr, .976)); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 1.5px solid var(--go); box-shadow: 0 0 12px color-mix(in srgb, var(--go) 55%, transparent), inset 0 0 8px color-mix(in srgb, var(--go) 30%, transparent); opacity: 0; pointer-events: none; transition: width .45s var(--spring), opacity .25s; }
+.pk-disc.aimed .pk-needle, .pk-disc.needle .pk-needle { opacity: .9; }
+.pk-disc.flipping .pk-needle, .pk-disc.swap .pk-needle { opacity: 0; }
+.pk-disc.aimed:not(.flipping):not(.needle) .pk-arm { transform: rotate(var(--arm, 6deg)) translateY(-3px); }
+.pk-disc { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .pk-needle { transition: none; } }
+
+/* panel Menit luang muat tanpa terpotong di layar laptop yang pendek */
+@media (min-width: 861px) and (max-height: 1000px) {
+  .turn-setup { padding-top: 22px; }
+  .ts-wheel { --it: 80px; margin: 14px 0 18px; }
+  .ts-grid { gap: 12px 14px; margin: 16px 0; }
+  .tc { height: 96px; border-radius: 48px; }
+  .tc-cell { gap: 6px; }
+}
+@media (min-width: 861px) and (max-height: 880px) {
+  .turn-setup { padding: 18px 22px 16px; }
+  .ts-wheel { --it: 62px; margin: 10px 0 12px; border-radius: 32px; }
+  .ts-sub { margin-bottom: 4px; }
+  .ts-grid { gap: 8px 14px; margin: 10px 0; }
+  .tc { height: 80px; border-radius: 40px; }
+  .tc-cell { gap: 4px; font-size: 13px; }
+  .ts-next { height: 46px; }
+  .tc-amb b { bottom: 10px; }
+}
+
+/* catatan sampul: tombol kecil untuk mendengar cuplikan lagu naskah */
+.ln-credits .ln-song { margin-left: 6px; padding: 2px 10px; border-radius: 999px; background: rgb(28 26 23 / .1); font: 600 12px var(--f-ui); text-decoration: none; vertical-align: 1px; }
+.ln-credits .ln-song:hover { background: rgb(28 26 23 / .2); }

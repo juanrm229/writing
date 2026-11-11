@@ -138,11 +138,108 @@
     document.getElementById('openSettings')?.addEventListener('click', sync);
     body.append(row); sync();
   };
+  /* LAGU DARI NASKAH (assets/lagu-naskah.js): tombol ♪ di kanan atas. Tulisan yang sedang dibuka menggubah
+     musiknya sendiri dari teksnya, dan setiap langkah (bait, bagian, malam, acara) menyanyikan bagiannya.
+     Pengalaman yang sudah punya rancangan bunyinya sendiri tidak diberi tombol ini, supaya tidak bertabrakan.
+     Pilihan pembaca diingat (jm:lagu) untuk semua pengalaman. */
+  const SONG_OWN = new Set(['interlude', 'terlambat-satu-menit', 'usia-pulang', 'semua-yang-pernah', 'yang-tidak-pernah-dibacakan', 'salasimpul']);
+  const Song = (() => {
+    let btn = null, row = null, player = null, key = '', span = null, stepped = false, wantOn = false, scrollT = 0, busy = false;
+    const at = () => (typeof cfg.work === 'function' ? cfg.work() : cfg.work === undefined ? cfg.slug : cfg.work) || '';
+    // teks yang sedang dibaca: karya, sisi, atau babnya, dalam bahasa yang tampil
+    const textOf = (list, ref) => {
+      const [slug, tail = ''] = String(ref).split(/(?=[:~])/), w = (Array.isArray(list) ? list : []).find(x => x && x.slug === slug);
+      if (!w) return null;
+      const other = EN ? (w.lang !== 'en' && w.en) : (w.lang === 'en' && w.id);
+      const has = o => o && ((Array.isArray(o.body) && o.body.length) || (Array.isArray(o.chapters) && o.chapters.length));
+      const src = has(other) ? other : w, ch = +(tail.match(/~(\d+)/) || [])[1] || 0, side = (tail.match(/:([a-p])/) || [])[1];
+      let paras = Array.isArray(src.chapters) && src.chapters.length ? (ch ? (src.chapters[ch - 1] || {}).body || [] : src.chapters.flatMap(c => c.body || [])) : src.body || [];
+      if (side && side !== 'a') paras = (((has(other) && other.sides) || w.sides || [])[side.charCodeAt(0) - 98] || {}).body || paras;
+      paras = paras.filter(p => /[\p{L}\p{N}]/u.test(String(p)));
+      return paras.length ? { paras, seed: w.slug, cat: w.cat, poem: w.form === 'puisi' } : null;
+    };
+    const paint = () => {
+      if (!btn) return;
+      const on = wantOn;
+      btn.setAttribute('aria-pressed', String(on)); btn.classList.toggle('on', on);
+      btn.setAttribute('aria-label', on ? t('Lagu naskah: menyala. Ketuk untuk mematikan', 'The text’s song: on. Tap to turn it off') : t('Lagu naskah: tulisan ini menggubah musiknya sendiri', 'The text’s song: this piece composes its own music'));
+      btn.title = t('Lagu dari naskah', 'The text’s own song');
+      if (row) { row.setAttribute('aria-pressed', String(on)); row.textContent = on ? t('Nyala', 'On') : t('Mati', 'Off'); }
+    };
+    const place = () => {
+      if (!player || !player.on) return;
+      if (span) player.seekFrac(span[0], span[1], true);
+    };
+    async function start() {
+      if (busy || !window.QMLagu) return;
+      busy = true;
+      try {
+        player = player || window.QMLagu.create({ volume: .8 });
+        player.unlock();
+        const ref = at(), src = textOf(await loadWorks(), ref);
+        if (!src || !wantOn) return;
+        key = ref;
+        const score = window.QMLagu.compose(src.paras, src);
+        // puisi yang baitnya belum dibuka: dengung dasar dulu, notnya menunggu bait pertama
+        player.start(score, 0, { rest: stepped && !span });
+        place();
+      } catch (_) { /* peramban tanpa Web Audio: tombolnya tetap diam */ } finally { busy = false; }
+    }
+    const stop = () => { if (player) player.stop(); key = ''; };
+    const set = on => { wantOn = on; try { localStorage.setItem('jm:lagu', JSON.stringify(on)); } catch (_) {} paint(); if (on) start(); else stop(); };
+    // tulisan berganti di halaman yang sama (arsip catatan): lagunya ikut berganti
+    const fresh = () => { if (wantOn && player && player.on && at() !== key) { span = null; start(); } };
+    return {
+      mount() {
+        const into = cfg.helpInto && document.querySelector(cfg.helpInto);
+        if (!into || SONG_OWN.has(cfg.slug) || !(window.AudioContext || window.webkitAudioContext)) return;
+        const sc = document.createElement('script'); sc.src = '../../assets/lagu-naskah.js?v=1'; sc.async = true; document.head.append(sc);
+        btn = document.createElement('button'); btn.type = 'button'; btn.className = 'jm-song';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 6.2a5.8 5.8 0 0 1 5.8 5.8M12 8.6a3.4 3.4 0 0 1 3.4 3.4"/></svg>';
+        btn.addEventListener('click', () => set(!wantOn));
+        into.prepend(btn);
+        // sakelar yang sama di dialog Aa: di layar yang sangat sempit tombol ♪ disembunyikan, sakelar ini tetap ada
+        const body = document.querySelector('#settingsDialog .settings-body');
+        if (body && !body.querySelector('#songToggle')) {
+          const r = document.createElement('div'); r.className = 'setting-row';
+          r.innerHTML = `<span>${esc(t('Lagu naskah', 'The text’s song'))}</span><button class="setting-button" id="songToggle" type="button" aria-pressed="false"></button>`;
+          row = r.querySelector('button'); row.setAttribute('aria-label', t('Lagu naskah: tulisan ini menggubah musiknya sendiri', 'The text’s song: this piece composes its own music'));
+          row.addEventListener('click', () => set(!wantOn));
+          body.append(r);
+        }
+        wantOn = read('lagu') === true; paint();
+        // pilihan yang diingat baru boleh berbunyi setelah sentuhan pertama pembaca
+        if (wantOn) {
+          const first = e => { if (btn.contains(e.target) || (row && row.contains(e.target))) return; removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true); if (wantOn && !(player && player.on)) start(); };
+          addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
+        }
+        // halaman tanpa penanda langkah (esai, arsip): lagunya mengikuti guliran
+        addEventListener('scroll', e => {
+          if (stepped || !player || !player.on) return;
+          clearTimeout(scrollT);
+          const el = e.target === document ? document.scrollingElement : e.target;
+          scrollT = setTimeout(() => { fresh(); const max = el.scrollHeight - el.clientHeight; if (max > 200 && player.on) player.seekFrac(Math.min(.999, el.scrollTop / max)); }, 250);
+        }, { capture: true, passive: true });
+        addEventListener('hashchange', () => setTimeout(fresh, 300));
+        document.addEventListener('visibilitychange', () => { if (player) player.suspend(document.hidden); });
+      },
+      // langkah ke-n dari total: bagian teks itu yang dinyanyikan
+      step(n, total) {
+        stepped = true;
+        const next = n >= 1 && total > 0 ? [(n - 1) / total, n / total] : null;
+        const same = span && next && span[0] === next[0] && span[1] === next[1];
+        span = next;
+        if (!same) { fresh(); place(); }
+      }
+    };
+  })();
+
   window.JMGuide = {
     // cfg: { slug, title, lede, steps, helpInto (selektor tempat tombol ?), stepInto (selektor penanda langkah), focusAfter }
     mount(c) {
       cfg = c;
       const into = c.helpInto && document.querySelector(c.helpInto); if (into) into.append(help());
+      Song.mount();
       plainRow(c.work === undefined ? c.slug : c.work);
       let seen = false; try { seen = localStorage.getItem(seenKey()) === '1'; } catch (_) {}
       if (!seen && !c.quiet) sheet();
@@ -150,6 +247,7 @@
     // Penanda "Bait 3 dari 7" dengan titik-titik kecil.
     // label: teks pengganti untuk bagian tanpa nomor, mis. "Prolog"
     step(n, total, word, label) {
+      Song.step(n, total);
       const el = cfg.stepInto && document.querySelector(cfg.stepInto); if (!el) return;
       const dots = total <= 14 ? `<i aria-hidden="true">${Array.from({ length: total }, (_, i) => `<b class="${i < n ? 'on' : ''}"></b>`).join('')}</i>` : '';
       const txt = label || `${word || t('Bait', 'Stanza')} ${n} ${t('dari', 'of')} ${total}`;
