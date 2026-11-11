@@ -161,6 +161,8 @@ window.JM_EN = {
   'Ombak': 'Waves',
   'Perapian': 'Fireplace',
   'Api': 'Fire',
+  'Naskah': 'Text',
+  'Tulisan ini menggubah musiknya sendiri': 'This piece composes its own music',
   'Matikan suasana': 'Turn off ambience',
   'Perataan Teks': 'Text Alignment',
   'Perataan teks': 'Text alignment',

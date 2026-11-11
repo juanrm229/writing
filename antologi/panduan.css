@@ -1,6 +1,15 @@
 /* Panduan bersama untuk pengalaman-pengalaman berbasis aplikasi (puisi dan arsip):
    kartu "Cara membaca", penanda langkah, dorongan saat diam, dan tautan ke tulisan berikutnya malam itu. */
 .jm-help { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--jm-chip, rgba(127,127,135,.18)); color: inherit; font: 600 16px system-ui, sans-serif; cursor: pointer; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.jm-song { width: 38px; height: 38px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--jm-chip, rgba(127,127,135,.18)); color: inherit; cursor: pointer; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.jm-song svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; opacity: .55; transition: opacity .25s; }
+.jm-song.on svg { opacity: 1; animation: jm-spin 5s linear infinite; }
+.jm-song.on { box-shadow: inset 0 0 0 1.5px var(--jm-accent, #2f6fe4); }
+@keyframes jm-spin { to { transform: rotate(1turn); } }
+/* layar yang sangat sempit: bilah atas tidak cukup untuk tombol ketiga; sakelarnya tetap ada di dialog Aa */
+@media (max-width: 359px) { .jm-song { display: none !important; } }
+html[data-calm] .jm-song.on svg { animation: none; }
+@media (prefers-reduced-motion: reduce) { .jm-song.on svg { animation: none; } }
 .jm-step { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: 999px; background: var(--jm-chip, rgba(127,127,135,.18)); font: 500 12.5px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .jm-step i { display: inline-flex; gap: 3px; }
 .jm-step i b { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .25; }

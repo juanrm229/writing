@@ -44,9 +44,10 @@
 
 /* Tombol bundar kanan atas: ? (panduan) dan Aa (pengaturan baca) */
 .qm-cluster { display: inline-flex; align-items: center; gap: 8px; flex: none; }
-.qm-icon, .qm-cluster .jm-help { width: 38px; height: 38px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--qm-card); color: var(--qm-ink); box-shadow: var(--qm-shadow); font: 400 16px var(--qm-read); cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.qm-icon, .qm-cluster .jm-help, .qm-cluster .jm-song { width: 38px; height: 38px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--qm-card); color: var(--qm-ink); box-shadow: var(--qm-shadow); font: 400 16px var(--qm-read); cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .qm-cluster .jm-help { font: 600 15px var(--qm-ui); }
-.qm-icon:hover, .qm-cluster .jm-help:hover { filter: brightness(.97); }
+.qm-icon:hover, .qm-cluster .jm-help:hover, .qm-cluster .jm-song:hover { filter: brightness(.97); }
+.qm-cluster .jm-song.on { box-shadow: var(--qm-shadow), inset 0 0 0 1.5px var(--qm-accent, #2f6fe4); }
 
 /* Penanda langkah dan kartu berikutnya memakai warna bingkai */
 .jm-step { background: var(--qm-card); color: var(--qm-ink); box-shadow: var(--qm-shadow); font-family: var(--qm-ui); }

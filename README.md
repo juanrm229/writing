@@ -74,7 +74,17 @@ Setiap simpanan adalah commit, jadi semua versi tulisanmu tercatat dan bisa dike
 - **Membaca = merajut.** Di pojok kartu baca, seni benang tulisan itu terajut sedikit demi sedikit sesuai seberapa jauh kamu membaca.
 - **Saksikan ditulis.** Tulisan diketik ulang di depan pembaca dengan ritme alami (jeda di tanda baca, sesekali salah ketik yang dihapus lalu diperbaiki). Bisa dijeda, dipercepat 2× atau 4×, atau dilewati.
 - **Kartu kutipan.** Pilih kalimat mana pun untuk membuat gambar kutipan (empat warna) lalu bagikan langsung ke aplikasi lain di ponsel, unduh, atau salin. Tombol bagikan di atas pembaca mengirim tautan tulisan.
-- **Suasana.** Pengaturan Lanjutan → Suasana: hujan, ombak, atau perapian, disintesis dengan Web Audio tanpa berkas suara.
+- **Suasana.** Pengaturan Lanjutan → Suasana: naskah, hujan, ombak, atau perapian, disintesis dengan Web Audio tanpa berkas suara.
+- **Lagu dari naskah.** Suasana *Naskah* (juga di kenop Suasana halaman awal, perintah *Putar lagu dari naskah ini* di `⌘K`, dan tombol **Dengarkan** di Catatan sampul) membuat tulisan yang sedang dibuka menggubah musiknya sendiri. Aturannya ada di `assets/lagu-naskah.js`:
+  - vokal di suku kata yang ditekan menentukan nada, dari gelap ke terang: **u, o, a, e, i** menjadi lima nada pentatonik;
+  - jumlah suku kata menentukan panjang not, dan kata bersuku tiga atau lebih menyanyikan dua nada;
+  - kata tiga huruf atau kurang lewat sebagai jeda; koma menahan napas, titik pulang ke nada dasar, tanda tanya naik dan tidak pulang, elipsis menggantung;
+  - kalimat di dalam tanda kutip dinyanyikan suara kedua, satu oktaf lebih tinggi;
+  - nada dasar dipilih dari alamat karya (semua sisi dan babnya senada), tangga nada dari jenisnya (esai mayor, catatan gantung, puisi pelog, cerita minor atau senja), tempo dari panjang kalimatnya.
+
+  Lagunya mengikuti paragraf yang sedang dibaca: pindah di akhir kalimat, dan kalau pembaca masih di paragraf yang sama setelah paragrafnya habis dinyanyikan, tiga not terakhir terulang pelan. Saat tulisan dibacakan lagunya menepi, pengatur waktu tidur ikut meredupkannya, dan musik latar situs diam selama lagu naskah menyala. Naskah yang sama selalu menghasilkan lagu yang sama. Chip di pembaca menyebut nadanya (*Naskah · C minor*).
+- **Alur yang jujur.** Alur di piringan besar (halaman awal dan Pilih piringan) digambar dari teksnya (`alurOf` dan `drawGroove` di `assets/app.js`): pita terang untuk kalimat pendek dan dialog, pita gelap untuk kalimat panjang, dan celah kosong di tiap jeda adegan, bait, atau bab, seperti celah antar-lagu di piringan sungguhan. Bilah waktu di Pilih piringan memakai bentuk yang sama, jadi tinggi garisnya naik turun mengikuti tulisan. Piringan kecil (carousel, daftar) tetap memakai alur polos. Catatan sampul menyebut jumlah adegan, bait, atau babnya.
+- **Jatuhkan jarum.** Di Pilih piringan, ketuk alur mana pun: cincin hijau menandai titik mulai, lengan pemutar pindah tepat ke alur itu, bilah waktu ikut, dan beberapa not dari bagian itu terdengar (kecuali musik dimatikan lewat tombol ♪). *Yang ini!* menurunkan jarum di titik itu. Mengetuk label tidak memindahkan jarum; usapan mendatar tetap membalik sisi.
 - **Hidup mengikuti jam.** Sapaan berganti (pagi, siang, sore, malam) dan wallpaper *Ikut jam* berubah dari fajar ke malam.
 - **Palet perintah.** `⌘K` lalu ketik `>` untuk menjalankan perintah: balik sisi, mode gelap, tulisan acak, pilih piringan, ganti latar, pasang aplikasi. Pencarian juga menemukan kalimat dari Sisi B.
 - **Pembaca.** Tema kertas, Suara, Cari, Fokus, ukuran, kecerahan, Tandai, Layar menyala, serta Pengaturan Lanjutan (huruf, ketebalan, ligatur, perataan).
@@ -605,7 +615,7 @@ Isi setiap pengalaman boleh berbeda (peta, obrolan, halaman lacak, kalender, ars
 
 - **Judul cerita**: judul di sampul (Interlude, Giliran, Anda di Sini, Pabrik Mimpi, Trillions of Seconds, The Room, Usia Pulang) memakai Doto kapital, sama seperti judul di halaman awal situs (`--qm-dot` di `bingkai.css`). Kicker di atasnya kapital kecil dengan jarak huruf yang sama. Tiruan aplikasi di dalam cerita (kalender, halaman lacak, aplikasi Jam dan Rumah, layar kunci, berkas arsip) tetap memakai gaya aplikasinya sendiri.
 - **Satu tombol keluar**: pil **‹ Meja tulis** di kiri atas, sama persis dengan pil di pembaca situs utama (tinggi 38, kartu kaca, bayangan yang sama). Dalam bahasa Inggris: *Writing desk*.
-- **Tombol kanan atas**: **Aa** (pengaturan baca) dan **?** (cara membaca), bundar, di tempat yang sama.
+- **Tombol kanan atas**: **♪** (lagu naskah, lihat Panduan bersama), **Aa** (pengaturan baca), dan **?** (cara membaca), bundar, di tempat yang sama.
 - **Dialog pengaturan baca** dengan tampilan yang sama: ukuran huruf, tampilan terang/gelap, dan pengaturan khusus pengalaman itu (gerak, bahasa, bunyi).
 - **Token situs**: huruf antarmuka sistem (seperti situs utama), huruf baca Newsreader, warna aksen biru situs, dan langit yang sama (`data-backdrop`: fajar, siang, senja, kabut, malam; ikut jam atau pilihan pembaca). Di layar lebar, aplikasinya tampil sebagai jendela di atas langit itu.
 - **Huruf baca** yang dipilih di situs utama (`jm:rd.font`: Literata, Georgia, sistem, Instrument, Geist) ikut dipakai untuk teks cerita. Pilihan **kertas** dari situs utama sengaja tidak diterapkan: setiap pengalaman punya permukaan dunianya sendiri (layar ponsel, kertas lacak, kalender), dan kertas krem di atasnya akan merusak ilusi itu.
@@ -618,6 +628,7 @@ Kedelapan pengalaman memakai panduan yang sama supaya alurnya tidak membingungka
 - **Cara membaca**: saat pertama kali dibuka, satu kartu menjelaskan langkah-langkahnya dalam tiga atau empat kalimat; tombol **?** di bilah atas membukanya lagi.
 - **Penanda langkah**: *Bait 3 dari 7* dengan titik-titik kecil (Anda di Sini: *Bagian*, Interlude: *Bab*, Terlambat Satu Menit: *Kiriman*, Pabrik Mimpi: *Acara*).
 - **Dorongan saat diam**: kalau pembaca tidak melakukan apa-apa beberapa detik, tombol yang ditunggu berdenyut; kalau tombolnya di luar layar, muncul tombol **↓** yang membawanya ke sana.
+- **Lagu naskah** (`Song` di `panduan.js`, mesinnya `assets/lagu-naskah.js`): tombol piringan kecil di kanan atas, dan sakelar *Lagu naskah* di dialog **Aa**, menyalakan musik yang digubah dari teks tulisan itu, dengan aturan yang sama seperti di pembaca situs utama. Setiap langkah (bait, bagian, malam, acara) menyanyikan bagian teksnya lalu menahan; halaman tanpa penanda langkah (esai, arsip) mengikuti guliran. Bait yang belum dibuka hanya berdengung. Pilihan pembaca diingat untuk semua pengalaman (`jm:lagu`) dan baru berbunyi setelah sentuhan pertama. Enam pengalaman yang sudah punya rancangan bunyi sendiri (Interlude, Terlambat Satu Menit, Usia Pulang, Semua yang Pernah, Yang Tidak Pernah Dibacakan, Salasimpul) tidak diberi tombol ini supaya tidak bertabrakan; daftarnya `SONG_OWN`. Di layar yang lebih sempit dari 360 px tombolnya disembunyikan dan sakelar di dialog **Aa** yang dipakai.
 - **Malam yang sama**: semua tulisan ini ditulis pada malam 19 Juli 2026 (Thought Log 01.57, 02.02, 02.06; The Room 02.13; Trillions of Seconds 02.17; The Moon Behind My Eyes 02.43). Di akhir setiap tulisan ada kartu ke tulisan berikutnya malam itu; di pengalaman lain, kartunya menunjuk pengalaman berikutnya menurut tanggal (dari `content/works.json`, jadi selalu ikut daftar terbaru).
 
 Cek bingkai di kedelapan pengalaman (tombol keluar, tombol kanan atas, dialog, tema, huruf baca, kartu berikutnya):
@@ -636,6 +647,12 @@ Cek catatan margin dan Titipan:
 
 ```bash
 python3 tests/margin_smoke.py
+```
+
+Cek lagu naskah, alur piringan, dan jarum (di situs utama dan di pengalaman interaktif):
+
+```bash
+python3 tests/lagu_smoke.py
 ```
 
 ### Arsip catatan (antologi/arsip/)

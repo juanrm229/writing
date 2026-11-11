@@ -1091,6 +1091,7 @@
       ixc.onclick = () => setPlainOnce(w.slug, false);
     }
     renderBody('', true);
+    Amb.doc();
     rhythm($('#rdRhythm'), w.lens);
     renderFlip(w);
     renderLinerCard(w);
@@ -1716,6 +1717,7 @@
     { label: 'Hentikan radio', hint: RADIO ? bySlug(RADIO.seed)?.title : '', run: stopRadio, show: !!RADIO },
     { label: 'Catatan sampul', hint: (view === 'pilih' ? bySlug(PK.slug) : current)?.title, run: () => openLiner(view === 'pilih' ? (pkDoc() || bySlug(PK.slug)) : current), show: (view === 'baca' && !!current) || view === 'pilih' },
     { label: 'Mode lirik', hint: 'dibacakan, kalimat demi kalimat', run: () => Lyr.show(), show: view === 'baca' && !!current },
+    { label: Amb.kind === 'naskah' ? t('Matikan lagu naskah', 'Turn off the text’s song') : t('Putar lagu dari naskah ini', 'Play this text’s own song'), hint: view === 'baca' && current && Naskah.ok ? Naskah.label(current) : '', run: () => Amb.set(Amb.kind === 'naskah' ? 'hening' : 'naskah'), show: view === 'baca' && !!current && Naskah.ok && !!SITE.features.ambience },
     { label: 'Saksikan tulisan ini ditulis', hint: current?.title, run: startReplay, show: view === 'baca' && !!SITE.features.replay },
     { label: isDark() ? 'Pakai mode terang' : 'Pakai mode gelap', hint: 'tema', run: () => setTheme(!isDark()) },
     { label: svOn() ? t('Ubah saringan', 'Change the filter') : t('Saring koleksi', 'Filter the collection'), hint: svOn() ? svSummary() : t('jenis, panjang, benang', 'kind, length, threads'), run: openSieve },
@@ -1835,6 +1837,8 @@
      BENANG MERAH: tulisan yang berbagi kata khas dihubungkan benang
      ====================================================================== */
   const LINK_STOP = new Set(('yang dan di ke dari itu ini aku kamu ia dia kita kami mereka dengan untuk pada ada tidak tapi tetapi juga akan sudah saja karena seperti adalah sebagai atau dalam bahwa lalu kalau jika apa satu setiap lebih sangat hanya masih bisa harus pun oleh kepada para si sang begitu sampai belum telah sedang agar supaya maka namun mau ingin lagi sebuah seorang pak bu yah iya ya tak kan hal demi tanpa sejak antara setelah sebelum selalu pernah mungkin kupikir sebenarnya terlalu semua dua tiga entah kenapa sesuatu bukan tetap paling membuat menjadi punya tahu hari kali orang biasa banyak balik jadi benar awal awalnya mana daripada pertama kedua sama tentang masuk datang tahun ketika sering memang akhirnya sedikit besar kecil baru lama dulu sekarang nanti cukup sambil hingga bahkan justru kembali dapat sana sini situ apakah bagaimana berapa siapa juga suatu terasa terus kemudian rasa sendiri saat waktu lain').split(' '));
+  // sembilan karya berbahasa Inggris: kata tugasnya juga bukan benang (tanpa ini racikan harian bisa bernama "tentang behind")
+  'that this with from have were what when which there their they them then than these those would could should been being into over under about after before again against between through during while where here very just only also some such more most much many each every other another because though although until upon within without toward towards behind beyond beside besides above below across along around among almost already always never ever still even quite rather perhaps maybe really anything something nothing everything anyone someone everyone itself myself yourself himself herself themselves ourselves your yours mine hers ours theirs will shall might must does doing done having were wasn didn don doesn isn aren couldn wouldn shouldn cannot like well back down away onto once since both either neither whether whose whom ever thing things time times make made come came went gone take took know knew said says tell told seem seemed find found give gave keep kept look looked want wanted going yeah okay'.split(' ').forEach(x => LINK_STOP.add(x));
   const VEC = {};
   let DF = {};
   const LINKS = (() => {
@@ -2152,8 +2156,73 @@
   /* ======================================================================
      SUASANA: hujan, ombak, perapian, disintesis langsung di peramban
      ====================================================================== */
+  /* ----------------------------------------------------------------------
+     LAGU DARI NASKAH (assets/lagu-naskah.js): tulisan yang sedang dibuka menggubah musiknya sendiri.
+     Satu karya, satu nada dasar: semua sisi dan babnya memakai tangga nada yang sama.
+     ---------------------------------------------------------------------- */
+  const Naskah = (() => {
+    const L = window.QMLagu, cache = new Map();
+    let player = null, duck = 0;
+    // paragraf pemisah adegan tetap dihitung (kosong), supaya nomor paragraf sama dengan yang di layar
+    const scoreOf = d => {
+      if (!cache.has(d.key)) {
+        if (cache.size > 12) cache.delete(cache.keys().next().value);
+        cache.set(d.key, L.compose(d.body.map(p => (isBreak(p) ? '' : plain(p))), { seed: (d.A || d).slug, cat: d.cat, poem: d.form === 'puisi' }));
+      }
+      return cache.get(d.key);
+    };
+    const get = () => player || (player = L.create({ volume: .8 }));
+    return {
+      ok: !!L, scoreOf,
+      label(d) { const x = L.describe(scoreOf(d), LANG === 'en'); return `${x.key} ${x.scale}`; },
+      tempo(d) { return L.describe(scoreOf(d)).bpm; },
+      unlock() { get().unlock(); },
+      start(d, at = 0) { get().start(scoreOf(d), at); },
+      seek(i) { if (player) player.seek(i); },
+      stop() { if (player) player.stop(); },
+      volume(v) { if (player) player.volume(.8 * v); },
+      suspend(h) { if (player) player.suspend(h); },
+      get on() { return !!player && player.on; },
+      // cuplikan saat jarum dijatuhkan di pemilih piringan; musik latar menepi sebentar
+      // o.force: diminta langsung oleh pembaca (tombol Dengarkan), jadi tetap berbunyi walau musik latar dimatikan
+      audition(d, f, o = {}) {
+        if (!L || !d || (!o.force && store.get('music', true) === false)) return;
+        try { duck = Date.now() + (o.count > 8 ? 9000 : 4500); get().audition(scoreOf(d), f, o.count || 7); } catch (e) { /* peramban tanpa Web Audio */ }
+      },
+      get ducking() { return Date.now() < duck; }
+    };
+  })();
+  document.addEventListener('visibilitychange', () => Naskah.suspend(document.hidden));
+
   const Amb = (() => {
-    let ac = null, master = null, parts = [], timers = [], kind = 'hening';
+    let ac = null, master = null, parts = [], timers = [], kind = 'hening', followT = 0, fade = 1;
+    // paragraf yang sedang dibaca: yang sedang dibacakan, atau yang berada di sekitar 40% tinggi layar
+    const paraNow = () => {
+      const kids = body.children, sp = $('.speaking', body);
+      if (sp) return [...kids].indexOf(sp);
+      const y = scroller.scrollTop + scroller.clientHeight * (scroller.scrollTop < 40 ? .12 : .4);
+      let lo = 0, hi = kids.length - 1;
+      while (lo < hi) { const m = (lo + hi + 1) >> 1; if (kids[m].offsetTop <= y) lo = m; else hi = m - 1; }
+      return lo;
+    };
+    const chip = label => {
+      $('#rd-amb')?.remove();
+      const c = document.createElement('button');
+      c.id = 'rd-amb'; c.type = 'button'; c.className = 'amb-chip';
+      c.innerHTML = `<i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>${label}`;
+      c.title = 'Matikan suasana';
+      c.addEventListener('click', () => set('hening'));
+      $('.rd-top').append(c);
+    };
+    // lagu naskah menyusul paragraf yang sedang dibaca, dan menepi saat tulisannya dibacakan
+    function sing() {
+      clearInterval(followT);
+      if (view !== 'baca' || !current) return;
+      Naskah.start(current, paraNow());
+      Naskah.volume(fade * (speaking ? .45 : 1));
+      chip(`${t('Naskah', 'Text')} · ${esc(Naskah.label(current))}`);
+      followT = setInterval(() => { if (kind !== 'naskah' || view !== 'baca') return; Naskah.seek(paraNow()); Naskah.volume(fade * (speaking ? .45 : 1)); }, 450);
+    }
     const bufs = {};
     function noise(type) {
       if (bufs[type]) return bufs[type];
@@ -2205,29 +2274,35 @@
       setTimeout(() => { p.forEach(n => { try { n.stop(); } catch (e) { /* */ } }); m.disconnect(); }, 1600);
     }
     function set(k) {
+      if (k === 'naskah' && !Naskah.ok) k = 'hening';
       if (k === kind) return;
       teardown({ m: master, p: parts, t: timers });
-      parts = []; timers = []; master = null; kind = k;
+      if (kind === 'naskah') { clearInterval(followT); Naskah.stop(); }
+      parts = []; timers = []; master = null; kind = k; fade = 1;
       $$('#ambience [data-amb]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.amb === k)));
       $('#rd-amb')?.remove();
       if (k === 'hening') return;
       try {
+        // dipilih sebelum tulisannya terbuka (dari halaman awal): suara dibuka kuncinya sekarang, selagi masih
+        // di dalam sentuhan pembaca, dan lagunya mulai begitu tulisan tampil (lihat doc())
+        if (k === 'naskah') { Naskah.unlock(); sing(); return; }
         ac = ac || new (window.AudioContext || window.webkitAudioContext)();
         ac.resume();
         master = gain(0); master.connect(ac.destination);
         build(k);
         master.gain.setTargetAtTime(.55, ac.currentTime, .8);
-        const chip = document.createElement('button');
-        chip.id = 'rd-amb'; chip.type = 'button'; chip.className = 'amb-chip';
-        chip.innerHTML = `<i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>${({ hujan: 'Hujan', ombak: 'Ombak', perapian: 'Perapian' })[k]}`;
-        chip.title = 'Matikan suasana';
-        chip.addEventListener('click', () => set('hening'));
-        $('.rd-top').append(chip);
+        chip(({ hujan: 'Hujan', ombak: 'Ombak', perapian: 'Perapian' })[k]);
       } catch (e) { kind = 'hening'; toast('Peramban ini belum bisa memutar suasana.'); }
     }
     // pengatur waktu tidur meredupkan suasana di menit terakhir
-    function volume(v) { if (master && ac) master.gain.setTargetAtTime(.55 * clamp(v, 0, 1), ac.currentTime, .6); }
-    return { set, volume, get kind() { return kind; } };
+    function volume(v) {
+      fade = clamp(v, 0, 1);
+      if (kind === 'naskah') Naskah.volume(fade * (speaking ? .45 : 1));
+      else if (master && ac) master.gain.setTargetAtTime(.55 * fade, ac.currentTime, .6);
+    }
+    // tulisan lain dibuka selagi lagu naskah menyala: lagunya berganti ke tulisan itu
+    function doc() { if (kind === 'naskah') { try { sing(); } catch (e) { set('hening'); } } }
+    return { set, volume, doc, get kind() { return kind; } };
   })();
 
   /* ======================================================================
@@ -2249,7 +2324,7 @@
       btn.setAttribute('aria-label', (on ? t('Matikan musik: ', 'Turn off music: ') : t('Putar musik: ', 'Play music: ')) + name);
       btn.title = name;
     };
-    const level = () => (speaking || (Amb.kind && Amb.kind !== 'hening') ? .07 : .3);
+    const level = () => (Amb.kind === 'naskah' ? 0 : Naskah.ducking ? .03 : speaking || (Amb.kind && Amb.kind !== 'hening') ? .07 : .3);
     const play = () => { target = level(); audio.play().then(() => { started = true; sync(); }).catch(() => { sync(); }); };
     // satu putaran halus: suara naik dan turun pelan, lalu berhenti kalau dimatikan
     setInterval(() => {
@@ -2275,6 +2350,74 @@
   })();
   $('#ambience').addEventListener('click', e => { const b = e.target.closest('[data-amb]'); if (b) Amb.set(b.dataset.amb); });
   if (!SITE.features.ambience) $('#ambWrap').hidden = true;
+
+  /* ======================================================================
+     ALUR YANG JUJUR: alur piringan digambar dari teksnya sendiri.
+     Pita terang = kalimat pendek dan dialog; pita gelap = kalimat panjang.
+     Jeda adegan, bait, dan bab menjadi celah antar-lagu, seperti di piringan sungguhan.
+     ====================================================================== */
+  const alurCache = new Map();
+  function alurOf(d) {
+    const id = d.key + (d.CH ? '*' : '');
+    if (alurCache.has(id)) return alurCache.get(id);
+    const poem = d.form === 'puisi';
+    // lagu-lagu di piringan: bab (karya berbab dilihat utuh), adegan, atau bait
+    let tracks;
+    if (d.CH) tracks = d.CH.map(c => c.body.filter(p => !isBreak(p)));
+    else {
+      tracks = [[]];
+      d.body.forEach(p => {
+        const last = tracks[tracks.length - 1];
+        if (isBreak(p)) { if (last.length) tracks.push([]); return; }
+        if (poem && last.length) tracks.push([p]); else last.push(p);
+      });
+    }
+    tracks = tracks.filter(tr => tr.length);
+    const segs = [], cuts = [];
+    let n = 0;
+    tracks.forEach((tr, ti) => {
+      if (ti) cuts.push(n);
+      tr.forEach(p => {
+        const tx = plain(p), w = wordsOf(tx).length; if (!w) return;
+        const s = Math.max(1, poem ? tx.split(/\n+/).length : (tx.match(/[.!?…]+/g) || []).length);
+        segs.push({ a: n, w, e: clamp(.18 + .57 * (1 - Math.min(1, w / s / 24)) + (/[“"]/.test(tx) ? .25 : 0), 0, 1) });
+        n += w;
+      });
+    });
+    const total = n || 1;
+    const A = { segs: segs.map(x => ({ f0: x.a / total, f1: (x.a + x.w) / total, e: x.e })), cuts: cuts.map(c => c / total), tracks: tracks.length };
+    alurCache.set(id, A);
+    return A;
+  }
+  // rata-rata tenaga teks di antara dua titik (0–1)
+  function alurEnergy(A, f0, f1) {
+    let sum = 0, wt = 0;
+    for (const x of A.segs) { if (x.f0 > f1) break; const o = Math.min(x.f1, f1) - Math.max(x.f0, f0); if (o > 0) { sum += x.e * o; wt += o; } }
+    return wt ? sum / wt : .4;
+  }
+  // tepi luar dan dalam alur, dalam satuan diameter piringan (label picture disc lebih kecil)
+  const GROOVE = { out: .488, in: k => (k === 'pic' ? .115 : .204) };
+  function drawGroove(cv, d, S, kind) {
+    const A = alurOf(d), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = cv.height = Math.round(S * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, S, S);
+    const c = S / 2, R0 = S * GROOVE.out, R1 = S * GROOVE.in(kind), step = S > 260 ? 2.2 : S > 150 ? 1.9 : 1.6;
+    const rings = Math.max(1, Math.floor((R0 - R1) / step));
+    // celah hanya digambar kalau lagunya tidak terlalu banyak untuk ukuran piringan ini
+    const gaps = A.cuts.length > 0 && A.cuts.length <= rings / 3;
+    // di atas gambar benang (picture disc) dan cipratan terang, alurnya butuh garis gelap pendamping supaya terbaca
+    const lit = kind === 'pic' ? 1.5 : 1, twin = kind === 'splat' || kind === 'pic';
+    for (let i = 0; i < rings; i++) {
+      const f0 = i / rings, f1 = (i + 1) / rings, r = R0 - i * step;
+      const cut = A.cuts.some(x => x >= f0 && x < f1);
+      if (cut && gaps) continue;
+      const e = alurEnergy(A, f0, f1);
+      ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${((.03 + e * e * .19 + (cut ? .07 : 0)) * lit).toFixed(3)})`; ctx.lineWidth = .55 + e * .5; ctx.stroke();
+      if (twin) { ctx.beginPath(); ctx.arc(c, c, r - .7, 0, Math.PI * 2); ctx.strokeStyle = `rgba(0,0,0,${(.06 + e * .22).toFixed(3)})`; ctx.lineWidth = .6; ctx.stroke(); }
+    }
+  }
 
   /* ======================================================================
      PIRINGAN: halaman awal. Setiap tulisan adalah satu piringan hitam.
@@ -2308,7 +2451,7 @@
       : d !== w && d.side !== 'a' ? `${sideWord(d)}${d.pov ? ' · ' + esc(d.pov) : ''}`
       : d !== w && multi(w) ? `${sideWord(d)}${d.pov ? ' · ' + esc(d.pov) : ''}`
       : `${esc(c.label)} · No. ${w.no}${w.CH ? ' · ' + chN(w) + ' ' + t('bab', 'ch.') : multi(w) ? ' · ' + w.S.map(SL).join('/') : ''}`;
-    el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(off ? { slug: d.key } : w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}
+    el.innerHTML = `<span class="disc-spin">${k === 'splat' ? splatSVG(off ? { slug: d.key } : w) : ''}${k === 'pic' ? '<canvas class="pic"></canvas>' : ''}${d ? '<canvas class="groove"></canvas>' : ''}
       <span class="disc-label"><canvas></canvas><b>${d ? esc(d.title) : ''}</b><small>${small}</small></span><i class="disc-hole"></i></span>`;
     return el;
   }
@@ -2318,6 +2461,9 @@
     drawThread($('.disc-label canvas', el), fullText(d), { w: size * .38, h: size * .38, pad: 4, color: '#000', seed: d.key, pins: false, weight: .9 });
     const pic = $('canvas.pic', el);
     if (pic) drawThread(pic, fullText(d), { w: size * .92, h: size * .92, pad: 10, color: catOf(d.cat).ink, seed: d.key, weight: 1.6 });
+    // piringan kecil (carousel, daftar) tetap memakai alur polos
+    const gv = $('canvas.groove', el);
+    if (gv && size >= 120) { drawGroove(gv, d, size, discKind(d)); el.classList.add('has-groove'); }
   }
   const discs = new Map();
   WORKS.forEach(w => {
@@ -2483,7 +2629,7 @@
 
   /* ---------- empat kontrol ---------- */
   const FORMS = ['puisi', 'semua', 'prosa'];
-  const AMBS = ['hening', 'hujan', 'ombak', 'perapian'];
+  const AMBS = ['hening', ...(Naskah.ok ? ['naskah'] : []), 'hujan', 'ombak', 'perapian'];
   const SIZES = [17, 19, 21, 23];
   const PAPERS = { putih: ['#F4F4F5', 'Putih'], sepia: ['#F2E4C9', 'Sepia'], gelap: ['#2A2A2E', 'Gelap'], custom: [rd.custom, 'Milikmu'] };
   function renderControls() {
@@ -2492,8 +2638,8 @@
     f.style.setProperty('--p', { puisi: '0%', semua: '50%', prosa: '100%' }[PV.form]);
     f.setAttribute('aria-label', t(`Bentuk: ${PV.form}. Ketuk untuk mengganti.`, `Form: ${{ puisi: 'poetry', prosa: 'prose', semua: 'all' }[PV.form] || PV.form}. Tap to change.`));
     const a = $('#tcAmb'), ai = AMBS.indexOf(PV.amb);
-    a.style.setProperty('--a', (-60 + ai * 40) + 'deg');
-    $('#tcAmbV').textContent = { hening: 'Hening', hujan: 'Hujan', ombak: 'Ombak', perapian: 'Api' }[PV.amb];
+    a.style.setProperty('--a', (-60 + Math.max(0, ai) * 120 / (AMBS.length - 1)) + 'deg');
+    $('#tcAmbV').textContent = { hening: 'Hening', naskah: t('Naskah', 'Text'), hujan: 'Hujan', ombak: 'Ombak', perapian: 'Api' }[PV.amb] || 'Hening';
     a.setAttribute('aria-label', t(`Suasana saat membaca: ${PV.amb}. Ketuk untuk mengganti.`, `Ambience while reading: ${PV.amb}. Tap to change.`));
     $('#tcSizeV').textContent = rd.size;
     const spread = (rd.size - 13) * 3.2;
@@ -2508,7 +2654,7 @@
     p.setAttribute('aria-label', t(`Kertas ${pp[1]}. Ketuk untuk mengganti.`, `Paper: ${pp[1]}. Tap to change.`));
   }
   $('#tcForm').addEventListener('click', () => { PV.form = FORMS[(FORMS.indexOf(PV.form) + 1) % FORMS.length]; savePv(); renderControls(); rerank(); });
-  $('#tcAmb').addEventListener('click', () => { PV.amb = AMBS[(AMBS.indexOf(PV.amb) + 1) % AMBS.length]; savePv(); renderControls(); });
+  $('#tcAmb').addEventListener('click', () => { PV.amb = AMBS[(AMBS.indexOf(PV.amb) + 1) % AMBS.length]; savePv(); renderControls(); if (PV.amb === 'naskah') toast(t('Naskah: setiap tulisan menggubah musiknya sendiri.', 'Text: every piece composes its own music.')); });
   $('#tcSize').addEventListener('click', () => { rd.size = SIZES[(SIZES.indexOf(rd.size) + 1) % SIZES.length] || 19; saveRd(); applyRd(); renderControls(); });
   $('#tcPaper').addEventListener('click', () => { const order = ['putih', 'sepia', 'gelap']; rd.rt = order[(order.indexOf(rd.rt) + 1) % order.length]; rd.rtAuto = false; saveRd(); applyRd(); renderControls(); });
   $('#tsMatch').addEventListener('click', () => openPicker(crateOrder[0].slug));
@@ -2658,7 +2804,7 @@
     if (PK.slug !== slug) { PK.slug = slug; PK.side = 'a'; PK.ch = 1; }
     PK.fr = {};
     const list = pkList(w);
-    pkDisc.innerHTML = `<div class="pk-flip">${list.map((d, i) => `<div class="pk-face ${w.CH ? 'c' + (i + 1) : LETTERS[i]}" data-i="${i}"></div>`).join('')}</div><svg class="pk-arm" viewBox="0 0 60 220" aria-hidden="true"><circle class="arm-base" cx="30" cy="22" r="17"/><circle class="arm-pivot" cx="30" cy="22" r="7"/><path class="arm-rod" d="M30 22 L30 168 Q30 182 22 190"/><rect class="arm-head" x="10" y="184" width="18" height="28" rx="4" transform="rotate(18 19 198)"/></svg>`;
+    pkDisc.innerHTML = `<div class="pk-flip">${list.map((d, i) => `<div class="pk-face ${w.CH ? 'c' + (i + 1) : LETTERS[i]}" data-i="${i}"></div>`).join('')}</div><i class="pk-needle" aria-hidden="true"></i><svg class="pk-arm" viewBox="0 0 60 220" aria-hidden="true"><circle class="arm-base" cx="30" cy="22" r="17"/><circle class="arm-pivot" cx="30" cy="22" r="7"/><path class="arm-rod" d="M30 22 L30 168 Q30 182 22 190"/><rect class="arm-head" x="10" y="184" width="18" height="28" rx="4" transform="rotate(18 19 198)"/></svg>`;
     const faces = $$('.pk-face', pkDisc);
     const els = list.map((d, i) => { const el = makeDisc(d, 'span', w); faces[i].append(el); return el; });
     requestAnimationFrame(() => els.forEach((el, i) => paintDisc(el, list[i], pkDisc.offsetWidth)));
@@ -2705,7 +2851,37 @@
     const go = $('#pkGo');
     go.disabled = !d;
     go.textContent = d ? t('Yang ini!', 'This one!') : t('Belum ada', 'Not yet');
+    // bilah waktu memakai bentuk yang sama dengan alur piringannya
+    const A = d ? alurOf(d) : null;
+    $$('i', ticks).forEach((tk, i) => tk.style.setProperty('--h', A ? (9 + alurEnergy(A, i / TICKS, (i + 1) / TICKS) * 19).toFixed(1) + 'px' : '22px'));
     renderScrub();
+  }
+  /* jarum: bilah waktu dan piringan menunjuk titik yang sama.
+     armAngle: sudut lengan supaya ujung jarum jatuh di jari-jari rho (satuan: diameter piringan);
+     poros lengan di (1.03, .014), ujung jarum (-.05, .632) dari poros. */
+  const armAngle = rho => {
+    let lo = 0, hi = 42;
+    for (let i = 0; i < 18; i++) {
+      const m = (lo + hi) / 2, th = m * Math.PI / 180;
+      const x = 1.03 - .05 * Math.cos(th) - .632 * Math.sin(th) - .5, y = .014 - .05 * Math.sin(th) + .632 * Math.cos(th) - .5;
+      if (Math.hypot(x, y) > rho) lo = m; else hi = m;
+    }
+    return (lo + hi) / 2;
+  };
+  function aimNeedle() {
+    const d = pkDoc(), R1 = GROOVE.in(d ? discKind(d) : 'black'), rho = GROOVE.out - PK.frac * (GROOVE.out - R1);
+    pkDisc.style.setProperty('--nr', (rho * 2).toFixed(4));
+    pkDisc.style.setProperty('--arm', armAngle(Math.min(rho, .476)).toFixed(2) + 'deg');
+    pkDisc.classList.toggle('aimed', !!d && PK.frac > 0);
+  }
+  // ketuk alurnya: jarum pindah ke situ, dan beberapa not dari bagian itu terdengar
+  function dropNeedle(e) {
+    const d = pkDoc(); if (!d) return;
+    const r = pkDisc.getBoundingClientRect(), rho = Math.hypot(e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2) / r.width;
+    const R1 = GROOVE.in(discKind(d));
+    if (rho > GROOVE.out + .02) return;
+    if (rho >= R1) { PK.frac = clamp((GROOVE.out - rho) / (GROOVE.out - R1), 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); }
+    Naskah.audition(d, PK.frac);
   }
   function renderScrub() {
     const d = pkDoc() || bySlug(PK.slug); if (!d) return;
@@ -2719,6 +2895,7 @@
     $('#scTo').innerHTML = `${fmtMS(total)}<small>M</small>`;
     scrub.setAttribute('aria-valuenow', Math.round(PK.frac * 100));
     scrub.setAttribute('aria-valuetext', t(`Mulai dari ${fmtMS(total * PK.frac)} dari ${fmtMS(total)}`, `Start at ${fmtMS(total * PK.frac)} of ${fmtMS(total)}`));
+    aimNeedle();
   }
   let scrubbing = false;
   const scrubTo = x => { if (!pkDoc()) return; const r = ticks.getBoundingClientRect(); PK.frac = clamp((x - r.left) / r.width, 0, 1); if (PK.frac < .03) PK.frac = 0; renderScrub(); };
@@ -2770,12 +2947,13 @@
     const st = e.target.closest('[data-chstep]'); if (st) { cycleSide(+st.dataset.chstep); return; }
     if (e.target.closest('[data-chlist]')) openChList();
   });
-  let fx = null;
-  pkDisc.addEventListener('pointerdown', e => { fx = e.clientX; });
+  let fx = null, fy = 0, ft = 0;
+  pkDisc.addEventListener('pointerdown', e => { fx = e.clientX; fy = e.clientY; ft = Date.now(); });
   pkDisc.addEventListener('pointerup', e => {
     if (fx == null) return;
-    const dx = e.clientX - fx; fx = null;
-    if (Math.abs(dx) > 40) cycleSide(dx < 0 ? 1 : -1);
+    const dx = e.clientX - fx, dy = e.clientY - fy; fx = null;
+    if (Math.abs(dx) > 40) { cycleSide(dx < 0 ? 1 : -1); return; }
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && Date.now() - ft < 500) dropNeedle(e);
   });
   pkDisc.addEventListener('dblclick', () => cycleSide(1));
   let carT;
@@ -3554,10 +3732,12 @@
     $('#rlTeaser').textContent = L.story ? (L.story.split(/(?<=[.!?…])\s/)[0].slice(0, 110) + (L.story.length > 110 ? '…' : '')) : t(`Ditulis ${partOfDay(d.A.time) || 'suatu hari'}${L.place ? ' di ' + L.place : ''}. Kata paling khas: ${L.khas.join(', ')}.`, `Written ${partOfDay(d.A.time) ? 'in the ' + partOfDay(d.A.time) : 'one day'}${L.place ? ' in ' + L.place : ''}. Most telling words: ${L.khas.join(', ')}.`);
     requestAnimationFrame(() => drawThread($('#rlArt'), fullText(d), { w: 52, h: 52, pad: 3, color: catOf(d.cat).ink, seed: d.key, pins: false, weight: 1.3 }));
   }
+  let lnDoc = null;
   function openLiner(d) {
     if (!d) return;
     const w = d.A, L = linerOf(d), ink = catOf(w.cat).ink;
     const sides = w.CH || w.S;
+    lnDoc = d;
     $('#liner').style.setProperty('--ink', ink);
     $('#lnFTitle').textContent = w.title;
     $('#lnFBy').textContent = `${SITE.author} · ${catOf(w.cat).label} · No. ${w.no}`;
@@ -3574,6 +3754,8 @@
         ${L.song ? `<div><dt>Diputar saat menulis</dt><dd>${songHref ? `<a href="${esc(songHref)}" target="_blank" rel="noopener">${esc(L.song)} ↗</a>` : esc(L.song)}</dd></div>` : ''}
         <div><dt>Kata paling khas</dt><dd class="ln-words">${L.khas.map(k => `<i>${esc(k)}</i>`).join('')}</dd></div>
         <div><dt>${t('Ritme', 'Rhythm')}</dt><dd>${t(`${L.sentences} ${w.form === 'puisi' ? 'baris' : 'kalimat'}, terpanjang ${L.longest} kata`, `${L.sentences} ${w.form === 'puisi' ? 'lines' : 'sentences'}, longest ${L.longest} words`)}</dd></div>
+        <div><dt>${t('Alur', 'Grooves')}</dt><dd>${(n => (d.CH ? countOf(n, 'bab', 'chapter', 'chapters') : w.form === 'puisi' ? countOf(n, 'bait', 'stanza', 'stanzas') : countOf(n, 'adegan', 'scene', 'scenes')))(alurOf(d).tracks)}${t(' · pita terang: kalimat pendek dan dialog', ' · bright bands: short sentences and dialogue')}</dd></div>
+        ${Naskah.ok ? `<div><dt>${t('Lagu naskah', 'The text’s song')}</dt><dd>${esc(Naskah.label(d))} · ${Naskah.tempo(d)} ${t('ketuk per menit', 'bpm')} <button type="button" class="ln-song" data-ln-song>${t('Dengarkan', 'Listen')}</button></dd></div>` : ''}
         ${L.thread ? `<div><dt>${t('Benang merah', 'Common thread')}</dt><dd><button type="button" data-ln-open="${L.thread.w.key}">“${esc(L.thread.w.title)}”</button> ${t('lewat', 'via')} ${L.thread.words.map(x => `<i>${esc(x)}</i>`).join(t(' dan ', ' and '))}</dd></div>` : ''}
       </dl>
       ${L.story ? `<div class="ln-story">${L.story.split(/\n\s*\n/).map(p => `<p>${rich(p)}</p>`).join('')}</div>` : ''}
@@ -3587,6 +3769,7 @@
   $('#lnClose').addEventListener('click', closeLiner);
   $('#liner').addEventListener('click', e => {
     if (e.target.id === 'liner') { closeLiner(); return; }
+    if (e.target.closest('[data-ln-song]')) { Naskah.audition(lnDoc, 0, { force: true, count: 12 }); return; }
     const o = e.target.closest('[data-ln-open]');
     if (o) { const d = docByKey(o.dataset.lnOpen); closeLiner(); if (d) openPicker(d.slug, d.side, d.ch); }
   });
