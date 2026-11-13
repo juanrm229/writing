@@ -49,6 +49,17 @@
     return data;
   }
 
+  // isi berkas sebagai teks mentah, untuk berkas yang terlalu besar bagi jawaban JSON biasa
+  async function rawText(path) {
+    const cfg = GH.cfg();
+    const res = await fetch(API + path, {
+      headers: { Accept: 'application/vnd.github.raw+json', Authorization: 'Bearer ' + cfg.token, 'X-GitHub-Api-Version': '2022-11-28' },
+      cache: 'no-store'
+    });
+    if (!res.ok) { const data = await res.json().catch(() => ({})); throw new GHError(res.status, explain(res.status, data.message)); }
+    return res.text();
+  }
+
   function explain(status, msg) {
     if (status === 401) return 'Token ditolak GitHub. Periksa lagi tokennya atau buat yang baru.';
     if (status === 403) return 'Token tidak punya izin menulis. Beri izin "Contents: Read and write" untuk repo ini.';
@@ -85,8 +96,12 @@
     async get(path) {
       const c = GH.cfg();
       try {
-        const d = await req(`${repoPath()}/contents/${path}?ref=${encodeURIComponent(c.branch)}`);
+        const url = `${repoPath()}/contents/${path}?ref=${encodeURIComponent(c.branch)}`;
+        const d = await req(url);
         shas[path] = d.sha;
+        // Berkas di atas 1 MB (misalnya content/works.json) datang tanpa isi: content kosong, encoding "none".
+        // Isinya diambil lagi dalam bentuk mentah, yang didukung GitHub sampai 100 MB.
+        if (d.encoding === 'none' || (!d.content && d.size > 0)) return { text: await rawText(url), sha: d.sha };
         return { text: d.encoding === 'base64' ? dec(d.content) : d.content, sha: d.sha };
       } catch (e) {
         if (e.status === 404) { delete shas[path]; return null; }
