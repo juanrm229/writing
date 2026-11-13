@@ -681,6 +681,9 @@ output.bump { animation: bump .35s var(--spring); }
 .turn { animation: turnIn .9s var(--ease-out) both; }
 /* masuk sekali saat situs dibuka; sesudahnya pindah tampilan memakai animasi masuk tampilan (enterView) */
 .win.settled .turn { animation: none; }
+/* tanpa animasi, Safari berhenti memotong piringan yang berputar di sudut bulat panel; isolation memulihkannya */
+.turn, .turn-hero, .th-sheet { isolation: isolate; }
+.th-sheet { transform: translateZ(0); }
 .turn-setup { animation-delay: .12s; }
 @keyframes turnIn { from { opacity: 0; transform: translateY(24px) scale(.97); } }
 
