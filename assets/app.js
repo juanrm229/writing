@@ -206,7 +206,15 @@
   // pemisah adegan: paragraf tanpa huruf atau angka, seperti *** atau ~
   const isBreak = p => !/[\p{L}\p{N}]/u.test(plain(p));
   const SCENE = '<p class="scene" aria-hidden="true"><span>⁂</span></p>';
-  const fullText = w => plain(w.body.filter(p => !isBreak(p)).join('\n\n'));
+  // dipakai berulang (seni benang, alur, pencarian); naskah panjang seperti Semua yang Pernah mahal kalau dihitung ulang
+  const fullTextCache = new WeakMap();
+  const fullText = w => {
+    const hit = fullTextCache.get(w);
+    if (hit && hit.body === w.body) return hit.t;
+    const t = plain(w.body.filter(p => !isBreak(p)).join('\n\n'));
+    fullTextCache.set(w, { body: w.body, t });
+    return t;
+  };
   function prep(w) {
     const t = fullText(w);
     w.words = wordsOf(t).length;
@@ -369,18 +377,21 @@
      TRANSISI ANTAR TAMPILAN (View Transitions bila didukung)
      ====================================================================== */
   let morphFrom = null, booted = false;
+  // pindah tampilan: tampilan baru muncul pelan dari sedikit di bawah. Dulu memakai View Transitions, tetapi
+  // snapshot-nya membuat Safari di iPhone menampilkan layar kosong lalu halaman yang masuk dari kanan;
+  // animasi yang kita pegang sendiri berjalan sama di semua peramban.
+  function enterView() {
+    const el = $('.view-' + win.dataset.view) || (win.dataset.view === 'sapa' ? $('#dock') : null);
+    if (!el || !el.animate || reduced || !booted) return;
+    el.getAnimations().forEach(a => a.id === 'enter' && a.cancel());
+    el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2, .8, .2, 1)', id: 'enter' });
+  }
   function vt(update) {
-    const from = morphFrom; morphFrom = null;
-    if (!document.startViewTransition || reduced || !booted) { update(); return; }
-    if (from) from.style.viewTransitionName = 'doc';
-    const t = document.startViewTransition(() => {
-      if (from) from.style.viewTransitionName = '';
-      update();
-      if (from && win.dataset.view === 'baca') $('#rdCard').style.viewTransitionName = 'doc';
-    });
-    // transisi yang dilewati (misalnya pindah halaman beruntun) menolak janjinya; itu wajar, bukan galat
-    t.ready.catch(() => {});
-    t.finished.catch(() => {}).finally(() => { $('#rdCard').style.viewTransitionName = ''; });
+    morphFrom = null;
+    const was = win.dataset.view;
+    update();
+    // tulisan lain di pembaca yang sama juga diberi animasi masuk; tampilan yang sama selain itu tidak
+    if (win.dataset.view !== was || win.dataset.view === 'baca') enterView();
   }
 
   /* ======================================================================
@@ -2741,7 +2752,14 @@
   function openPicker(slug, side = 'a', ch = 1) { location.hash = 'pilih-' + slug + pkSuffix(side, ch); }
   function showPicker(slug, side = 'a', ch = 1) {
     setView('pilih');
-    if (!pkPainted) { pkPainted = true; $$('.pk-item', pkCar).forEach(it => paintDisc($('.disc', it), bySlug(it.dataset.slug), 64)); }
+    // piringan kecil di carousel digambar sesudah animasi masuk, sedikit demi sedikit, supaya pemilih langsung tampil
+    if (!pkPainted) {
+      pkPainted = true;
+      const items = $$('.pk-item', pkCar), sel = items.findIndex(it => it.dataset.slug === slug);
+      const order = items.map((it, i) => [Math.abs(i - sel), it]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+      const step = () => { order.splice(0, 4).forEach(it => paintDisc($('.disc', it), bySlug(it.dataset.slug), 64)); if (order.length) setTimeout(step, 16); };
+      setTimeout(step, booted ? 320 : 0);
+    }
     const w = bySlug(slug);
     if (w && !w.CH && !multi(w)) side = side === 'a' ? 'a' : 'b';
     if (w && !w.CH && multi(w) && !w.S.some(d => d.side === side)) side = 'a';
@@ -3836,5 +3854,7 @@
   initPutar();
   route();
   requestAnimationFrame(() => { syncPill(); win.classList.add('ready'); booted = true; });
+  // animasi masuk pertama selesai: sesudah ini bagian dalam tampilan tidak lagi masuk ulang setiap pindah tampilan
+  setTimeout(() => win.classList.add('settled'), 1400);
   if (PREVIEW) root.classList.add('is-preview');
 })();

@@ -484,24 +484,13 @@ body::after { width: 55vmax; height: 55vmax; right: -16vmax; top: -24vmax; backg
 .win { animation: winIn 1s var(--ease-out) both; }
 @keyframes winIn { from { opacity: 0; transform: translateY(18px) scale(.975); filter: blur(6px); } }
 .dock { animation: dockIn .8s var(--ease-out) both; }
+.win.settled .dock { animation: none; }
 @keyframes dockIn { from { opacity: 0; transform: translateY(24px) scale(.97); } }
 .viewpill { animation: pillIn .8s .3s var(--spring) both; }
 @keyframes pillIn { from { opacity: 0; transform: translateY(-10px) scale(.9); } }
 
 /* transisi tampilan */
-.views { view-transition-name: views; }
-.dock { view-transition-name: dock; }
-::view-transition-old(views) { animation: vtOut .32s ease-in both; }
-::view-transition-new(views) { animation: vtIn .55s var(--ease-out) both; }
-@keyframes vtOut { to { opacity: 0; transform: scale(.985); filter: blur(6px); } }
-@keyframes vtIn { from { opacity: 0; transform: scale(1.012); filter: blur(6px); } }
-::view-transition-group(doc) { animation-duration: .6s; animation-timing-function: cubic-bezier(.3, .9, .2, 1); z-index: 50; }
-::view-transition-old(doc), ::view-transition-new(doc) { height: 100%; width: 100%; object-fit: cover; }
-::view-transition-old(doc) { animation: docOut .3s ease both; }
-::view-transition-new(doc) { animation: docIn .45s .1s ease both; }
-@keyframes docOut { to { opacity: 0; } }
-@keyframes docIn { from { opacity: 0; } }
-::view-transition-group(dock) { animation-duration: .5s; }
+/* pindah tampilan dianimasikan di app.js (enterView), tanpa View Transitions */
 
 @keyframes rowIn { from { opacity: 0; transform: translateY(14px); } }
 @keyframes selIn { from { opacity: 0; transform: translateY(20px) scale(.92); } }
@@ -690,6 +679,8 @@ output.bump { animation: bump .35s var(--spring); }
 .turn { position: relative; width: min(430px, 47%); height: 100%; max-height: 860px; border-radius: 44px; background: var(--t-panel); color: var(--t-ink); overflow: hidden; box-shadow: 0 0 0 1px var(--t-line), 0 40px 80px -40px rgb(0 0 0 / .45); }
 .turn-hero { display: flex; flex-direction: column; }
 .turn { animation: turnIn .9s var(--ease-out) both; }
+/* masuk sekali saat situs dibuka; sesudahnya pindah tampilan memakai animasi masuk tampilan (enterView) */
+.win.settled .turn { animation: none; }
 .turn-setup { animation-delay: .12s; }
 @keyframes turnIn { from { opacity: 0; transform: translateY(24px) scale(.97); } }
 
